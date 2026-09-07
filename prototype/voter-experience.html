@@ -79,11 +79,14 @@ svg text{font-family:"Public Sans",system-ui,sans-serif}
 .lede{font-family:"Newsreader",Georgia,serif;font-size:21px;line-height:1.5;max-width:64ch}
 .about{font-size:13px;color:var(--muted);max-width:75ch}
 .sparkcell svg{display:block}
+.ovr{display:flex;flex-direction:column}
 @media (max-width:640px){
   .dotrow{grid-template-columns:96px 1fr 92px}
   .blocnum{font-size:26px}
   .switcher .vlabel{min-width:104px}
   .urlpill{order:9;max-width:100%}
+  .ovr .o-tl{order:1}.ovr .o-bloc{order:2}.ovr .o-est{order:3}.ovr .o-latest{order:4}.ovr .o-journ{order:5}.ovr .o-about{order:6}
+  .sparkcell,.sparkth{display:none}
 }
 @media (prefers-reduced-motion: no-preference){ .chip,.btn{transition:opacity .15s} }
 </style>
@@ -274,7 +277,7 @@ function arcSeg(cx,cy,rad,a1,a2,color,w,title){
   return `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${rad},${rad} 0 0 1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${color}" stroke-width="${w}"><title>${title}</title></path>`;
 }
 function hemicycle(){
-  const t=T(), total=349, cx=170, cy=128, rad=92, w=44, gapA=0.012;
+  const t=T(), total=349, cx=170, cy=148, rad=92, w=44, gapA=0.012;
   const order=[...BLOCS[0].keys, ...BLOCS[1].keys];
   let a=Math.PI, segs="";
   for(const k of order){
@@ -286,10 +289,10 @@ function hemicycle(){
   const am=Math.PI - Math.PI*175/total;
   const mx1=cx+(rad-w/2-4)*Math.cos(am), my1=cy-(rad-w/2-4)*Math.sin(am);
   const mx2=cx+(rad+w/2+4)*Math.cos(am), my2=cy-(rad+w/2+4)*Math.sin(am);
-  return `<svg viewBox="0 0 340 150" role="img" aria-label="${t.blocs}" style="width:100%;max-width:360px;height:auto">
+  return `<svg viewBox="0 0 340 172" role="img" aria-label="${t.blocs}" style="width:100%;max-width:360px;height:auto">
     ${segs}
     <line x1="${mx1.toFixed(1)}" y1="${my1.toFixed(1)}" x2="${mx2.toFixed(1)}" y2="${my2.toFixed(1)}" stroke="var(--ink)" stroke-width="2"/>
-    <text x="${cx}" y="${cy-rad-w/2-8}" text-anchor="middle" font-size="11" fill="var(--faint)">${t.majority}</text>
+    <text x="${cx}" y="${cy-rad-w/2-12}" text-anchor="middle" font-size="11" fill="var(--faint)">${t.majority}</text>
     <text x="${cx-rad}" y="${cy+16}" text-anchor="start" font-size="13" font-weight="700" fill="var(--ink)" class="num">${BLOCS[0].seats}</text>
     <text x="${cx+rad}" y="${cy+16}" text-anchor="end" font-size="13" font-weight="700" fill="var(--ink)" class="num">${BLOCS[1].seats}</text>
     <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="11" fill="var(--faint)">349 ${t.seatsUnit}</text>
@@ -342,7 +345,7 @@ function headerBlock(){
 function estimateTable(){
   const t=T();
   return `<div class="tablewrap"><table>
-    <tr><th>${t.partyEyebrow}</th><th class="r">%</th><th>${t.interval}</th><th class="r">${t.seatsT}</th><th></th></tr>
+    <tr><th>${t.partyEyebrow}</th><th class="r">%</th><th>${t.interval}</th><th class="r">${t.seatsT}</th><th class="sparkth"></th></tr>
     ${PARTIES.map(p=>`<tr class="clickable" data-party="${p.k}" tabindex="0">
       <td><span class="pname"><span class="swatch" style="background:${pc(p.k)}"></span>${pname(p)}</span></td>
       <td class="r num" style="font-weight:700">${fmtN(p.now,state.lang)}</td>
@@ -382,23 +385,23 @@ function latestPollsTable(){
     ${POLLS.map(pl=>`<tr><td>${pl.inst}</td><td>${state.lang==="sv"?pl.field:pl.field_en}</td><td class="r num">${pl.n.toLocaleString(state.lang==="sv"?"sv-SE":"en-GB")}</td>${PARTIES.map(p=>`<td class="r num">${fmtN(pl.vals[p.k],state.lang)}</td>`).join("")}</tr>`).join("")}
   </table></div>`;
 }
-function aboutBlock(){
+function aboutBlock(cls){
   const t=T();
-  return `<section class="sec sub"><h2 class="sectitle" style="font-size:15px">${t.about}</h2><p class="about" style="margin:0">${t.aboutText}</p></section>`;
+  return `<section class="sec sub ${cls||""}"><h2 class="sectitle" style="font-size:15px">${t.about}</h2><p class="about" style="margin:0">${t.aboutText}</p></section>`;
 }
 
 /* ---------- overview variants ---------- */
 function variantD(){
   const t=T();
-  return headerBlock()+`
-  <section class="sec"><h2 class="sectitle">${t.timeline}</h2>${timelineBlock(true)}</section>
-  <section class="sec"><h2 class="sectitle">${t.headline}</h2>${estimateTable()}</section>
-  <div class="grid cols2">
+  return headerBlock()+`<div class="ovr">
+  <section class="sec o-tl"><h2 class="sectitle">${t.timeline}</h2>${timelineBlock(true)}</section>
+  <section class="sec o-est"><h2 class="sectitle">${t.headline}</h2>${estimateTable()}</section>
+  <div class="grid cols2 o-bloc">
     <section class="sec"><h2 class="sectitle">${t.blocs}</h2>${blocsBlock(true)}</section>
     <section class="sec"><h2 class="sectitle">${t.thresh}</h2>${threshBlock()}</section>
   </div>
-  <section class="sec"><h2 class="sectitle">${t.latest}</h2>${latestPollsTable()}</section>
-  <div class="grid cols2">
+  <section class="sec o-latest"><h2 class="sectitle">${t.latest}</h2>${latestPollsTable()}</section>
+  <div class="grid cols2 o-journ">
     <section class="sec"><h2 class="sectitle">${t.forJourn}</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
         <a class="btn" href="#" onclick="return false">${t.downloads.csv}</a>
@@ -406,7 +409,7 @@ function variantD(){
         <a class="btn" href="#" onclick="return false">${t.downloads.png}</a></div></section>
     <section class="sec"><h2 class="sectitle">${t.share}</h2>${shareCard()}<p class="footnote" style="margin:8px 0 0">${t.shareNote}</p></section>
   </div>
-  ${aboutBlock()}`;
+  ${aboutBlock("o-about")}</div>`;
 }
 function variantA(){
   const t=T();
