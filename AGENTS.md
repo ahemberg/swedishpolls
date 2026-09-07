@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Issues and specs live in GitHub Issues. For ticket operations, read
+Issues and specs live in GitHub Issues. For ticket, branch, and pull request operations, read
 [issue-tracker.md](docs/agents/issue-tracker.md).
 
 ### Triage labels

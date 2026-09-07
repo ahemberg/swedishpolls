@@ -3,6 +3,13 @@
 Issues and specs live in GitHub Issues for ahemberg/swedishpolls.
 Use the gh CLI from this repository.
 
+## Branches and pull requests
+
+- `main` is the integration and default branch. Start ordinary work from current `origin/main` and target PRs at `main`.
+- Keep wayfinder research and prototype artifacts on their dedicated `research/*` and `prototype/*` branches when linked from decision tickets. These artifact branches are not integration branches or PR bases.
+- After a PR merges, remove its topic branch and clean worktree when no unique work remains. Preserve branches holding linked research or prototype evidence.
+- Keep the primary working directory on `main` between tasks. Check for local changes before switching or removing a worktree.
+
 ## Operations
 
 - Create: gh issue create --title "..." --body-file <file>
