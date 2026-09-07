@@ -1,0 +1,247 @@
+{
+ "config": {
+  "seed": 20260907,
+  "data_file": "polls-pinned.csv",
+  "upstream_commit": "f0390c05854d87bbf21db9d31c6431ffa0f07f7e",
+  "parties": [
+   "M",
+   "L",
+   "C",
+   "KD",
+   "S",
+   "V",
+   "MP",
+   "SD"
+  ],
+  "model_start": "2010-01-01",
+  "zero_share_floor": 0.0005,
+  "kappa_grid": [
+   1.0,
+   1.5
+  ],
+  "q_grid": [
+   1e-05,
+   3e-05,
+   0.0001,
+   0.0003,
+   0.001,
+   0.003,
+   0.01
+  ],
+  "halflife_grid": [
+   14.0,
+   30.0,
+   60.0
+  ],
+  "recency_window_days": 120,
+  "fold_start": "2018-01-15",
+  "fold_end": "2026-07-15",
+  "fold_step_days": 60,
+  "tune_before": "2021-01-01",
+  "predict_horizon_days": 35,
+  "final_cutoff": "2026-09-07",
+  "threshold": 0.04,
+  "n_draws": 4000,
+  "synth_T": 1500,
+  "synth_cutoff": 1400,
+  "synth_replicates": 5,
+  "synth_poll_gap_mean": 3.0,
+  "synth_house_sd_ilr": 0.02,
+  "synth_design_effect": 1.5,
+  "synth_eval_points": 26
+ },
+ "n_polls": 1422,
+ "exclusions": {
+  "missing_publdate": 16,
+  "missing_or_bad_n": 25,
+  "nonpositive_other": 5,
+  "bad_collect_dates": 5,
+  "exit_poll": 6,
+  "published_before_collect_end": 10,
+  "before_model_start": 174,
+  "missing_party_share": 987
+ },
+ "same_house_overlaps": 145,
+ "tuning": {
+  "recency": [
+   [
+    -5.2218441150482215,
+    14.0
+   ],
+   [
+    -3.2089756047661733,
+    30.0
+   ],
+   [
+    -2.7692282950468616,
+    60.0
+   ]
+  ],
+  "midpoint-ss": [
+   [
+    -2.8020926850214183,
+    1e-05
+   ],
+   [
+    0.5645332760080229,
+    3e-05
+   ],
+   [
+    2.8455672694271503,
+    0.0001
+   ],
+   [
+    3.716139166947528,
+    0.0003
+   ],
+   [
+    3.1995233730525614,
+    0.001
+   ],
+   [
+    1.3173629775783013,
+    0.003
+   ],
+   [
+    -2.0084113130738084,
+    0.01
+   ]
+  ],
+  "window-avg": [
+   [
+    -2.8092854337014335,
+    1e-05
+   ],
+   [
+    0.5471231794617254,
+    3e-05
+   ],
+   [
+    2.8068251355597438,
+    0.0001
+   ],
+   [
+    3.663797285765414,
+    0.0003
+   ],
+   [
+    3.1716628874874133,
+    0.001
+   ],
+   [
+    1.3710440104167076,
+    0.003
+   ],
+   [
+    -1.809889710512435,
+    0.01
+   ]
+  ]
+ },
+ "chosen_hyperparams": {
+  "recency": 60.0,
+  "midpoint-ss": 0.0003,
+  "window-avg": 0.0003
+ },
+ "tuning_seconds": 286.0,
+ "house_residuals_since_2022": {
+  "Sifo": {
+   "n": 79,
+   "mean_share_residual_pp": [
+    -0.08,
+    0.0,
+    -0.23,
+    0.07,
+    0.46,
+    -0.15,
+    0.01,
+    -0.26,
+    0.18
+   ]
+  },
+  "Novus": {
+   "n": 75,
+   "mean_share_residual_pp": [
+    0.16,
+    -0.12,
+    0.11,
+    -0.06,
+    0.03,
+    0.06,
+    -0.15,
+    0.28,
+    -0.31
+   ]
+  },
+  "Demoskop": {
+   "n": 59,
+   "mean_share_residual_pp": [
+    0.47,
+    -0.1,
+    0.2,
+    0.21,
+    -0.5,
+    -0.19,
+    -0.14,
+    -0.0,
+    0.04
+   ]
+  },
+  "Ipsos": {
+   "n": 47,
+   "mean_share_residual_pp": [
+    -0.11,
+    -0.09,
+    0.14,
+    -0.08,
+    -0.41,
+    0.48,
+    -0.02,
+    0.03,
+    0.07
+   ]
+  },
+  "Sentio": {
+   "n": 46,
+   "mean_share_residual_pp": [
+    -0.8,
+    0.09,
+    -0.68,
+    0.28,
+    -1.16,
+    0.35,
+    0.07,
+    1.88,
+    -0.03
+   ]
+  },
+  "Indikator": {
+   "n": 32,
+   "mean_share_residual_pp": [
+    0.07,
+    -0.14,
+    -0.14,
+    -0.35,
+    0.9,
+    -0.08,
+    -0.12,
+    0.09,
+    -0.22
+   ]
+  },
+  "Skop": {
+   "n": 28,
+   "mean_share_residual_pp": [
+    -0.21,
+    0.86,
+    0.54,
+    -0.08,
+    -0.7,
+    0.27,
+    0.67,
+    -0.97,
+    -0.37
+   ]
+  }
+ }
+}

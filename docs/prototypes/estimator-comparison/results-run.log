@@ -1,0 +1,35 @@
+eligible polls: 1422; exclusions: {'missing_publdate': 16, 'missing_or_bad_n': 25, 'nonpositive_other': 5, 'bad_collect_dates': 5, 'exit_poll': 6, 'published_before_collect_end': 10, 'before_model_start': 174, 'missing_party_share': 987}
+folds: 19 tuning, 33 evaluation
+tune recency hl=14.0: -5.22
+tune recency hl=30.0: -3.21
+tune recency hl=60.0: -2.77
+tune midpoint q=1e-05: -2.80
+tune midpoint q=3e-05: 0.56
+tune midpoint q=0.0001: 2.85
+tune midpoint q=0.0003: 3.72
+tune midpoint q=0.001: 3.20
+tune midpoint q=0.003: 1.32
+tune midpoint q=0.01: -2.01
+tune window-avg q=1e-05: -2.81
+tune window-avg q=3e-05: 0.55
+tune window-avg q=0.0001: 2.81
+tune window-avg q=0.0003: 3.66
+tune window-avg q=0.001: 3.17
+tune window-avg q=0.003: 1.37
+tune window-avg q=0.01: -1.81
+chosen: {'recency': 60.0, 'midpoint-ss': 0.0003, 'window-avg': 0.0003}
+folds recency kappa=1.0: 1s
+folds midpoint-ss kappa=1.0: 5s
+folds window-avg kappa=1.0: 90s
+folds recency kappa=1.5: 1s
+folds midpoint-ss kappa=1.5: 5s
+folds window-avg kappa=1.5: 92s
+synthetic clean done
+synthetic house+deff done
+final recency kappa=1.0: 0.0s 0.1MB
+final midpoint-ss kappa=1.0: 0.4s 0.0MB
+final window-avg kappa=1.0: 3.2s 1544.9MB
+final recency kappa=1.5: 0.0s 0.1MB
+final midpoint-ss kappa=1.5: 0.5s 0.0MB
+final window-avg kappa=1.5: 3.6s 1544.9MB
+DONE
