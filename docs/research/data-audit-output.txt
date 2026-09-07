@@ -1,0 +1,138 @@
+{
+  "commit": "f0390c05854d87bbf21db9d31c6431ffa0f07f7e",
+  "sha256": "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+  "all": {
+    "rows": 2650,
+    "missing": {
+      "PublYearMonth": 0,
+      "Company": 0,
+      "M": 0,
+      "L": 0,
+      "C": 0,
+      "KD": 38,
+      "S": 0,
+      "V": 0,
+      "MP": 228,
+      "SD": 988,
+      "FI": 2256,
+      "Uncertain": 1026,
+      "n": 152,
+      "PublDate": 351,
+      "collectPeriodFrom": 337,
+      "collectPeriodTo": 336,
+      "approxPeriod": 0,
+      "house": 0
+    },
+    "retained_by_spec": 2247,
+    "retained_missing_publication": 59,
+    "retained_precision_over_two": 7,
+    "missing_party_retained": 615,
+    "duplicate_key_groups": 29,
+    "duplicate_key_extra_rows": 90,
+    "approx": {
+      "FALSE": 2600,
+      "TRUE": 50
+    },
+    "reversed_dates": 0,
+    "publication_before_end": 20,
+    "nonpositive_n": 0,
+    "noninteger_n": 0,
+    "n_range": [
+      "731",
+      "12909"
+    ],
+    "other_negative": [],
+    "other_zero": 5,
+    "other_range": [
+      "0",
+      "6.8"
+    ],
+    "overlap_rows": 325,
+    "overlap_house_days": 618,
+    "max_overlap": 7,
+    "houses": {
+      "Novus": 292,
+      "Indikator": 32,
+      "Sifo": 760,
+      "Demoskop": 378,
+      "Infostat": 5,
+      "Sentio": 199,
+      "Ipsos": 415,
+      "SCB": 104,
+      "Skop": 207,
+      "SVT": 6,
+      "Inizio": 69,
+      "TV4": 1,
+      "YouGov": 97,
+      "United Minds": 83,
+      "Gallup": 2
+    }
+  },
+  "since_start": {
+    "rows": 1684,
+    "missing": {
+      "PublYearMonth": 0,
+      "Company": 0,
+      "M": 0,
+      "L": 0,
+      "C": 0,
+      "KD": 0,
+      "S": 0,
+      "V": 0,
+      "MP": 0,
+      "SD": 34,
+      "FI": 1290,
+      "Uncertain": 718,
+      "n": 18,
+      "PublDate": 20,
+      "collectPeriodFrom": 1,
+      "collectPeriodTo": 0,
+      "approxPeriod": 0,
+      "house": 0
+    },
+    "retained_by_spec": 1665,
+    "retained_missing_publication": 20,
+    "retained_precision_over_two": 7,
+    "missing_party_retained": 33,
+    "duplicate_key_groups": 0,
+    "duplicate_key_extra_rows": 0,
+    "approx": {
+      "FALSE": 1635,
+      "TRUE": 49
+    },
+    "reversed_dates": 0,
+    "publication_before_end": 10,
+    "nonpositive_n": 0,
+    "noninteger_n": 0,
+    "n_range": [
+      "731",
+      "12909"
+    ],
+    "other_negative": [],
+    "other_zero": 5,
+    "other_range": [
+      "0",
+      "6.8"
+    ],
+    "overlap_rows": 213,
+    "overlap_house_days": 312,
+    "max_overlap": 7,
+    "houses": {
+      "Novus": 255,
+      "Indikator": 32,
+      "Sifo": 287,
+      "Demoskop": 247,
+      "Infostat": 5,
+      "Sentio": 195,
+      "Ipsos": 239,
+      "SCB": 37,
+      "Skop": 141,
+      "SVT": 5,
+      "Inizio": 69,
+      "TV4": 1,
+      "YouGov": 88,
+      "United Minds": 83
+    }
+  }
+}
+2022 national allocation: {'S': 107, 'SD': 73, 'M': 68, 'V': 24, 'C': 24, 'KD': 19, 'MP': 18, 'L': 16}
