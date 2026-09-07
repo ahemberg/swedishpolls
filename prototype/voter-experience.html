@@ -1,0 +1,459 @@
+<!-- PROTOTYPE — throwaway. Three variants of the poll-of-polls overview + party page,
+     switchable via ?variant= and the floating bottom bar. Illustrative data only.
+     Wayfinder ticket: https://github.com/ahemberg/swedishpolls/issues/7 -->
+<title>Opinionsprototypen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ground:#FAFAF7; --surface:#FFFFFF; --ink:#1B2530; --muted:#56616E; --faint:#7C8894;
+  --line:#E2E5E0; --accent:#23606E; --accent-ink:#FFFFFF; --warn-bg:#FBF3DC; --warn-ink:#6B4E00;
+  --band-alpha:.14; --chip:#EFF1ED; --proto:#8A2D2D;
+  --c-S:#C7233A; --c-SD:#8A6D00; --c-M:#356E9F; --c-V:#93283C; --c-C:#12945F;
+  --c-KD:#17365E; --c-MP:#67A22B; --c-L:#4C8FD6; --c-OTH:#77808F;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#12161B; --surface:#1A2027; --ink:#E8EAEC; --muted:#9AA5AF; --faint:#78828C;
+    --line:#2A323B; --accent:#63B0BF; --accent-ink:#0E1418; --warn-bg:#3A3013; --warn-ink:#EBD48A;
+    --chip:#242C34; --proto:#E08C8C;
+    --c-S:#E86A7C; --c-SD:#C7A93C; --c-M:#6FA6D6; --c-V:#C86A80; --c-C:#3FBF8B;
+    --c-KD:#7C9CD0; --c-MP:#8FC556; --c-L:#8FBCEB; --c-OTH:#98A2AC;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#12161B; --surface:#1A2027; --ink:#E8EAEC; --muted:#9AA5AF; --faint:#78828C;
+  --line:#2A323B; --accent:#63B0BF; --accent-ink:#0E1418; --warn-bg:#3A3013; --warn-ink:#EBD48A;
+  --chip:#242C34; --proto:#E08C8C;
+  --c-S:#E86A7C; --c-SD:#C7A93C; --c-M:#6FA6D6; --c-V:#C86A80; --c-C:#3FBF8B;
+  --c-KD:#7C9CD0; --c-MP:#8FC556; --c-L:#8FBCEB; --c-OTH:#98A2AC;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font:15px/1.55 "Public Sans",system-ui,sans-serif;margin:0;padding-bottom:96px}
+h1,h2,h3{font-family:"Newsreader",Georgia,serif;text-wrap:balance;margin:0}
+a{color:var(--accent)}
+.num{font-variant-numeric:tabular-nums}
+.protostripe{background:var(--proto);color:#fff;font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:4px 10px}
+header.site{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--surface)}
+.brand{font-family:"Newsreader",Georgia,serif;font-weight:700;font-size:21px;cursor:pointer}
+.urlpill{font-size:12px;background:var(--chip);border:1px solid var(--line);border-radius:99px;padding:3px 12px;color:var(--muted);font-variant-numeric:tabular-nums;overflow-x:auto;white-space:nowrap;max-width:60vw}
+.spacer{flex:1}
+.langtog{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.langtog button{border:0;background:var(--surface);color:var(--muted);font:600 12.5px "Public Sans",sans-serif;padding:5px 12px;cursor:pointer}
+.langtog button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.stalebanner{background:var(--warn-bg);color:var(--warn-ink);padding:10px 20px;font-size:13.5px;border-bottom:1px solid var(--line)}
+main{max-width:1080px;margin:0 auto;padding:24px 20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.metaline{color:var(--muted);font-size:13.5px}
+.notforecast{display:inline-block;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--muted)}
+.grid{display:grid;gap:16px}
+.dotrow{display:grid;grid-template-columns:130px 1fr 118px;align-items:center;gap:10px;padding:6px 0;cursor:pointer;border-radius:6px}
+.dotrow:hover{background:var(--chip)}
+.dotrow .val{text-align:right;font-weight:600}
+.dotrow .ival{color:var(--muted);font-weight:400;font-size:12px}
+.pname{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px}
+.swatch{width:11px;height:11px;border-radius:3px;flex:none}
+.blocnum{font-family:"Newsreader",Georgia,serif;font-size:34px;font-weight:700;line-height:1.1}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 12px;font:600 12.5px "Public Sans",sans-serif;color:var(--ink);cursor:pointer}
+.chip[aria-pressed="false"]{opacity:.42}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{text-align:left;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:600;padding:6px 10px;border-bottom:1px solid var(--line)}
+td{padding:7px 10px;border-bottom:1px solid var(--line)}
+td.r,th.r{text-align:right}
+tr.clickable{cursor:pointer} tr.clickable:hover{background:var(--chip)}
+.tablewrap{overflow-x:auto}
+.readout{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);min-height:22px;align-items:baseline}
+.readout b{color:var(--ink)}
+.share{display:grid;gap:12px}
+.sharecard{width:100%;max-width:560px;aspect-ratio:1200/630;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:4% 5%;display:flex;flex-direction:column;justify-content:space-between}
+.btn{display:inline-block;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 14px;font:600 13px "Public Sans",sans-serif;cursor:pointer;text-decoration:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.backlink{font-size:13px;text-decoration:none;font-weight:600}
+.switcher{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--ground);border-radius:99px;padding:8px 14px;box-shadow:0 4px 18px rgba(0,0,0,.28);z-index:50;font-size:13px}
+.switcher button{border:0;background:transparent;color:inherit;font-size:16px;cursor:pointer;padding:2px 6px}
+.switcher .vlabel{font-weight:700;min-width:170px;text-align:center}
+.switcher label{display:flex;gap:5px;align-items:center;font-size:12px;opacity:.85;cursor:pointer;border-left:1px solid rgba(255,255,255,.25);padding-left:10px}
+svg text{font-family:"Public Sans",system-ui,sans-serif}
+.footnote{font-size:12.5px;color:var(--faint)}
+.lede{font-family:"Newsreader",Georgia,serif;font-size:21px;line-height:1.5;max-width:64ch}
+.sparkcell svg{display:block}
+@media (max-width:640px){
+  .dotrow{grid-template-columns:96px 1fr 92px}
+  .blocnum{font-size:27px}
+  .switcher .vlabel{min-width:110px}
+  .urlpill{order:9;max-width:100%}
+}
+@media (prefers-reduced-motion: no-preference){ .chip,.btn{transition:opacity .15s} }
+</style>
+
+<div class="protostripe" id="protostripe"></div>
+<div id="app"></div>
+<div class="switcher" id="switcher"></div>
+
+<script>
+"use strict";
+/* ---------- illustrative data (clearly fake) ---------- */
+const PARTIES = [
+  {k:"S",  sv:"Socialdemokraterna", en:"Social Democrats",     slug_sv:"socialdemokraterna", slug_en:"social-democrats",   now:33.8, ci:1.1, seats:128, start:30.3},
+  {k:"SD", sv:"Sverigedemokraterna",en:"Sweden Democrats",     slug_sv:"sverigedemokraterna",slug_en:"sweden-democrats",   now:19.5, ci:0.9, seats:74,  start:20.5},
+  {k:"M",  sv:"Moderaterna",        en:"Moderates",            slug_sv:"moderaterna",        slug_en:"moderates",          now:17.2, ci:0.9, seats:65,  start:19.1},
+  {k:"V",  sv:"Vänsterpartiet",     en:"Left Party",           slug_sv:"vansterpartiet",     slug_en:"left-party",         now:7.9,  ci:0.6, seats:30,  start:6.7},
+  {k:"MP", sv:"Miljöpartiet",       en:"Green Party",          slug_sv:"miljopartiet",       slug_en:"green-party",        now:4.9,  ci:0.5, seats:19,  start:5.1,  thr:79},
+  {k:"C",  sv:"Centerpartiet",      en:"Centre Party",         slug_sv:"centerpartiet",      slug_en:"centre-party",       now:4.6,  ci:0.5, seats:17,  start:6.7,  thr:71},
+  {k:"KD", sv:"Kristdemokraterna",  en:"Christian Democrats",  slug_sv:"kristdemokraterna",  slug_en:"christian-democrats",now:4.2,  ci:0.5, seats:16,  start:5.3,  thr:57},
+  {k:"L",  sv:"Liberalerna",        en:"Liberals",             slug_sv:"liberalerna",        slug_en:"liberals",           now:3.6,  ci:0.5, seats:0,   start:4.6,  thr:31, gap:true},
+  {k:"OTH",sv:"Övriga",             en:"Other",                slug_sv:"ovriga",             slug_en:"other",              now:4.3,  ci:0.5, seats:0,   start:1.6}
+];
+const ELECTION_2022 = {S:30.3,SD:20.5,M:19.1,V:6.7,MP:5.1,C:6.7,KD:5.3,L:4.6,OTH:1.6};
+const LASTFIELD_SV = "4 september 2026", LASTFIELD_EN = "4 September 2026";
+const POLLS = [
+  {inst:"Indikator", field:"28 aug–3 sep", field_en:"28 Aug–3 Sep", n:2104, vals:{S:34.2,SD:19.1,M:17.5,V:7.6,MP:4.8,C:4.9,KD:4.0,L:3.4,OTH:4.5}},
+  {inst:"Novus",     field:"24 aug–1 sep", field_en:"24 Aug–1 Sep", n:3512, vals:{S:33.1,SD:20.0,M:16.9,V:8.2,MP:5.1,C:4.4,KD:4.3,L:3.7,OTH:4.3}},
+  {inst:"Verian",    field:"18–25 aug",    field_en:"18–25 Aug",    n:1408, vals:{S:34.0,SD:19.7,M:17.0,V:7.7,MP:4.7,C:4.6,KD:4.5,L:3.9,OTH:3.9}},
+  {inst:"SCB/PSU",   field:"1–28 maj",     field_en:"1–28 May",     n:4917, vals:{S:33.5,SD:19.9,M:17.6,V:7.8,MP:5.0,C:4.6,KD:4.1,L:3.5,OTH:4.0}}
+];
+const HOUSE = { // illustrative house effects (pp, relative to institute ensemble) shown on party pages
+  Indikator:.4, Novus:-.3, Verian:.1, "SCB/PSU":-.2, Demoskop:.5, Sifo:-.4
+};
+const BLOCS = [
+  {sv:"S + V + MP + C", en:"S + V + MP + C", share:51.2, seats:194, maj:87},
+  {sv:"M + SD + KD + L", en:"M + SD + KD + L", share:44.5, seats:155, maj:12}
+];
+
+/* seeded weekly series 2022-09-11 -> 2026-09-04 */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const WEEKS = 209;
+const T0 = Date.UTC(2022,8,11), MS_W = 7*864e5;
+const SERIES = (()=>{
+  const rnd = mulberry32(20260904), out = {};
+  for(const p of PARTIES){
+    let w = 0; const arr=[];
+    for(let i=0;i<WEEKS;i++){
+      const t=i/(WEEKS-1);
+      w += (rnd()-0.5)*0.22; w*=0.985;
+      const base = p.start + (p.now-p.start)*(t*t*(3-2*t));
+      arr.push(Math.max(1.2, base + w + Math.sin(t*9+p.start)*0.25));
+    }
+    out[p.k]=arr;
+  }
+  for(let i=0;i<WEEKS;i++){ let s=0; for(const p of PARTIES) s+=out[p.k][i];
+    for(const p of PARTIES) out[p.k][i]=out[p.k][i]*100/s; }
+  for(const p of PARTIES) out[p.k][WEEKS-1]=p.now;
+  return out;
+})();
+const POLLDOTS = (()=>{ // sparse illustrative poll markers per party
+  const rnd = mulberry32(4711), out={};
+  for(const p of PARTIES){
+    out[p.k]=[];
+    for(let i=2;i<WEEKS;i+=3+Math.floor(rnd()*3)){
+      if(p.gap && i>95 && i<125) continue;               // missing-data demo: no polls for L here
+      out[p.k].push([i, SERIES[p.k][i] + (rnd()-0.5)*2.2]);
+    }
+  }
+  return out;
+})();
+
+/* ---------- i18n ---------- */
+const STR = {
+sv:{site:"Opinionsläget", proto:"Prototyp · Illustrativa data – inte riktiga skattningar",
+  headline:"Skattat väljarstöd", asof:"per "+LASTFIELD_SV, notfc:"Inte en valprognos",
+  updated:"Uppdaterad 6 september 2026 · senaste fältarbetsdag "+LASTFIELD_SV,
+  stale:"Ny data har inte kunnat valideras. Den senast validerade skattningen (per "+LASTFIELD_SV+") visas tills nästa körning godkänns.",
+  interval:"95 % intervall", seatsT:"Mandatuppskattning", seatsNote:"Nationell approximation, 349 mandat. Inte en officiell mandatfördelning.",
+  blocs:"Blockläget", majprob:"sannolikhet för egen majoritet (≥175 mandat)",
+  thresh:"Spärren 4 %", threshNote:"Sannolikhet att nå riksdagsspärren nationellt. Avser 4 %-tröskeln, inte alla vägar in i riksdagen.",
+  latest:"Senaste mätningar", inst:"Institut", fieldwork:"Fältarbete", sample:"Urval",
+  share:"Dela", shareNote:"Så ser länken ut när den delas — bilden skapas när skattningen publiceras.",
+  copyLink:"Kopiera länk", download:"Ladda ner", forJourn:"För journalister",
+  downloads:{csv:"Skattningar (CSV)", json:"Alla mätningar (JSON)", png:"Diagram (PNG)"},
+  timeline:"Utveckling sedan valet 2022", electionDot:"Valresultat 2022 (faktiskt utfall)",
+  tapHint:"Dra i diagrammet för att läsa av ett datum", back:"‹ Till översikten",
+  house:"Huseffekter", houseNote:"Skillnad mot institutens gemensamma genomsnitt i innevarande mandatperiod, procentenheter. Säger inte vilket institut som har rätt.",
+  gapNote:"Glapp i kurvan = inga mätningar under perioden. Saknade värden gissas aldrig.",
+  verbally:(lo,hi)=>`troligen mellan ${fmtN(lo,"sv")} och ${fmtN(hi,"sv")} procent`,
+  lede:(d)=>`Socialdemokraterna är största parti med ett skattat väljarstöd på 33,8 procent, ${d} Liberalerna ligger under riksdagsspärren och Kristdemokraterna strax över. Skattningen sammanväger de senaste opinionsmätningarna och är inte en prognos för valet 2026.`,
+  ledeDate:"per den 4 september.",
+  belowThr:"under spärren", nearThr:"nära spärren",
+  methodShort:"Sammanvägning av opinionsmätningar med osäkerhetsintervall. Skattningen avser läget vid senaste fältarbetsdag.",
+  partyEyebrow:"Parti", othNote:"Övriga är samlat stöd för partier som inte särredovisas — bland dem FI, som särredovisas historiskt 2014–2018.",
+  table:"Tabell", perParty:"Läs av väljarstödet vecka för vecka i tabellform", route:(p)=>p?`opinionslaget.se/partier/${p.slug_sv}`:"opinionslaget.se"},
+en:{site:"Opinionsläget", proto:"Prototype · Illustrative data – not real estimates",
+  headline:"Estimated voter support", asof:"as of "+LASTFIELD_EN, notfc:"Not an election forecast",
+  updated:"Updated 6 September 2026 · last fieldwork day "+LASTFIELD_EN,
+  stale:"New data could not be validated. The most recent validated estimate (as of "+LASTFIELD_EN+") is shown until the next run passes checks.",
+  interval:"95% interval", seatsT:"Seat estimate", seatsNote:"National approximation, 349 seats. Not an official seat allocation.",
+  blocs:"Bloc standings", majprob:"probability of a majority (≥175 seats)",
+  thresh:"The 4% threshold", threshNote:"Probability of reaching the national parliamentary threshold. Refers to the 4% rule, not every route into parliament.",
+  latest:"Latest polls", inst:"Pollster", fieldwork:"Fieldwork", sample:"Sample",
+  share:"Share", shareNote:"How the link appears when shared — the image is generated when the estimate is published.",
+  copyLink:"Copy link", download:"Download", forJourn:"For journalists",
+  downloads:{csv:"Estimates (CSV)", json:"All polls (JSON)", png:"Chart (PNG)"},
+  timeline:"Since the 2022 election", electionDot:"2022 election result (actual outcome)",
+  tapHint:"Drag on the chart to read off a date", back:"‹ Back to overview",
+  house:"House effects", houseNote:"Difference from the pollster ensemble average in the current term, percentage points. Does not say which pollster is right.",
+  gapNote:"A gap in the curve = no polls in that period. Missing values are never invented.",
+  verbally:(lo,hi)=>`probably between ${fmtN(lo,"en")} and ${fmtN(hi,"en")} percent`,
+  lede:(d)=>`The Social Democrats are the largest party with an estimated 33.8 percent of voter support ${d} The Liberals sit below the parliamentary threshold and the Christian Democrats just above it. The estimate pools recent opinion polls and is not a forecast of the 2026 election.`,
+  ledeDate:"as of 4 September.",
+  belowThr:"below threshold", nearThr:"near threshold",
+  methodShort:"A pooled estimate of published polls with uncertainty intervals, dated to the last fieldwork day.",
+  partyEyebrow:"Party", othNote:"Other is combined support for parties not shown individually — among them FI, shown separately for 2014–2018 in historical views.",
+  table:"Table", perParty:"Read the estimate week by week as a table", route:(p)=>p?`opinionslaget.se/en/parties/${p.slug_en}`:"opinionslaget.se/en"}
+};
+function fmtN(x,lang,d=1){const s=x.toFixed(d);return lang==="sv"?s.replace(".",","):s}
+
+/* ---------- state ---------- */
+const state = { variant:"A", lang:"sv", view:"overview", party:null, stale:false, sel:new Set(["S","SD","M","V"]) };
+try{ const q=new URLSearchParams(location.search); if(["A","B","C"].includes(q.get("variant"))) state.variant=q.get("variant"); if(q.get("lang")==="en") state.lang="en"; }catch(e){}
+function nav(patch){ Object.assign(state,patch); try{ const q=new URLSearchParams(location.search); q.set("variant",state.variant); q.set("lang",state.lang); history.replaceState(null,"","?"+q); }catch(e){} render(); }
+const T = ()=>STR[state.lang];
+const pc = k=>`var(--c-${k})`;
+function pname(p){return state.lang==="sv"?p.sv:p.en}
+
+/* ---------- chart builders (inline SVG strings) ---------- */
+function xw(i,W){return 40+(W-52)*i/(WEEKS-1)}
+function yv(v,H,vmax){return (H-26)-(H-40)*v/vmax}
+function linechart({W=960,H=380,keys,sel,bandKey,dots=false,gapKey,id="tl"}){
+  const vmax=40;
+  let g="";
+  for(let v=0;v<=vmax;v+=10) g+=`<line x1="40" x2="${W-12}" y1="${yv(v,H,vmax)}" y2="${yv(v,H,vmax)}" stroke="var(--line)" stroke-width="1"/><text x="34" y="${yv(v,H,vmax)+4}" text-anchor="end" font-size="11" fill="var(--faint)">${v}</text>`;
+  const y4=yv(4,H,vmax);
+  g+=`<line x1="40" x2="${W-12}" y1="${y4}" y2="${y4}" stroke="var(--faint)" stroke-width="1" stroke-dasharray="5 4"/><text x="44" y="${y4-5}" font-size="10.5" fill="var(--faint)">4 %</text>`;
+  for(const yr of [2023,2024,2025,2026]){ const i=(Date.UTC(yr,0,1)-T0)/MS_W; const x=xw(i,W);
+    g+=`<line x1="${x}" x2="${x}" y1="14" y2="${H-26}" stroke="var(--line)" stroke-width="1"/><text x="${x}" y="${H-8}" font-size="11" fill="var(--faint)" text-anchor="middle">${yr}</text>`;}
+  let paths="", labels="";
+  for(const k of keys){
+    const on = !sel || sel.has(k); if(!on) continue;
+    const p=PARTIES.find(p=>p.k===k);
+    if(bandKey===k){
+      let up="",dn="";
+      for(let i=0;i<WEEKS;i++){const x=xw(i,W);up+=`${i?"L":"M"}${x.toFixed(1)},${yv(SERIES[k][i]+p.ci,H,vmax).toFixed(1)}`;}
+      for(let i=WEEKS-1;i>=0;i--){const x=xw(i,W);dn+=`L${x.toFixed(1)},${yv(Math.max(0,SERIES[k][i]-p.ci),H,vmax).toFixed(1)}`;}
+      paths+=`<path d="${up}${dn}Z" fill="${pc(k)}" opacity="var(--band-alpha)"/>`;
+    }
+    let d="",pen=false;
+    for(let i=0;i<WEEKS;i++){
+      if(gapKey===k && i>95 && i<125){pen=false;continue;}
+      d+=`${pen?"L":"M"}${xw(i,W).toFixed(1)},${yv(SERIES[k][i],H,vmax).toFixed(1)}`; pen=true;
+    }
+    paths+=`<path d="${d}" fill="none" stroke="${pc(k)}" stroke-width="2" stroke-linejoin="round"/>`;
+    if(dots) for(const [i,v] of POLLDOTS[k]) paths+=`<circle cx="${xw(i,W).toFixed(1)}" cy="${yv(v,H,vmax).toFixed(1)}" r="2.6" fill="${pc(k)}" opacity=".45" stroke="var(--surface)" stroke-width="1"/>`;
+    const ly=yv(SERIES[k][WEEKS-1],H,vmax);
+    labels+=`<text x="${W-46}" y="${ly+4}" font-size="12" font-weight="700" fill="${pc(k)}">${k} <tspan fill="var(--ink)" font-weight="600">${fmtN(SERIES[k][WEEKS-1],state.lang)}</tspan></text>`;
+    const ei=0, ex=xw(ei,W), ey=yv(ELECTION_2022[k],H,vmax);
+    paths+=`<circle cx="${ex}" cy="${ey}" r="4" fill="none" stroke="${pc(k)}" stroke-width="2"><title>${pname(p)} ${state.lang==="sv"?"valet 2022":"2022 election"}: ${fmtN(ELECTION_2022[k],state.lang)} %</title></circle>`;
+  }
+  return `<svg id="${id}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${T().timeline}" style="width:100%;height:auto;touch-action:pan-y">
+    ${g}${paths}${labels}
+    <line id="${id}-cur" x1="-9" x2="-9" y1="14" y2="${H-26}" stroke="var(--muted)" stroke-width="1"/>
+  </svg>`;
+}
+function attachScrub(id, keys){
+  const svg=document.getElementById(id); if(!svg) return;
+  const ro=document.getElementById(id+"-readout"), cur=document.getElementById(id+"-cur");
+  const move=e=>{
+    const r=svg.getBoundingClientRect(), W=svg.viewBox.baseVal.width;
+    const px=((e.touches?e.touches[0].clientX:e.clientX)-r.left)/r.width*W;
+    const i=Math.max(0,Math.min(WEEKS-1,Math.round((px-40)/(W-52)*(WEEKS-1))));
+    cur.setAttribute("x1",xw(i,W)); cur.setAttribute("x2",xw(i,W));
+    const dt=new Date(T0+i*MS_W);
+    const ds=dt.toLocaleDateString(state.lang==="sv"?"sv-SE":"en-GB",{year:"numeric",month:"short"});
+    ro.innerHTML=`<b>${ds}</b> `+[...keys].filter(k=>id!=="tl"||state.sel.has(k)).map(k=>{
+      const p=PARTIES.find(p=>p.k===k);
+      const gap=p.gap&&i>95&&i<125;
+      return `<span><span class="swatch" style="background:${pc(k)};display:inline-block;vertical-align:-1px"></span> ${k} <b class="num">${gap?"–":fmtN(SERIES[k][i],state.lang)+" %"}</b></span>`;
+    }).join(" ");
+  };
+  svg.addEventListener("pointermove",move); svg.addEventListener("pointerdown",move);
+}
+function dotplot(){
+  const rows = PARTIES.map(p=>{
+    const x0=130, xw2=v=>x0+(v/40)*430;
+    const below = p.k==="L";
+    return `<div class="dotrow" data-party="${p.k}" role="link" tabindex="0" aria-label="${pname(p)} ${fmtN(p.now,state.lang)} %">
+      <span class="pname"><span class="swatch" style="background:${pc(p.k)}"></span>${p.k==="OTH"?pname(p):p.k}</span>
+      <svg viewBox="0 0 600 26" style="width:100%;height:24px" aria-hidden="true">
+        <line x1="${xw2(0)-130}" x2="${xw2(40)-130}" y1="13" y2="13" stroke="var(--line)"/>
+        <line x1="${(4/40)*430}" y1="3" x2="${(4/40)*430}" y2="23" stroke="var(--faint)" stroke-dasharray="3 3"/>
+        <line x1="${(p.now-p.ci)/40*430}" x2="${(p.now+p.ci)/40*430}" y1="13" y2="13" stroke="${pc(p.k)}" stroke-width="4" opacity=".35" stroke-linecap="round"/>
+        <circle cx="${p.now/40*430}" cy="13" r="6" fill="${pc(p.k)}" stroke="var(--surface)" stroke-width="2"/>
+      </svg>
+      <span class="val num">${fmtN(p.now,state.lang)} %<br><span class="ival">±${fmtN(p.ci,state.lang)} · ${below?`<span style="color:var(--warn-ink)">${T().belowThr}</span>`:(p.thr?T().nearThr:"&nbsp;")}</span></span>
+    </div>`;
+  }).join("");
+  return `<div>${rows}<p class="footnote" style="margin:8px 0 0">${T().interval}: ±. ${T().othNote}</p></div>`;
+}
+function sparkline(k){
+  let d="";const H=26,W=110;
+  for(let i=0;i<WEEKS;i+=4) d+=`${i?"L":"M"}${(8+(W-16)*i/(WEEKS-1)).toFixed(1)},${(H-3-(H-8)*SERIES[k][i]/40).toFixed(1)}`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true"><path d="${d}" fill="none" stroke="${pc(k)}" stroke-width="1.8"/></svg>`;
+}
+function shareCard(){
+  const t=T();
+  const bars = PARTIES.map(p=>`<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;align-items:center">
+     <div style="font-size:11px;font-weight:600" class="num">${fmtN(p.now,state.lang,0)}</div>
+     <div style="width:70%;max-width:34px;height:${p.now*3.2}px;background:${pc(p.k)};border-radius:3px 3px 0 0"></div>
+     <div style="font-size:10.5px;font-weight:700;color:${pc(p.k)}">${p.k}</div></div>`).join("");
+  return `<div class="sharecard" role="img" aria-label="${t.share}">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <span style="font-family:Newsreader,Georgia,serif;font-weight:700;font-size:clamp(14px,3.2cqw,22px)">${t.site}</span>
+      <span class="footnote">${t.headline} · ${t.asof}</span></div>
+    <div style="display:flex;align-items:flex-end;gap:2px;height:56%">${bars}</div>
+    <div style="display:flex;justify-content:space-between"><span class="footnote">${t.notfc}</span><span class="footnote">${t.route(null)}</span></div>
+  </div>`;
+}
+
+/* ---------- overview variants ---------- */
+function headerBlock(sub){
+  const t=T();
+  return `<div style="margin-bottom:18px">
+    <p class="eyebrow" style="margin:0 0 4px">${t.updated}</p>
+    <h1 style="font-size:clamp(26px,4.5vw,38px)">${t.headline} <span style="color:var(--muted);font-weight:500">· ${t.asof}</span></h1>
+    <p class="metaline" style="margin:6px 0 0"><span class="notforecast">${t.notfc}</span> &nbsp;${sub||t.methodShort}</p>
+  </div>`;
+}
+function latestPollsTable(){
+  const t=T();
+  return `<div class="tablewrap"><table>
+    <tr><th>${t.inst}</th><th>${t.fieldwork}</th><th class="r">${t.sample}</th>${PARTIES.map(p=>`<th class="r">${p.k}</th>`).join("")}</tr>
+    ${POLLS.map(pl=>`<tr><td>${pl.inst}</td><td>${state.lang==="sv"?pl.field:pl.field_en}</td><td class="r num">${pl.n.toLocaleString(state.lang==="sv"?"sv-SE":"en-GB")}</td>${PARTIES.map(p=>`<td class="r num">${fmtN(pl.vals[p.k],state.lang)}</td>`).join("")}</tr>`).join("")}
+  </table></div>`;
+}
+function variantA(){
+  const t=T();
+  return headerBlock()+`
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+    <section class="card" style="grid-column:1/-1">${dotplot()}</section>
+    <section class="card"><p class="eyebrow">${t.blocs}</p>
+      ${BLOCS.map(b=>`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">
+        <div><div style="font-weight:600">${state.lang==="sv"?b.sv:b.en}</div><div class="footnote num">${b.maj} % ${t.majprob}</div></div>
+        <div class="blocnum num">${fmtN(b.share,state.lang)}<span style="font-size:15px;color:var(--muted)"> % · ${b.seats}</span></div></div>`).join("")}
+      <p class="footnote" style="margin:10px 0 0">${t.seatsNote}</p></section>
+    <section class="card"><p class="eyebrow">${t.thresh}</p>
+      ${PARTIES.filter(p=>p.thr).map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
+        <span class="pname" style="width:44px"><span class="swatch" style="background:${pc(p.k)}"></span>${p.k}</span>
+        <div style="flex:1;height:8px;background:var(--chip);border-radius:99px"><div style="width:${p.thr}%;height:100%;background:${pc(p.k)};border-radius:99px"></div></div>
+        <b class="num" style="width:46px;text-align:right">${p.thr} %</b></div>`).join("")}
+      <p class="footnote" style="margin:10px 0 0">${t.threshNote}</p></section>
+    <section class="card"><p class="eyebrow">${t.latest}</p>${latestPollsTable()}</section>
+    <section class="card share"><p class="eyebrow">${t.share}</p>${shareCard()}
+      <div><button class="btn primary">${t.copyLink}</button> <a class="btn" href="#" onclick="return false" title="prototyp">${t.downloads.png}</a></div>
+      <p class="footnote">${t.shareNote}</p></section>
+  </div>`;
+}
+function variantB(){
+  const t=T();
+  const chips = PARTIES.map(p=>`<button class="chip" data-chip="${p.k}" aria-pressed="${state.sel.has(p.k)}">
+    <span class="swatch" style="background:${pc(p.k)}"></span>${p.k==="OTH"?pname(p):p.k} <b class="num">${fmtN(p.now,state.lang)}</b></button>`).join("");
+  return headerBlock()+`
+  <section class="card">
+    <div class="chips" style="margin-bottom:12px">${chips}</div>
+    <div class="readout" id="tl-readout">${t.tapHint}</div>
+    ${linechart({keys:PARTIES.map(p=>p.k),sel:state.sel,dots:false,id:"tl"})}
+    <p class="footnote" style="margin:8px 0 0">○ ${t.electionDot} · ${t.interval} ${state.lang==="sv"?"visas på partisidorna":"shown on party pages"} · ${t.perParty}: <a href="#" onclick="return false">${t.table}</a></p>
+  </section>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:16px">
+    <section class="card"><p class="eyebrow">${t.blocs}</p>
+      ${BLOCS.map(b=>`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0"><span>${state.lang==="sv"?b.sv:b.en}</span><b class="blocnum num" style="font-size:24px">${fmtN(b.share,state.lang)} %</b></div>`).join("")}
+      <p class="footnote">${t.seatsNote}</p></section>
+    <section class="card share"><p class="eyebrow">${t.share}</p>${shareCard()}</section>
+  </div>`;
+}
+function variantC(){
+  const t=T();
+  return headerBlock()+`
+  <p class="lede">${t.lede(t.ledeDate)}</p>
+  <section class="card" style="margin-top:18px"><p class="eyebrow">${t.headline} · ${t.asof}</p>
+   <div class="tablewrap"><table>
+    <tr><th>${t.partyEyebrow}</th><th class="r">%</th><th>${t.interval}</th><th class="r">${t.seatsT}</th><th></th></tr>
+    ${PARTIES.map(p=>`<tr class="clickable" data-party="${p.k}" tabindex="0">
+      <td><span class="pname"><span class="swatch" style="background:${pc(p.k)}"></span>${pname(p)}</span></td>
+      <td class="r num" style="font-weight:700">${fmtN(p.now,state.lang)}</td>
+      <td class="num" style="color:var(--muted)">${t.verbally(p.now-p.ci,p.now+p.ci)}</td>
+      <td class="r num">${p.k==="L"||p.k==="OTH"?"–":p.seats}</td>
+      <td class="sparkcell">${sparkline(p.k)}</td></tr>`).join("")}
+   </table></div>
+   <p class="footnote" style="margin:10px 0 0">${t.seatsNote} ${t.othNote}</p></section>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:16px">
+    <section class="card"><p class="eyebrow">${t.latest}</p>${latestPollsTable()}</section>
+    <section class="card share"><p class="eyebrow">${t.forJourn}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn" href="#" onclick="return false">${t.downloads.csv}</a>
+        <a class="btn" href="#" onclick="return false">${t.downloads.json}</a>
+        <a class="btn" href="#" onclick="return false">${t.downloads.png}</a></div>
+      ${shareCard()}<p class="footnote">${t.shareNote}</p></section>
+  </div>`;
+}
+
+/* ---------- party page (block order varies per variant) ---------- */
+function partyPage(){
+  const t=T(), p=PARTIES.find(x=>x.k===state.party);
+  const est=`<div><p class="eyebrow">${t.partyEyebrow}</p>
+    <h1 style="font-size:clamp(24px,4vw,34px);color:${pc(p.k)}">${pname(p)}</h1>
+    <p style="font-size:22px;margin:6px 0 2px"><b class="num">${fmtN(p.now,state.lang)} %</b>
+      <span class="metaline">· ${t.verbally(p.now-p.ci,p.now+p.ci)} · ${t.asof}</span></p>
+    <p class="metaline"><span class="notforecast">${t.notfc}</span>${p.thr?` &nbsp;<b class="num">${p.thr} %</b> ${state.lang==="sv"?"sannolikhet att nå 4 %-spärren":"probability of reaching the 4% threshold"}`:""}</p></div>`;
+  const chart=`<section class="card"><p class="eyebrow">${t.timeline}</p>
+    <div class="readout" id="pp-readout">${t.tapHint}</div>
+    ${linechart({keys:[p.k],sel:new Set([p.k]),bandKey:p.k,dots:true,gapKey:p.gap?p.k:null,id:"pp"})}
+    <p class="footnote">○ ${t.electionDot} · ${state.lang==="sv"?"prickar är enskilda mätningar":"dots are individual polls"}${p.gap?" · "+t.gapNote:""}</p></section>`;
+  const house=`<section class="card"><p class="eyebrow">${t.house}</p>
+    ${Object.entries(HOUSE).map(([inst,v])=>{const shifted=v*(p.k==="S"?1:p.k==="SD"?-1:.5);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0">
+      <span style="width:90px;font-size:13px">${inst}</span>
+      <svg viewBox="0 0 200 16" style="flex:1;height:16px"><line x1="100" x2="100" y1="0" y2="16" stroke="var(--line)"/>
+        <line x1="100" x2="${100+shifted*60}" y1="8" y2="8" stroke="${pc(p.k)}" stroke-width="4" stroke-linecap="round"/></svg>
+      <b class="num" style="width:52px;text-align:right;font-size:13px">${shifted>0?"+":"−"}${fmtN(Math.abs(shifted),state.lang)}</b></div>`;}).join("")}
+    <p class="footnote" style="margin:8px 0 0">${t.houseNote}</p></section>`;
+  const dl=`<section class="card"><p class="eyebrow">${t.download}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="#" onclick="return false">${t.downloads.csv}</a><a class="btn" href="#" onclick="return false">${t.downloads.json}</a></div></section>`;
+  const order = state.variant==="B" ? [chart,est,house,dl] : state.variant==="C" ? [est,house,chart,dl] : [est,chart,house,dl];
+  return `<a class="backlink" href="#" data-back>‹ ${t.back.replace("‹ ","")}</a><div class="grid" style="margin-top:12px">${order.join("")}</div>`;
+}
+
+/* ---------- shell ---------- */
+const VNAMES={A:{sv:"A · Läget först",en:"A · Standings first"},B:{sv:"B · Tidslinjen",en:"B · Timeline"},C:{sv:"C · Redaktionell",en:"C · Editorial"}};
+function render(){
+  const t=T(), p=state.party?PARTIES.find(x=>x.k===state.party):null;
+  document.documentElement.lang=state.lang;
+  document.getElementById("protostripe").textContent=t.proto;
+  document.getElementById("app").innerHTML=`
+    <header class="site">
+      <span class="brand" data-back>${t.site}</span>
+      <span class="urlpill num" title="${state.lang==="sv"?"Så här ser adressen ut – översatta rutter, inte bara ett språkprefix":"How the URL looks – translated routes, not just a language prefix"}">${t.route(p)}</span>
+      <span class="spacer"></span>
+      <span class="langtog" role="group" aria-label="Language">
+        <button aria-pressed="${state.lang==="sv"}" data-lang="sv">SV</button>
+        <button aria-pressed="${state.lang==="en"}" data-lang="en">EN</button></span>
+    </header>
+    ${state.stale?`<div class="stalebanner">⚠ ${t.stale}</div>`:""}
+    <main>${state.view==="party"?partyPage():{A:variantA,B:variantB,C:variantC}[state.variant]()}</main>`;
+  document.getElementById("switcher").innerHTML=`
+    <button data-cycle="-1" aria-label="previous variant">←</button>
+    <span class="vlabel">${VNAMES[state.variant][state.lang]}</span>
+    <button data-cycle="1" aria-label="next variant">→</button>
+    <label><input type="checkbox" id="staletog" ${state.stale?"checked":""}> ${state.lang==="sv"?"inaktuell data":"stale data"}</label>`;
+  attachScrub("tl",PARTIES.map(p=>p.k)); attachScrub("pp",state.party?[state.party]:[]);
+  bind();
+}
+function bind(){
+  document.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>nav({lang:b.dataset.lang}));
+  document.querySelectorAll("[data-cycle]").forEach(b=>b.onclick=()=>{
+    const v=["A","B","C"],i=(v.indexOf(state.variant)+ +b.dataset.cycle+3)%3; nav({variant:v[i]});});
+  document.querySelectorAll("[data-party]").forEach(el=>{
+    const go=()=>nav({view:"party",party:el.dataset.party});
+    el.onclick=go; el.onkeydown=e=>{if(e.key==="Enter")go();};});
+  document.querySelectorAll("[data-chip]").forEach(el=>el.onclick=e=>{
+    e.stopPropagation(); const k=el.dataset.chip;
+    state.sel.has(k)?state.sel.delete(k):state.sel.add(k); render();});
+  document.querySelectorAll("[data-back]").forEach(el=>el.onclick=e=>{e.preventDefault();nav({view:"overview",party:null});});
+  const st=document.getElementById("staletog"); if(st) st.onchange=()=>nav({stale:st.checked});
+}
+document.addEventListener("keydown",e=>{
+  if(/INPUT|TEXTAREA/.test(document.activeElement.tagName)||document.activeElement.isContentEditable) return;
+  if(e.key==="ArrowLeft"||e.key==="ArrowRight"){
+    const v=["A","B","C"],i=(v.indexOf(state.variant)+(e.key==="ArrowRight"?1:-1)+3)%3; nav({variant:v[i]});}
+});
+render();
+</script>
