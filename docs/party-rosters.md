@@ -35,8 +35,10 @@ FI and `RESIDUAL = 100 - sum(eight) - FI`. Both rosters therefore give the same
 comparable remainder, the support outside the fixed eight, and FI is subtracted
 exactly once.
 
-A composition is either complete or excluded with reasons; an excluded poll
-carries no components. It inherits the ingest exclusion reasons and adds
+A poll belongs to a coverage period only when its whole collection window lies
+inside the period, so a window straddling a boundary composes in neither
+neighbour. A composition is either complete or excluded with reasons; an
+excluded poll carries no components. It inherits the ingest exclusion reasons and adds
 `outside_coverage_period:<id>` for a collection window outside the period,
 `missing_share:FI` for a poll without FI inside an FI segment, and
 `negative_residual` when a reported FI share exceeds the eight-party remainder.
@@ -57,7 +59,7 @@ The segment holds 388 eligible FI polls from ten institutes: Demoskop, Inizio,
 Ipsos, Novus, SCB, Sentio, Sifo, Skop, United Minds and YouGov. FI shares run
 from 0.6 to 4.4 with a median of 2.1, and five observations reach 4 or above.
 
-| Collection year | Eligible FI polls | Institutes |
+| Year of collection end | Eligible FI polls | Institutes |
 | --- | ---: | ---: |
 | 2014 | 74 | 10 |
 | 2015 | 81 | 8 |
@@ -65,10 +67,11 @@ from 0.6 to 4.4 with a median of 2.1, and five observations reach 4 or above.
 | 2017 | 78 | 8 |
 | 2018 | 75 | 7 |
 
-Merging the collection windows leaves one gap wider than a month: no FI poll
-collects between 2016-07-05 and 2016-08-01, 27 days. July 2016 is also the only
-month whose FI observations come from a single institute, Demoskop. The remaining
-18 gaps are 15 days or shorter. Novus stops reporting FI after August 2017 and
+Merging the collection windows in start order leaves one break far wider than the
+rest: no eligible FI poll collects between 2016-07-05 and 2016-08-01, leaving 26
+uncovered days. July 2016 is also the only month whose FI observations come from a
+single institute, Demoskop. Every other break leaves 14 uncovered days or fewer.
+Novus stops reporting FI after August 2017 and
 SCB contributes one observation, so institute coverage thins towards the 2018
 election even though the poll count stays stable.
 
@@ -91,8 +94,9 @@ gap is not bridged.
 
 ## Verification
 
-`RosterTest` checks both compositions on synthetic rows and derives every count
-and boundary above from the pinned `audit.csv` snapshot. `CoveragePeriodIT`
+`RosterTest` checks both compositions on synthetic rows, including the straddling
+window and the missing-FI exclusion, and derives every count, share and boundary
+above from the pinned `audit.csv` snapshot. `CoveragePeriodIT`
 upgrades an isolated PostgreSQL schema from checkpoint 2, checks the stored
 rosters, effective periods, decision URLs and the unvalidated candidate, and
 proves the roster and overlap constraints reject invalid rows.

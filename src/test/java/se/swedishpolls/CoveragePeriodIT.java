@@ -23,8 +23,7 @@ class CoveragePeriodIT {
             flyway.migrate();
             assertEquals(0, flyway.migrate().migrationsExecuted);
             var db = JdbcClient.create(dataSource);
-            var roster = new Roster(db);
-            var periods = roster.periods();
+            var periods = new Roster(db).periods();
             assertEquals(List.of("eight_party_2010", "fi_candidate_2014_2018"),
                     periods.stream().map(Roster.CoveragePeriod::id).toList());
 
@@ -44,12 +43,11 @@ class CoveragePeriodIT {
             // No individual FI estimate is enabled: the segment inside the eight-party period stays unvalidated.
             assertFalse(candidate.supportValidated());
 
-            var inSegment = PollCsv.parse(PollCsvTest.csv(PollCsvTest.ROW.replace("2020-01-20", "2016-06-20")
-                    .replace("2020-01-01", "2016-06-01").replace("2020-01-19", "2016-06-19"))).getFirst();
-            assertEquals("eight_party_2010", roster.supportedPeriod(inSegment).id());
+            var inSegment = PollCsv.parse(PollCsvTest.csv(PollCsvTest.SEGMENT_ROW)).getFirst();
+            assertEquals("eight_party_2010", Roster.supportedPeriod(periods, inSegment).id());
             assertTrue(candidate.covers(inSegment));
             var beforeHistory = PollCsv.parse(PollCsvTest.csv(PollCsvTest.ROW.replace("2020", "2009"))).getFirst();
-            assertThrows(IllegalStateException.class, () -> roster.supportedPeriod(beforeHistory));
+            assertThrows(IllegalStateException.class, () -> Roster.supportedPeriod(periods, beforeHistory));
 
             // A second validated roster may not overlap an existing one; an unvalidated candidate may.
             assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> insert(db, "overlapping", true));

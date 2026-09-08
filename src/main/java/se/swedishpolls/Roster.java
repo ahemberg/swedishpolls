@@ -15,6 +15,7 @@ public class Roster {
     public record CoveragePeriod(String id, LocalDate effectiveFrom, LocalDate effectiveTo, List<String> roster,
                                  boolean individualFi, boolean supportValidated, String decisionUrl) {
         public CoveragePeriod { roster = List.copyOf(roster); }
+        /** A poll belongs to the period only when its whole collection window lies inside it. */
         public boolean covers(PollCsv.Poll poll) {
             return poll.collectionFrom() != null && poll.collectionTo() != null
                     && !poll.collectionFrom().isBefore(effectiveFrom)
@@ -51,8 +52,8 @@ public class Roster {
     }
 
     /** A candidate segment never replaces the validated roster until the estimator ticket validates its fits. */
-    public CoveragePeriod supportedPeriod(PollCsv.Poll poll) {
-        return periods().stream().filter(CoveragePeriod::supportValidated).filter(period -> period.covers(poll)).findFirst()
+    public static CoveragePeriod supportedPeriod(List<CoveragePeriod> periods, PollCsv.Poll poll) {
+        return periods.stream().filter(CoveragePeriod::supportValidated).filter(period -> period.covers(poll)).findFirst()
                 .orElseThrow(() -> new IllegalStateException("No validated coverage period covers " + poll.collectionFrom()));
     }
 
@@ -61,20 +62,18 @@ public class Roster {
         if (!period.covers(poll)) reasons.add("outside_coverage_period:" + period.id());
         var fi = poll.shares().get("FI");
         if (period.individualFi() && fi == null) reasons.add("missing_share:FI");
+        var residual = reasons.isEmpty() && period.individualFi() ? poll.remainder().subtract(fi) : null;
+        if (residual != null && residual.signum() < 0) reasons.add("negative_residual");
         var components = new LinkedHashMap<String, BigDecimal>();
         if (reasons.isEmpty()) {
             for (var party : PollCsv.PARTIES) components.put(party, poll.shares().get(party));
-            if (!period.individualFi()) {
-                // The eight-party remainder already contains FI; adding FI again would double-count it.
-                components.put("OTHER", poll.remainder());
-            } else {
-                var residual = poll.remainder().subtract(fi);
-                if (residual.signum() < 0) reasons.add("negative_residual");
+            // The eight-party remainder already contains FI; adding FI again would double-count it.
+            if (residual == null) components.put("OTHER", poll.remainder());
+            else {
                 components.put("FI", fi);
                 components.put("RESIDUAL", residual);
             }
         }
-        if (!reasons.isEmpty()) components.clear();
         return new Composition(period.id(), components, reasons);
     }
 }

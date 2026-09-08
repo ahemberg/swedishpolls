@@ -2,7 +2,13 @@ package se.swedishpolls;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,21 +18,18 @@ class RosterTest {
             LocalDate.of(2010, 1, 1), null, PollCsv.PARTIES, false, true, "https://example.invalid/decision");
     private static final Roster.CoveragePeriod FI_SEGMENT = new Roster.CoveragePeriod("fi_candidate_2014_2018",
             LocalDate.of(2014, 4, 9), LocalDate.of(2018, 9, 7),
-            java.util.stream.Stream.concat(PollCsv.PARTIES.stream(), java.util.stream.Stream.of("FI")).toList(),
-            true, false, "https://example.invalid/decision");
+            Stream.concat(PollCsv.PARTIES.stream(), Stream.of("FI")).toList(), true, false, "https://example.invalid/decision");
 
     private static PollCsv.Poll poll(String row) { return PollCsv.parse(PollCsvTest.csv(row)).getFirst(); }
 
     @Test
     void groupsFiIntoOtherOutsideAnFiSegmentAndSeparatesItInside() {
-        var row = PollCsvTest.ROW.replace("2020-01-20", "2016-06-20").replace("2020-01-01", "2016-06-01")
-                .replace("2020-01-19", "2016-06-19");
-        var outside = Roster.compose(EIGHT, poll(row));
+        var outside = Roster.compose(EIGHT, poll(PollCsvTest.SEGMENT_ROW));
         assertEquals(List.of("M", "L", "C", "KD", "S", "V", "MP", "SD", "OTHER"), List.copyOf(outside.components().keySet()));
         assertEquals(new BigDecimal("1.877"), outside.components().get("OTHER"));
         assertTrue(outside.complete());
 
-        var inside = Roster.compose(FI_SEGMENT, poll(row));
+        var inside = Roster.compose(FI_SEGMENT, poll(PollCsvTest.SEGMENT_ROW));
         assertEquals(List.of("M", "L", "C", "KD", "S", "V", "MP", "SD", "FI", "RESIDUAL"), List.copyOf(inside.components().keySet()));
         assertEquals(new BigDecimal("1"), inside.components().get("FI"));
         assertEquals(new BigDecimal("0.877"), inside.components().get("RESIDUAL"));
@@ -36,24 +39,23 @@ class RosterTest {
 
     @Test
     void excludesPollsThatCannotFormThePeriodComposition() {
-        var window = PollCsvTest.ROW.replace("2020-01-20", "2016-06-20").replace("2020-01-01", "2016-06-01")
-                .replace("2020-01-19", "2016-06-19");
-        var missingFi = poll(window.replace(",17,1,10,", ",17,NA,10,"));
+        var missingFi = poll(PollCsvTest.SEGMENT_ROW.replace(",17,1,10,", ",17,NA,10,"));
         assertTrue(missingFi.eligible());
         assertTrue(Roster.compose(EIGHT, missingFi).complete());
         assertEquals(List.of("missing_share:FI"), Roster.compose(FI_SEGMENT, missingFi).exclusionReasons());
         assertTrue(Roster.compose(FI_SEGMENT, missingFi).components().isEmpty());
 
-        var largeFi = poll(window.replace(",17,1,10,", ",17,3,10,"));
+        var largeFi = poll(PollCsvTest.SEGMENT_ROW.replace(",17,1,10,", ",17,3,10,"));
         assertEquals(List.of("negative_residual"), Roster.compose(FI_SEGMENT, largeFi).exclusionReasons());
 
-        var beforeSegment = poll(PollCsvTest.ROW.replace("2020", "2013"));
+        // A collection window is inside a period only as a whole, so a straddling poll cannot compose.
+        var straddling = poll(PollCsvTest.SEGMENT_ROW.replace("2016-06-01", "2014-04-08").replace("2016-06-19", "2014-04-20")
+                .replace("2016-06-20", "2014-04-25"));
         assertEquals(List.of("outside_coverage_period:fi_candidate_2014_2018"),
-                Roster.compose(FI_SEGMENT, beforeSegment).exclusionReasons());
-        assertTrue(Roster.compose(EIGHT, beforeSegment).complete());
+                Roster.compose(FI_SEGMENT, straddling).exclusionReasons());
+        assertTrue(Roster.compose(EIGHT, straddling).complete());
 
-        var ineligible = poll(PollCsvTest.ROW.replace("Ipsos", "Demoskop valdag").replace("2020-01-20", "2016-06-20")
-                .replace("2020-01-01", "2016-06-01").replace("2020-01-19", "2016-06-19"));
+        var ineligible = poll(PollCsvTest.SEGMENT_ROW.replace("Ipsos", "Demoskop valdag"));
         assertEquals(List.of("exit_or_election_day"), Roster.compose(FI_SEGMENT, ineligible).exclusionReasons());
     }
 
@@ -62,35 +64,60 @@ class RosterTest {
         byte[] bytes;
         try (var input = getClass().getResourceAsStream("/polls/audit.csv")) { bytes = input.readAllBytes(); }
         var polls = PollCsv.parse(bytes);
-        var inSegment = polls.stream().map(poll -> Roster.compose(FI_SEGMENT, poll)).filter(Roster.Composition::complete).toList();
-        assertEquals(388, inSegment.size());
-        var window = polls.stream().filter(PollCsv.Poll::eligible).filter(FI_SEGMENT::covers).toList();
+        var eligible = polls.stream().filter(PollCsv.Poll::eligible).toList();
+        var window = eligible.stream().filter(FI_SEGMENT::covers).toList();
+        var withFi = window.stream().filter(poll -> poll.shares().get("FI") != null)
+                .sorted(Comparator.comparing(PollCsv.Poll::collectionFrom)).toList();
         assertEquals(439, window.size());
-        assertEquals(51, window.stream().filter(poll -> !Roster.compose(FI_SEGMENT, poll).complete()).count());
-        assertTrue(window.stream().map(poll -> Roster.compose(FI_SEGMENT, poll))
-                .filter(c -> !c.complete()).allMatch(c -> c.exclusionReasons().equals(List.of("missing_share:FI"))));
+        assertEquals(388, withFi.size());
+        assertEquals(388, polls.stream().map(poll -> Roster.compose(FI_SEGMENT, poll)).filter(Roster.Composition::complete).count());
 
-        // The candidate boundaries are the outermost collection dates of those eligible FI polls.
-        var withFi = window.stream().filter(poll -> poll.shares().get("FI") != null).toList();
-        assertEquals(LocalDate.of(2014, 4, 9), withFi.stream().map(PollCsv.Poll::collectionFrom).min(LocalDate::compareTo).orElseThrow());
+        // The boundaries are the outermost collection dates of those eligible FI polls.
+        assertEquals(LocalDate.of(2014, 4, 9), withFi.getFirst().collectionFrom());
         assertEquals(LocalDate.of(2018, 9, 7), withFi.stream().map(PollCsv.Poll::collectionTo).max(LocalDate::compareTo).orElseThrow());
         assertEquals(10, withFi.stream().map(PollCsv.Poll::institute).distinct().count());
-        // Merging the collection windows in start order leaves one gap wider than a month, in July 2016.
-        long widestGap = 0;
-        var covered = LocalDate.of(2014, 4, 9);
-        for (var poll : withFi.stream().sorted(java.util.Comparator.comparing(PollCsv.Poll::collectionFrom)).toList()) {
-            widestGap = Math.max(widestGap, java.time.temporal.ChronoUnit.DAYS.between(covered, poll.collectionFrom()));
+        assertEquals(5, eligible.stream().filter(poll -> poll.collectionFrom().isBefore(FI_SEGMENT.effectiveFrom())
+                && !poll.collectionTo().isBefore(FI_SEGMENT.effectiveFrom())).peek(poll -> assertNull(poll.shares().get("FI"))).count());
+        assertEquals(Map.of(2014, 74L, 2015, 81L, 2016, 80L, 2017, 78L, 2018, 75L), byCollectionYear(withFi, PollCsv.Poll::institute).entrySet()
+                .stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> (long) entry.getValue().size())));
+        assertEquals(List.of(10L, 8L, 8L, 8L, 7L), byCollectionYear(withFi, PollCsv.Poll::institute).values().stream()
+                .map(institutes -> institutes.stream().distinct().count()).toList());
+
+        var shares = withFi.stream().map(poll -> poll.shares().get("FI")).sorted().toList();
+        assertEquals(List.of(new BigDecimal("0.6"), new BigDecimal("4.4")), List.of(shares.getFirst(), shares.getLast()));
+        assertEquals(new BigDecimal("2.1"), shares.get(shares.size() / 2));
+        assertEquals(5, shares.stream().filter(share -> share.compareTo(new BigDecimal("4")) >= 0).count());
+
+        // Merging the collection windows in start order leaves one break far wider than the rest.
+        var breaks = new java.util.ArrayList<Long>();
+        var covered = FI_SEGMENT.effectiveFrom();
+        for (var poll : withFi) {
+            breaks.add(ChronoUnit.DAYS.between(covered, poll.collectionFrom()));
             if (poll.collectionTo().isAfter(covered)) covered = poll.collectionTo();
         }
-        assertEquals(27, widestGap);
+        var widest = breaks.stream().sorted(Comparator.reverseOrder()).limit(2).toList();
+        assertEquals(List.of(27L, 15L), widest);
+        assertEquals(LocalDate.of(2016, 8, 1), withFi.get(breaks.indexOf(27L)).collectionFrom());
+
+        var excluded = window.stream().map(poll -> Roster.compose(FI_SEGMENT, poll)).filter(composition -> !composition.complete()).toList();
+        assertEquals(51, excluded.size());
+        assertTrue(excluded.stream().allMatch(composition -> composition.exclusionReasons().equals(List.of("missing_share:FI"))));
+        assertEquals(Map.of("Novus", 17L, "Inizio", 10L, "Sentio", 9L, "SCB", 8L, "Ipsos", 4L, "Sifo", 2L, "Demoskop", 1L),
+                window.stream().filter(poll -> poll.shares().get("FI") == null)
+                        .collect(Collectors.groupingBy(PollCsv.Poll::institute, Collectors.counting())));
 
         // The two isolated 2022 observations stay archived and never join the candidate segment.
-        var later = polls.stream().filter(PollCsv.Poll::eligible)
-                .filter(poll -> poll.shares().get("FI") != null && poll.collectionFrom().isAfter(LocalDate.of(2018, 9, 7))).toList();
+        var later = eligible.stream().filter(poll -> poll.shares().get("FI") != null
+                && poll.collectionFrom().isAfter(FI_SEGMENT.effectiveTo())).toList();
         assertEquals(List.of(LocalDate.of(2022, 6, 21), LocalDate.of(2022, 8, 29)),
                 later.stream().map(PollCsv.Poll::collectionTo).sorted().toList());
         assertEquals(List.of("Sentio"), later.stream().map(PollCsv.Poll::institute).distinct().toList());
         assertTrue(later.stream().noneMatch(FI_SEGMENT::covers));
         assertTrue(later.stream().map(poll -> Roster.compose(EIGHT, poll)).allMatch(Roster.Composition::complete));
+    }
+
+    private static <T> TreeMap<Integer, List<T>> byCollectionYear(List<PollCsv.Poll> polls, java.util.function.Function<PollCsv.Poll, T> field) {
+        return polls.stream().collect(Collectors.groupingBy(poll -> poll.collectionTo().getYear(), TreeMap::new,
+                Collectors.mapping(field, Collectors.toList())));
     }
 }
