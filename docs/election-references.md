@@ -45,8 +45,8 @@ an individual party or a decision about modeled coverage.
 
 Derive a reference share as `100 * votes / valid_votes` without rounding the
 stored counts. For the eight-party display, OTHER combines FI and RESIDUAL.
-For an FI display, OTHER contains only RESIDUAL. Roster validation and supported
-FI dates remain checkpoint 3 work.
+For an FI display, OTHER contains only RESIDUAL. Roster validation and candidate
+FI dates are [checkpoint 3 work](party-rosters.md).
 
 The [frozen 2022 validation fixture](validation/protocol.json) is separate. It
 uses the already-exposed two-decimal percentages and a 1.54% remainder. The exact
