@@ -30,3 +30,11 @@ Pending: owner review of the drag controls and blue-biased colors, initial/reset
 A continuous semicircle sits beside the coalition editor on desktop and above it on mobile. It updates after completed assignments, showing latest-date combined voting intention for A and B. Gray accounts for unassigned parties plus OTHER, with separate numeric values below. It is not a seat hemicycle and does not renormalize A and B to 100%. The summary remains sticky within the editor; the historical chart stays below. Review this placement and mobile behavior with the owner.
 
 Existing checks and Chrome drag/click/keyboard/touch/reload checks pass after the addition.
+
+## Owner approval
+
+The owner approved compact C at commit `c55698e`: "this is great. Lock it in."
+
+That commit is the frozen UI reference. It includes the three-destination drag editor, blue-biased support-weighted colors, sticky latest-support semicircle and historical chart below. Earlier pending UI-review notes above are superseded by this approval. See the [canonical UI decision](https://github.com/ahemberg/swedishpolls/issues/15#issuecomment-5588828746).
+
+Production data/API specification remains open. The prototype stays on this artifact branch and is not merged into the application.
