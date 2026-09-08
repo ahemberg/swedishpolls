@@ -13,6 +13,12 @@ Representation of a party separately from OTHER, supported by usable polling cov
 **Coverage period**:
 A supported historical interval with a fixed roster of individually represented parties and a corresponding definition of OTHER. A boundary between coverage periods changes that grouping, not necessarily voter support.
 
+**Roster**:
+The parties represented individually in a coverage period, together with the aggregate holding the rest. A roster change requires a recorded owner decision and an effective period; it never varies poll by poll.
+
+**Candidate coverage segment**:
+A proposed coverage period whose boundaries come from documented source evidence, before validated fits establish support. Its individual estimates stay unavailable, and it never replaces a validated roster.
+
 **Source observation**:
 A party share reported by a poll, preserved with its date and provenance. Its existence alone does not establish a supported individual estimate.
 

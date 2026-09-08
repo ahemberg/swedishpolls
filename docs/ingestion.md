@@ -41,7 +41,7 @@ The baseline requires S, M, SD, V, C, KD, L and MP, a positive integer sample si
 usable collection dates, and source company/institute identities. Missing shares
 remain null. OTHER is exactly 100 minus those eight shares, so FI is already in
 this remainder. Uncertain is separate and never enters that sum. FI observations
-are retained independently; FI-period rosters belong to checkpoint 3.
+are retained independently; [FI-period rosters](party-rosters.md) are checkpoint 3.
 
 All reported shares must be in 0–100. Invalid numbers, negative remainders and
 incomplete required compositions receive exclusion reasons, without flooring,
@@ -101,5 +101,6 @@ in the packaged application. No test fetches the live polling source.
 ./mvnw -Dtest=PollCsvTest -Dit.test=SnapshotIngestIT verify
 ```
 
-[Election references](election-references.md) are stored separately by checkpoint 2.
-FI support evidence and the public API contract remain later checkpoints of #17.
+[Election references](election-references.md) are stored separately by checkpoint 2, and
+[party rosters](party-rosters.md) compose these observations in checkpoint 3. The
+public API contract remains the last checkpoint of #17.
