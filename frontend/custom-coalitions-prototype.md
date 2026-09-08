@@ -1,23 +1,26 @@
-# Custom coalition prototype
+# Two-block comparison prototype
 
-Throwaway review artifact for [Explore custom coalitions with support history](https://github.com/ahemberg/swedishpolls/issues/15). All numerical values are fictional. This is not a fitted model or production API.
-
-Run from this worktree:
+Review artifact for [Explore two disjoint blocks with compared support histories](https://github.com/ahemberg/swedishpolls/issues/15). Fictional estimates and joint draws only. Not production code.
 
 ```sh
 python3 -m http.server 4173 --directory frontend
-```
-
-Open http://localhost:4173/custom-coalitions-prototype.html?variant=A . The floating arrows switch between A, stacked controls; B, a side editor; and C, a compact editor. All retain the preset selector followed by party checkboxes. Mobile layouts stack. No application route imports these files.
-
-Review empty and single-party selections, a preset edit, Swedish text, a narrow screen, keyboard controls, and reloading the generated URL. The example starts from M + KD + L + SD. The fictional missing-data period and separate-fit boundary demonstrate line breaks. Date inputs choose the range; the slider chooses the readout date. Only the range is shared.
-
-```sh
 node frontend/custom-coalitions-prototype.check.cjs
 ```
 
-The check exercises the script with a minimal DOM stub. It does not verify browser rendering or accessibility. Uncertainty comes from sums within fictional joint composition draws; these draws are only an illustration. The production contract still needs to specify validated joint coalition summaries.
+Open http://localhost:4173/custom-coalitions-prototype.html?variant=C . Compact C is the preferred direction. The switcher retains stacked A. Side-panel B is discarded. The original reviewed layouts remain in commit 10d38d6.
 
-Owner-approved scope: post-v1, one editable grouping, eight current parties only, combined voting-intention history with uncertainty, empty and single-party states, coalition-page placement, no 50% reference line, shareable parties and date range using the latest publication with its date visible. No seats, majority probabilities, accounts, saved lists, custom images or downloads.
+Assign each party to A, B, or neither. A single ownership field prevents simultaneous membership. Empty blocks prompt for assignment, while a nonempty block still renders. Both histories and uncertainty bands share a date axis, publication and scrubber. No normalization to 100%, majority line, seats or FI/OTHER selection.
 
-Layout verdict and production data contract remain pending. Do not merge this prototype into main.
+The URL carries both blocks and the date range. Reloading restores them. Legacy single-selection links populate A only. Duplicate ownership in malformed links retains A; unsupported party codes are ignored in this prototype. Production input behavior still needs specification.
+
+## Color experiment
+
+The provisional palette follows the owner's directions. Each block averages its constituent sRGB channels, weighted by fictional party support at the latest date. The resulting color stays fixed during date scrubbing. Very light mixtures are darkened for contrast; when mixtures are close, B is darkened further. Solid A and dashed B supplement colors. These rules and exact hex values require owner visual review. The blue/yellow block can look olive; the experiment deliberately exposes that consequence of blending.
+
+## Status
+
+Owner-approved pivot: two disjoint blocks, parties may be unassigned, moving a party removes its previous assignment, and try support-based color weights. Post-v1 scope and earlier sharing/uncertainty requirements remain.
+
+The runnable check covers ownership, moves, unassignment, URL restoration, date validation, empty states, joint sums, missing values, stable colors and similar-color handling. A headless Chrome screenshot was inspected for desktop rendering. Full browser interaction and accessibility testing have not been completed.
+
+Pending: owner review of the two-block controls and colors, initial/reset behavior, and the production data/API contract. Do not merge the prototype into main.

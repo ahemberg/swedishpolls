@@ -3,19 +3,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Custom coalition prototype</title>
-<!-- Throwaway: three coalition-page layouts, ?variant=A|B|C. Fictional data only.
+<!-- Throwaway: two disjoint blocks, compact C with stacked A fallback. Fictional data only.
      Serve: python3 -m http.server 4173 --directory frontend
      No production route imports this standalone prototype. -->
 <style>
 :root{font:16px/1.5 system-ui,sans-serif;color:#1b2530;background:#f7f6f2;--line:#d7d8d3;--accent:#23606e;--surface:#fff}
-*{box-sizing:border-box}body{margin:0;padding-bottom:100px}header,main,footer{max-width:1100px;margin:auto;padding:20px}header{display:flex;justify-content:space-between;border-bottom:2px solid}h1,h2{font-family:Georgia,serif;margin:10px 0}h1{font-size:36px}.notice{background:#86332e;color:white;text-align:center;padding:6px}.muted{color:#56616e}button,select,input{font:inherit}button,select{padding:10px;background:var(--surface);color:inherit;border:1px solid #899196;border-radius:4px}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #ae6d00;outline-offset:3px}.workspace{display:grid;gap:24px;margin-top:25px}.editor{padding:20px;background:var(--surface);border:1px solid var(--line)}fieldset{border:0;padding:0;margin:18px 0}.parties{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.parties label{padding:10px;border:1px solid var(--line);cursor:pointer;display:flex;gap:8px;align-items:center}.parties label:has(:checked){background:#e5f0f1;border-color:var(--accent)}input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}input[type=range]{width:100%;accent-color:var(--accent)}.dates{display:flex;gap:12px;flex-wrap:wrap}.dates label{display:grid;font-size:14px}.dates input{max-width:100%;padding:8px}svg{width:100%;display:block}#readout{font-size:23px;min-height:75px}#empty{padding:65px 20px;text-align:center;border:1px dashed #899196}#share{width:100%;padding:10px}details{margin-top:15px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}.switcher{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:#1b2530;color:white;padding:8px 15px;border-radius:40px;white-space:nowrap}.switcher button{background:transparent;color:white;border:0}body[data-variant=B] .workspace{grid-template-columns:310px 1fr}body[data-variant=B] .parties{grid-template-columns:1fr 1fr}body[data-variant=C] .editor{background:transparent;border:0;border-top:2px solid;padding:10px 0}body[data-variant=C] .parties{display:flex;flex-wrap:wrap}body[data-variant=C] .editor legend{position:absolute;clip-path:inset(50%)}body[data-variant=C] .chart{border-top:1px solid var(--line)}footer{font-size:14px;border-top:1px solid var(--line)}@media(max-width:720px){body[data-variant=B] .workspace{grid-template-columns:1fr}.parties{grid-template-columns:repeat(2,1fr)}h1{font-size:29px}header,main,footer{padding:16px}}
+*{box-sizing:border-box}body{margin:0;padding-bottom:100px}header,main,footer{max-width:1100px;margin:auto;padding:20px}header{display:flex;justify-content:space-between;border-bottom:2px solid}h1,h2{font-family:Georgia,serif;margin:10px 0}h1{font-size:36px}.notice{background:#86332e;color:white;text-align:center;padding:6px}.muted{color:#56616e}button,select,input{font:inherit}button,select{padding:10px;background:var(--surface);color:inherit;border:1px solid #899196;border-radius:4px}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #ae6d00;outline-offset:3px}.workspace{display:grid;gap:24px;margin-top:25px}.editor{padding:20px;background:var(--surface);border:1px solid var(--line)}fieldset{border:0;padding:0;margin:18px 0}.parties{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.parties label{padding:10px;border:1px solid var(--line);cursor:pointer;display:flex;gap:8px;align-items:center}input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}input[type=range]{width:100%;accent-color:var(--accent)}.dates{display:flex;gap:12px;flex-wrap:wrap}.dates label{display:grid;font-size:14px}.dates input{max-width:100%;padding:8px}svg{width:100%;display:block}#readout{font-size:23px;min-height:75px}#empty{padding:65px 20px;text-align:center;border:1px dashed #899196}#share{width:100%;padding:10px}details{margin-top:15px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}.switcher{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:#1b2530;color:white;padding:8px 15px;border-radius:40px;white-space:nowrap}.switcher button{background:transparent;color:white;border:0}body[data-variant=C] .editor{background:transparent;border:0;border-top:2px solid;padding:10px 0}.parties{display:flex;flex-wrap:wrap;gap:8px}.parties .party{border:1px solid var(--line);border-top:5px solid var(--party);padding:8px;display:grid;gap:6px;min-width:115px}.party select{padding:6px}.block-readout{border-left:5px solid var(--block);padding:8px 14px;margin:10px 0;font-size:18px}.block-readout.dashed{border-left-style:dashed}.block-readout strong{display:block}.color-note{font-size:13px}.swatch{display:inline-block;width:16px;height:16px;background:var(--block);vertical-align:middle;margin-right:6px}footer{font-size:14px;border-top:1px solid var(--line)}@media(max-width:720px){.parties{grid-template-columns:repeat(2,1fr)}h1{font-size:29px}header,main,footer{padding:16px}}
 </style>
 <div class="notice">Throwaway prototype · Fictional estimates and intervals</div>
 <header><strong>Svenska opinionsmätningar</strong><label>Language <select id="language"><option value="en">English</option><option value="sv">Svenska</option></select></label></header>
 <main>
 <p class="muted" id="breadcrumb"></p><h1 id="heading"></h1><p id="intro"></p>
 <div class="workspace">
-<section class="editor"><label for="preset" id="presetLabel"></label> <select id="preset"><option value="M,KD,L,SD">M + KD + L + SD</option><option value="S,V,C,MP">S + V + C + MP</option><option value="custom" id="customOption"></option></select>
+<section class="editor"><label for="preset" id="presetLabel"></label> <select id="preset"><option value="initial">S + V + C + MP / M + KD + L + SD</option><option value="custom" id="customOption"></option></select>
 <fieldset><legend id="partyLegend"></legend><div class="parties" id="parties"></div></fieldset>
 <button id="clear" type="button"></button>
 </section>
@@ -23,7 +23,7 @@
 <p id="rangeError" role="alert"></p><p class="muted" id="publication"></p><div id="empty"></div><div id="plot"><div id="readout" aria-live="polite"></div><svg id="chart" viewBox="0 0 700 260" role="img" aria-labelledby="chartTitle"></svg><label for="scrub" id="scrubLabel"></label><input type="range" id="scrub" min="0" max="32" value="32"><p class="muted" id="gapNote"></p></div>
 </section></div>
 <p><label for="share" id="shareLabel"></label><input id="share" readonly></p>
-<details><summary>Prototype state</summary><pre id="state"></pre></details>
+<p class="color-note">Prototype color recipe: colors are mixed in proportion to fictional support on 1 September 2026. Very light mixtures are darkened; similar mixtures receive a darker B. Colors stay fixed when exploring dates. Exact palette and mixing remain under review.</p><details><summary>Prototype state</summary><pre id="state"></pre></details>
 </main><footer id="method"></footer>
 <nav class="switcher" aria-label="Prototype layouts"><button id="previous" aria-label="Previous layout">←</button><span id="variantName"></span><button id="next" aria-label="Next layout">→</button></nav>
 <script>
@@ -31,8 +31,16 @@ const keys=['S','M','SD','V','C','KD','L','MP'];
 const names=['Socialdemokraterna','Moderaterna','Sverigedemokraterna','Vänsterpartiet','Centerpartiet','Kristdemokraterna','Liberalerna','Miljöpartiet'];
 const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search);
-const selected=new Set((params.has('parties')?params.get('parties'):'M,KD,L,SD').split(',').filter(k=>keys.includes(k)));
-let variant=['A','B','C'].includes(params.get('variant'))?params.get('variant'):'A';
+const assignment=Object.fromEntries(keys.map(k=>[k,'none']));
+const hasBlocks=params.has('a')||params.has('b');
+const initialA=hasBlocks?(params.get('a')||''):(params.has('parties')?params.get('parties'):'S,V,C,MP');
+const initialB=hasBlocks?(params.get('b')||''):(params.has('parties')?'':'M,KD,L,SD');
+// Reject duplicate ownership in shared input by retaining block A's assignment.
+initialA.split(',').filter(k=>keys.includes(k)).forEach(k=>assignment[k]='a');
+initialB.split(',').filter(k=>keys.includes(k)&&assignment[k]==='none').forEach(k=>assignment[k]='b');
+function assign(key,block){if(keys.includes(key)&&['a','b','none'].includes(block))assignment[key]=block;}
+const palette=['#d22d3f','#173b70','#e2bc25','#8c1737','#187344','#639bd2','#337dc4','#8fc44b'];
+let variant=params.get('variant')==='A'?'A':'C';
 let lang=params.get('lang')==='sv'?'sv':'en';
 const t=(en,sv)=>lang==='sv'?sv:en;
 const dates=Array.from({length:33},(_,i)=>new Date(Date.UTC(2024, i, 1)).toISOString().slice(0,10));
@@ -51,21 +59,38 @@ function validDate(value){return dates[0]<=value&&value<=dates.at(-1)&&/^\d{4}-\
 $('from').value=validDate(params.get('from')||'')?params.get('from'):dates[0];
 $('to').value=validDate(params.get('to')||'')?params.get('to'):dates.at(-1);
 $('language').value=lang;
-$('parties').innerHTML=keys.map((key,i)=>`<label title="${names[i]}"><input type="checkbox" value="${key}" aria-label="${names[i]}" ${selected.has(key)?'checked':''}>${key}</label>`).join('');
+// Prototype recipe: support-weighted sRGB channel average, held at the latest date.
+// Contrast and separation adjustments are provisional, for owner visual review.
+function blockColor(parties){
+ if(!parties.length)return [100,110,120];
+ const weights=parties.map(k=>estimate(32,[k]).mean),total=weights.reduce((a,b)=>a+b,0);
+ let rgb=[0,1,2].map(c=>parties.reduce((v,k,i)=>v+parseInt(palette[keys.indexOf(k)].slice(1+c*2,3+c*2),16)*weights[i]/total,0));
+ const luminance=values=>values.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
+ while(luminance(rgb)>.23)rgb=rgb.map(v=>v*.95);
+ return rgb.map(Math.round);
+}
+function colorsFor(groups){
+ const colors=groups.map(blockColor);
+ if(groups.every(g=>g.length)&&Math.hypot(...colors[0].map((v,i)=>v-colors[1][i]))<65)colors[1]=colors[1].map(v=>Math.round(v*.55));
+ return colors.map(c=>'#'+c.map(v=>v.toString(16).padStart(2,'0')).join(''));
+}
+$('parties').innerHTML=keys.map((key,i)=>`<label class="party" style="--party:${palette[i]}"><strong title="${names[i]}">${key}</strong><select data-party="${key}" aria-label="${names[i]}"><option value="none">Unassigned</option><option value="a">Block A</option><option value="b">Block B</option></select></label>`).join('');
 function render(){
  document.documentElement.lang=lang;document.body.dataset.variant=variant;
- const parties=keys.filter(k=>selected.has(k));
+ const groups=['a','b'].map(block=>keys.filter(k=>assignment[k]===block));
+ const parties=groups.flat(),colors=colorsFor(groups);
+ document.querySelectorAll('[data-party]').forEach(el=>{el.value=assignment[el.dataset.party];el.options[0].textContent=t('Unassigned','Ej tilldelad');el.options[1].textContent=t('Block A','Block A');el.options[2].textContent=t('Block B','Block B');});
  const from=$('from').value,to=$('to').value;
  const valid=validDate(from)&&validDate(to)&&from<=to;
  const indices=dates.map((date,i)=>date>=from&&date<=to?i:-1).filter(i=>i>=0);
- const q=new URLSearchParams({parties:parties.join(','),from,to,lang,variant});
+ const q=new URLSearchParams({a:groups[0].join(','),b:groups[1].join(','),from,to,lang,variant});
  history.replaceState(null,'','?'+q);$('share').value=location.href;
  $('breadcrumb').textContent=t('Coalitions / Custom selection','Koalitioner / Eget urval');
- $('heading').textContent=t('Explore a combination','Utforska en kombination');
- $('intro').textContent=t('Choose parties and follow their combined support over time.','Välj partier och följ deras sammanlagda stöd över tid.');
+ $('heading').textContent=t('Compare two blocks','Jämför två block');
+ $('intro').textContent=t('Assign each party to A, B, or neither. Moving a party removes it from its previous block.','Placera varje parti i A, B eller inget block. Ett parti flyttas automatiskt från sitt tidigare block.');
  $('presetLabel').textContent=t('Start from a preset','Utgå från ett förval');$('customOption').textContent=t('Custom combination','Egen kombination');
  $('partyLegend').textContent=t('Choose parties','Välj partier');$('clear').textContent=t('Clear selection','Rensa urval');
- $('selection').textContent=parties.join(' + ')||t('No parties selected','Inga partier valda');
+ $('selection').textContent=t('Combined support over time','Sammanlagt stöd över tid');
  $('fromLabel').textContent=t('From','Från');$('toLabel').textContent=t('To','Till');
  $('rangeError').textContent=valid?'':t('Choose a valid date range within the available period.','Välj ett giltigt datumintervall inom den tillgängliga perioden.');
  $('publication').textContent=t('Illustrative publication: 8 September 2026. Shared links load the latest publication.','Exempelpublicering: 8 september 2026. Delade länkar visar senaste publiceringen.');
@@ -76,27 +101,31 @@ function render(){
  $('empty').textContent=!parties.length?t('Choose at least one party to see its support.','Välj minst ett parti för att visa stödet.'):t('No estimates in this date range.','Inga skattningar i datumintervallet.');
  $('plot').hidden=!$('empty').hidden;
  $('scrub').min=indices[0]??0;$('scrub').max=indices.at(-1)??0;
- const day=Number($('scrub').value),value=estimate(day,parties);
+ const day=Number($('scrub').value),values=groups.map(g=>estimate(day,g));
  const format=n=>n.toLocaleString(lang==='sv'?'sv-SE':'en-GB',{maximumFractionDigits:1,minimumFractionDigits:1});
- $('readout').textContent=dates[day]+' · '+(value?`${format(value.mean)}% · ${t('likely range','troligt intervall')} ${format(value.low)}–${format(value.high)}%`:t('Estimate unavailable','Skattning saknas'));
+ $('readout').innerHTML=`<div>${dates[day]}</div>`+groups.map((g,i)=>`<div class="block-readout ${i?'dashed':''}" style="--block:${colors[i]}"><strong><span class="swatch"></span>${t('Block','Block')} ${i?'B':'A'} · ${g.join(' + ')||t('No parties','Inga partier')} · ${i?t('dashed','streckad'):t('solid','heldragen')}</strong>${values[i]?`${format(values[i].mean)}% · ${t('likely range','troligt intervall')} ${format(values[i].low)}–${format(values[i].high)}%`:g.length?t('Estimate unavailable','Skattning saknas'):t('Assign a party to compare','Tilldela ett parti för att jämföra')}</div>`).join('');
  $('scrubLabel').textContent=t('Explore date','Utforska datum');$('scrub').setAttribute('aria-valuetext',$('readout').textContent);
- const points=indices.map(i=>({i,v:estimate(i,parties)}));
+ const series=groups.map(g=>indices.map(i=>({i,v:estimate(i,g)})));
+ const points=series.flat();
  const maximum=Math.max(10,...points.filter(p=>p.v).map(p=>p.v.high));
  const top=Math.min(100,Math.ceil(maximum/10)*10),x=i=>45+(i-(indices[0]??0))*630/Math.max(1,indices.length-1),y=v=>220-v/top*190;
- const segments=[];let segment=[];
- for(const p of points){if(!p.v||p.i===24){if(segment.length)segments.push(segment);segment=[];}if(p.v)segment.push(p);}if(segment.length)segments.push(segment);
- $('chart').innerHTML=`<title id="chartTitle">${t('Fictional combined support and uncertainty','Påhittat sammanlagt stöd och osäkerhet')}</title>`+[0,top].map(n=>`<text x="3" y="${y(n)+5}" fill="currentColor">${n}%</text><line x1="45" x2="675" y1="${y(n)}" y2="${y(n)}" stroke="#b8c0c2"/>`).join('')+segments.map(s=>`<polygon points="${[...s.map(p=>`${x(p.i)},${y(p.v.high)}`),...s.slice().reverse().map(p=>`${x(p.i)},${y(p.v.low)}`)].join(' ')}" fill="#23606e" fill-opacity=".18"/><polyline points="${s.map(p=>`${x(p.i)},${y(p.v.mean)}`).join(' ')}" fill="none" stroke="#23606e" stroke-width="3"/>`).join('')+`<line x1="${x(day)}" x2="${x(day)}" y1="25" y2="220" stroke="#596571" stroke-dasharray="4 4"/><text x="45" y="250">${from}</text><text x="675" y="250" text-anchor="end">${to}</text>`;
- $('preset').value=['M,KD,L,SD','S,V,C,MP'].find(p=>p.split(',').length===parties.length&&p.split(',').every(k=>selected.has(k)))||'custom';
- $('variantName').textContent=variant+' · '+({A:t('Stacked','Staplad'),B:t('Side editor','Sidopanel'),C:t('Compact editor','Kompakt')}[variant]);
- $('state').textContent=JSON.stringify({variant,lang,parties,from,to,date:dates[day],publication:'fictional-latest',value},null,2);
+ const paths=series.map((points,block)=>{
+  const segments=[];let segment=[];
+  for(const p of points){if(!p.v||p.i===24){if(segment.length)segments.push(segment);segment=[];}if(p.v)segment.push(p);}if(segment.length)segments.push(segment);
+  return segments.map(s=>`<polygon points="${[...s.map(p=>`${x(p.i)},${y(p.v.high)}`),...s.slice().reverse().map(p=>`${x(p.i)},${y(p.v.low)}`)].join(' ')}" fill="${colors[block]}" fill-opacity=".12"/><polyline points="${s.map(p=>`${x(p.i)},${y(p.v.mean)}`).join(' ')}" fill="none" stroke="${colors[block]}" stroke-width="3" ${block?'stroke-dasharray="9 5"':''}/>${s.length===1?`<circle cx="${x(s[0].i)}" cy="${y(s[0].v.mean)}" r="4" fill="${colors[block]}"/>`:''}`).join('');
+ });
+ $('chart').innerHTML=`<title id="chartTitle">${t('Fictional support and uncertainty for two blocks','Påhittat stöd och osäkerhet för två block')}</title>`+[0,top].map(n=>`<text x="3" y="${y(n)+5}" fill="currentColor">${n}%</text><line x1="45" x2="675" y1="${y(n)}" y2="${y(n)}" stroke="#b8c0c2"/>`).join('')+paths.join('')+`<line x1="${x(day)}" x2="${x(day)}" y1="25" y2="220" stroke="#596571" stroke-dasharray="4 4"/><text x="45" y="250">${from}</text><text x="675" y="250" text-anchor="end">${to}</text>`;
+ $('preset').value=groups[0].join(',')==='S,V,C,MP'&&groups[1].join(',')==='M,SD,KD,L'?'initial':'custom';
+ $('variantName').textContent=variant+' · '+(variant==='A'?t('Stacked','Staplad'):t('Compact editor','Kompakt'));
+ $('state').textContent=JSON.stringify({variant,lang,assignment,from,to,date:dates[day],publication:'fictional-latest',colorReferenceDate:dates.at(-1),colors,values},null,2);
 }
-$('parties').onchange=e=>{e.target.checked?selected.add(e.target.value):selected.delete(e.target.value);render();};
-$('clear').onclick=()=>{selected.clear();document.querySelectorAll('[type=checkbox]').forEach(c=>c.checked=false);render();};
-$('preset').onchange=e=>{if(e.target.value==='custom')return;selected.clear();e.target.value.split(',').forEach(k=>selected.add(k));document.querySelectorAll('[type=checkbox]').forEach(c=>c.checked=selected.has(c.value));render();};
+$('parties').onchange=e=>{assign(e.target.dataset.party,e.target.value);render();};
+$('clear').onclick=()=>{keys.forEach(k=>assign(k,'none'));render();};
+$('preset').onchange=e=>{if(e.target.value==='custom')return;keys.forEach(k=>assign(k,['S','V','C','MP'].includes(k)?'a':'b'));render();};
 $('from').onchange=$('to').onchange=$('scrub').oninput=render;
 $('language').onchange=e=>{lang=e.target.value;render();};
 $('share').onclick=()=> $('share').select();
-function cycle(step){variant=['A','B','C'][(['A','B','C'].indexOf(variant)+step+3)%3];render();}
+function cycle(step){variant=variant==='A'?'C':'A';render();}
 $('previous').onclick=()=>cycle(-1);$('next').onclick=()=>cycle(1);
 document.onkeydown=e=>{if(e.target.closest('input,select,textarea,button,[contenteditable]'))return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();cycle(e.key==='ArrowRight'?1:-1);}};
 render();
