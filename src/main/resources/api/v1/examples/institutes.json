@@ -1,0 +1,51 @@
+{
+  "publication": {"publicationId": "pub_20260908T051233Z", "runId": "run_000412", "snapshotId": 412},
+  "electionCycle": "2022-2026",
+  "reference": "House effects are deviations from the ensemble of institutes active in the cycle, centered with equal institute weights. They are not deviations from true opinion.",
+  "institutes": [
+    {
+      "institute": "Novus",
+      "companies": ["Novus"],
+      "polls": 96,
+      "firstCollection": "2010-01-04",
+      "lastCollection": "2026-09-05",
+      "methodEras": [],
+      "houseEffects": [
+        {"electionCycle": "2022-2026", "component": "S", "mean": 0.4, "lower": 0.0, "upper": 0.8, "shrunk": false},
+        {"electionCycle": "2022-2026", "component": "SD", "mean": -0.3, "lower": -0.7, "upper": 0.1, "shrunk": false}
+      ]
+    },
+    {
+      "institute": "Demoskop",
+      "companies": ["Demoskop"],
+      "polls": 41,
+      "firstCollection": "2010-01-11",
+      "lastCollection": "2019-10-24",
+      "methodEras": [
+        {
+          "id": "demoskop_before_2019_11",
+          "to": "2019-10-31",
+          "evidence": "https://github.com/MansMeg/SwedishPolls/blob/f0390c05854d87bbf21db9d31c6431ffa0f07f7e/RPackage/R/handle_demoskop_inizio_merger.R"
+        }
+      ],
+      "houseEffects": []
+    },
+    {
+      "institute": "Inizio",
+      "companies": ["Inizio", "Demoskop"],
+      "polls": 22,
+      "firstCollection": "2019-11-04",
+      "lastCollection": "2026-08-30",
+      "methodEras": [
+        {
+          "id": "inizio_continuation",
+          "from": "2019-11-01",
+          "evidence": "https://github.com/MansMeg/SwedishPolls/blob/f0390c05854d87bbf21db9d31c6431ffa0f07f7e/RPackage/R/handle_demoskop_inizio_merger.R"
+        }
+      ],
+      "houseEffects": [
+        {"electionCycle": "2022-2026", "component": "S", "mean": -0.2, "lower": -0.9, "upper": 0.5, "shrunk": true}
+      ]
+    }
+  ]
+}

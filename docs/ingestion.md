@@ -103,4 +103,4 @@ in the packaged application. No test fetches the live polling source.
 
 [Election references](election-references.md) are stored separately by checkpoint 2, and
 [party rosters](party-rosters.md) compose these observations in checkpoint 3. The
-public API contract remains the last checkpoint of #17.
+[frozen v1 API contract](api-contract.md) is checkpoint 4.

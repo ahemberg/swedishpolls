@@ -1,0 +1,28 @@
+{
+  "publicationId": "pub_20260908T051233Z",
+  "publishedAt": "2026-09-08T05:12:33Z",
+  "sourceCheckedAt": "2026-09-08T05:00:07Z",
+  "lastFieldworkDate": "2026-09-05",
+  "stale": false,
+  "staleSince": null,
+  "permalink": "/api/v1/publications/pub_20260908T051233Z",
+  "modelRun": {
+    "runId": "run_000412",
+    "codeVersion": "0.1.0+1e574ce",
+    "estimatorVersion": "midpoint-state-space-1",
+    "seed": 20260908,
+    "runtime": "eclipse-temurin:25.0.4_7-jre-noble",
+    "numericalLibrary": "ejml-simple 0.46.1"
+  },
+  "snapshot": {
+    "snapshotId": 412,
+    "sha256": "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+    "sourceUrl": "https://raw.githubusercontent.com/MansMeg/SwedishPolls/master/Data/Polls.csv",
+    "capturedAt": "2026-09-08T05:00:07Z"
+  },
+  "assets": {
+    "overview": {"sv": "/assets/pub_20260908T051233Z/overview-sv-1.png", "en": "/assets/pub_20260908T051233Z/overview-en-1.png"},
+    "seats": {"sv": "/assets/pub_20260908T051233Z/seats-sv-1.png", "en": "/assets/pub_20260908T051233Z/seats-en-1.png"}
+  },
+  "history": "corrected"
+}
