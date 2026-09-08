@@ -5,7 +5,8 @@ Use the gh CLI from this repository.
 
 ## Branches and pull requests
 
-- `main` is the integration and default branch. Start ordinary work from current `origin/main` and target PRs at `main`.
+- All repository changes, including code, documentation, configuration and follow-up fixes, go through a topic branch and a pull request targeting `main`. Never commit or push changes directly to `main`.
+- Create or switch to the task branch before editing, starting new work from current `origin/main`. When a skill says to commit to the current branch, use the task branch. Push that branch and open a PR when the changes are ready for review.
 - Keep wayfinder research and prototype artifacts on their dedicated `research/*` and `prototype/*` branches when linked from decision tickets. These artifact branches are not integration branches or PR bases.
 - After a PR merges, remove its topic branch and clean worktree when no unique work remains. Preserve branches holding linked research or prototype evidence.
 - Keep the primary working directory on `main` between tasks. Check for local changes before switching or removing a worktree.
