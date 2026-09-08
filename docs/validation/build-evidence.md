@@ -23,6 +23,8 @@ local integration credentials. The test starts and stops its own application.
 
 GitHub-hosted workflow execution and required-merge-check enforcement are not
 claimed by these local results. The private repository's plan returned HTTP 403
-for branch protection. No image was published. Both production architectures and
+for branch protection. The owner accepted this limitation on 2026-09-08, keeping
+the repository private on the free plan. Enforced merge checks are waived, not
+a remaining blocker. No image was published. Both production architectures and
 font rendering remain #27's checks. Fallow reports and Maven test results are
 configured as CI artifacts; local generated reports are ignored by Git.

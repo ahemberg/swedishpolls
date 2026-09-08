@@ -66,17 +66,20 @@ docker build -t swedishpolls:local .
 
 ## CI and merge policy
 
-`Verify` runs on PRs and main. Require `Build and integration` and `Fallow`, an
-up-to-date PR branch and code-owner review for baseline/protocol changes. Fallow
+`Verify` runs on PRs and main. Check that `Build and integration` and `Fallow`
+pass before merging, and review baseline/protocol changes. These are manual
+project conventions; GitHub does not enforce them. Fallow
 uses full Git history, the PR base SHA and a separately pinned action and CLI.
 Tool/configuration errors and audit regressions fail the job; reports upload even
 on failure. Any image-publishing job added by #27 must use `needs: [build, fallow]`
 in this workflow or depend on equivalent successful checks for the exact commit.
 
-GitHub returned HTTP 403 on 2026-09-08 when reading branch protection: this private
-repository's current plan does not support it. Required-check and code-owner
-review enforcement cannot be enabled until the plan or visibility changes. The
-workflow and CODEOWNERS alone do not enforce merging restrictions.
+Owner decision, 2026-09-08: keep the repository private on its current free plan
+and accept the absence of enforced merge checks and code-owner approval. This
+waives #16's requirement to configure required merge checks and is not an open
+blocker. Keep the CI checks, failure reporting, CODEOWNERS review routing and
+quality dependencies for future image publication. No paid upgrade or visibility
+change is planned.
 
 The [validation protocol](docs/validation/README.md) records development folds,
 paired score gates, 2022 exposure and the prospective 2026 evaluation. Resolved
