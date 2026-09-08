@@ -9,6 +9,8 @@
 <style>
 :root{font:16px/1.5 system-ui,sans-serif;color:#1b2530;background:#f7f6f2;--line:#d7d8d3;--accent:#23606e;--surface:#fff}
 *{box-sizing:border-box}body{margin:0;padding-bottom:100px}header,main,footer{max-width:1100px;margin:auto;padding:20px}header{display:flex;justify-content:space-between;border-bottom:2px solid}h1,h2{font-family:Georgia,serif;margin:10px 0}h1{font-size:36px}.notice{background:#86332e;color:white;text-align:center;padding:6px}.muted{color:#56616e}button,select,input{font:inherit}button,select{padding:10px;background:var(--surface);color:inherit;border:1px solid #899196;border-radius:4px}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #ae6d00;outline-offset:3px}.workspace{display:grid;gap:24px;margin-top:25px}.editor{padding:20px;background:var(--surface);border:1px solid var(--line)}fieldset{border:0;padding:0;margin:18px 0}.parties{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.parties label{padding:10px;border:1px solid var(--line);cursor:pointer;display:flex;gap:8px;align-items:center}input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}input[type=range]{width:100%;accent-color:var(--accent)}.dates{display:flex;gap:12px;flex-wrap:wrap}.dates label{display:grid;font-size:14px}.dates input{max-width:100%;padding:8px}svg{width:100%;display:block}#readout{font-size:23px;min-height:75px}#empty{padding:65px 20px;text-align:center;border:1px dashed #899196}#share{width:100%;padding:10px}details{margin-top:15px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}.switcher{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:#1b2530;color:white;padding:8px 15px;border-radius:40px;white-space:nowrap}.switcher button{background:transparent;color:white;border:0}body[data-variant=C] .editor{background:transparent;border:0;border-top:2px solid;padding:10px 0}.parties{display:flex;flex-wrap:wrap;gap:8px}.parties .party{border:1px solid var(--line);border-top:5px solid var(--party);padding:8px;display:grid;gap:6px;min-width:115px}.party select{padding:6px}.block-readout{border-left:5px solid var(--block);padding:8px 14px;margin:10px 0;font-size:18px}.block-readout.dashed{border-left-style:dashed}.block-readout strong{display:block}.color-note{font-size:13px}.swatch{display:inline-block;width:16px;height:16px;background:var(--block);vertical-align:middle;margin-right:6px}footer{font-size:14px;border-top:1px solid var(--line)}@media(max-width:720px){.parties{grid-template-columns:repeat(2,1fr)}h1{font-size:29px}header,main,footer{padding:16px}}
+
+.zones{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.zone{border:2px solid var(--zone-color,#a0a5a7);border-radius:6px;padding:12px;min-width:0;background:#fff}.zone[data-zone=none]{grid-column:1/-1;border-style:dashed;background:transparent}.zone-title{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}.zone h3{font:600 18px system-ui;margin:0}.zone .total{font-size:24px;font-variant-numeric:tabular-nums}.tiles{display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px;min-height:85px;padding-top:12px}.tile{touch-action:none;user-select:none;cursor:grab;min-height:52px;min-width:64px;padding:8px 12px;font-weight:700;border:2px solid transparent;background:var(--party);color:white;font-size:20px}.tile[data-party=SD],.tile[data-party=MP],.tile[data-party=KD]{color:#142230}.tile[aria-pressed=true]{outline:3px solid #1b2530;outline-offset:3px}.tile small{display:block;font-size:11px;font-weight:400}.zone.over{outline:4px solid #ad6800;outline-offset:3px;background:#fff7e4}.ghost{position:fixed;z-index:100;pointer-events:none;opacity:.9;transform:translate(-50%,-50%) rotate(-4deg);box-shadow:0 8px 20px #0004}.drag-source{opacity:.3}.move-here{font-size:13px;padding:8px;min-height:44px}.move-here:disabled{opacity:.55;cursor:default}#move-status{min-height:24px;font-size:14px}.empty-zone{font-size:14px;color:#56616e;margin:10px 0}.drag-help{font-size:14px;color:#56616e}body[data-variant=A] .zones{grid-template-columns:1fr}body[data-variant=A] .zone[data-zone=none]{grid-column:auto}@media(max-width:480px){.zones{gap:8px}.zone{padding:8px}.tile{min-width:55px;padding:6px}.zone-title{display:block}.zone h3{font-size:16px}.move-here{margin-top:6px}.switcher{font-size:13px}.tiles{gap:6px}}
 </style>
 <div class="notice">Throwaway prototype · Fictional estimates and intervals</div>
 <header><strong>Svenska opinionsmätningar</strong><label>Language <select id="language"><option value="en">English</option><option value="sv">Svenska</option></select></label></header>
@@ -16,14 +18,14 @@
 <p class="muted" id="breadcrumb"></p><h1 id="heading"></h1><p id="intro"></p>
 <div class="workspace">
 <section class="editor"><label for="preset" id="presetLabel"></label> <select id="preset"><option value="initial">S + V + C + MP / M + KD + L + SD</option><option value="custom" id="customOption"></option></select>
-<fieldset><legend id="partyLegend"></legend><div class="parties" id="parties"></div></fieldset>
+<p id="partyLegend" class="drag-help"></p><div class="zones" id="parties"></div><p id="move-status" role="status" aria-live="polite"></p>
 <button id="clear" type="button"></button>
 </section>
 <section class="chart" aria-labelledby="selection"><h2 id="selection"></h2><div class="dates"><label><span id="fromLabel"></span><input type="date" id="from" min="2024-01-01" max="2026-09-01"></label><label><span id="toLabel"></span><input type="date" id="to" min="2024-01-01" max="2026-09-01"></label></div>
 <p id="rangeError" role="alert"></p><p class="muted" id="publication"></p><div id="empty"></div><div id="plot"><div id="readout" aria-live="polite"></div><svg id="chart" viewBox="0 0 700 260" role="img" aria-labelledby="chartTitle"></svg><label for="scrub" id="scrubLabel"></label><input type="range" id="scrub" min="0" max="32" value="32"><p class="muted" id="gapNote"></p></div>
 </section></div>
 <p><label for="share" id="shareLabel"></label><input id="share" readonly></p>
-<p class="color-note">Prototype color recipe: colors are mixed in proportion to fictional support on 1 September 2026. Very light mixtures are darkened; similar mixtures receive a darker B. Colors stay fixed when exploring dates. Exact palette and mixing remain under review.</p><details><summary>Prototype state</summary><pre id="state"></pre></details>
+<p class="color-note">Color experiment: support-weighted at the latest date. SD keeps its yellow tile, but contributes blue to a mixture containing M, KD or L. SD alone stays yellow. This provisional rule prevents olive right-bloc curves; mixed coalitions still need review. Light colors are darkened for contrast. Similar mixtures get a darker B. Colors stay fixed while scrubbing.</p><details><summary>Prototype state</summary><pre id="state"></pre></details>
 </main><footer id="method"></footer>
 <nav class="switcher" aria-label="Prototype layouts"><button id="previous" aria-label="Previous layout">←</button><span id="variantName"></span><button id="next" aria-label="Next layout">→</button></nav>
 <script>
@@ -40,6 +42,7 @@ initialA.split(',').filter(k=>keys.includes(k)).forEach(k=>assignment[k]='a');
 initialB.split(',').filter(k=>keys.includes(k)&&assignment[k]==='none').forEach(k=>assignment[k]='b');
 function assign(key,block){if(keys.includes(key)&&['a','b','none'].includes(block))assignment[key]=block;}
 const palette=['#d22d3f','#173b70','#e2bc25','#8c1737','#187344','#639bd2','#337dc4','#8fc44b'];
+let picked=null;
 let variant=params.get('variant')==='A'?'A':'C';
 let lang=params.get('lang')==='sv'?'sv':'en';
 const t=(en,sv)=>lang==='sv'?sv:en;
@@ -64,7 +67,7 @@ $('language').value=lang;
 function blockColor(parties){
  if(!parties.length)return [100,110,120];
  const weights=parties.map(k=>estimate(32,[k]).mean),total=weights.reduce((a,b)=>a+b,0);
- let rgb=[0,1,2].map(c=>parties.reduce((v,k,i)=>v+parseInt(palette[keys.indexOf(k)].slice(1+c*2,3+c*2),16)*weights[i]/total,0));
+ let rgb=[0,1,2].map(c=>parties.reduce((v,k,i)=>v+parseInt((k==='SD'&&parties.some(p=>['M','KD','L'].includes(p))?'#427cae':palette[keys.indexOf(k)]).slice(1+c*2,3+c*2),16)*weights[i]/total,0));
  const luminance=values=>values.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
  while(luminance(rgb)>.23)rgb=rgb.map(v=>v*.95);
  return rgb.map(Math.round);
@@ -74,22 +77,35 @@ function colorsFor(groups){
  if(groups.every(g=>g.length)&&Math.hypot(...colors[0].map((v,i)=>v-colors[1][i]))<65)colors[1]=colors[1].map(v=>Math.round(v*.55));
  return colors.map(c=>'#'+c.map(v=>v.toString(16).padStart(2,'0')).join(''));
 }
-$('parties').innerHTML=keys.map((key,i)=>`<label class="party" style="--party:${palette[i]}"><strong title="${names[i]}">${key}</strong><select data-party="${key}" aria-label="${names[i]}"><option value="none">Unassigned</option><option value="a">Block A</option><option value="b">Block B</option></select></label>`).join('');
+function zoneName(zone){return zone==='none'?t('Unassigned','Utanför'):t('Coalition ','Koalition ')+zone.toUpperCase();}
+function renderZones(colors){
+ const focusKey=document.activeElement?.dataset?.party;
+ $('parties').innerHTML=['a','b','none'].map((zone,i)=>{
+  const members=keys.filter(k=>assignment[k]===zone),value=estimate(32,members);
+  return `<section class="zone" data-zone="${zone}" aria-label="${zoneName(zone)}" style="--zone-color:${colors[i]||'#899196'}"><div class="zone-title"><div><h3>${zoneName(zone)}</h3>${zone!=='none'?`<span class="total">${value?value.mean.toFixed(1)+'%':'—'}</span>`:''}</div><button class="move-here" data-move="${zone}" ${!picked?'disabled':''}>${t('Move here','Flytta hit')}${picked?' · '+picked:''}</button></div><div class="tiles">${members.map(k=>`<button type="button" class="tile" data-party="${k}" aria-pressed="${picked===k}" aria-label="${names[keys.indexOf(k)]}, ${zoneName(zone)}. ${t('Select to move','Välj för att flytta')}" style="--party:${palette[keys.indexOf(k)]}">${k}<small>${estimate(32,[k]).mean.toFixed(1)}%</small></button>`).join('')||`<p class="empty-zone">${t('Drop parties here','Släpp partier här')}</p>`}</div></section>`;
+ }).join('');
+ if(focusKey)document.querySelector(`[data-party="${focusKey}"]`)?.focus({preventScroll:true});
+}
+function moveParty(key,zone){
+ assign(key,zone);picked=null;render();
+ $('move-status').textContent=key+' · '+zoneName(zone);
+ document.querySelector(`[data-party="${key}"]`)?.focus({preventScroll:true});
+}
 function render(){
  document.documentElement.lang=lang;document.body.dataset.variant=variant;
  const groups=['a','b'].map(block=>keys.filter(k=>assignment[k]===block));
  const parties=groups.flat(),colors=colorsFor(groups);
- document.querySelectorAll('[data-party]').forEach(el=>{el.value=assignment[el.dataset.party];el.options[0].textContent=t('Unassigned','Ej tilldelad');el.options[1].textContent=t('Block A','Block A');el.options[2].textContent=t('Block B','Block B');});
+ renderZones(colors);
  const from=$('from').value,to=$('to').value;
  const valid=validDate(from)&&validDate(to)&&from<=to;
  const indices=dates.map((date,i)=>date>=from&&date<=to?i:-1).filter(i=>i>=0);
  const q=new URLSearchParams({a:groups[0].join(','),b:groups[1].join(','),from,to,lang,variant});
  history.replaceState(null,'','?'+q);$('share').value=location.href;
  $('breadcrumb').textContent=t('Coalitions / Custom selection','Koalitioner / Eget urval');
- $('heading').textContent=t('Compare two blocks','Jämför två block');
- $('intro').textContent=t('Assign each party to A, B, or neither. Moving a party removes it from its previous block.','Placera varje parti i A, B eller inget block. Ett parti flyttas automatiskt från sitt tidigare block.');
+ $('heading').textContent=t('Build and compare two coalitions','Bygg och jämför två koalitioner');
+ $('intro').textContent=t('Drag parties into either coalition, or leave them outside. A party belongs to only one place.','Dra partier till valfri koalition eller lämna dem utanför. Ett parti finns bara på en plats.');
  $('presetLabel').textContent=t('Start from a preset','Utgå från ett förval');$('customOption').textContent=t('Custom combination','Egen kombination');
- $('partyLegend').textContent=t('Choose parties','Välj partier');$('clear').textContent=t('Clear selection','Rensa urval');
+ $('partyLegend').textContent=t('Drag a tile, or select it and choose Move here. Keyboard: Enter to select, Tab to a destination, Enter to move. Escape cancels. Totals below use the latest date.','Dra en bricka eller välj den och tryck Flytta hit. Tangentbord: Enter väljer, Tab till målet, Enter flyttar. Escape avbryter. Summorna nedan gäller senaste datumet.');$('clear').textContent=t('Clear selection','Rensa urval');
  $('selection').textContent=t('Combined support over time','Sammanlagt stöd över tid');
  $('fromLabel').textContent=t('From','Från');$('toLabel').textContent=t('To','Till');
  $('rangeError').textContent=valid?'':t('Choose a valid date range within the available period.','Välj ett giltigt datumintervall inom den tillgängliga perioden.');
@@ -103,7 +119,7 @@ function render(){
  $('scrub').min=indices[0]??0;$('scrub').max=indices.at(-1)??0;
  const day=Number($('scrub').value),values=groups.map(g=>estimate(day,g));
  const format=n=>n.toLocaleString(lang==='sv'?'sv-SE':'en-GB',{maximumFractionDigits:1,minimumFractionDigits:1});
- $('readout').innerHTML=`<div>${dates[day]}</div>`+groups.map((g,i)=>`<div class="block-readout ${i?'dashed':''}" style="--block:${colors[i]}"><strong><span class="swatch"></span>${t('Block','Block')} ${i?'B':'A'} · ${g.join(' + ')||t('No parties','Inga partier')} · ${i?t('dashed','streckad'):t('solid','heldragen')}</strong>${values[i]?`${format(values[i].mean)}% · ${t('likely range','troligt intervall')} ${format(values[i].low)}–${format(values[i].high)}%`:g.length?t('Estimate unavailable','Skattning saknas'):t('Assign a party to compare','Tilldela ett parti för att jämföra')}</div>`).join('');
+ $('readout').innerHTML=`<div>${dates[day]}</div>`+groups.map((g,i)=>`<div class="block-readout ${i?'dashed':''}" style="--block:${colors[i]}"><strong><span class="swatch"></span>${t('Coalition','Koalition')} ${i?'B':'A'} · ${g.join(' + ')||t('No parties','Inga partier')} · ${i?t('dashed','streckad'):t('solid','heldragen')}</strong>${values[i]?`${format(values[i].mean)}% · ${t('likely range','troligt intervall')} ${format(values[i].low)}–${format(values[i].high)}%`:g.length?t('Estimate unavailable','Skattning saknas'):t('Assign a party to compare','Tilldela ett parti för att jämföra')}</div>`).join('');
  $('scrubLabel').textContent=t('Explore date','Utforska datum');$('scrub').setAttribute('aria-valuetext',$('readout').textContent);
  const series=groups.map(g=>indices.map(i=>({i,v:estimate(i,g)})));
  const points=series.flat();
@@ -117,17 +133,49 @@ function render(){
  $('chart').innerHTML=`<title id="chartTitle">${t('Fictional support and uncertainty for two blocks','Påhittat stöd och osäkerhet för två block')}</title>`+[0,top].map(n=>`<text x="3" y="${y(n)+5}" fill="currentColor">${n}%</text><line x1="45" x2="675" y1="${y(n)}" y2="${y(n)}" stroke="#b8c0c2"/>`).join('')+paths.join('')+`<line x1="${x(day)}" x2="${x(day)}" y1="25" y2="220" stroke="#596571" stroke-dasharray="4 4"/><text x="45" y="250">${from}</text><text x="675" y="250" text-anchor="end">${to}</text>`;
  $('preset').value=groups[0].join(',')==='S,V,C,MP'&&groups[1].join(',')==='M,SD,KD,L'?'initial':'custom';
  $('variantName').textContent=variant+' · '+(variant==='A'?t('Stacked','Staplad'):t('Compact editor','Kompakt'));
- $('state').textContent=JSON.stringify({variant,lang,assignment,from,to,date:dates[day],publication:'fictional-latest',colorReferenceDate:dates.at(-1),colors,values},null,2);
+ $('state').textContent=JSON.stringify({variant,lang,assignment,picked,from,to,date:dates[day],publication:'fictional-latest',colorReferenceDate:dates.at(-1),colors,values},null,2);
 }
-$('parties').onchange=e=>{assign(e.target.dataset.party,e.target.value);render();};
-$('clear').onclick=()=>{keys.forEach(k=>assign(k,'none'));render();};
-$('preset').onchange=e=>{if(e.target.value==='custom')return;keys.forEach(k=>assign(k,['S','V','C','MP'].includes(k)?'a':'b'));render();};
+let drag=null,suppressClick=false;
+function finishDrag(){
+ if(drag){drag.ghost?.remove();drag.tile.classList.remove('drag-source');}
+ document.querySelectorAll('.zone.over').forEach(z=>z.classList.remove('over'));drag=null;
+}
+$('parties').onpointerdown=e=>{
+ const tile=e.target.closest('[data-party]');if(!tile||e.button!==0||!e.isPrimary)return;
+ drag={key:tile.dataset.party,tile,id:e.pointerId,x:e.clientX,y:e.clientY,ghost:null};
+ tile.setPointerCapture(e.pointerId);
+};
+$('parties').onpointermove=e=>{
+ if(!drag||drag.id!==e.pointerId)return;
+ if(!drag.ghost&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>7){
+  drag.ghost=drag.tile.cloneNode(true);drag.ghost.classList.add('ghost');drag.ghost.removeAttribute('data-party');drag.ghost.setAttribute('aria-hidden','true');drag.ghost.tabIndex=-1;document.body.append(drag.ghost);drag.tile.classList.add('drag-source');
+ }
+ if(!drag.ghost)return;
+ drag.ghost.style.left=e.clientX+'px';drag.ghost.style.top=e.clientY+'px';
+ const zone=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-zone]');
+ document.querySelectorAll('[data-zone]').forEach(z=>z.classList.toggle('over',z===zone));
+};
+$('parties').onpointerup=e=>{
+ if(!drag||drag.id!==e.pointerId)return;
+ const {key,ghost}=drag,zone=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-zone]')?.dataset.zone;
+ finishDrag();
+ if(ghost){suppressClick=true;setTimeout(()=>suppressClick=false,0);if(zone)moveParty(key,zone);else $('move-status').textContent=t('Move cancelled','Flytten avbröts');}
+};
+$('parties').onpointercancel=()=>{finishDrag();$('move-status').textContent=t('Move cancelled','Flytten avbröts');};
+$('parties').onclick=e=>{
+ if(suppressClick)return;
+ const tile=e.target.closest('[data-party]'),destination=e.target.closest('[data-move]');
+ if(tile){picked=picked===tile.dataset.party?null:tile.dataset.party;render();$('move-status').textContent=picked?picked+' · '+t('Choose a destination','Välj ett mål'):t('Selection cancelled','Valet avbröts');}
+ if(destination&&picked)moveParty(picked,destination.dataset.move);
+};
+$('clear').onclick=()=>{$('move-status').textContent=t('All parties unassigned','Alla partier utanför');picked=null;keys.forEach(k=>assign(k,'none'));render();};
+$('preset').onchange=e=>{if(e.target.value==='custom')return;$('move-status').textContent=t('Preset restored','Förval återställt');picked=null;keys.forEach(k=>assign(k,['S','V','C','MP'].includes(k)?'a':'b'));render();};
 $('from').onchange=$('to').onchange=$('scrub').oninput=render;
 $('language').onchange=e=>{lang=e.target.value;render();};
 $('share').onclick=()=> $('share').select();
 function cycle(step){variant=variant==='A'?'C':'A';render();}
 $('previous').onclick=()=>cycle(-1);$('next').onclick=()=>cycle(1);
-document.onkeydown=e=>{if(e.target.closest('input,select,textarea,button,[contenteditable]'))return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();cycle(e.key==='ArrowRight'?1:-1);}};
+document.onkeydown=e=>{if(e.key==='Escape'){finishDrag();picked=null;render();$('move-status').textContent=t('Move cancelled','Flytten avbröts');return;}if(e.target.closest('input,select,textarea,button,[contenteditable]'))return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();cycle(e.key==='ArrowRight'?1:-1);}};
 render();
 </script>
 </html>
