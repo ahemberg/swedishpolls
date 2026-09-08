@@ -101,5 +101,5 @@ in the packaged application. No test fetches the live polling source.
 ./mvnw -Dtest=PollCsvTest -Dit.test=SnapshotIngestIT verify
 ```
 
-Election references, FI support evidence and the public API contract remain the
-later checkpoints of #17.
+[Election references](election-references.md) are stored separately by checkpoint 2.
+FI support evidence and the public API contract remain later checkpoints of #17.
