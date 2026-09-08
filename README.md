@@ -2,7 +2,9 @@
 
 Build foundation for [issue #16](https://github.com/ahemberg/swedishpolls/issues/16).
 Spring serves a bundled React page showing that estimates are not yet available.
-No polling data, estimator or publication is populated by this build.
+The snapshot worker captures polling data at startup and every 30 minutes.
+No estimator or publication is populated. See [snapshot ingest](docs/ingestion.md)
+for archival storage, eligibility rules and checks.
 
 ## Build and run
 

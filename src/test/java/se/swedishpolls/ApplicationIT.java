@@ -23,7 +23,7 @@ class ApplicationIT {
         var log = Path.of("target", "application-integration.log").toFile();
         var process = new ProcessBuilder(
                 Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-                "-jar", "target/swedishpolls-0.1.0.jar", "--server.port=" + port)
+                "-jar", "target/swedishpolls-0.1.0.jar", "--server.port=" + port, "--polls.ingest.enabled=false")
                 .redirectErrorStream(true).redirectOutput(log).start();
         try (var http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).build()) {
             var root = URI.create("http://127.0.0.1:" + port);
