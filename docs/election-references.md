@@ -78,3 +78,16 @@ constituency exception. The national approximation omits constituency rules,
 including the return of excess fixed seats introduced in 2018. Stored official
 seats are actual outcomes, not outputs of this approximation. Allocation logic
 and public endpoints belong to later implementation tickets.
+
+## Verification
+
+`ElectionReferenceIT` upgrades an isolated PostgreSQL schema from checkpoint 1,
+checks reference counts, denominators, vote precision, FI separation, official
+seats and election-era rules, and verifies migration restart and empty poll tables.
+It uses fixed expectations from the official sources without network requests.
+
+```sh
+# With DATABASE_URL, DATABASE_USER and DATABASE_PASSWORD for PostgreSQL 18:
+./mvnw test-compile failsafe:integration-test failsafe:verify -Dit.test=ElectionReferenceIT
+./mvnw --batch-mode --no-transfer-progress clean verify
+```
