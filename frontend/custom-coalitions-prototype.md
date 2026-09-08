@@ -24,3 +24,9 @@ Owner-approved pivot: two disjoint blocks, parties may be unassigned, moving a p
 The runnable check covers ownership, moves, unassignment, URL restoration, date validation, empty states, joint sums, missing values, stable colors and similar-color handling. Chrome checks exercised mouse dragging among all three destinations, invalid-drop cancellation, click and Enter-based assignment, mobile touch dragging, stable colors and URL reload. Desktop and 390px screenshots were inspected. This does not constitute a full accessibility audit.
 
 Pending: owner review of the drag controls and blue-biased colors, initial/reset behavior, and the production data/API contract. Do not merge the prototype into main.
+
+## Live support semicircle
+
+A continuous semicircle sits beside the coalition editor on desktop and above it on mobile. It updates after completed assignments, showing latest-date combined voting intention for A and B. Gray accounts for unassigned parties plus OTHER, with separate numeric values below. It is not a seat hemicycle and does not renormalize A and B to 100%. The summary remains sticky within the editor; the historical chart stays below. Review this placement and mobile behavior with the owner.
+
+Existing checks and Chrome drag/click/keyboard/touch/reload checks pass after the addition.
