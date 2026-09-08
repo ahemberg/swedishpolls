@@ -177,4 +177,24 @@ class SnapshotIngestIT {
             if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) process.destroyForcibly().waitFor();
         }
     }
+    @Test
+    void archivesThePinnedAuditIncludingExcludedRowsAndExactAssessments() throws Exception {
+        try (var input = getClass().getResourceAsStream("/polls/audit.csv")) { body = input.readAllBytes(); }
+        var expected = PollCsv.parse(body);
+        assertEquals(SnapshotIngest.Result.CHANGED, ingest.check());
+        var snapshot = ingest.activeSnapshot().orElseThrow();
+        assertEquals("27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608", snapshot.sha256());
+        assertArrayEquals(body, snapshot.rawCsv());
+        assertEquals(expected, newIngest().polls(snapshot.id()));
+        assertEquals(SnapshotIngest.Result.UNCHANGED, newIngest().check());
+        assertEquals(snapshot.id(), newIngest().activeSnapshot().orElseThrow().id());
+    }
+    @Test
+    void oversizedDownloadsAreStoppedByTheHttpClientAndRetainTheArchive() {
+        ingest.check();
+        var first = ingest.activeSnapshot().orElseThrow();
+        body = new byte[16 * 1024 * 1024 + 1];
+        assertThrows(IllegalStateException.class, ingest::check);
+        assertEquals(first.id(), ingest.activeSnapshot().orElseThrow().id());
+    }
 }

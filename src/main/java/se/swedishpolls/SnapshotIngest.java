@@ -69,7 +69,6 @@ public class SnapshotIngest {
             if (response.statusCode() != 200 || response.headers().firstValue("Content-Range").isPresent())
                 throw new IllegalStateException("Expected a complete source response, got HTTP " + response.statusCode());
             var bytes = response.body();
-            if (bytes.length > 16 * 1024 * 1024) throw new IllegalArgumentException("Source exceeds 16 MiB");
             var hash = sha256(bytes);
             var existing = db.sql("SELECT id FROM poll_snapshot WHERE source_url = ? AND sha256 = ?")
                     .params(sourceUrl, hash).query(Long.class).optional();
@@ -113,7 +112,8 @@ public class SnapshotIngest {
 
     private static HttpResponse<byte[]> fetch(HttpRequest request) {
         try (var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()) {
-            return client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            return client.send(request, info -> HttpResponse.BodySubscribers.limiting(
+                    HttpResponse.BodySubscribers.ofByteArray(), 16 * 1024 * 1024));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Source fetch interrupted", e);

@@ -9,7 +9,7 @@ Spring checks the approved `MansMeg/SwedishPolls/master/Data/Polls.csv` at start
 and every 30 minutes. `polls.source-url` overrides the URL for integration tests;
 `polls.ingest.enabled=false` disables the worker. A PostgreSQL transaction advisory
 lock allows one worker at a time. Fetches have a 10-second connection timeout and
-a 30-second request timeout. Errors are logged and the next scheduled check retries.
+a 30-second request timeout. The HTTP body subscriber stops downloads above 16 MiB. Errors are logged and the next scheduled check retries.
 
 ETag and Last-Modified validators survive restarts. A 304 updates the successful
 check time. A 200 with identical SHA-256 bytes updates validators without parsing
