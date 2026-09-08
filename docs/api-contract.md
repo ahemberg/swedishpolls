@@ -7,8 +7,9 @@ Nothing here is served yet: the checkpoint freezes the contract, and no endpoint
 publication or estimate exists in this repository.
 
 [`api/v1/contract.json`](../src/main/resources/api/v1/contract.json) is the manifest.
-Each surface names its path, media type, query parameters, cache class, error codes
-and one example payload under `api/v1/examples/`. The examples show the frozen shape
+Each surface names its path, media type, query parameters, paging, cache class,
+error codes and one example payload under `api/v1/examples/`. Every surface names
+the language of the representation it returns, so `sv` and `en` validate separately. The examples show the frozen shape
 with illustrative numbers; only the poll rows and election references are real data.
 
 ## Surfaces
@@ -32,7 +33,9 @@ Errors have their own examples in
 
 The publication response carries the publication id, model run, source snapshot,
 asset links and the three distinct times: last fieldwork date, source-check time
-and publication time. `stale` marks a publication kept live after a failed update.
+and publication time. `stale` marks a publication kept live after a failed update. Its asset links are
+versioned and immutable: a renderer change creates a new asset version and never
+overwrites published bytes.
 
 Every other response repeats `publication` as the publication id, run id and
 snapshot id. A page resolves the publication once and passes it back through the
@@ -61,12 +64,14 @@ inclusive, `step` is bounded to 1, 3 or 7, sampling retains the last requested
 supported date, and no step refits the model. `boundaries` marks each membership
 boundary so a break is never rendered as voter movement. `change30d` stays inside
 one publication and returns `available: false` with a reason when its comparison
-date is unsupported.
+date lies outside supported history, outside the supported fit, or on the other
+side of a coverage boundary.
 
 ## Polls and the CSV download
 
-The poll table and the CSV download declare identical filters in the manifest, and
-the download applies them without paging. Both preserve source precision exactly as
+The poll table and the CSV download declare identical filters in the manifest. Only
+the table pages, with `page` and `pageSize`; the download applies the same filters
+to every matching row. Both preserve source precision exactly as
 archived: `26` stays `26`, a missing FI share is empty in CSV and null in JSON, and
 neither is filled with zero. `other` is the eight-party remainder, which already
 contains FI. Excluded rows appear only with `includeExcluded=true` and carry their
@@ -76,7 +81,8 @@ exclusion reasons.
 
 Seat responses keep the integer point allocation separate from posterior mean seats
 and intervals, and carry per-party threshold probabilities from the model rather
-than from rounded seats. OTHER is excluded from the allocation. The allocation rule
+than from rounded seats. Probabilities stay unrounded, and a display formats them
+as whole percent using `<1%` and `>99%` rather than 0% and 100%. OTHER is excluded from the allocation. The allocation rule
 names the election year being approximated, its first divisor, the inclusive 4%
 threshold, the documented tie order and the omitted constituency exceptions.
 
@@ -90,15 +96,15 @@ separate as [election references](election-references.md) stores them.
 
 Current responses cache for at most 300 seconds with content-based ETags, so query,
 schema and translation differences validate separately. Permanent publication links
-and versioned assets are immutable and cache for a year. Unknown versions, routes
-and publications return 404, invalid filters return 400 with the offending
+and versioned assets are immutable and cache for a year. Unknown versions and routes return 404, an unknown pinned or permanent publication
+returns 404 on every surface rather than falling back, invalid filters return 400 with the offending
 parameters, and a request needing a publication before the first one exists returns
 503 `estimates_unavailable` with no estimate fields.
 
 ## Verification
 
 `ApiContractTest` checks the manifest, every example and the shared rules: surface
-coverage, pinning parameters, error codes, publication and run identity on every
+coverage, pinning and language parameters, paging, error codes, publication and run identity on every
 dependent response, coverage periods and null unsupported values, columnar history
 with inclusive ranges and bounded sampling, the ten coalition memberships, point
 seats separate from posterior means, and this document naming every frozen path.

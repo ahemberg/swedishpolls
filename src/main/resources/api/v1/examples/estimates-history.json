@@ -1,20 +1,80 @@
 {
-  "publication": {"publicationId": "pub_20260908T051233Z", "runId": "run_000412", "snapshotId": 412},
+  "publication": {
+    "publicationId": "pub_20260908T051233Z",
+    "runId": "run_000412",
+    "snapshotId": 412
+  },
   "intervalLevel": 0.95,
-  "range": {"from": "2010-01-01", "to": "2010-01-10", "step": 3, "inclusive": true, "requestedTo": "2010-01-10"},
+  "range": {
+    "from": "2010-01-01",
+    "to": "2010-01-10",
+    "step": 3,
+    "inclusive": true,
+    "requestedTo": "2010-01-10"
+  },
   "dates": ["2010-01-01", "2010-01-04", "2010-01-07", "2010-01-10"],
   "coveragePeriodByDate": ["eight_party_2010", "eight_party_2010", "eight_party_2010", "eight_party_2010"],
   "series": [
-    {"component": "S", "mean": [34.1, 34.0, 33.8, 33.7], "lower": [31.9, 31.9, 31.8, 31.8], "upper": [36.3, 36.1, 35.8, 35.6]},
-    {"component": "M", "mean": [28.9, 29.0, 29.2, 29.3], "lower": [26.8, 26.9, 27.2, 27.4], "upper": [31.0, 31.1, 31.2, 31.2]},
-    {"component": "SD", "mean": [4.4, 4.4, 4.5, 4.5], "lower": [3.4, 3.4, 3.5, 3.6], "upper": [5.4, 5.4, 5.5, 5.4]},
-    {"component": "V", "mean": [5.7, 5.7, 5.6, 5.6], "lower": [4.6, 4.6, 4.6, 4.6], "upper": [6.8, 6.8, 6.6, 6.6]},
-    {"component": "C", "mean": [5.1, 5.1, 5.2, 5.2], "lower": [4.1, 4.1, 4.2, 4.3], "upper": [6.1, 6.1, 6.2, 6.1]},
-    {"component": "KD", "mean": [4.5, 4.5, 4.5, 4.6], "lower": [3.5, 3.5, 3.6, 3.7], "upper": [5.5, 5.5, 5.4, 5.5]},
-    {"component": "L", "mean": [6.7, 6.7, 6.6, 6.6], "lower": [5.6, 5.6, 5.6, 5.6], "upper": [7.8, 7.8, 7.6, 7.6]},
-    {"component": "MP", "mean": [9.1, 9.1, 9.0, 9.0], "lower": [7.8, 7.8, 7.8, 7.8], "upper": [10.4, 10.4, 10.2, 10.2]},
-    {"component": "OTHER", "mean": [1.5, 1.5, 1.6, 1.5], "lower": [1.0, 1.0, 1.1, 1.0], "upper": [2.0, 2.0, 2.1, 2.0]},
-    {"component": "FI", "mean": [null, null, null, null], "lower": [null, null, null, null], "upper": [null, null, null, null]}
+    {
+      "component": "S",
+      "mean": [34.1, 34.0, 33.8, 33.7],
+      "lower": [31.9, 31.9, 31.8, 31.8],
+      "upper": [36.3, 36.1, 35.8, 35.6]
+    },
+    {
+      "component": "M",
+      "mean": [28.9, 29.0, 29.2, 29.3],
+      "lower": [26.8, 26.9, 27.2, 27.4],
+      "upper": [31.0, 31.1, 31.2, 31.2]
+    },
+    {
+      "component": "SD",
+      "mean": [4.4, 4.4, 4.5, 4.5],
+      "lower": [3.4, 3.4, 3.5, 3.6],
+      "upper": [5.4, 5.4, 5.5, 5.4]
+    },
+    {
+      "component": "V",
+      "mean": [5.7, 5.7, 5.6, 5.6],
+      "lower": [4.6, 4.6, 4.6, 4.6],
+      "upper": [6.8, 6.8, 6.6, 6.6]
+    },
+    {
+      "component": "C",
+      "mean": [5.1, 5.1, 5.2, 5.2],
+      "lower": [4.1, 4.1, 4.2, 4.3],
+      "upper": [6.1, 6.1, 6.2, 6.1]
+    },
+    {
+      "component": "KD",
+      "mean": [4.5, 4.5, 4.5, 4.6],
+      "lower": [3.5, 3.5, 3.6, 3.7],
+      "upper": [5.5, 5.5, 5.4, 5.5]
+    },
+    {
+      "component": "L",
+      "mean": [6.7, 6.7, 6.6, 6.6],
+      "lower": [5.6, 5.6, 5.6, 5.6],
+      "upper": [7.8, 7.8, 7.6, 7.6]
+    },
+    {
+      "component": "MP",
+      "mean": [9.1, 9.1, 9.0, 9.0],
+      "lower": [7.8, 7.8, 7.8, 7.8],
+      "upper": [10.4, 10.4, 10.2, 10.2]
+    },
+    {
+      "component": "OTHER",
+      "mean": [1.5, 1.5, 1.6, 1.5],
+      "lower": [1.0, 1.0, 1.1, 1.0],
+      "upper": [2.0, 2.0, 2.1, 2.0]
+    },
+    {
+      "component": "FI",
+      "mean": [null, null, null, null],
+      "lower": [null, null, null, null],
+      "upper": [null, null, null, null]
+    }
   ],
   "boundaries": [
     {

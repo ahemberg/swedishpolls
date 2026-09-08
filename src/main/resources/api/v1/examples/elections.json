@@ -1,5 +1,9 @@
 {
-  "publication": {"publicationId": "pub_20260908T051233Z", "runId": "run_000412", "snapshotId": 412},
+  "publication": {
+    "publicationId": "pub_20260908T051233Z",
+    "runId": "run_000412",
+    "snapshotId": 412
+  },
   "note": "Official outcomes are display references, never model observations. Shares derive from unrounded vote counts.",
   "elections": [
     {
@@ -15,16 +19,46 @@
         "note": "An election reference uses the membership of the estimate it is compared with."
       },
       "results": {
-        "S": {"votes": 1964474, "officialSeats": 107},
-        "M": {"votes": 1237428, "officialSeats": 68},
-        "SD": {"votes": 1330325, "officialSeats": 73},
-        "V": {"votes": 437050, "officialSeats": 24},
-        "C": {"votes": 434945, "officialSeats": 24},
-        "KD": {"votes": 345712, "officialSeats": 19},
-        "L": {"votes": 298542, "officialSeats": 16},
-        "MP": {"votes": 329242, "officialSeats": 18},
-        "FI": {"votes": 3157, "officialSeats": 0},
-        "RESIDUAL": {"votes": 97095, "officialSeats": 0}
+        "S": {
+          "votes": 1964474,
+          "officialSeats": 107
+        },
+        "M": {
+          "votes": 1237428,
+          "officialSeats": 68
+        },
+        "SD": {
+          "votes": 1330325,
+          "officialSeats": 73
+        },
+        "V": {
+          "votes": 437050,
+          "officialSeats": 24
+        },
+        "C": {
+          "votes": 434945,
+          "officialSeats": 24
+        },
+        "KD": {
+          "votes": 345712,
+          "officialSeats": 19
+        },
+        "L": {
+          "votes": 298542,
+          "officialSeats": 16
+        },
+        "MP": {
+          "votes": 329242,
+          "officialSeats": 18
+        },
+        "FI": {
+          "votes": 3157,
+          "officialSeats": 0
+        },
+        "RESIDUAL": {
+          "votes": 97095,
+          "officialSeats": 0
+        }
       }
     }
   ]

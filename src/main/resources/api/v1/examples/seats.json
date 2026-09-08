@@ -1,6 +1,10 @@
 {
-  "publication": {"publicationId": "pub_20260908T051233Z", "runId": "run_000412", "snapshotId": 412},
-  "asOf": "2026-09-05",
+  "publication": {
+    "publicationId": "pub_20260908T051233Z",
+    "runId": "run_000412",
+    "snapshotId": 412
+  },
+  "lastFieldworkDate": "2026-09-05",
   "totalSeats": 349,
   "intervalLevel": 0.95,
   "note": "A national seat approximation from national shares. It omits constituency rules, including the return of excess fixed seats, and is not an official allocation.",
@@ -18,17 +22,70 @@
     "sourceUrl": "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
   },
   "parties": [
-    {"component": "S", "pointSeats": 96, "meanSeats": 95.7, "seatInterval": [89, 102], "thresholdProbability": 1.0},
-    {"component": "M", "pointSeats": 64, "meanSeats": 63.9, "seatInterval": [58, 70], "thresholdProbability": 1.0},
-    {"component": "SD", "pointSeats": 70, "meanSeats": 70.2, "seatInterval": [64, 76], "thresholdProbability": 1.0},
-    {"component": "V", "pointSeats": 28, "meanSeats": 27.6, "seatInterval": [24, 32], "thresholdProbability": 1.0},
-    {"component": "C", "pointSeats": 27, "meanSeats": 27.3, "seatInterval": [23, 31], "thresholdProbability": 1.0},
-    {"component": "KD", "pointSeats": 21, "meanSeats": 21.4, "seatInterval": [17, 25], "thresholdProbability": 0.98},
-    {"component": "L", "pointSeats": 15, "meanSeats": 15.1, "seatInterval": [0, 19], "thresholdProbability": 0.62},
-    {"component": "MP", "pointSeats": 28, "meanSeats": 27.8, "seatInterval": [24, 32], "thresholdProbability": 1.0}
+    {
+      "component": "S",
+      "pointSeats": 96,
+      "meanSeats": 95.7,
+      "seatInterval": [89, 102],
+      "thresholdProbability": 0.999
+    },
+    {
+      "component": "M",
+      "pointSeats": 64,
+      "meanSeats": 63.9,
+      "seatInterval": [58, 70],
+      "thresholdProbability": 0.999
+    },
+    {
+      "component": "SD",
+      "pointSeats": 70,
+      "meanSeats": 70.2,
+      "seatInterval": [64, 76],
+      "thresholdProbability": 0.999
+    },
+    {
+      "component": "V",
+      "pointSeats": 28,
+      "meanSeats": 27.6,
+      "seatInterval": [24, 32],
+      "thresholdProbability": 0.997
+    },
+    {
+      "component": "C",
+      "pointSeats": 27,
+      "meanSeats": 27.3,
+      "seatInterval": [23, 31],
+      "thresholdProbability": 0.996
+    },
+    {
+      "component": "KD",
+      "pointSeats": 21,
+      "meanSeats": 21.4,
+      "seatInterval": [17, 25],
+      "thresholdProbability": 0.981
+    },
+    {
+      "component": "L",
+      "pointSeats": 15,
+      "meanSeats": 15.1,
+      "seatInterval": [0, 19],
+      "thresholdProbability": 0.62
+    },
+    {
+      "component": "MP",
+      "pointSeats": 28,
+      "meanSeats": 27.8,
+      "seatInterval": [24, 32],
+      "thresholdProbability": 0.997
+    }
   ],
   "unavailable": {
-    "FI": {"pointSeats": null, "meanSeats": null, "thresholdProbability": null, "reason": "no_validated_coverage_period"}
+    "FI": {
+      "pointSeats": null,
+      "meanSeats": null,
+      "thresholdProbability": null,
+      "reason": "no_validated_coverage_period"
+    }
   },
   "excludedFromAllocation": ["OTHER"]
 }

@@ -1,28 +1,24 @@
 package se.swedishpolls;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.Array;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.StreamSupport;
+import java.util.stream.Collectors;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /** The frozen examples must describe the stored coverage periods, election references and allocation rules. */
 class ApiContractIT {
     private static JsonNode read(String name) throws IOException {
-        try (var input = ApiContractIT.class.getResourceAsStream("/api/v1/examples/" + name)) {
-            assertNotNull(input, name);
-            return JsonMapper.builder().build().readTree(input);
-        }
+        return ApiContractTest.read("examples/" + name);
     }
 
     @Test
@@ -65,27 +61,27 @@ class ApiContractIT {
             }
             assertEquals(db.sql("SELECT component, votes FROM election_party_reference WHERE election_date = ?")
                     .param(date).query().listOfRows().stream()
-                    .collect(java.util.stream.Collectors.toMap(row -> (String) row.get("component"),
+                    .collect(Collectors.toMap(row -> (String) row.get("component"),
                             row -> ((Number) row.get("votes")).longValue())), votes);
             assertEquals(db.sql("SELECT component, official_seats FROM election_party_reference WHERE election_date = ?")
                     .param(date).query().listOfRows().stream()
-                    .collect(java.util.stream.Collectors.toMap(row -> (String) row.get("component"),
+                    .collect(Collectors.toMap(row -> (String) row.get("component"),
                             row -> (Integer) row.get("official_seats"))), seats);
 
             var rule = read("seats.json").get("allocationRule");
             var storedRule = db.sql("SELECT * FROM national_allocation_rule WHERE election_year = ?")
                     .param(rule.get("electionYear").asInt()).query().singleRow();
             assertEquals(((Number) storedRule.get("seats")).intValue(), rule.get("seats").asInt());
-            assertEquals(0, ((java.math.BigDecimal) storedRule.get("first_divisor")).compareTo(
-                    java.math.BigDecimal.valueOf(rule.get("firstDivisor").asDouble())));
-            assertEquals(0, ((java.math.BigDecimal) storedRule.get("national_threshold_percent")).compareTo(
-                    java.math.BigDecimal.valueOf(rule.get("thresholdPercent").asDouble())));
+            assertEquals(0, ((BigDecimal) storedRule.get("first_divisor")).compareTo(
+                    BigDecimal.valueOf(rule.get("firstDivisor").asDouble())));
+            assertEquals(0, ((BigDecimal) storedRule.get("national_threshold_percent")).compareTo(
+                    BigDecimal.valueOf(rule.get("thresholdPercent").asDouble())));
             assertEquals(storedRule.get("threshold_inclusive"), rule.get("thresholdInclusive").asBoolean());
             assertEquals(storedRule.get("other_receives_seats"), rule.get("otherReceivesSeats").asBoolean());
             assertEquals(storedRule.get("constituency_exceptions_included"), rule.get("constituencyExceptionsIncluded").asBoolean());
             assertEquals(storedRule.get("subsequent_divisor_formula"), rule.get("subsequentDivisorFormula").asString());
             assertEquals(storedRule.get("official_tie_rule"), rule.get("officialTieRule").asString());
-            assertEquals(List.of((String[]) ((java.sql.Array) storedRule.get("tie_order")).getArray()),
+            assertEquals(List.of((String[]) ((Array) storedRule.get("tie_order")).getArray()),
                     texts(rule.get("tieOrder")));
 
             // Only parties of the validated roster can be allocated seats or joined into a preset coalition.
@@ -101,6 +97,6 @@ class ApiContractIT {
     }
 
     private static List<String> texts(JsonNode array) {
-        return StreamSupport.stream(array.spliterator(), false).map(JsonNode::asString).toList();
+        return ApiContractTest.texts(array);
     }
 }

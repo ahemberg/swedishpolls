@@ -25,7 +25,7 @@ class ApiContractTest {
     private static final List<String> ROSTER = List.of("S", "M", "SD", "V", "C", "KD", "L", "MP");
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
-    private static JsonNode read(String name) throws IOException {
+    static JsonNode read(String name) throws IOException {
         try (var input = ApiContractTest.class.getResourceAsStream("/api/v1/" + name)) {
             assertNotNull(input, name + " is missing from the frozen contract");
             return JSON.readTree(input);
@@ -39,7 +39,7 @@ class ApiContractTest {
         }
     }
 
-    private static List<String> texts(JsonNode array) {
+    static List<String> texts(JsonNode array) {
         return StreamSupport.stream(array.spliterator(), false).map(JsonNode::asString).toList();
     }
 
@@ -60,10 +60,18 @@ class ApiContractTest {
             assertTrue(surface.get("path").asString().startsWith("/api/v1"), id + " must live under the versioned base path");
             assertTrue(List.of("current", "immutable").contains(surface.get("cache").asString()), id);
             assertFalse(readText(surface.get("example").asString()).isBlank(), id);
+            assertTrue(field(surface.get("query"), "name").contains("language"),
+                    id + " must name the translated representation it returns");
             // A page resolves the publication once and pins every dependent request to it.
-            if (!id.equals("publication"))
+            if (!id.equals("publication")) {
                 assertTrue(field(surface.get("query"), "name").contains("publication"), id);
+                assertTrue(texts(surface.get("errors")).contains("unknown_publication"),
+                        id + " must reject an unknown pinned publication rather than fall back");
+            }
         }
+        // Only the poll table pages; the download applies the same filters to every matching row.
+        assertEquals(List.of("page", "pageSize"), field(surfaces.get(SURFACES.indexOf("polls")).get("paging"), "name"));
+        assertFalse(surfaces.get(SURFACES.indexOf("polls-csv")).get("paging").asBoolean());
 
         var rules = contract.get("rules");
         assertEquals(List.of(1, 3, 7), texts(rules.get("displaySteps")).stream().map(Integer::valueOf).toList());
@@ -72,6 +80,10 @@ class ApiContractTest {
         assertEquals("null", rules.get("missingValue").asString());
         assertTrue(rules.get("immutableMaxAgeSeconds").asInt() >= 31536000);
         assertTrue(rules.get("etag").asString().contains("content"));
+        assertTrue(rules.get("probabilities").asString().contains(">99%"),
+                "Probabilities stay unrounded and are never displayed as 0% or 100%");
+        assertTrue(rules.get("change30d").asString().contains("coverage boundary"));
+        assertTrue(rules.get("assets").asString().contains("immutable"));
 
         var errors = new LinkedHashMap<String, Integer>();
         for (var error : contract.get("errors")) errors.put(error.get("code").asString(), error.get("status").asInt());

@@ -9,10 +9,10 @@
   "modelRun": {
     "runId": "run_000412",
     "codeVersion": "0.1.0+1e574ce",
-    "estimatorVersion": "midpoint-state-space-1",
+    "estimatorVersion": "<estimator version recorded by the run>",
     "seed": 20260908,
-    "runtime": "eclipse-temurin:25.0.4_7-jre-noble",
-    "numericalLibrary": "ejml-simple 0.46.1"
+    "runtime": "<runtime image digest recorded by the run>",
+    "numericalLibrary": "<numerical library and version recorded by the run>"
   },
   "snapshot": {
     "snapshotId": 412,
@@ -21,8 +21,15 @@
     "capturedAt": "2026-09-08T05:00:07Z"
   },
   "assets": {
-    "overview": {"sv": "/assets/pub_20260908T051233Z/overview-sv-1.png", "en": "/assets/pub_20260908T051233Z/overview-en-1.png"},
-    "seats": {"sv": "/assets/pub_20260908T051233Z/seats-sv-1.png", "en": "/assets/pub_20260908T051233Z/seats-en-1.png"}
+    "note": "Versioned immutable links. A renderer change creates a new version and never overwrites published bytes.",
+    "overview": {
+      "sv": "/assets/pub_20260908T051233Z/overview-sv-1.png",
+      "en": "/assets/pub_20260908T051233Z/overview-en-1.png"
+    },
+    "seats": {
+      "sv": "/assets/pub_20260908T051233Z/seats-sv-1.png",
+      "en": "/assets/pub_20260908T051233Z/seats-en-1.png"
+    }
   },
   "history": "corrected"
 }

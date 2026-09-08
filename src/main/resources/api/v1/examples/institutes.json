@@ -1,5 +1,9 @@
 {
-  "publication": {"publicationId": "pub_20260908T051233Z", "runId": "run_000412", "snapshotId": 412},
+  "publication": {
+    "publicationId": "pub_20260908T051233Z",
+    "runId": "run_000412",
+    "snapshotId": 412
+  },
   "electionCycle": "2022-2026",
   "reference": "House effects are deviations from the ensemble of institutes active in the cycle, centered with equal institute weights. They are not deviations from true opinion.",
   "institutes": [
@@ -11,8 +15,22 @@
       "lastCollection": "2026-09-05",
       "methodEras": [],
       "houseEffects": [
-        {"electionCycle": "2022-2026", "component": "S", "mean": 0.4, "lower": 0.0, "upper": 0.8, "shrunk": false},
-        {"electionCycle": "2022-2026", "component": "SD", "mean": -0.3, "lower": -0.7, "upper": 0.1, "shrunk": false}
+        {
+          "electionCycle": "2022-2026",
+          "component": "S",
+          "mean": 0.4,
+          "lower": 0.0,
+          "upper": 0.8,
+          "shrunk": false
+        },
+        {
+          "electionCycle": "2022-2026",
+          "component": "SD",
+          "mean": -0.3,
+          "lower": -0.7,
+          "upper": 0.1,
+          "shrunk": false
+        }
       ]
     },
     {
@@ -44,7 +62,14 @@
         }
       ],
       "houseEffects": [
-        {"electionCycle": "2022-2026", "component": "S", "mean": -0.2, "lower": -0.9, "upper": 0.5, "shrunk": true}
+        {
+          "electionCycle": "2022-2026",
+          "component": "S",
+          "mean": -0.2,
+          "lower": -0.9,
+          "upper": 0.5,
+          "shrunk": true
+        }
       ]
     }
   ]
