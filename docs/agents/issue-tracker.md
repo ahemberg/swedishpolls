@@ -11,6 +11,17 @@ Use the gh CLI from this repository.
 - After a PR merges, remove its topic branch and clean worktree when no unique work remains. Preserve branches holding linked research or prototype evidence.
 - Keep the primary working directory on `main` between tasks. Check for local changes before switching or removing a worktree.
 
+## Checkpoints
+
+A ticket may carry a `## Checkpoints` section grouping its acceptance criteria
+into ordered stops. Implement one checkpoint per session: build only the
+criteria that checkpoint names, push the task branch, comment the progress on
+the issue, and stop. Do not start the next checkpoint in the same session.
+
+Tick an acceptance criterion only when it is fully met. Leave the ticket open
+until its last checkpoint is done. A ticket with no `## Checkpoints` section is
+implemented in one pass.
+
 ## Operations
 
 - Create: gh issue create --title "..." --body-file <file>
