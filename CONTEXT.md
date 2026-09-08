@@ -10,6 +10,18 @@ Combined support for parties not individually represented in a displayed period.
 **Individual party coverage**:
 Representation of a party separately from OTHER, supported by usable polling coverage and sustained material support established in a documented review. Historical coverage can differ from current coverage; a dedicated source column alone does not establish individual coverage.
 
+**Coverage period**:
+A supported historical interval with a fixed roster of individually represented parties and a corresponding definition of OTHER. A boundary between coverage periods changes that grouping, not necessarily voter support.
+
+**Source observation**:
+A party share reported by a poll, preserved with its date and provenance. Its existence alone does not establish a supported individual estimate.
+
+**Modeled component**:
+A party or aggregate whose support is estimated jointly with the other components of the voting-intention composition. It is distinct from an individual source observation or a grouping chosen for display.
+
+**Comparable remainder**:
+Combined support outside the fixed eight parties S, M, SD, V, C, KD, L and MP. It includes FI in every period, unlike OTHER when FI is individually represented.
+
 **Corrected history**:
 A historical estimate using corrected source data available today, rather than a reconstruction of what was known at the time.
 
@@ -40,3 +52,6 @@ An automated check run before each new estimate replaces the published one. On f
 
 **Method era**:
 A documented period of a polling series with a particular measurement method. Method eras are distinct from institute or company names: a brand can span a method break, and a method can continue under a new name.
+
+**Custom coalition**:
+A visitor-selected combination of parties whose estimated voting-intention shares are summed. The grouping does not imply an agreement between the parties to govern together.
