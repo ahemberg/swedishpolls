@@ -22,5 +22,21 @@ Whether a source record can contribute to the voting-intention estimate. An arch
 **Source snapshot**:
 A complete captured version of the polling source that defines which source records belong together. A newer snapshot may correct or remove records without erasing the older version.
 
+**Current-opinion estimate**:
+An estimate of voting intention as of its last fieldwork date. It is not an election forecast.
+_Avoid_: prediction, forecast, projection
+
+**House effect**:
+A polling institute's persistent deviation from the institute-ensemble reference within an election cycle. It is relative to that ensemble, not a deviation from true opinion.
+
+**Overdispersion**:
+Poll-to-poll variation beyond pure sampling variation, treated as inflated observation noise shared across institutes.
+
+**Release gate**:
+A pre-registered validation requirement that must pass before an estimation method may be published. A failed gate blocks release unless waived by a recorded owner decision.
+
+**Publication-time check**:
+An automated check run before each new estimate replaces the published one. On failure the last validated estimate stays published with a staleness notice.
+
 **Method era**:
 A documented period of a polling series with a particular measurement method. Method eras are distinct from institute or company names: a brand can span a method break, and a method can continue under a new name.
