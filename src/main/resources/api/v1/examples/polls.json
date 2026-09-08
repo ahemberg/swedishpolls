@@ -1,0 +1,80 @@
+{
+  "publication": {
+    "publicationId": "pub_20260908T051233Z",
+    "runId": "run_000412",
+    "snapshotId": 412
+  },
+  "filters": {
+    "from": "2016-06-01",
+    "to": "2016-06-30",
+    "institute": ["Skop", "Novus"],
+    "includeExcluded": false
+  },
+  "coveragePeriod": "eight_party_2010",
+  "total": 2,
+  "page": 1,
+  "pageSize": 50,
+  "csv": "/api/v1/polls.csv?publication=pub_20260908T051233Z&from=2016-06-01&to=2016-06-30&institute=Skop,Novus",
+  "polls": [
+    {
+      "pollId": "412:843",
+      "institute": "Skop",
+      "company": "Skop",
+      "methodEra": null,
+      "methodEvidence": null,
+      "surveyType": "voting_intention",
+      "publicationDate": "2016-06-30",
+      "collectionFrom": "2016-06-01",
+      "collectionTo": "2016-06-20",
+      "approximatePeriod": true,
+      "sampleSize": 1021,
+      "denominatorNote": "respondents; effective sample size unknown",
+      "shares": {
+        "S": 29.6,
+        "M": 26.4,
+        "SD": 14.1,
+        "V": 7.2,
+        "C": 7.7,
+        "KD": 2.2,
+        "L": 5.7,
+        "MP": 4.6,
+        "FI": 1.9
+      },
+      "other": 2.5,
+      "uncertain": 7,
+      "coveragePeriod": "eight_party_2010",
+      "eligible": true,
+      "exclusionReasons": []
+    },
+    {
+      "pollId": "412:844",
+      "institute": "Novus",
+      "company": "Novus",
+      "methodEra": null,
+      "methodEvidence": null,
+      "surveyType": "voting_intention",
+      "publicationDate": "2016-06-30",
+      "collectionFrom": "2016-05-30",
+      "collectionTo": "2016-06-26",
+      "approximatePeriod": false,
+      "sampleSize": 4001,
+      "denominatorNote": "respondents; effective sample size unknown",
+      "shares": {
+        "S": 26.2,
+        "M": 26,
+        "SD": 18.2,
+        "V": 7.5,
+        "C": 6.7,
+        "KD": 2.8,
+        "L": 5,
+        "MP": 4.3,
+        "FI": 2.4
+      },
+      "other": 3.3,
+      "uncertain": 5.8,
+      "coveragePeriod": "eight_party_2010",
+      "eligible": true,
+      "exclusionReasons": []
+    }
+  ]
+}

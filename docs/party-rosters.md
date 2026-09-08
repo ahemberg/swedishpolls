@@ -109,5 +109,5 @@ proves the roster and overlap constraints reject invalid rows.
 
 [Snapshot ingest](ingestion.md) archives the source observations these
 compositions read, and [election references](election-references.md) stores the
-official outcomes separately. The public API contract is the last checkpoint
-of #17.
+official outcomes separately. The [frozen v1 API contract](api-contract.md)
+exposes both in checkpoint 4.

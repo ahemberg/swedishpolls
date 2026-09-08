@@ -1,0 +1,98 @@
+{
+  "publication": {
+    "publicationId": "pub_20260908T051233Z",
+    "runId": "run_000412",
+    "snapshotId": 412
+  },
+  "lastFieldworkDate": "2026-09-05",
+  "majoritySeats": 175,
+  "intervalLevel": 0.95,
+  "overviewDefaults": ["tido", "opposition", "left", "s_m"],
+  "note": "A label states membership and implies no agreement to govern together. Probabilities come from the same joint draws as the seat allocation. A coalition needs 175 of the 349 seats; an exact tie between two compared coalitions counts as neither side winning.",
+  "coalitions": [
+    {
+      "id": "left",
+      "parties": ["S", "V", "MP"],
+      "pointSeats": 152,
+      "meanSeats": 151.1,
+      "seatInterval": [140, 162],
+      "majorityProbability": 0.002
+    },
+    {
+      "id": "right",
+      "parties": ["M", "L", "C", "KD"],
+      "pointSeats": 127,
+      "meanSeats": 127.7,
+      "seatInterval": [113, 139],
+      "majorityProbability": 0.001
+    },
+    {
+      "id": "tido",
+      "parties": ["M", "L", "KD", "SD"],
+      "pointSeats": 170,
+      "meanSeats": 170.6,
+      "seatInterval": [157, 183],
+      "majorityProbability": 0.29
+    },
+    {
+      "id": "opposition",
+      "parties": ["S", "C", "V", "MP"],
+      "pointSeats": 179,
+      "meanSeats": 178.4,
+      "seatInterval": [166, 191],
+      "majorityProbability": 0.71
+    },
+    {
+      "id": "s_c_mp",
+      "parties": ["S", "C", "MP"],
+      "pointSeats": 151,
+      "meanSeats": 150.8,
+      "seatInterval": [139, 162],
+      "majorityProbability": 0.002
+    },
+    {
+      "id": "s_m",
+      "parties": ["S", "M"],
+      "pointSeats": 160,
+      "meanSeats": 159.6,
+      "seatInterval": [148, 171],
+      "majorityProbability": 0.012
+    },
+    {
+      "id": "c_l_mp_s",
+      "parties": ["C", "L", "MP", "S"],
+      "pointSeats": 166,
+      "meanSeats": 165.9,
+      "seatInterval": [153, 178],
+      "majorityProbability": 0.061
+    },
+    {
+      "id": "m_kd_sd",
+      "parties": ["M", "KD", "SD"],
+      "pointSeats": 155,
+      "meanSeats": 155.5,
+      "seatInterval": [144, 167],
+      "majorityProbability": 0.004
+    },
+    {
+      "id": "s_sd",
+      "parties": ["S", "SD"],
+      "pointSeats": 166,
+      "meanSeats": 165.9,
+      "seatInterval": [155, 177],
+      "majorityProbability": 0.054
+    },
+    {
+      "id": "m_sd",
+      "parties": ["M", "SD"],
+      "pointSeats": 134,
+      "meanSeats": 134.1,
+      "seatInterval": [123, 145],
+      "majorityProbability": 0.001
+    }
+  ],
+  "comparison": {
+    "pairs": "Every ordered pair of the ten coalitions is available in the full comparison view.",
+    "tie": "neither_side_wins"
+  }
+}

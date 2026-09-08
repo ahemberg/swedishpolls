@@ -1,0 +1,412 @@
+{
+  "version": "v1",
+  "basePath": "/api/v1",
+  "frozenBy": "https://github.com/ahemberg/swedishpolls/issues/17",
+  "decision": "https://github.com/ahemberg/swedishpolls/issues/8#issuecomment-5575724091",
+  "note": "Example payloads show the frozen shape with illustrative numbers. They are not a published estimate; public publication is https://github.com/ahemberg/swedishpolls/issues/21.",
+  "rules": {
+    "dateBounds": "inclusive",
+    "displaySteps": [1, 3, 7],
+    "stepRule": "A bounded positive step samples the supported range and always retains the last requested supported date. Sampling never refits the model.",
+    "missingValue": "null",
+    "missingValueRule": "An unsupported or unreported value is null. It is never zero and never filled.",
+    "currentMaxAgeSeconds": 300,
+    "immutableMaxAgeSeconds": 31536000,
+    "etag": "A content-based ETag covers the response body, so query, schema and translation differences produce different validators.",
+    "pinning": "Every dependent request carries the publication resolved once for the page. A permanent publication link never falls back to the current publication.",
+    "languages": ["sv", "en"],
+    "probabilities": "Probabilities are unrounded. A display formats them as whole percent using <1% and >99% rather than 0% and 100%.",
+    "assets": "Share images and other publication assets are versioned and immutable. Their links come from publication metadata; a renderer change creates a new asset version and never overwrites published bytes.",
+    "change30d": "A 30-day change stays inside one publication. It is unavailable, with a reason, when its comparison date is outside supported history, outside the supported fit, or on the other side of a coverage boundary."
+  },
+  "surfaces": [
+    {
+      "id": "publication",
+      "method": "GET",
+      "path": "/api/v1/publication",
+      "permanentPath": "/api/v1/publications/{publicationId}",
+      "mediaType": "application/json",
+      "cache": "current",
+      "permanentCache": "immutable",
+      "paging": false,
+      "example": "examples/publication.json",
+      "query": [
+        {
+          "name": "language",
+          "type": "enum",
+          "allowed": ["sv", "en"],
+          "default": "sv",
+          "note": "Selects translated labels. It is part of the ETag."
+        }
+      ],
+      "errors": ["unknown_publication", "estimates_unavailable"]
+    },
+    {
+      "id": "estimates-latest",
+      "method": "GET",
+      "path": "/api/v1/estimates/latest",
+      "mediaType": "application/json",
+      "cache": "current",
+      "paging": false,
+      "example": "examples/estimates-latest.json",
+      "query": [
+        {
+          "name": "publication",
+          "type": "publication-id",
+          "required": false,
+          "default": "current"
+        },
+        {
+          "name": "coveragePeriod",
+          "type": "coverage-period-id",
+          "required": false,
+          "default": "the period covering the estimate date"
+        },
+        {
+          "name": "language",
+          "type": "enum",
+          "allowed": ["sv", "en"],
+          "default": "sv",
+          "note": "Selects translated labels. It is part of the ETag."
+        }
+      ],
+      "errors": ["unknown_publication", "invalid_filter", "estimates_unavailable"]
+    },
+    {
+      "id": "estimates-history",
+      "method": "GET",
+      "path": "/api/v1/estimates/history",
+      "mediaType": "application/json",
+      "cache": "current",
+      "paging": false,
+      "example": "examples/estimates-history.json",
+      "query": [
+        {
+          "name": "publication",
+          "type": "publication-id",
+          "required": false,
+          "default": "current"
+        },
+        {
+          "name": "from",
+          "type": "date",
+          "required": false,
+          "bounds": "inclusive"
+        },
+        {
+          "name": "to",
+          "type": "date",
+          "required": false,
+          "bounds": "inclusive"
+        },
+        {
+          "name": "step",
+          "type": "integer",
+          "required": false,
+          "allowed": [1, 3, 7],
+          "default": 1
+        },
+        {
+          "name": "coveragePeriod",
+          "type": "coverage-period-id",
+          "required": false
+        },
+        {
+          "name": "language",
+          "type": "enum",
+          "allowed": ["sv", "en"],
+          "default": "sv",
+          "note": "Selects translated labels. It is part of the ETag."
+        }
+      ],
+      "errors": ["unknown_publication", "invalid_filter", "estimates_unavailable"]
+    },
+    {
+      "id": "polls",
+      "method": "GET",
+      "path": "/api/v1/polls",
+      "mediaType": "application/json",
+      "cache": "current",
+      "paging": [
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "pageSize",
+          "type": "integer",
+          "required": false,
+          "default": 50,
+          "max": 200
+        }
+      ],
+      "example": "examples/polls.json",
+      "query": [
+        {
+          "name": "publication",
+          "type": "publication-id",
+          "required": false,
+          "default": "current"
+        },
+        {
+          "name": "from",
+          "type": "date",
+          "required": false,
+          "bounds": "inclusive"
+        },
+        {
+          "name": "to",
+          "type": "date",
+          "required": false,
+          "bounds": "inclusive"
+        },
+        {
+          "name": "institute",
+          "type": "string-list",
+          "required": false
+        },
+        {
+          "name": "party",
+          "type": "component-list",
+          "required": false
+        },
+        {
+          "name": "coveragePeriod",
+          "type": "coverage-period-id",
+          "required": false
+        },
+        {
+          "name": "includeExcluded",
+          "type": "boolean",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "language",
+          "type": "enum",
+          "allowed": ["sv", "en"],
+          "default": "sv",
+          "note": "Selects translated labels. It is part of the ETag."
+        }
+      ],
+      "errors": ["unknown_publication", "invalid_filter", "estimates_unavailable"]
+    },
+    {
+      "id": "polls-csv",
+      "method": "GET",
+      "path": "/api/v1/polls.csv",
+      "mediaType": "text/csv; charset=utf-8",
+      "cache": "current",
+      "paging": false,
+      "example": "examples/polls.csv",
+      "query": [
+        {
+          "name": "publication",
+          "type": "publication-id",
+          "required": false,
+          "default": "current"
+        },
+        {
+          "name": "from",
+          "type": "date",
+          "required": false,
+          "bounds": "inclusive"
+        },
+        {
+          "name": "to",
+          "type": "date",
+          "required": false,
+          "bounds": "inclusive"
+        },
+        {
+          "name": "institute",
+          "type": "string-list",
+          "required": false
+        },
+        {
+          "name": "party",
+          "type": "component-list",
+          "required": false
+        },
+        {
+          "name": "coveragePeriod",
+          "type": "coverage-period-id",
+          "required": false
+        },
+        {
+          "name": "includeExcluded",
+          "type": "boolean",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "language",
+          "type": "enum",
+          "allowed": ["sv", "en"],
+          "default": "sv",
+          "note": "Selects translated labels. It is part of the ETag."
+        }
+      ],
+      "errors": ["unknown_publication", "invalid_filter", "estimates_unavailable"]
+    },
+    {
+      "id": "institutes",
+      "method": "GET",
+      "path": "/api/v1/institutes",
+      "mediaType": "application/json",
+      "cache": "current",
+      "paging": false,
+      "example": "examples/institutes.json",
+      "query": [
+        {
+          "name": "publication",
+          "type": "publication-id",
+          "required": false,
+          "default": "current"
+        },
+        {
+          "name": "electionCycle",
+          "type": "string",
+          "required": false,
+          "default": "the current cycle"
+        },
+        {
+          "name": "language",
+          "type": "enum",
+          "allowed": ["sv", "en"],
+          "default": "sv",
+          "note": "Selects translated labels. It is part of the ETag."
+        }
+      ],
+      "errors": ["unknown_publication", "invalid_filter", "estimates_unavailable"]
+    },
+    {
+      "id": "elections",
+      "method": "GET",
+      "path": "/api/v1/elections",
+      "mediaType": "application/json",
+      "cache": "current",
+      "paging": false,
+      "example": "examples/elections.json",
+      "query": [
+        {
+          "name": "publication",
+          "type": "publication-id",
+          "required": false,
+          "default": "current"
+        },
+        {
+          "name": "coveragePeriod",
+          "type": "coverage-period-id",
+          "required": false,
+          "note": "Selects the grouping an election reference is compared with."
+        },
+        {
+          "name": "language",
+          "type": "enum",
+          "allowed": ["sv", "en"],
+          "default": "sv",
+          "note": "Selects translated labels. It is part of the ETag."
+        }
+      ],
+      "errors": ["unknown_publication", "invalid_filter", "estimates_unavailable"]
+    },
+    {
+      "id": "seats",
+      "method": "GET",
+      "path": "/api/v1/seats",
+      "mediaType": "application/json",
+      "cache": "current",
+      "paging": false,
+      "example": "examples/seats.json",
+      "query": [
+        {
+          "name": "publication",
+          "type": "publication-id",
+          "required": false,
+          "default": "current"
+        },
+        {
+          "name": "election",
+          "type": "integer",
+          "required": false,
+          "note": "The election year being approximated; it selects the era allocation rule."
+        },
+        {
+          "name": "language",
+          "type": "enum",
+          "allowed": ["sv", "en"],
+          "default": "sv",
+          "note": "Selects translated labels. It is part of the ETag."
+        }
+      ],
+      "errors": ["unknown_publication", "invalid_filter", "estimates_unavailable"]
+    },
+    {
+      "id": "coalitions",
+      "method": "GET",
+      "path": "/api/v1/coalitions",
+      "mediaType": "application/json",
+      "cache": "current",
+      "paging": false,
+      "example": "examples/coalitions.json",
+      "query": [
+        {
+          "name": "publication",
+          "type": "publication-id",
+          "required": false,
+          "default": "current"
+        },
+        {
+          "name": "election",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "name": "coalition",
+          "type": "coalition-id-list",
+          "required": false,
+          "note": "Restricted to the ten approved memberships."
+        },
+        {
+          "name": "language",
+          "type": "enum",
+          "allowed": ["sv", "en"],
+          "default": "sv",
+          "note": "Selects translated labels. It is part of the ETag."
+        }
+      ],
+      "errors": ["unknown_publication", "invalid_filter", "estimates_unavailable"]
+    }
+  ],
+  "errors": [
+    {
+      "code": "unknown_version",
+      "status": 404,
+      "when": "A path outside /api/v1."
+    },
+    {
+      "code": "unknown_route",
+      "status": 404,
+      "when": "An unknown resource inside the version."
+    },
+    {
+      "code": "unknown_publication",
+      "status": 404,
+      "when": "A permanent publication link that does not exist. It never falls back to the current publication."
+    },
+    {
+      "code": "invalid_filter",
+      "status": 400,
+      "when": "An unparseable or out-of-range query value, including an unsupported display step."
+    },
+    {
+      "code": "estimates_unavailable",
+      "status": 503,
+      "when": "A request requiring a publication before the first one exists.",
+      "example": "examples/errors.json"
+    }
+  ]
+}
