@@ -1,0 +1,29 @@
+{
+  "name": "swedishpolls-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.13.1",
+    "npm": "11.8.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "check": "npm run typecheck && npm run lint",
+    "build": "vite build --outDir ../target/frontend",
+    "audit": "fallow audit --base origin/main --dead-code-baseline baselines/dead-code.json --health-baseline baselines/health.json --dupes-baseline baselines/dupes.json --gate all --fail-on-issues --format json"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "fallow": "3.23.0",
+    "typescript": "5.9.3",
+    "vite": "8.2.2"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "rules": {
+    "unresolved-imports": "error",
+    "unlisted-dependencies": "error",
+    "unused-exports": "error"
+  }
+}

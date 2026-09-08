@@ -1,0 +1,247 @@
+{
+  "version": "v1-development-1",
+  "registered_on": "2026-09-08",
+  "seed": 20260908,
+  "development_folds": [
+    {
+      "cutoff": "2014-01-15",
+      "score_through": "2014-02-19"
+    },
+    {
+      "cutoff": "2014-03-16",
+      "score_through": "2014-04-20"
+    },
+    {
+      "cutoff": "2014-05-15",
+      "score_through": "2014-06-19"
+    },
+    {
+      "cutoff": "2014-07-14",
+      "score_through": "2014-08-18"
+    },
+    {
+      "cutoff": "2014-09-12",
+      "score_through": "2014-10-17"
+    },
+    {
+      "cutoff": "2014-11-11",
+      "score_through": "2014-12-16"
+    },
+    {
+      "cutoff": "2015-01-10",
+      "score_through": "2015-02-14"
+    },
+    {
+      "cutoff": "2015-03-11",
+      "score_through": "2015-04-15"
+    },
+    {
+      "cutoff": "2015-05-10",
+      "score_through": "2015-06-14"
+    },
+    {
+      "cutoff": "2015-07-09",
+      "score_through": "2015-08-13"
+    },
+    {
+      "cutoff": "2015-09-07",
+      "score_through": "2015-10-12"
+    },
+    {
+      "cutoff": "2015-11-06",
+      "score_through": "2015-12-11"
+    },
+    {
+      "cutoff": "2016-01-05",
+      "score_through": "2016-02-09"
+    },
+    {
+      "cutoff": "2016-03-05",
+      "score_through": "2016-04-09"
+    },
+    {
+      "cutoff": "2016-05-04",
+      "score_through": "2016-06-08"
+    },
+    {
+      "cutoff": "2016-07-03",
+      "score_through": "2016-08-07"
+    },
+    {
+      "cutoff": "2016-09-01",
+      "score_through": "2016-10-06"
+    },
+    {
+      "cutoff": "2016-10-31",
+      "score_through": "2016-12-05"
+    },
+    {
+      "cutoff": "2016-12-30",
+      "score_through": "2017-02-03"
+    },
+    {
+      "cutoff": "2017-02-28",
+      "score_through": "2017-04-04"
+    },
+    {
+      "cutoff": "2017-04-29",
+      "score_through": "2017-06-03"
+    },
+    {
+      "cutoff": "2017-06-28",
+      "score_through": "2017-08-02"
+    },
+    {
+      "cutoff": "2017-08-27",
+      "score_through": "2017-10-01"
+    },
+    {
+      "cutoff": "2017-10-26",
+      "score_through": "2017-11-30"
+    },
+    {
+      "cutoff": "2017-12-25",
+      "score_through": "2018-01-29"
+    },
+    {
+      "cutoff": "2018-02-23",
+      "score_through": "2018-03-30"
+    },
+    {
+      "cutoff": "2018-04-24",
+      "score_through": "2018-05-29"
+    },
+    {
+      "cutoff": "2018-06-23",
+      "score_through": "2018-07-28"
+    },
+    {
+      "cutoff": "2018-08-22",
+      "score_through": "2018-09-26"
+    },
+    {
+      "cutoff": "2018-10-21",
+      "score_through": "2018-11-25"
+    },
+    {
+      "cutoff": "2018-12-20",
+      "score_through": "2019-01-24"
+    },
+    {
+      "cutoff": "2019-02-18",
+      "score_through": "2019-03-25"
+    },
+    {
+      "cutoff": "2019-04-19",
+      "score_through": "2019-05-24"
+    },
+    {
+      "cutoff": "2019-06-18",
+      "score_through": "2019-07-23"
+    },
+    {
+      "cutoff": "2019-08-17",
+      "score_through": "2019-09-21"
+    },
+    {
+      "cutoff": "2019-10-16",
+      "score_through": "2019-11-20"
+    },
+    {
+      "cutoff": "2019-12-15",
+      "score_through": "2020-01-19"
+    },
+    {
+      "cutoff": "2020-02-13",
+      "score_through": "2020-03-19"
+    },
+    {
+      "cutoff": "2020-04-13",
+      "score_through": "2020-05-18"
+    },
+    {
+      "cutoff": "2020-06-12",
+      "score_through": "2020-07-17"
+    },
+    {
+      "cutoff": "2020-08-11",
+      "score_through": "2020-09-15"
+    },
+    {
+      "cutoff": "2020-10-10",
+      "score_through": "2020-11-14"
+    },
+    {
+      "cutoff": "2020-12-09",
+      "score_through": "2021-01-13"
+    },
+    {
+      "cutoff": "2021-02-07",
+      "score_through": "2021-03-14"
+    },
+    {
+      "cutoff": "2021-04-08",
+      "score_through": "2021-05-13"
+    },
+    {
+      "cutoff": "2021-06-07",
+      "score_through": "2021-07-12"
+    },
+    {
+      "cutoff": "2021-08-06",
+      "score_through": "2021-09-10"
+    },
+    {
+      "cutoff": "2021-10-05",
+      "score_through": "2021-11-09"
+    }
+  ],
+  "score_horizon_days": 35,
+  "paired_hac_lag_folds": 3,
+  "reference_max_paired_se_loss": 1,
+  "predictive_coverage95": [
+    0.9,
+    0.98
+  ],
+  "predictive_coverage50": [
+    0.4,
+    0.6
+  ],
+  "final_draws": 10000,
+  "tolerance_status": "awaiting-development-evidence",
+  "resolved_tolerances": null,
+  "election_audit2022": {
+    "cutoff": "2022-09-10",
+    "election_date": "2022-09-11",
+    "source_commit": "f0390c05854d87bbf21db9d31c6431ffa0f07f7e",
+    "source_sha256": "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+    "row_identity": "one-based CSV physical line; SHA-256 of UTF-8 row excluding newline",
+    "candidate_count": 1192,
+    "candidate_rows_sha256": "b539aef835eb14bd9ef5cc4f79b79f3c25b3d1bd6a8cb3bce5f911ca296a4211",
+    "candidate_selection": "2010-01-01 <= collectPeriodFrom <= collectPeriodTo <= 2022-09-10 AND PublDate not in ['', 'NA'] AND PublDate <= 2022-09-10; compare ISO dates lexically; apply versioned eligibility rules before fitting, retaining exclusions",
+    "outcome": {
+      "source_url": "https://resultat.val.se/val2022/slutlig/RD/rike",
+      "exposed_fixture_commit": "f48ab9ee5181fca889d6e025d20c17d77488713f",
+      "exposed_fixture_path": "docs/research/audit-polls.py",
+      "exposed_fixture_sha256": "a87eaeb31fb9aa4e9e3f2c6826fda694e83152b40f44b1247d218db80df371c8",
+      "shares_percent": {
+        "S": "30.33",
+        "M": "19.10",
+        "SD": "20.54",
+        "V": "6.75",
+        "C": "6.71",
+        "KD": "5.34",
+        "L": "4.61",
+        "MP": "5.08",
+        "OTHER": "1.54"
+      },
+      "precision": "Use the exposed official two-decimal percentage fixture, not recomputed vote-count shares. OTHER is exactly 100 minus the eight displayed percentages in decimal arithmetic. Preserve this rounding in audit reporting."
+    }
+  },
+  "prospective2026": {
+    "cutoff": "2026-09-12",
+    "election_date": "2026-09-13",
+    "status": "registered-before-result",
+    "source_rule": "first complete archived snapshot captured after cutoff, restrict publication and collection end to cutoff; archive bytes and eligibility before reading result"
+  }
+}
