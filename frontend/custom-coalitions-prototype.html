@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Custom coalition prototype</title>
+<!-- Throwaway: three coalition-page layouts, ?variant=A|B|C. Fictional data only.
+     Serve: python3 -m http.server 4173 --directory frontend
+     No production route imports this standalone prototype. -->
+<style>
+:root{font:16px/1.5 system-ui,sans-serif;color:#1b2530;background:#f7f6f2;--line:#d7d8d3;--accent:#23606e;--surface:#fff}
+*{box-sizing:border-box}body{margin:0;padding-bottom:100px}header,main,footer{max-width:1100px;margin:auto;padding:20px}header{display:flex;justify-content:space-between;border-bottom:2px solid}h1,h2{font-family:Georgia,serif;margin:10px 0}h1{font-size:36px}.notice{background:#86332e;color:white;text-align:center;padding:6px}.muted{color:#56616e}button,select,input{font:inherit}button,select{padding:10px;background:var(--surface);color:inherit;border:1px solid #899196;border-radius:4px}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #ae6d00;outline-offset:3px}.workspace{display:grid;gap:24px;margin-top:25px}.editor{padding:20px;background:var(--surface);border:1px solid var(--line)}fieldset{border:0;padding:0;margin:18px 0}.parties{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.parties label{padding:10px;border:1px solid var(--line);cursor:pointer;display:flex;gap:8px;align-items:center}.parties label:has(:checked){background:#e5f0f1;border-color:var(--accent)}input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}input[type=range]{width:100%;accent-color:var(--accent)}.dates{display:flex;gap:12px;flex-wrap:wrap}.dates label{display:grid;font-size:14px}.dates input{max-width:100%;padding:8px}svg{width:100%;display:block}#readout{font-size:23px;min-height:75px}#empty{padding:65px 20px;text-align:center;border:1px dashed #899196}#share{width:100%;padding:10px}details{margin-top:15px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}.switcher{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:#1b2530;color:white;padding:8px 15px;border-radius:40px;white-space:nowrap}.switcher button{background:transparent;color:white;border:0}body[data-variant=B] .workspace{grid-template-columns:310px 1fr}body[data-variant=B] .parties{grid-template-columns:1fr 1fr}body[data-variant=C] .editor{background:transparent;border:0;border-top:2px solid;padding:10px 0}body[data-variant=C] .parties{display:flex;flex-wrap:wrap}body[data-variant=C] .editor legend{position:absolute;clip-path:inset(50%)}body[data-variant=C] .chart{border-top:1px solid var(--line)}footer{font-size:14px;border-top:1px solid var(--line)}@media(max-width:720px){body[data-variant=B] .workspace{grid-template-columns:1fr}.parties{grid-template-columns:repeat(2,1fr)}h1{font-size:29px}header,main,footer{padding:16px}}
+</style>
+<div class="notice">Throwaway prototype · Fictional estimates and intervals</div>
+<header><strong>Svenska opinionsmätningar</strong><label>Language <select id="language"><option value="en">English</option><option value="sv">Svenska</option></select></label></header>
+<main>
+<p class="muted" id="breadcrumb"></p><h1 id="heading"></h1><p id="intro"></p>
+<div class="workspace">
+<section class="editor"><label for="preset" id="presetLabel"></label> <select id="preset"><option value="M,KD,L,SD">M + KD + L + SD</option><option value="S,V,C,MP">S + V + C + MP</option><option value="custom" id="customOption"></option></select>
+<fieldset><legend id="partyLegend"></legend><div class="parties" id="parties"></div></fieldset>
+<button id="clear" type="button"></button>
+</section>
+<section class="chart" aria-labelledby="selection"><h2 id="selection"></h2><div class="dates"><label><span id="fromLabel"></span><input type="date" id="from" min="2024-01-01" max="2026-09-01"></label><label><span id="toLabel"></span><input type="date" id="to" min="2024-01-01" max="2026-09-01"></label></div>
+<p id="rangeError" role="alert"></p><p class="muted" id="publication"></p><div id="empty"></div><div id="plot"><div id="readout" aria-live="polite"></div><svg id="chart" viewBox="0 0 700 260" role="img" aria-labelledby="chartTitle"></svg><label for="scrub" id="scrubLabel"></label><input type="range" id="scrub" min="0" max="32" value="32"><p class="muted" id="gapNote"></p></div>
+</section></div>
+<p><label for="share" id="shareLabel"></label><input id="share" readonly></p>
+<details><summary>Prototype state</summary><pre id="state"></pre></details>
+</main><footer id="method"></footer>
+<nav class="switcher" aria-label="Prototype layouts"><button id="previous" aria-label="Previous layout">←</button><span id="variantName"></span><button id="next" aria-label="Next layout">→</button></nav>
+<script>
+const keys=['S','M','SD','V','C','KD','L','MP'];
+const names=['Socialdemokraterna','Moderaterna','Sverigedemokraterna','Vänsterpartiet','Centerpartiet','Kristdemokraterna','Liberalerna','Miljöpartiet'];
+const $=id=>document.getElementById(id);
+const params=new URLSearchParams(location.search);
+const selected=new Set((params.has('parties')?params.get('parties'):'M,KD,L,SD').split(',').filter(k=>keys.includes(k)));
+let variant=['A','B','C'].includes(params.get('variant'))?params.get('variant'):'A';
+let lang=params.get('lang')==='sv'?'sv':'en';
+const t=(en,sv)=>lang==='sv'?sv:en;
+const dates=Array.from({length:33},(_,i)=>new Date(Date.UTC(2024, i, 1)).toISOString().slice(0,10));
+const base=[32,19,20,8,6,4,3,5];
+// Fictional joint compositions, not fitted estimates. Replace with validated publication outputs in production.
+const draws=dates.map((_,d)=>Array.from({length:101},(_,j)=>{
+ const weights=[...base,3].map((b,k)=>b*Math.exp(.09*Math.sin(d/7+k)+.07*Math.sin(j*1.71+k*2.1)+.02*Math.cos(j*.39+d+k)));
+ const total=weights.reduce((a,b)=>a+b,0);return weights.map(w=>100*w/total);
+}));
+function estimate(d, parties){
+ if(!parties.length||d===15||d===16)return null;
+ const sums=draws[d].map(draw=>parties.reduce((sum,key)=>sum+draw[keys.indexOf(key)],0)).sort((a,b)=>a-b);
+ return {mean:sums.reduce((a,b)=>a+b,0)/sums.length,low:sums[2],high:sums[98]};
+}
+function validDate(value){return dates[0]<=value&&value<=dates.at(-1)&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;}
+$('from').value=validDate(params.get('from')||'')?params.get('from'):dates[0];
+$('to').value=validDate(params.get('to')||'')?params.get('to'):dates.at(-1);
+$('language').value=lang;
+$('parties').innerHTML=keys.map((key,i)=>`<label title="${names[i]}"><input type="checkbox" value="${key}" aria-label="${names[i]}" ${selected.has(key)?'checked':''}>${key}</label>`).join('');
+function render(){
+ document.documentElement.lang=lang;document.body.dataset.variant=variant;
+ const parties=keys.filter(k=>selected.has(k));
+ const from=$('from').value,to=$('to').value;
+ const valid=validDate(from)&&validDate(to)&&from<=to;
+ const indices=dates.map((date,i)=>date>=from&&date<=to?i:-1).filter(i=>i>=0);
+ const q=new URLSearchParams({parties:parties.join(','),from,to,lang,variant});
+ history.replaceState(null,'','?'+q);$('share').value=location.href;
+ $('breadcrumb').textContent=t('Coalitions / Custom selection','Koalitioner / Eget urval');
+ $('heading').textContent=t('Explore a combination','Utforska en kombination');
+ $('intro').textContent=t('Choose parties and follow their combined support over time.','Välj partier och följ deras sammanlagda stöd över tid.');
+ $('presetLabel').textContent=t('Start from a preset','Utgå från ett förval');$('customOption').textContent=t('Custom combination','Egen kombination');
+ $('partyLegend').textContent=t('Choose parties','Välj partier');$('clear').textContent=t('Clear selection','Rensa urval');
+ $('selection').textContent=parties.join(' + ')||t('No parties selected','Inga partier valda');
+ $('fromLabel').textContent=t('From','Från');$('toLabel').textContent=t('To','Till');
+ $('rangeError').textContent=valid?'':t('Choose a valid date range within the available period.','Välj ett giltigt datumintervall inom den tillgängliga perioden.');
+ $('publication').textContent=t('Illustrative publication: 8 September 2026. Shared links load the latest publication.','Exempelpublicering: 8 september 2026. Delade länkar visar senaste publiceringen.');
+ $('shareLabel').textContent=t('Share this selection and date range','Dela urvalet och datumintervallet');
+ $('method').textContent=t('Combined voting intention, with a 95% uncertainty interval. A selection does not imply that the parties would govern together. All values in this prototype are fictional.','Sammanlagt väljarstöd med ett 95-procentigt osäkerhetsintervall. Urvalet innebär inte att partierna skulle regera tillsammans. Alla värden i prototypen är påhittade.');
+ $('gapNote').textContent=t('The sample gap demonstrates unavailable estimates. Lines also stop at separate-fit boundaries.','Exempelluckan visar att skattningar saknas. Linjer bryts också vid gränser mellan separata modellanpassningar.');
+ $('empty').hidden=parties.length>0&&valid&&indices.length>0;
+ $('empty').textContent=!parties.length?t('Choose at least one party to see its support.','Välj minst ett parti för att visa stödet.'):t('No estimates in this date range.','Inga skattningar i datumintervallet.');
+ $('plot').hidden=!$('empty').hidden;
+ $('scrub').min=indices[0]??0;$('scrub').max=indices.at(-1)??0;
+ const day=Number($('scrub').value),value=estimate(day,parties);
+ const format=n=>n.toLocaleString(lang==='sv'?'sv-SE':'en-GB',{maximumFractionDigits:1,minimumFractionDigits:1});
+ $('readout').textContent=dates[day]+' · '+(value?`${format(value.mean)}% · ${t('likely range','troligt intervall')} ${format(value.low)}–${format(value.high)}%`:t('Estimate unavailable','Skattning saknas'));
+ $('scrubLabel').textContent=t('Explore date','Utforska datum');$('scrub').setAttribute('aria-valuetext',$('readout').textContent);
+ const points=indices.map(i=>({i,v:estimate(i,parties)}));
+ const maximum=Math.max(10,...points.filter(p=>p.v).map(p=>p.v.high));
+ const top=Math.min(100,Math.ceil(maximum/10)*10),x=i=>45+(i-(indices[0]??0))*630/Math.max(1,indices.length-1),y=v=>220-v/top*190;
+ const segments=[];let segment=[];
+ for(const p of points){if(!p.v||p.i===24){if(segment.length)segments.push(segment);segment=[];}if(p.v)segment.push(p);}if(segment.length)segments.push(segment);
+ $('chart').innerHTML=`<title id="chartTitle">${t('Fictional combined support and uncertainty','Påhittat sammanlagt stöd och osäkerhet')}</title>`+[0,top].map(n=>`<text x="3" y="${y(n)+5}" fill="currentColor">${n}%</text><line x1="45" x2="675" y1="${y(n)}" y2="${y(n)}" stroke="#b8c0c2"/>`).join('')+segments.map(s=>`<polygon points="${[...s.map(p=>`${x(p.i)},${y(p.v.high)}`),...s.slice().reverse().map(p=>`${x(p.i)},${y(p.v.low)}`)].join(' ')}" fill="#23606e" fill-opacity=".18"/><polyline points="${s.map(p=>`${x(p.i)},${y(p.v.mean)}`).join(' ')}" fill="none" stroke="#23606e" stroke-width="3"/>`).join('')+`<line x1="${x(day)}" x2="${x(day)}" y1="25" y2="220" stroke="#596571" stroke-dasharray="4 4"/><text x="45" y="250">${from}</text><text x="675" y="250" text-anchor="end">${to}</text>`;
+ $('preset').value=['M,KD,L,SD','S,V,C,MP'].find(p=>p.split(',').length===parties.length&&p.split(',').every(k=>selected.has(k)))||'custom';
+ $('variantName').textContent=variant+' · '+({A:t('Stacked','Staplad'),B:t('Side editor','Sidopanel'),C:t('Compact editor','Kompakt')}[variant]);
+ $('state').textContent=JSON.stringify({variant,lang,parties,from,to,date:dates[day],publication:'fictional-latest',value},null,2);
+}
+$('parties').onchange=e=>{e.target.checked?selected.add(e.target.value):selected.delete(e.target.value);render();};
+$('clear').onclick=()=>{selected.clear();document.querySelectorAll('[type=checkbox]').forEach(c=>c.checked=false);render();};
+$('preset').onchange=e=>{if(e.target.value==='custom')return;selected.clear();e.target.value.split(',').forEach(k=>selected.add(k));document.querySelectorAll('[type=checkbox]').forEach(c=>c.checked=selected.has(c.value));render();};
+$('from').onchange=$('to').onchange=$('scrub').oninput=render;
+$('language').onchange=e=>{lang=e.target.value;render();};
+$('share').onclick=()=> $('share').select();
+function cycle(step){variant=['A','B','C'][(['A','B','C'].indexOf(variant)+step+3)%3];render();}
+$('previous').onclick=()=>cycle(-1);$('next').onclick=()=>cycle(1);
+document.onkeydown=e=>{if(e.target.closest('input,select,textarea,button,[contenteditable]'))return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();cycle(e.key==='ArrowRight'?1:-1);}};
+render();
+</script>
+</html>
