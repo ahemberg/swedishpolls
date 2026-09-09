@@ -266,4 +266,31 @@ class DevelopmentTuningTest {
     assertEquals(List.of(1.0, 1.5, 2.0, 3.0), protocol.grid().covarianceMultipliers());
     assertEquals(80, protocol.grid().points().size());
   }
+
+  @Test
+  void storedEvidenceReadsBackAndCarriesEachPeriodsLastCutoffPoint() {
+    var tuning = DevelopmentTuning.tuning(Path.of("docs", "validation", "tuning.json"));
+    assertEquals("v1-development-1", tuning.protocolVersion());
+    assertTrue(tuning.gate().blocked());
+    assertFalse(tuning.resolved().isEmpty());
+
+    var parameters = DevelopmentTuning.latestParameters(tuning);
+
+    assertEquals(
+        tuning.resolved().stream()
+            .map(DevelopmentTuning.Resolved::periodId)
+            .distinct()
+            .sorted()
+            .toList(),
+        parameters.keySet().stream().sorted().toList());
+    for (var entry : parameters.entrySet()) {
+      var latest =
+          tuning.resolved().stream()
+              .filter(resolved -> resolved.periodId().equals(entry.getKey()))
+              .max(java.util.Comparator.comparing(resolved -> resolved.fold().cutoff()))
+              .orElseThrow();
+      assertEquals(latest.parameters(), entry.getValue());
+      assertTrue(tuning.grid().walkVariances().contains(entry.getValue().walkVariance()));
+    }
+  }
 }

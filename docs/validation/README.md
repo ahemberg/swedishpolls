@@ -363,6 +363,105 @@ fit included. An earlier run without that verifying fit took 15m07s wall and 103
 CPU-minutes. CPU time was not re-measured for the committed run. These are
 development observations for checkpoint 10 to measure properly, not frozen bounds.
 
+### Coverage-period validation, issue #18 checkpoint 5
+
+`CoverageValidation` establishes what each coverage period actually supports and
+measures what a separate-fit boundary does to every modeled party.
+[protocol.json](protocol.json) freezes the rules under `coverage_validation` and
+states them in prose under `coverage_rules`, so a rule change is a protocol change.
+
+`development(polls, rules)` is the whole input rule: fieldwork ending on or before
+`development_through`, the last development fold cutoff of 2021-10-05. The reserved
+2022 comparison and the prospective 2026 window therefore stay outside this
+evidence. Unlike a tuning fold this reads corrected history, so a poll with an
+unknown publication date still counts. Every entry point applies the filter, so no
+caller can reach past it by passing the full snapshot.
+
+`support(period, polls, rules)` reports what the period's own roster composes
+completely: the outermost collection dates, the observation and institute counts,
+the excluded polls with a count per reason, and the longest run between consecutive
+observation midpoints. The supported dates come from those observations, never from
+the declared endpoints, and `supported(period, support)` trims the period to them.
+Source observations are untouched by any of this: a poll the roster cannot place is
+excluded with its reason and stays archived.
+
+`validate` fails a period when its observations, institutes or largest internal gap
+breach the registered rules, and when pulling both supported boundaries in by a
+registered shift moves the estimate too far. Each variant refits the same parameters
+on the shortened window, and the comparison burns in `stability_burn_in_days` at
+each end: the days beside a moved boundary lost the polls the shift removed, so only
+the interior says whether the boundary choice drives the estimate. Failures are
+listed, never lowered rules.
+
+`validateAll` fits each period at the point its last development fold resolved in
+[tuning.json](tuning.json), and that run's gate carries into this one. So the
+coverage gate is blocked here by construction: no estimate produced from these
+parameters is a release value, and clearing it needs the tuning boundary decision
+first. Boundary effects compare the candidate fit with the surrounding validated
+fit on the candidate's first and last retained day, per fixed party and for the
+comparable remainder, which sums FI and the residual so both sides describe the
+same aggregate. That step is a change of modeled membership and of the fit itself.
+It is never voter movement, and checkpoint 6 must present it as a break.
+
+#### Established dates and the observed margins
+
+The full run of 2026-09-09 is stored in [coverage.json](coverage.json). Both periods
+pass every registered rule.
+
+The eight-party period supports 2010-01-04 to 2021-10-03 within the development
+window, from 1,038 eligible observations across 10 institutes. Its estimate is
+insensitive to the boundary: the worst movement over 4,111 or more compared days is
+0.05 points, at every registered shift.
+
+The FI candidate segment supports **2014-04-09 to 2018-09-07**, the outermost
+collection dates of the 388 eligible complete FI observations, across 10 institutes.
+These are the exact dates the evidence establishes; the declared candidate period
+already carried them, and the run confirms them rather than moving them. Its
+estimate is stable but visibly less so than the eight-party one: 0.07 points at the
+7-day shift, 0.15 at 14 days and **0.43 points at the 30-day shift**, on S. That
+sits below the registered 0.5 with little room, and a shift of 30 days at each end
+drops 14 months of a 53-month segment, so the margin is a real property of a short
+segment rather than a numerical artifact.
+
+Two registered constants deserve their observed values next to them. The largest
+internal gap is the summer of 2016, 2016-07-01 to 2016-08-13, **43 days against a
+registered maximum of 45** on both rosters. The gap rule was registered from the
+FI collection dates of the pinned snapshot before the eligible batches were fitted,
+and it survives by two days. A snapshot correction that widens that summer, or a
+stricter rule, ends support inside the segment rather than bridging it. Neither
+constant may be enlarged after the fact: that is a protocol change with a repeat of
+every affected development check.
+
+The boundary steps are large enough to matter for presentation. At 2014-04-09 the
+comparable remainder steps 1.32 points and S steps -0.92; at 2018-09-05, the last
+retained day, the remainder steps 0.73, S -1.14 and SD 0.79. Both fits describe the
+same voters from the same polls, so the whole step is the separate fit, the changed
+membership and each period's own diffuse start. Checkpoint 6 owns marking these
+boundaries, and no automatic change may cross one.
+
+Because the tuning gate is blocked, this checkpoint records the approved fallback
+rather than enabling a curve: `support_validated` stays false for
+`fi_candidate_2014_2018`, the individual FI estimate remains unavailable, its source
+observations stay archived, and flipping it needs the tuning boundary decision plus a
+recorded owner decision. Unsupported is never zero.
+
+`CoverageValidationTest` checks the registered rules and every inadmissible rule
+value, the development window against later polls, the supported dates, institute
+count, largest gap and retained exclusions of a period, a thin period that fails
+only the rules it breaches, a dense period bounded under every shift, and the
+per-party boundary steps with a blocked tuning gate carried into the report.
+`PollObservationsTest` checks that `PollObservations.shares` inverts the transform
+back to the replaced composition in component order and stays closed on an extreme
+state. `CoverageValidationIT` runs the archived development rows through
+`validateAll` for both rosters.
+
+Run `./mvnw -Dtest=CoverageValidationTest test` for the rules and `./mvnw clean
+verify` against PostgreSQL 18 for the suite, where the integration test uses the
+first registered shift and costs about 40 seconds. `./mvnw clean verify
+-Dcoverage.full=true` runs every shift and rewrites `coverage.json`; that run took
+1m40s wall on the development machine. These are development observations for
+checkpoint 10 to measure properly, not frozen bounds.
+
 ### Conventions for the estimator
 
 Midpoint is `start + floor(days_between(start,end)/2)`. A half-day rounds toward
