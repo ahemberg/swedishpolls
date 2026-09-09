@@ -129,29 +129,35 @@ public final class DevelopmentTuning {
     try {
       var root = JSON.readTree(Files.readAllBytes(file));
       var folds = new ArrayList<Fold>();
-      for (var fold : root.get("development_folds"))
+      for (var fold : required(root, "development_folds", file))
         folds.add(
             new Fold(
-                LocalDate.parse(fold.get("cutoff").asText()),
-                LocalDate.parse(fold.get("score_through").asText())));
-      var grid = root.get("tuning_grid");
+                LocalDate.parse(required(fold, "cutoff", file).asText()),
+                LocalDate.parse(required(fold, "score_through", file).asText())));
+      var grid = required(root, "tuning_grid", file);
       return new Protocol(
-          root.get("version").asText(),
+          required(root, "version", file).asText(),
           folds,
           new Grid(
-              values(grid, "walk_variance"),
-              values(grid, "house_scale"),
-              values(grid, "covariance_multiplier")));
+              values(grid, "walk_variance", file),
+              values(grid, "house_scale", file),
+              values(grid, "covariance_multiplier", file)));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
-    } catch (NullPointerException e) {
-      throw new IllegalArgumentException("Incomplete validation protocol in " + file, e);
     }
   }
 
-  private static List<Double> values(JsonNode grid, String axis) {
+  private static JsonNode required(JsonNode parent, String field, Path file) {
+    var value = parent == null ? null : parent.get(field);
+    if (value == null || value.isNull())
+      throw new IllegalArgumentException(
+          "Incomplete validation protocol in " + file + ": missing " + field);
+    return value;
+  }
+
+  private static List<Double> values(JsonNode grid, String axis, Path file) {
     var values = new ArrayList<Double>();
-    for (var value : grid.get(axis)) values.add(value.doubleValue());
+    for (var value : required(grid, axis, file)) values.add(value.doubleValue());
     return values;
   }
 
@@ -275,7 +281,7 @@ public final class DevelopmentTuning {
     // The likelihood path skips the daily joint factorization, so the stored point is confirmed by
     // a full fit.
     double retained = DailyStateSpace.fit(batch, elections, resolved).logLikelihood();
-    if (retained != likelihoods[best])
+    if (Double.compare(retained, likelihoods[best]) != 0)
       throw new IllegalArgumentException(
           "Retained fit disagrees with the tuning likelihood at "
               + resolved
@@ -287,13 +293,21 @@ public final class DevelopmentTuning {
     for (var exclusion : batch.exclusions())
       for (var reason : exclusion.reasons()) reasons.merge(reason, 1, Integer::sum);
     var boundaries = new ArrayList<String>();
-    boundary(boundaries, "walkVariance", grid.walkVariances(), resolved.walkVariance());
-    boundary(boundaries, "houseScale", grid.houseScales(), resolved.houseScale());
+    boundary(
+        boundaries,
+        "walkVariance",
+        grid.walkVariances().indexOf(resolved.walkVariance()),
+        grid.walkVariances().size());
+    boundary(
+        boundaries,
+        "houseScale",
+        grid.houseScales().indexOf(resolved.houseScale()),
+        grid.houseScales().size());
     boundary(
         boundaries,
         "covarianceMultiplier",
-        grid.covarianceMultipliers(),
-        resolved.covarianceMultiplier());
+        grid.covarianceMultipliers().indexOf(resolved.covarianceMultiplier()),
+        grid.covarianceMultipliers().size());
     return new Resolved(
         periodId,
         fold,
@@ -306,10 +320,9 @@ public final class DevelopmentTuning {
         boundaries);
   }
 
-  private static void boundary(
-      List<String> boundaries, String name, List<Double> axis, double value) {
-    if (value == axis.getFirst()) boundaries.add(name + ":lower");
-    if (value == axis.getLast()) boundaries.add(name + ":upper");
+  private static void boundary(List<String> boundaries, String name, int index, int size) {
+    if (index == 0) boundaries.add(name + ":lower");
+    if (index == size - 1) boundaries.add(name + ":upper");
   }
 
   public static String report(Tuning tuning) {
