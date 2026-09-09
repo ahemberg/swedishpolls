@@ -26,10 +26,10 @@ public final class DailyStateSpace {
   /** Opinion state of one day, centered over the institutes active in its cycle. */
   public record Day(
       LocalDate date,
-      SimpleMatrix filteredMean,
-      SimpleMatrix filteredCovariance,
-      SimpleMatrix smoothedMean,
-      SimpleMatrix smoothedCovariance) {}
+      ModelValues filteredMean,
+      ModelValues filteredCovariance,
+      ModelValues smoothedMean,
+      ModelValues smoothedCovariance) {}
 
   /**
    * Centered house effects of one election cycle, stacked in effect order and conditioned on its
@@ -40,10 +40,10 @@ public final class DailyStateSpace {
       LocalDate end,
       List<String> effects,
       List<Double> weights,
-      SimpleMatrix filteredMean,
-      SimpleMatrix filteredCovariance,
-      SimpleMatrix smoothedMean,
-      SimpleMatrix smoothedCovariance) {
+      ModelValues filteredMean,
+      ModelValues filteredCovariance,
+      ModelValues smoothedMean,
+      ModelValues smoothedCovariance) {
     public Cycle {
       effects = List.copyOf(effects);
       weights = List.copyOf(weights);
@@ -333,10 +333,10 @@ public final class DailyStateSpace {
       days[day] =
           new Day(
               start.plusDays(day),
-              filteredMeans.get(day),
-              filteredCovariances.get(day),
-              centered.mean(),
-              centered.covariance());
+              ModelValues.owned(filteredMeans.get(day)),
+              ModelValues.owned(filteredCovariances.get(day)),
+              ModelValues.owned(centered.mean()),
+              ModelValues.owned(centered.covariance()));
       if (layout.end().equals(days[day].date())) {
         var deviation = deviation(layout);
         var effects = project(deviation, filtered.mean(), filtered.covariance());
@@ -347,10 +347,10 @@ public final class DailyStateSpace {
                 layout.end(),
                 layout.effects(),
                 layout.weights(),
-                effects.mean(),
-                effects.covariance(),
-                smoothedEffects.mean(),
-                smoothedEffects.covariance());
+                ModelValues.owned(effects.mean()),
+                ModelValues.owned(effects.covariance()),
+                ModelValues.owned(smoothedEffects.mean()),
+                ModelValues.owned(smoothedEffects.covariance()));
       }
     }
     return new Smoothed(List.of(days), List.of(cycles));
@@ -463,8 +463,19 @@ public final class DailyStateSpace {
         || covariance.minus(covariance.transpose()).elementMaxAbs()
             > 1e-12 * covariance.elementMaxAbs())
       throw new IllegalArgumentException("Covariance must be finite and symmetric");
-    var solver = LinearSolverFactory_DDRM.symmPosDef(covariance.getNumRows());
-    if (!solver.setA(covariance.getDDRM().copy()))
+    return factor(covariance.getNumRows(), covariance.getDDRM().copy());
+  }
+
+  private static Factor factor(ModelValues covariance) {
+    if (covariance.hasUncountable()
+        || covariance.symmetryError() > 1e-12 * covariance.elementMaxAbs())
+      throw new IllegalArgumentException("Covariance must be finite and symmetric");
+    return factor(covariance.getNumRows(), covariance.matrixCopy());
+  }
+
+  private static Factor factor(int size, DMatrixRMaj covariance) {
+    var solver = LinearSolverFactory_DDRM.symmPosDef(size);
+    if (!solver.setA(covariance))
       throw new IllegalArgumentException("Covariance is not positive definite");
     CholeskyDecomposition_F64<DMatrixRMaj> decomposition = solver.getDecomposition();
     var lower = decomposition.getT(null);

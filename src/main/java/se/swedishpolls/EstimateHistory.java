@@ -40,6 +40,11 @@ public final class EstimateHistory {
     public Day {
       shares = ordered(shares);
     }
+
+    @Override
+    public Map<String, Double> shares() {
+      return ordered(shares);
+    }
   }
 
   /** One separate fit's consecutive days. Segments are never joined across a gap. */
@@ -64,6 +69,11 @@ public final class EstimateHistory {
       String periodId, LocalDate asOf, LocalDate estimatedOn, Map<String, Double> shares) {
     public Headline {
       shares = ordered(shares);
+    }
+
+    @Override
+    public Map<String, Double> shares() {
+      return ordered(shares);
     }
   }
 
@@ -105,6 +115,11 @@ public final class EstimateHistory {
       boolean available, LocalDate from, LocalDate to, Map<String, Double> points, String reason) {
     public Change {
       points = ordered(points);
+    }
+
+    @Override
+    public Map<String, Double> points() {
+      return ordered(points);
     }
   }
 
@@ -370,6 +385,16 @@ public final class EstimateHistory {
     public SegmentSummary {
       firstShares = ordered(firstShares);
       lastShares = ordered(lastShares);
+    }
+
+    @Override
+    public Map<String, Double> firstShares() {
+      return ordered(firstShares);
+    }
+
+    @Override
+    public Map<String, Double> lastShares() {
+      return ordered(lastShares);
     }
   }
 

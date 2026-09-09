@@ -12,6 +12,18 @@ import org.junit.jupiter.api.Test;
 class PollObservationsTest {
   private static final String ROW = PollCsvTest.SEGMENT_ROW.replace("20.123", "20");
 
+  @Test
+  void modelValuesDoNotExposeTheirMatrixForMutation() {
+    var source = new SimpleMatrix(new double[][] {{1, 2}, {3, 4}});
+    var values = ModelValues.copyOf(source);
+    var matrix = values.copy();
+
+    source.set(0, 0, 98);
+    matrix.set(0, 0, 99);
+
+    assertEquals(1, values.get(0, 0));
+  }
+
   private static Roster.CoveragePeriod period(boolean fi) {
     return new Roster.CoveragePeriod(
         fi ? "fi_candidate" : "eight",
@@ -77,7 +89,8 @@ class PollObservationsTest {
   }
 
   private static SimpleMatrix proportions(PollObservations.Batch batch) {
-    var p = batch.basis().transpose().mult(batch.observations().getFirst().ilr()).elementExp();
+    var p =
+        batch.basis().transpose().mult(batch.observations().getFirst().ilr().copy()).elementExp();
     return p.divide(p.elementSum());
   }
 
@@ -193,7 +206,7 @@ class PollObservationsTest {
     assertEquals(0, actual.minus(actual.transpose()).normF());
     assertTrue(
         DecompositionFactory_DDRM.chol(actual.getNumRows(), true)
-            .decompose(actual.getDDRM().copy()));
+            .decompose(actual.copy().getDDRM()));
   }
 
   @Test
@@ -234,7 +247,7 @@ class PollObservationsTest {
       assertEquals(period(fi), batch.period());
       assertEquals(fi ? "RESIDUAL" : "OTHER", batch.components().getLast());
       assertEquals(0, observation.replacedZeros());
-      assertArrayEquals(expected[fi ? 1 : 0], observation.ilr().getDDRM().getData(), 1e-13);
+      assertArrayEquals(expected[fi ? 1 : 0], observation.ilr().toArray(), 1e-13);
       var covariance = observation.covariance();
       assertEquals(0.0125, covariance.get(0, 0), 1e-15);
       assertEquals(-0.004330127018922193, covariance.get(0, 1), 1e-15);

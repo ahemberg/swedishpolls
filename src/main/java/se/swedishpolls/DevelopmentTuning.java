@@ -31,6 +31,21 @@ public final class DevelopmentTuning {
       covarianceMultipliers = axis(covarianceMultipliers, "covarianceMultiplier", false);
     }
 
+    @Override
+    public List<Double> walkVariances() {
+      return List.copyOf(walkVariances);
+    }
+
+    @Override
+    public List<Double> houseScales() {
+      return List.copyOf(houseScales);
+    }
+
+    @Override
+    public List<Double> covarianceMultipliers() {
+      return List.copyOf(covarianceMultipliers);
+    }
+
     /**
      * Ascending walk variance, then house scale, then multiplier, so an exact tie keeps the first
      * point.
