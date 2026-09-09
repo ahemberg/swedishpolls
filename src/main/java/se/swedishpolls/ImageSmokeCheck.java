@@ -42,7 +42,10 @@ final class ImageSmokeCheck {
     }
 
     Path output = Path.of(args.length == 0 ? "/tmp/swedishpolls-smoke.png" : args[0]);
-    Files.createDirectories(output.toAbsolutePath().getParent());
+    Path parent = output.toAbsolutePath().getParent();
+    if (parent != null) {
+      Files.createDirectories(parent);
+    }
     if (!ImageIO.write(image, "png", output.toFile())) {
       throw new IllegalStateException("No PNG writer is available");
     }
