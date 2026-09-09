@@ -235,6 +235,134 @@ and public history remain checkpoints 4 to 6.
 Run `./mvnw -Dtest=DailyStateSpaceTest test` for the numerical checks and
 `./mvnw clean verify` against PostgreSQL 18 for the full suite.
 
+### Development tuning, issue #18 checkpoint 4
+
+`DevelopmentTuning` resolves the three approved parameters inside the frozen
+publication-time folds of [protocol.json](protocol.json). The protocol now also
+freezes the candidate grid under `tuning_grid`, which `DevelopmentTuning.protocol`
+reads, so a grid change is a protocol change. `tuning_rules` states the objective,
+the tie-break, the boundary rule and the per-institute deferral in prose; those
+are implemented in code, not read from the file, so changing that object alone
+changes nothing. The frozen grid is walk variance `1e-5, 3e-5, 1e-4, 3e-4, 1e-3`,
+house scale `0.02, 0.05, 0.1, 0.2` and pooled covariance multiplier
+`1, 1.5, 2, 3`: 80 points per fold and roster.
+
+`training(polls, fold)` is the fold's whole input rule. It keeps eligible polls
+with a known publication date on or before the cutoff. Ingest eligibility already
+rejects publication before fieldwork end, so the fieldwork end lies on or before
+the cutoff as a consequence, and no second filter restates it. Unknown
+publication dates are excluded here even though corrected history uses them.
+Held-out scoring windows are read from the protocol but not scored: predictive
+scores, the recency baseline and the ilr-window reference remain checkpoint 9.
+
+The objective is the plug-in marginal likelihood: the Gaussian innovation log
+likelihood of the fold's training observations under the same fit that checkpoint
+3 validated. `DailyStateSpace.logLikelihood` runs that forward filter without
+retaining daily states or smoothing, which is what made 80 fits per fold
+affordable; it keeps every per-observation Cholesky factorization and finiteness
+check, and `DailyStateSpaceTest` compares it against `fit` on the same batches.
+The daily joint positive-definite check belongs to the retained states and does
+not run on this search path. So the resolved point is not stored on the search
+alone: every fold reruns the full `fit` at its argmax and requires the retained
+likelihood to equal the search likelihood exactly. A point that wins the search
+but cannot carry a fully checked fit therefore never becomes a stored parameter.
+
+Every grid point must fit finitely. A failed or nonfinite fit stops that fold,
+naming the point, the period and the cutoff, instead of being dropped from the
+grid. `tuneAll` then lists the fold in `unresolved` with that reason and carries
+on, so one bad fold never destroys the other folds' evidence. A fold whose
+training data yields no observation in a coverage period is listed the same way:
+the 2014-01-15 and 2014-03-16 cutoffs precede the candidate FI period's
+2014-04-09 start. `tune` on a single named fold still throws, because there the
+caller asked for that one fold. Ties are exact-equality ties and resolve to the
+first point in grid order, so the smallest walk variance wins, then the smallest
+house scale, then the smallest multiplier.
+
+Each resolved fold records its training poll count, its observation count, its
+excluded poll count and a count per exclusion reason. One excluded poll can carry
+several reasons, so the reason counts sum to at least the poll count. Per-fold
+train and test row identities belong to checkpoint 9's scoring report, which is
+where held-out rows first exist.
+
+`gridBoundaries` names every axis whose optimum sits at an end of its frozen
+axis, as `walkVariance:lower` and so on. A single-valued axis is a fixed
+parameter and reports both ends. The protocol requires a documented grid
+expansion and a repeat of every affected development check before a boundary
+optimum can stand, so these entries are open work, not results.
+
+`Tuning.gate` makes that machine-readable rather than leaving it to this prose.
+Any boundary optimum and any unresolved fold set `blocked` and add their reason,
+and the gate is serialized at the top of the evidence file. A later checkpoint
+reading `tuning.json` therefore sees the block alongside the parameters and
+cannot mistake them for resolved release values. Clearing the gate needs an owner
+decision recorded in the protocol, not a code change here.
+
+### Resolved development parameters and the open boundary
+
+The full run of 2026-09-09 resolved 94 fold fits, listed 2 unresolved folds and
+left the gate blocked on both counts: 38 of the 94 sit on a grid boundary, and
+the 2 unresolved folds need a reviewed reason. Every resolved point also passed
+the full retained fit at its own parameters. All
+eight-party folds resolved walk variance `1e-4`, interior on that axis, and house
+scale `0.1` on 41 folds and `0.05` on 7, six of them the earliest folds. Both
+values are interior. The FI candidate roster resolved house scale `0.1` on 40 of its 46
+folds and walk variance `1e-4` on 39, with `3e-4` on 6 folds in 2014-2015.
+
+**The pooled covariance multiplier sits at its grid floor of 1 in 19 of 48
+eight-party folds and 18 of 46 FI folds**, all of them before 2017-10-26. This is
+a boundary optimum on the `covariance_multiplier` axis and the bulk of the 38
+blocked folds; the remaining one is the near-empty FI fold below. The protocol makes it a
+documented grid expansion plus a repeat of every affected development check, or a
+failed gate: it is not resolved here. Expanding the axis below 1 would let the
+fitted observation noise fall under the multinomial sampling variance, which is
+the opposite of the overdispersion the parameter was introduced to carry, so
+whether 1 is a modeling floor or an expandable grid end is an owner decision. Until
+it is recorded, the aggregate score gate stays blocked and these multipliers are
+not release values. Later folds, from 2017-12-25 onward, resolve `1.5` on both
+rosters and sit interior.
+
+Two FI folds carry almost no training data: the 2014-05-15 cutoff has 2
+observations and 2014-07-14 has 15. The 2-observation fold is the only one whose
+walk variance and house scale land at grid ends, which is the near-empty fold
+resolving arbitrarily rather than evidence about either parameter. It is listed
+rather than dropped, and checkpoint 9 has to decide whether folds this thin
+belong in the paired comparison at all.
+
+The eight-party roster excludes no eligible training poll in any fold, so its
+`trainingPolls` equals its `observations`. The FI roster's counts diverge because
+its candidate period runs 2014-04-09 to 2018-09-07: later folds carry training
+polls the period cannot place, and its observation count stops growing at 387.
+
+Per-institute observation variance is not tuned. The handoff requires older-fold
+evidence for it first, and this checkpoint produces none: the pooled multiplier
+stays a single shared parameter.
+
+`DevelopmentTuningTest` checks the grid rules, the training filter against late
+publication, unknown publication dates and ineligible rows, the resolved point
+against a directly recomputed grid maximum for both rosters, the boundary strings,
+the exact tie, the empty fold and a failed fit that overflows the opinion
+covariance before its poll. `DailyStateSpaceTest` checks that the likelihood-only
+path returns exactly the retained fit's likelihood and rejects the same inputs.
+`DevelopmentTuningIT` runs the archived pre-2022 development rows through
+`tuneAll` for both rosters and reruns one fold to confirm it resolves the same
+point and likelihood.
+
+[tuning.json](tuning.json) is the stored result of the full run. It is
+development evidence at protocol version `v1-development-1`: resolved parameters
+per fold and roster, their marginal likelihood, training and exclusion counts,
+the grid, the boundary lists, the unresolved folds and the blocked gate. No
+parameter here is a frozen release value, and none has been scored against
+held-out polls yet.
+
+Run `./mvnw -Dtest=DevelopmentTuningTest test` for the tuning rules and `./mvnw
+clean verify` against PostgreSQL 18 for the suite, where the three-fold subset
+costs about 85 seconds. `./mvnw clean verify -Dtuning.full=true` reruns every
+fold and rewrites `tuning.json`; the run that produced the committed evidence took
+19m12s wall across 8 cores on the development machine, with its per-fold verifying
+fit included. An earlier run without that verifying fit took 15m07s wall and 103
+CPU-minutes. CPU time was not re-measured for the committed run. These are
+development observations for checkpoint 10 to measure properly, not frozen bounds.
+
 ### Conventions for the estimator
 
 Midpoint is `start + floor(days_between(start,end)/2)`. A half-day rounds toward

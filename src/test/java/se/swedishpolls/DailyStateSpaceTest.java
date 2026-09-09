@@ -235,6 +235,24 @@ class DailyStateSpaceTest {
     }
 
     @Test
+    void theLikelihoodOnlyPathReturnsExactlyTheRetainedFitsLikelihoodAndRejectsTheSameInputs() {
+        for (boolean fi : List.of(false, true)) {
+            var batch = batch(fi, 200, row("Sifo", 99, 101, "22") + row("Novus", 1, 3, "20")
+                    + row("Novus", 0, 4, "19") + row("Sifo", 2, 2, "21") + row("Novus", 100, 100, "18"));
+            for (var parameters : List.of(PARAMETERS, new DailyStateSpace.Parameters(0, 0.05, 1)))
+                assertEquals(DailyStateSpace.fit(batch, ELECTIONS, parameters).logLikelihood(),
+                        DailyStateSpace.logLikelihood(batch, ELECTIONS, parameters), 0);
+        }
+        var batch = batch(false, 30, row("Novus", 0, 0, "20"));
+        assertThrows(IllegalArgumentException.class, () -> DailyStateSpace.logLikelihood(batch, ELECTIONS,
+                new DailyStateSpace.Parameters(0.003, 0, 1)));
+        assertThrows(IllegalArgumentException.class,
+                () -> DailyStateSpace.logLikelihood(batch(false, 30, ""), ELECTIONS, PARAMETERS));
+        assertThrows(IllegalArgumentException.class,
+                () -> DailyStateSpace.logLikelihood(batch, List.of(ELECTION, ELECTION), PARAMETERS));
+    }
+
+    @Test
     void rejectsInvalidParametersElectionOrderEmptyBatchesAndInvalidNumericsWithoutRepair() {
         var batch = batch(false, 30, row("Novus", 0, 0, "20"));
         for (double value : new double[]{-1, Double.NaN, Double.POSITIVE_INFINITY})

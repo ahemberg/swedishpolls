@@ -1,0 +1,1764 @@
+{
+  "protocolVersion" : "v1-development-1",
+  "grid" : {
+    "walkVariances" : [ 1.0E-5, 3.0E-5, 1.0E-4, 3.0E-4, 0.001 ],
+    "houseScales" : [ 0.02, 0.05, 0.1, 0.2 ],
+    "covarianceMultipliers" : [ 1.0, 1.5, 2.0, 3.0 ]
+  },
+  "gate" : {
+    "blocked" : true,
+    "reasons" : [ "38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "2 folds did not resolve and need a reviewed reason and a revised development protocol" ]
+  },
+  "resolved" : [ {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2014-01-15",
+      "scoreThrough" : "2014-02-19"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 1935.098952097292,
+    "trainingPolls" : 369,
+    "observations" : 369,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2014-03-16",
+      "scoreThrough" : "2014-04-20"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 2023.0358020813087,
+    "trainingPolls" : 385,
+    "observations" : 385,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2014-05-15",
+      "scoreThrough" : "2014-06-19"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 2095.3790083033464,
+    "trainingPolls" : 400,
+    "observations" : 400,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2014-07-14",
+      "scoreThrough" : "2014-08-18"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2128.2586768814276,
+    "trainingPolls" : 414,
+    "observations" : 414,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2014-09-12",
+      "scoreThrough" : "2014-10-17"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2333.6537565529675,
+    "trainingPolls" : 448,
+    "observations" : 448,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2014-11-11",
+      "scoreThrough" : "2014-12-16"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2394.983819394359,
+    "trainingPolls" : 460,
+    "observations" : 460,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2015-01-10",
+      "scoreThrough" : "2015-02-14"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2479.671588283261,
+    "trainingPolls" : 477,
+    "observations" : 477,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2015-03-11",
+      "scoreThrough" : "2015-04-15"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2565.779063901812,
+    "trainingPolls" : 491,
+    "observations" : 491,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2015-05-10",
+      "scoreThrough" : "2015-06-14"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 2677.2319430179537,
+    "trainingPolls" : 507,
+    "observations" : 507,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2015-07-09",
+      "scoreThrough" : "2015-08-13"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 2793.8743323561375,
+    "trainingPolls" : 523,
+    "observations" : 523,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2015-09-07",
+      "scoreThrough" : "2015-10-12"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 2843.4230359882677,
+    "trainingPolls" : 531,
+    "observations" : 531,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2015-11-06",
+      "scoreThrough" : "2015-12-11"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 2929.4170999976213,
+    "trainingPolls" : 546,
+    "observations" : 546,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2016-01-05",
+      "scoreThrough" : "2016-02-09"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3047.0188440297925,
+    "trainingPolls" : 562,
+    "observations" : 562,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2016-03-05",
+      "scoreThrough" : "2016-04-09"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3143.2423397386483,
+    "trainingPolls" : 577,
+    "observations" : 577,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2016-05-04",
+      "scoreThrough" : "2016-06-08"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3235.9928390802497,
+    "trainingPolls" : 591,
+    "observations" : 591,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2016-07-03",
+      "scoreThrough" : "2016-08-07"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3335.9125439348186,
+    "trainingPolls" : 608,
+    "observations" : 608,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2016-09-01",
+      "scoreThrough" : "2016-10-06"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3375.460725290646,
+    "trainingPolls" : 615,
+    "observations" : 615,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2016-10-31",
+      "scoreThrough" : "2016-12-05"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3468.4634592243465,
+    "trainingPolls" : 629,
+    "observations" : 629,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2016-12-30",
+      "scoreThrough" : "2017-02-03"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3574.0079110498073,
+    "trainingPolls" : 644,
+    "observations" : 644,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2017-02-28",
+      "scoreThrough" : "2017-04-04"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3675.1661395004626,
+    "trainingPolls" : 660,
+    "observations" : 660,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2017-04-29",
+      "scoreThrough" : "2017-06-03"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3752.9650514233927,
+    "trainingPolls" : 675,
+    "observations" : 675,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2017-06-28",
+      "scoreThrough" : "2017-08-02"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3848.5891885101914,
+    "trainingPolls" : 691,
+    "observations" : 691,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2017-08-27",
+      "scoreThrough" : "2017-10-01"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3916.003577277121,
+    "trainingPolls" : 703,
+    "observations" : 703,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2017-10-26",
+      "scoreThrough" : "2017-11-30"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 3986.942448551791,
+    "trainingPolls" : 717,
+    "observations" : 717,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2017-12-25",
+      "scoreThrough" : "2018-01-29"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 4089.2250794274296,
+    "trainingPolls" : 733,
+    "observations" : 733,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2018-02-23",
+      "scoreThrough" : "2018-03-30"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 4199.122639538079,
+    "trainingPolls" : 749,
+    "observations" : 749,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2018-04-24",
+      "scoreThrough" : "2018-05-29"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 4269.315105365872,
+    "trainingPolls" : 763,
+    "observations" : 763,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2018-06-23",
+      "scoreThrough" : "2018-07-28"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 4355.490736604495,
+    "trainingPolls" : 779,
+    "observations" : 779,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2018-08-22",
+      "scoreThrough" : "2018-09-26"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 4465.575523529003,
+    "trainingPolls" : 798,
+    "observations" : 798,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2018-10-21",
+      "scoreThrough" : "2018-11-25"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 4672.8991771438,
+    "trainingPolls" : 838,
+    "observations" : 838,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2018-12-20",
+      "scoreThrough" : "2019-01-24"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 4761.417059541029,
+    "trainingPolls" : 852,
+    "observations" : 852,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2019-02-18",
+      "scoreThrough" : "2019-03-25"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 4829.849706873443,
+    "trainingPolls" : 863,
+    "observations" : 863,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2019-04-19",
+      "scoreThrough" : "2019-05-24"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 4920.617052936282,
+    "trainingPolls" : 877,
+    "observations" : 877,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2019-06-18",
+      "scoreThrough" : "2019-07-23"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 4998.541390995707,
+    "trainingPolls" : 890,
+    "observations" : 890,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2019-08-17",
+      "scoreThrough" : "2019-09-21"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5049.527009071692,
+    "trainingPolls" : 898,
+    "observations" : 898,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2019-10-16",
+      "scoreThrough" : "2019-11-20"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5129.9405681651115,
+    "trainingPolls" : 909,
+    "observations" : 909,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2019-12-15",
+      "scoreThrough" : "2020-01-19"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5230.132820815422,
+    "trainingPolls" : 922,
+    "observations" : 922,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2020-02-13",
+      "scoreThrough" : "2020-03-19"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5309.974973655806,
+    "trainingPolls" : 932,
+    "observations" : 932,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2020-04-13",
+      "scoreThrough" : "2020-05-18"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5366.878638906157,
+    "trainingPolls" : 943,
+    "observations" : 943,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2020-06-12",
+      "scoreThrough" : "2020-07-17"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5459.433212655538,
+    "trainingPolls" : 956,
+    "observations" : 956,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2020-08-11",
+      "scoreThrough" : "2020-09-15"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5498.188247692069,
+    "trainingPolls" : 963,
+    "observations" : 963,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2020-10-10",
+      "scoreThrough" : "2020-11-14"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5575.915852658649,
+    "trainingPolls" : 973,
+    "observations" : 973,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2020-12-09",
+      "scoreThrough" : "2021-01-13"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5659.819386655849,
+    "trainingPolls" : 984,
+    "observations" : 984,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2021-02-07",
+      "scoreThrough" : "2021-03-14"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5761.14337371372,
+    "trainingPolls" : 997,
+    "observations" : 997,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2021-04-08",
+      "scoreThrough" : "2021-05-13"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5829.898840916483,
+    "trainingPolls" : 1006,
+    "observations" : 1006,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2021-06-07",
+      "scoreThrough" : "2021-07-12"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5906.262799107816,
+    "trainingPolls" : 1016,
+    "observations" : 1016,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2021-08-06",
+      "scoreThrough" : "2021-09-10"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5936.724967257993,
+    "trainingPolls" : 1023,
+    "observations" : 1023,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "eight_party_2010",
+    "fold" : {
+      "cutoff" : "2021-10-05",
+      "scoreThrough" : "2021-11-09"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 5990.272537092091,
+    "trainingPolls" : 1031,
+    "observations" : 1031,
+    "exclusions" : 0,
+    "exclusionReasons" : { },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2014-05-15",
+      "scoreThrough" : "2014-06-19"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-5,
+      "houseScale" : 0.02,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : -14.011503384629101,
+    "trainingPolls" : 400,
+    "observations" : 2,
+    "exclusions" : 398,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 398
+    },
+    "gridBoundaries" : [ "walkVariance:lower", "houseScale:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2014-07-14",
+      "scoreThrough" : "2014-08-18"
+    },
+    "parameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 38.79659164603995,
+    "trainingPolls" : 414,
+    "observations" : 15,
+    "exclusions" : 399,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 399
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2014-09-12",
+      "scoreThrough" : "2014-10-17"
+    },
+    "parameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 228.4392207369785,
+    "trainingPolls" : 448,
+    "observations" : 48,
+    "exclusions" : 400,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 400
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2014-11-11",
+      "scoreThrough" : "2014-12-16"
+    },
+    "parameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 281.28623915150354,
+    "trainingPolls" : 460,
+    "observations" : 60,
+    "exclusions" : 400,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 400
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2015-01-10",
+      "scoreThrough" : "2015-02-14"
+    },
+    "parameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 343.3231094461588,
+    "trainingPolls" : 477,
+    "observations" : 74,
+    "exclusions" : 403,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 403
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2015-03-11",
+      "scoreThrough" : "2015-04-15"
+    },
+    "parameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 412.1849490577464,
+    "trainingPolls" : 491,
+    "observations" : 87,
+    "exclusions" : 404,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 404
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2015-05-10",
+      "scoreThrough" : "2015-06-14"
+    },
+    "parameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 509.8922334611866,
+    "trainingPolls" : 507,
+    "observations" : 102,
+    "exclusions" : 405,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 405
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2015-07-09",
+      "scoreThrough" : "2015-08-13"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 615.6205208159108,
+    "trainingPolls" : 523,
+    "observations" : 116,
+    "exclusions" : 407,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 407
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2015-09-07",
+      "scoreThrough" : "2015-10-12"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 655.4041997205568,
+    "trainingPolls" : 531,
+    "observations" : 124,
+    "exclusions" : 407,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 407
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2015-11-06",
+      "scoreThrough" : "2015-12-11"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 733.513853340827,
+    "trainingPolls" : 546,
+    "observations" : 139,
+    "exclusions" : 407,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 407
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2016-01-05",
+      "scoreThrough" : "2016-02-09"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 834.3075952027638,
+    "trainingPolls" : 562,
+    "observations" : 154,
+    "exclusions" : 408,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 408
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2016-03-05",
+      "scoreThrough" : "2016-04-09"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 921.7124483568031,
+    "trainingPolls" : 577,
+    "observations" : 169,
+    "exclusions" : 408,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 408
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2016-05-04",
+      "scoreThrough" : "2016-06-08"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 1007.5203842626665,
+    "trainingPolls" : 591,
+    "observations" : 183,
+    "exclusions" : 408,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 408
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2016-07-03",
+      "scoreThrough" : "2016-08-07"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 1088.9309280888854,
+    "trainingPolls" : 608,
+    "observations" : 199,
+    "exclusions" : 409,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 409
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2016-09-01",
+      "scoreThrough" : "2016-10-06"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 1127.8663224629397,
+    "trainingPolls" : 615,
+    "observations" : 206,
+    "exclusions" : 409,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 409
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2016-10-31",
+      "scoreThrough" : "2016-12-05"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 1222.3669328576948,
+    "trainingPolls" : 629,
+    "observations" : 220,
+    "exclusions" : 409,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 409
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2016-12-30",
+      "scoreThrough" : "2017-02-03"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 1314.426203733051,
+    "trainingPolls" : 644,
+    "observations" : 234,
+    "exclusions" : 410,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 410
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2017-02-28",
+      "scoreThrough" : "2017-04-04"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 1404.2910406239655,
+    "trainingPolls" : 660,
+    "observations" : 250,
+    "exclusions" : 410,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 410
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2017-04-29",
+      "scoreThrough" : "2017-06-03"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 1458.4547738858064,
+    "trainingPolls" : 675,
+    "observations" : 263,
+    "exclusions" : 412,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 412
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2017-06-28",
+      "scoreThrough" : "2017-08-02"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "logLikelihood" : 1520.812688159232,
+    "trainingPolls" : 691,
+    "observations" : 275,
+    "exclusions" : 416,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 416
+    },
+    "gridBoundaries" : [ "covarianceMultiplier:lower" ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2017-08-27",
+      "scoreThrough" : "2017-10-01"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 1562.60452703357,
+    "trainingPolls" : 703,
+    "observations" : 287,
+    "exclusions" : 416,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 416
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2017-10-26",
+      "scoreThrough" : "2017-11-30"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 1599.1803455420468,
+    "trainingPolls" : 717,
+    "observations" : 299,
+    "exclusions" : 418,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 418
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2017-12-25",
+      "scoreThrough" : "2018-01-29"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 1669.4557828248294,
+    "trainingPolls" : 733,
+    "observations" : 312,
+    "exclusions" : 421,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 421
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2018-02-23",
+      "scoreThrough" : "2018-03-30"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 1734.58441200682,
+    "trainingPolls" : 749,
+    "observations" : 324,
+    "exclusions" : 425,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 425
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2018-04-24",
+      "scoreThrough" : "2018-05-29"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 1770.1597667768915,
+    "trainingPolls" : 763,
+    "observations" : 335,
+    "exclusions" : 428,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 428
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2018-06-23",
+      "scoreThrough" : "2018-07-28"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 1809.3026161278488,
+    "trainingPolls" : 779,
+    "observations" : 348,
+    "exclusions" : 431,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 431
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2018-08-22",
+      "scoreThrough" : "2018-09-26"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 1864.9394802596696,
+    "trainingPolls" : 798,
+    "observations" : 362,
+    "exclusions" : 436,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 396,
+      "missing_share:FI" : 436
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2018-10-21",
+      "scoreThrough" : "2018-11-25"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 838,
+    "observations" : 387,
+    "exclusions" : 451,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 400,
+      "missing_share:FI" : 451
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2018-12-20",
+      "scoreThrough" : "2019-01-24"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 852,
+    "observations" : 387,
+    "exclusions" : 465,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 414,
+      "missing_share:FI" : 465
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2019-02-18",
+      "scoreThrough" : "2019-03-25"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 863,
+    "observations" : 387,
+    "exclusions" : 476,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 425,
+      "missing_share:FI" : 476
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2019-04-19",
+      "scoreThrough" : "2019-05-24"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 877,
+    "observations" : 387,
+    "exclusions" : 490,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 439,
+      "missing_share:FI" : 490
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2019-06-18",
+      "scoreThrough" : "2019-07-23"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 890,
+    "observations" : 387,
+    "exclusions" : 503,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 452,
+      "missing_share:FI" : 503
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2019-08-17",
+      "scoreThrough" : "2019-09-21"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 898,
+    "observations" : 387,
+    "exclusions" : 511,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 460,
+      "missing_share:FI" : 511
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2019-10-16",
+      "scoreThrough" : "2019-11-20"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 909,
+    "observations" : 387,
+    "exclusions" : 522,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 471,
+      "missing_share:FI" : 522
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2019-12-15",
+      "scoreThrough" : "2020-01-19"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 922,
+    "observations" : 387,
+    "exclusions" : 535,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 484,
+      "missing_share:FI" : 535
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2020-02-13",
+      "scoreThrough" : "2020-03-19"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 932,
+    "observations" : 387,
+    "exclusions" : 545,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 494,
+      "missing_share:FI" : 545
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2020-04-13",
+      "scoreThrough" : "2020-05-18"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 943,
+    "observations" : 387,
+    "exclusions" : 556,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 505,
+      "missing_share:FI" : 556
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2020-06-12",
+      "scoreThrough" : "2020-07-17"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 956,
+    "observations" : 387,
+    "exclusions" : 569,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 518,
+      "missing_share:FI" : 569
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2020-08-11",
+      "scoreThrough" : "2020-09-15"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 963,
+    "observations" : 387,
+    "exclusions" : 576,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 525,
+      "missing_share:FI" : 576
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2020-10-10",
+      "scoreThrough" : "2020-11-14"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 973,
+    "observations" : 387,
+    "exclusions" : 586,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 535,
+      "missing_share:FI" : 586
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2020-12-09",
+      "scoreThrough" : "2021-01-13"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 984,
+    "observations" : 387,
+    "exclusions" : 597,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 546,
+      "missing_share:FI" : 597
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2021-02-07",
+      "scoreThrough" : "2021-03-14"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 997,
+    "observations" : 387,
+    "exclusions" : 610,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 559,
+      "missing_share:FI" : 610
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2021-04-08",
+      "scoreThrough" : "2021-05-13"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 1006,
+    "observations" : 387,
+    "exclusions" : 619,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 568,
+      "missing_share:FI" : 619
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2021-06-07",
+      "scoreThrough" : "2021-07-12"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 1016,
+    "observations" : 387,
+    "exclusions" : 629,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 578,
+      "missing_share:FI" : 629
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2021-08-06",
+      "scoreThrough" : "2021-09-10"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 1023,
+    "observations" : 387,
+    "exclusions" : 636,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 585,
+      "missing_share:FI" : 636
+    },
+    "gridBoundaries" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2021-10-05",
+      "scoreThrough" : "2021-11-09"
+    },
+    "parameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "logLikelihood" : 2005.268029321677,
+    "trainingPolls" : 1031,
+    "observations" : 387,
+    "exclusions" : 644,
+    "exclusionReasons" : {
+      "outside_coverage_period:fi_candidate_2014_2018" : 593,
+      "missing_share:FI" : 644
+    },
+    "gridBoundaries" : [ ]
+  } ],
+  "unresolved" : [ {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2014-01-15",
+      "scoreThrough" : "2014-02-19"
+    },
+    "reason" : "no eligible training observation in the period"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "fold" : {
+      "cutoff" : "2014-03-16",
+      "scoreThrough" : "2014-04-20"
+    },
+    "reason" : "no eligible training observation in the period"
+  } ]
+}
