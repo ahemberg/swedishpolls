@@ -53,20 +53,45 @@ public final class PollObservations {
         || ilr.getNumCols() != 1
         || ilr.hasUncountable())
       throw new IllegalArgumentException("Invalid ilr state for " + batch.period().id());
-    var log = batch.basis().transpose().mult(ilr);
-    double max = log.elementMax();
-    var weights = new double[log.getNumRows()];
+    var state = new double[ilr.getNumRows()];
+    for (int r = 0; r < state.length; r++) state[r] = ilr.get(r);
+    var values = new double[batch.components().size()];
+    close(transposedBasis(batch), state, values, batch.period().id());
+    var shares = new LinkedHashMap<String, Double>();
+    for (int c = 0; c < values.length; c++) shares.put(batch.components().get(c), values[c]);
+    return java.util.Collections.unmodifiableMap(shares);
+  }
+
+  /** The batch basis transposed once, as {@code H'[component][coordinate]}. */
+  static double[][] transposedBasis(Batch batch) {
+    int size = batch.components().size();
+    var transposed = new double[size][size - 1];
+    for (int c = 0; c < size; c++)
+      for (int r = 0; r < size - 1; r++) transposed[c][r] = batch.basis().get(r, c);
+    return transposed;
+  }
+
+  /**
+   * Closes {@code exp(H' z)} into percent shares, writing them into the caller's buffer. Drawing
+   * uncertainty transforms one state at a time, so this reuses buffers rather than allocating a
+   * composition per draw, and both callers run the same arithmetic in the same order.
+   */
+  static void close(double[][] transposedBasis, double[] ilr, double[] shares, String periodId) {
+    double max = Double.NEGATIVE_INFINITY;
+    for (int c = 0; c < shares.length; c++) {
+      double log = 0;
+      for (int r = 0; r < ilr.length; r++) log += transposedBasis[c][r] * ilr[r];
+      shares[c] = log;
+      if (log > max) max = log;
+    }
     double total = 0;
-    for (int c = 0; c < weights.length; c++) {
-      weights[c] = Math.exp(log.get(c) - max);
-      total += weights[c];
+    for (int c = 0; c < shares.length; c++) {
+      shares[c] = Math.exp(shares[c] - max);
+      total += shares[c];
     }
     if (!Double.isFinite(total) || total <= 0)
-      throw new IllegalArgumentException("Unrepresentable composition for " + batch.period().id());
-    var shares = new LinkedHashMap<String, Double>();
-    for (int c = 0; c < weights.length; c++)
-      shares.put(batch.components().get(c), 100 * weights[c] / total);
-    return java.util.Collections.unmodifiableMap(shares);
+      throw new IllegalArgumentException("Unrepresentable composition for " + periodId);
+    for (int c = 0; c < shares.length; c++) shares[c] = 100 * shares[c] / total;
   }
 
   /**

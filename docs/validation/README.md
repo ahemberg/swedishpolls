@@ -557,6 +557,96 @@ against PostgreSQL 18 for the suite, where the integration test costs about 10 s
 `./mvnw clean verify -Dhistory.full=true` rewrites `history.json`. These are development
 observations for checkpoint 10 to measure properly, not frozen bounds.
 
+### Reproducible joint uncertainty, issue #18 checkpoint 7
+
+`JointUncertainty` turns the fitted daily states into draws. It registers the
+`uncertainty` block and its `uncertainty_rules` prose in [protocol.json](protocol.json)
+and reuses the `seed` and `final_draws` that were frozen for #16.
+
+`estimate(period, polls, elections, parameters, coverage, rules)` draws over the same
+separately fitted runs the daily history publishes, because it asks `EstimateHistory`
+for them rather than splitting the observations again. Each day's centered smoothed
+covariance is factorized, `final_draws` standard normal vectors are drawn, and each
+resulting ilr state is transformed on its own.
+
+**Support is transformed before it is averaged.** The reported `mean` is the arithmetic
+mean of the transformed draws. `stateMean` on the same record is the transform of the
+mean state, which is exactly the checkpoint 6 series, and the two are kept side by side
+so the difference is visible rather than implied: on the archived rows the largest gap
+between them is **0.028 percentage points**, over 4,278 days and nine components. The
+transform is nonlinear, so these are two different numbers and only the first is
+supported by the draws. Which one a publication prints is #21's to settle; this
+checkpoint states that the draw mean is the one the draws justify.
+
+Intervals are marginal quantiles of one component's own draws, at the registered 50%
+and 95%, read by linear interpolation between the order statistics at `h = (n-1)p`. No
+interval endpoint is ever summed with another; the comparable remainder needs its own
+draws, which is checkpoint 8. The final day's 10,000 joint draws are retained on the
+result, in percent and component order, because a threshold, seat or coalition quantity
+has to be computed on the rows rather than on these summaries.
+
+#### Seeding, and why every day has its own stream
+
+Each day draws from a `java.util.Random` seeded by the leading eight bytes of
+`SHA-256("<periodId>|<date>|<seed>")`. One shared stream would make a day's draws depend
+on how many days the run computed before it and on the order threads finished, so the
+same day would move when an unrelated day was added. `JointUncertaintyTest` checks that:
+a run that goes on to draw a second segment returns the first segment unchanged.
+
+The generator is deliberately the legacy `java.util.Random`, whose `nextGaussian` the
+Java specification pins to a stated algorithm over `StrictMath.log` and
+`StrictMath.sqrt`. Its draws are therefore the same on any conforming runtime, which is
+what a cross-architecture reproduction claim will need.
+
+#### What a rerun is given
+
+Every run records what it would take to repeat: the seed and draw count, the period,
+the roster and a digest of the orthonormal basis, a digest of the ordered archived rows
+it read with their count, the fitted parameters, a SHA-256 over the compiled bytecode of
+the eight estimator classes, the Java runtime and VM versions, the OS name and
+architecture, and the linear-algebra version. The archived run reads 1,038 rows under
+implementation digest `72bf0cb…` on Java 25.0.4 and EJML 0.46.1.
+
+#### Results, in [uncertainty.json](uncertainty.json)
+
+- **Seeded reproduction is exact.** A rerun at the registered seed returned all 90,000
+  retained values with a maximum absolute difference of 0. That is the proposed bound:
+  zero, on this implementation and this runtime. A cross-architecture rerun is still
+  owed before it becomes a resolved tolerance.
+- **Interval precision at 10,000 draws per day.** Across the registered seed and its
+  seven successors, over all 4,278 estimated days, the largest movement of any 95%
+  endpoint is **0.115 percentage points**, on S; of any 50% endpoint 0.058; of any mean
+  0.041. Precision is best for the small components, down to 0.023 points on OTHER's 95%
+  endpoints, since Monte Carlo error scales with the component's own spread. This bounds
+  how much of a published interval is sampling noise rather than estimated uncertainty.
+  It is a measurement, never something to enlarge afterwards.
+- The headline of 2021-09-20 is S 25.56 [24.40, 26.74], M 22.07 [20.97, 23.17],
+  SD 20.05 [19.03, 21.10] at 95%.
+
+`Precision` reports the mean spread once per component and level; the mean does not
+depend on the level, so those two rows carry the same number by construction.
+
+Both proposed bounds are listed in the report with their units, largest observed error,
+case count, seeds and rationale, which is what the tolerance registration above asks
+for. The coverage gate carries in whole, so the tuning boundary decision still blocks
+every number here from being a release value.
+
+`JointUncertaintyTest` checks the registered rules and the inadmissible ones, that both
+the drawn and the state composition close to 100 and that they differ, that the state
+mean equals the day the daily history publishes, that 50% nests inside 95% and both
+bracket the mean, exact reproduction at one seed and movement at another, per-day
+streams, the retained final draws on the last segment of a split period, the spread
+across four seeds, the recorded metadata and its response to a changed roster or a
+dropped poll, and a covariance that is singular, asymmetric or nonfinite stopping the
+run without jitter. `JointUncertaintyIT` draws the archived development rows at the
+registered seed and count.
+
+Run `./mvnw -Dtest=JointUncertaintyTest test` for the rules and `./mvnw clean verify`
+against PostgreSQL 18 for the suite, where the integration test costs about 34 seconds
+for its two full runs. `./mvnw clean verify -Duncertainty.full=true` runs the eight-seed
+precision study and rewrites `uncertainty.json` in about 150 seconds. These are
+development observations for checkpoint 10 to measure properly, not frozen bounds.
+
 ### Conventions for the estimator
 
 Midpoint is `start + floor(days_between(start,end)/2)`. A half-day rounds toward

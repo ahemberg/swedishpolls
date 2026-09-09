@@ -1,0 +1,565 @@
+{
+  "protocolVersion" : "v1-development-1",
+  "gate" : {
+    "blocked" : true,
+    "reasons" : [ "development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol" ]
+  },
+  "rules" : {
+    "seed" : 20260908,
+    "draws" : 10000,
+    "intervalLevels" : [ 0.5, 0.95 ],
+    "precisionRepeats" : 8
+  },
+  "periods" : [ {
+    "periodId" : "eight_party_2010",
+    "reproduction" : {
+      "seed" : 20260908,
+      "draws" : 10000,
+      "periodId" : "eight_party_2010",
+      "components" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER" ],
+      "basisSha256" : "4bfa062453f30fabc7986f2f6a774d87cea6da4899fa646d315f2154d11ca913",
+      "inputRowsSha256" : "8c3b3db1648d6a61a0f078e2155a9b139be94920a1a7e2c8b8fd8a0d99df04d5",
+      "inputRows" : 1038,
+      "parameters" : {
+        "walkVariance" : 1.0E-4,
+        "houseScale" : 0.1,
+        "covarianceMultiplier" : 1.5
+      },
+      "implementationSha256" : "72bf0cbc750177ed417137313409b827c9bba449f81f2b3916386e0918337585",
+      "javaRuntimeVersion" : "25.0.4+7-1-24.04-Ubuntu",
+      "javaVmVersion" : "25.0.4+7-1-24.04-Ubuntu",
+      "osName" : "Linux",
+      "osArch" : "amd64",
+      "linearAlgebraVersion" : "0.46.1"
+    },
+    "headline" : {
+      "date" : "2021-09-20",
+      "components" : [ {
+        "component" : "S",
+        "mean" : 25.556263572946776,
+        "stateMean" : 25.554236218870475,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 25.151956741210846,
+          "upper" : 25.959673549612887
+        }, {
+          "level" : 0.95,
+          "lower" : 24.398396494066166,
+          "upper" : 26.735237892848186
+        } ]
+      }, {
+        "component" : "M",
+        "mean" : 22.065201224007463,
+        "stateMean" : 22.067389754739402,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 21.677385718631868,
+          "upper" : 22.443533275644683
+        }, {
+          "level" : 0.95,
+          "lower" : 20.965406434548335,
+          "upper" : 23.164979354542712
+        } ]
+      }, {
+        "component" : "SD",
+        "mean" : 20.046394458253438,
+        "stateMean" : 20.048592719086038,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 19.68701209830812,
+          "upper" : 20.39894337748244
+        }, {
+          "level" : 0.95,
+          "lower" : 19.029479861945543,
+          "upper" : 21.09844374255392
+        } ]
+      }, {
+        "component" : "V",
+        "mean" : 10.593046744967692,
+        "stateMean" : 10.599296285742096,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 10.349927828929232,
+          "upper" : 10.830923895582124
+        }, {
+          "level" : 0.95,
+          "lower" : 9.893590010613908,
+          "upper" : 11.330085312435434
+        } ]
+      }, {
+        "component" : "C",
+        "mean" : 8.665475498742163,
+        "stateMean" : 8.661203997926078,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 8.448959032877465,
+          "upper" : 8.871581077568827
+        }, {
+          "level" : 0.95,
+          "lower" : 8.05494846163699,
+          "upper" : 9.307655057745299
+        } ]
+      }, {
+        "component" : "KD",
+        "mean" : 4.811457935795641,
+        "stateMean" : 4.809630551051208,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 4.663362787175743,
+          "upper" : 4.954565642881184
+        }, {
+          "level" : 0.95,
+          "lower" : 4.3957392610497825,
+          "upper" : 5.243879605207194
+        } ]
+      }, {
+        "component" : "L",
+        "mean" : 2.7307731164189075,
+        "stateMean" : 2.7301517138516016,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 2.630524066017702,
+          "upper" : 2.828615864023365
+        }, {
+          "level" : 0.95,
+          "lower" : 2.4524586720788837,
+          "upper" : 3.0335006411142458
+        } ]
+      }, {
+        "component" : "MP",
+        "mean" : 3.9637426651434913,
+        "stateMean" : 3.962992591939603,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 3.833320772949132,
+          "upper" : 4.089805985230449
+        }, {
+          "level" : 0.95,
+          "lower" : 3.6021413244796596,
+          "upper" : 4.351378377787814
+        } ]
+      }, {
+        "component" : "OTHER",
+        "mean" : 1.5676447837245695,
+        "stateMean" : 1.5665061667934979,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 1.496445799481855,
+          "upper" : 1.633519717783358
+        }, {
+          "level" : 0.95,
+          "lower" : 1.376953054646518,
+          "upper" : 1.7786933940802212
+        } ]
+      } ]
+    },
+    "segmentEdges" : [ {
+      "date" : "2010-01-04",
+      "components" : [ {
+        "component" : "S",
+        "mean" : 35.08270360308064,
+        "stateMean" : 35.09234856566843,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 34.47551563536792,
+          "upper" : 35.69461207530059
+        }, {
+          "level" : 0.95,
+          "lower" : 33.31461996642529,
+          "upper" : 36.85769932634968
+        } ]
+      }, {
+        "component" : "M",
+        "mean" : 26.561545155405323,
+        "stateMean" : 26.5682183956171,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 26.026215557512725,
+          "upper" : 27.09617693922106
+        }, {
+          "level" : 0.95,
+          "lower" : 24.96882003830364,
+          "upper" : 28.133574553679246
+        } ]
+      }, {
+        "component" : "SD",
+        "mean" : 4.7545341977659525,
+        "stateMean" : 4.747938651615271,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 4.5824378006303785,
+          "upper" : 4.919582469220695
+        }, {
+          "level" : 0.95,
+          "lower" : 4.279743425228892,
+          "upper" : 5.264098426728599
+        } ]
+      }, {
+        "component" : "V",
+        "mean" : 5.296953914995423,
+        "stateMean" : 5.2915446132824115,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 5.101254052040173,
+          "upper" : 5.480722365677152
+        }, {
+          "level" : 0.95,
+          "lower" : 4.770113373861895,
+          "upper" : 5.875510208016344
+        } ]
+      }, {
+        "component" : "C",
+        "mean" : 4.732430574220229,
+        "stateMean" : 4.736018425740112,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 4.554868554499246,
+          "upper" : 4.902149176175155
+        }, {
+          "level" : 0.95,
+          "lower" : 4.2480115850141384,
+          "upper" : 5.256196201449164
+        } ]
+      }, {
+        "component" : "KD",
+        "mean" : 4.473042793582049,
+        "stateMean" : 4.468001622010793,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 4.308027822183444,
+          "upper" : 4.6323249801736335
+        }, {
+          "level" : 0.95,
+          "lower" : 4.022898222052958,
+          "upper" : 4.968177766503671
+        } ]
+      }, {
+        "component" : "L",
+        "mean" : 6.485773594295948,
+        "stateMean" : 6.489037128765412,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 6.264771914059929,
+          "upper" : 6.696369826701909
+        }, {
+          "level" : 0.95,
+          "lower" : 5.89082594702657,
+          "upper" : 7.1329002542057225
+        } ]
+      }, {
+        "component" : "MP",
+        "mean" : 10.558847480889124,
+        "stateMean" : 10.553169994014102,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 10.240118102871932,
+          "upper" : 10.867179548867478
+        }, {
+          "level" : 0.95,
+          "lower" : 9.673546777814996,
+          "upper" : 11.477147724058355
+        } ]
+      }, {
+        "component" : "OTHER",
+        "mean" : 2.0541686857652732,
+        "stateMean" : 2.0537226032863547,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 1.960907085021893,
+          "upper" : 2.1425487248268213
+        }, {
+          "level" : 0.95,
+          "lower" : 1.8022273541331733,
+          "upper" : 2.3354689368525037
+        } ]
+      } ]
+    }, {
+      "date" : "2021-09-20",
+      "components" : [ {
+        "component" : "S",
+        "mean" : 25.556263572946776,
+        "stateMean" : 25.554236218870475,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 25.151956741210846,
+          "upper" : 25.959673549612887
+        }, {
+          "level" : 0.95,
+          "lower" : 24.398396494066166,
+          "upper" : 26.735237892848186
+        } ]
+      }, {
+        "component" : "M",
+        "mean" : 22.065201224007463,
+        "stateMean" : 22.067389754739402,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 21.677385718631868,
+          "upper" : 22.443533275644683
+        }, {
+          "level" : 0.95,
+          "lower" : 20.965406434548335,
+          "upper" : 23.164979354542712
+        } ]
+      }, {
+        "component" : "SD",
+        "mean" : 20.046394458253438,
+        "stateMean" : 20.048592719086038,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 19.68701209830812,
+          "upper" : 20.39894337748244
+        }, {
+          "level" : 0.95,
+          "lower" : 19.029479861945543,
+          "upper" : 21.09844374255392
+        } ]
+      }, {
+        "component" : "V",
+        "mean" : 10.593046744967692,
+        "stateMean" : 10.599296285742096,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 10.349927828929232,
+          "upper" : 10.830923895582124
+        }, {
+          "level" : 0.95,
+          "lower" : 9.893590010613908,
+          "upper" : 11.330085312435434
+        } ]
+      }, {
+        "component" : "C",
+        "mean" : 8.665475498742163,
+        "stateMean" : 8.661203997926078,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 8.448959032877465,
+          "upper" : 8.871581077568827
+        }, {
+          "level" : 0.95,
+          "lower" : 8.05494846163699,
+          "upper" : 9.307655057745299
+        } ]
+      }, {
+        "component" : "KD",
+        "mean" : 4.811457935795641,
+        "stateMean" : 4.809630551051208,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 4.663362787175743,
+          "upper" : 4.954565642881184
+        }, {
+          "level" : 0.95,
+          "lower" : 4.3957392610497825,
+          "upper" : 5.243879605207194
+        } ]
+      }, {
+        "component" : "L",
+        "mean" : 2.7307731164189075,
+        "stateMean" : 2.7301517138516016,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 2.630524066017702,
+          "upper" : 2.828615864023365
+        }, {
+          "level" : 0.95,
+          "lower" : 2.4524586720788837,
+          "upper" : 3.0335006411142458
+        } ]
+      }, {
+        "component" : "MP",
+        "mean" : 3.9637426651434913,
+        "stateMean" : 3.962992591939603,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 3.833320772949132,
+          "upper" : 4.089805985230449
+        }, {
+          "level" : 0.95,
+          "lower" : 3.6021413244796596,
+          "upper" : 4.351378377787814
+        } ]
+      }, {
+        "component" : "OTHER",
+        "mean" : 1.5676447837245695,
+        "stateMean" : 1.5665061667934979,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 1.496445799481855,
+          "upper" : 1.633519717783358
+        }, {
+          "level" : 0.95,
+          "lower" : 1.376953054646518,
+          "upper" : 1.7786933940802212
+        } ]
+      } ]
+    } ],
+    "estimatedDays" : 4278,
+    "maxStateMeanShiftPoints" : 0.028242291598033376,
+    "reproduced" : {
+      "daySeed" : 5416840566589286126,
+      "comparedValues" : 90000,
+      "maxAbsoluteDifference" : 0.0
+    },
+    "precision" : [ {
+      "component" : "S",
+      "level" : 0.5,
+      "meanSpreadPoints" : 0.041059221080253394,
+      "lowerSpreadPoints" : 0.05788495899114565,
+      "upperSpreadPoints" : 0.0579923779535747,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "S",
+      "level" : 0.95,
+      "meanSpreadPoints" : 0.041059221080253394,
+      "lowerSpreadPoints" : 0.11419896135512886,
+      "upperSpreadPoints" : 0.11533204035549716,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "M",
+      "level" : 0.5,
+      "meanSpreadPoints" : 0.040734424169432515,
+      "lowerSpreadPoints" : 0.05656832979921589,
+      "upperSpreadPoints" : 0.04996376403890679,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "M",
+      "level" : 0.95,
+      "meanSpreadPoints" : 0.040734424169432515,
+      "lowerSpreadPoints" : 0.11240038425034626,
+      "upperSpreadPoints" : 0.10460919605389307,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "SD",
+      "level" : 0.5,
+      "meanSpreadPoints" : 0.03343909490349972,
+      "lowerSpreadPoints" : 0.04570021116288103,
+      "upperSpreadPoints" : 0.04326342268593564,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "SD",
+      "level" : 0.95,
+      "meanSpreadPoints" : 0.03343909490349972,
+      "lowerSpreadPoints" : 0.0997343165970328,
+      "upperSpreadPoints" : 0.10183611235307666,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "V",
+      "level" : 0.5,
+      "meanSpreadPoints" : 0.018517614552200357,
+      "lowerSpreadPoints" : 0.02570851569502608,
+      "upperSpreadPoints" : 0.026523525248233426,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "V",
+      "level" : 0.95,
+      "meanSpreadPoints" : 0.018517614552200357,
+      "lowerSpreadPoints" : 0.0469649023702825,
+      "upperSpreadPoints" : 0.05911766158781617,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "C",
+      "level" : 0.5,
+      "meanSpreadPoints" : 0.02023305062045999,
+      "lowerSpreadPoints" : 0.024691406690964257,
+      "upperSpreadPoints" : 0.027684877247091677,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "C",
+      "level" : 0.95,
+      "meanSpreadPoints" : 0.02023305062045999,
+      "lowerSpreadPoints" : 0.04786943152385881,
+      "upperSpreadPoints" : 0.06459251614729311,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "KD",
+      "level" : 0.5,
+      "meanSpreadPoints" : 0.01801176540023519,
+      "lowerSpreadPoints" : 0.021846132306581723,
+      "upperSpreadPoints" : 0.022927346359027823,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "KD",
+      "level" : 0.95,
+      "meanSpreadPoints" : 0.01801176540023519,
+      "lowerSpreadPoints" : 0.04300918346119964,
+      "upperSpreadPoints" : 0.054235475120947285,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "L",
+      "level" : 0.5,
+      "meanSpreadPoints" : 0.01450979545794695,
+      "lowerSpreadPoints" : 0.02065401801420297,
+      "upperSpreadPoints" : 0.020625059127376666,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "L",
+      "level" : 0.95,
+      "meanSpreadPoints" : 0.01450979545794695,
+      "lowerSpreadPoints" : 0.03729910206699838,
+      "upperSpreadPoints" : 0.044787016912360755,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "MP",
+      "level" : 0.5,
+      "meanSpreadPoints" : 0.019373031792735418,
+      "lowerSpreadPoints" : 0.025284938163858683,
+      "upperSpreadPoints" : 0.02392639997172452,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "MP",
+      "level" : 0.95,
+      "meanSpreadPoints" : 0.019373031792735418,
+      "lowerSpreadPoints" : 0.04670011181562295,
+      "upperSpreadPoints" : 0.05307517028884412,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "OTHER",
+      "level" : 0.5,
+      "meanSpreadPoints" : 0.008464033419648409,
+      "lowerSpreadPoints" : 0.012193449859560168,
+      "upperSpreadPoints" : 0.012093852021169305,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    }, {
+      "component" : "OTHER",
+      "level" : 0.95,
+      "meanSpreadPoints" : 0.008464033419648409,
+      "lowerSpreadPoints" : 0.022984021228128704,
+      "upperSpreadPoints" : 0.02958308090337436,
+      "comparedDays" : 4278,
+      "seeds" : 8
+    } ]
+  } ],
+  "proposedTolerances" : [ {
+    "name" : "eight_party_2010:seeded_reproduction",
+    "units" : "percentage points between retained draws of two runs at the same seed",
+    "maxObservedError" : 0.0,
+    "cases" : 90000,
+    "seeds" : [ 20260908 ],
+    "rationale" : "A rerun of the same seed on the same implementation must return every draw unchanged, so the proposed bound is exactly zero. Cross-architecture reruns are still owed before this becomes a resolved tolerance."
+  }, {
+    "name" : "eight_party_2010:interval_endpoint_precision",
+    "units" : "percentage points between the extreme interval endpoints of runs differing only in seed",
+    "maxObservedError" : 0.11533204035549716,
+    "cases" : 77004,
+    "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
+    "rationale" : "The Monte Carlo error of a published interval endpoint at 10000 draws per day. It bounds how much of a reported interval is sampling noise rather than estimated uncertainty, and it is measured, never enlarged afterwards."
+  } ]
+}
