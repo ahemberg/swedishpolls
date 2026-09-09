@@ -6,10 +6,14 @@ snapshot capture and baseline poll eligibility. It does not publish estimates.
 ## Fetch and archive
 
 Spring checks the approved `MansMeg/SwedishPolls/master/Data/Polls.csv` at startup
-and every 30 minutes. `polls.source-url` overrides the URL for integration tests;
-`polls.ingest.enabled=false` disables the worker. A PostgreSQL transaction advisory
-lock allows one worker at a time. Fetches have a 10-second connection timeout and
-a 30-second request timeout. The HTTP body subscriber stops downloads above 16 MiB. Errors are logged and the next scheduled check retries.
+and every 30 minutes. A Spring-managed `@HttpExchange` client sends each request
+through Boot's configured `RestClient`. `polls.source-url` overrides the URL;
+`polls.ingest.enabled=false` disables scheduling while leaving the ingestion
+component available for explicit checks. `polls.ingest.interval` overrides the
+schedule interval. A PostgreSQL transaction advisory lock allows one worker at a
+time. Fetches have a 10-second connection timeout and a 30-second request timeout.
+The response converter stops downloads above 16 MiB. Errors are logged and the next
+scheduled check retries.
 
 ETag and Last-Modified validators survive restarts. A 304 updates the successful
 check time. A 200 with identical SHA-256 bytes updates validators without parsing
@@ -90,14 +94,16 @@ seven rows with precision beyond two decimals, and five zero remainders. This
 post-2006 audit cohort is distinct from the approved 2010 supported-history start.
 Tests also cover malformed documents, duplicate keys and exclusion reasons.
 
-`SnapshotIngestIT` uses a local HTTP server and isolated PostgreSQL schemas to
-check replacement/deletion, old snapshots after restart, conditional requests,
-hashing, failed responses, transaction rollback, worker exclusion and scheduling
-in the packaged application. No test fetches the live polling source.
+`SnapshotIngestIT` loads the Spring Boot application, obtains the managed ingestion
+component, and uses Boot's Testcontainers service connection for PostgreSQL.
+Requests go through the production HTTP client to WireMock. The tests check
+replacement/deletion, old snapshots after restart, conditional requests, hashing,
+failed responses, transaction rollback and worker exclusion. A separate bounded
+Boot test checks scheduled execution. `ApplicationIT` retains the packaged-JAR
+smoke test with scheduling disabled. No test fetches the live polling source.
 
 ```sh
 ./mvnw -Dtest=PollCsvTest test
-# With DATABASE_URL, DATABASE_USER and DATABASE_PASSWORD for PostgreSQL 18:
 ./mvnw -Dtest=PollCsvTest -Dit.test=SnapshotIngestIT verify
 ```
 
