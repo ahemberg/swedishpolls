@@ -10,24 +10,45 @@ must implement.
 
 ## Build and run
 
-Install Java 25 and Docker. The Maven wrapper downloads Maven 3.9.12 with a
-SHA-256 check; Maven installs Node 24.13.1 and npm 11.8.0 under `target/`.
+Install Java 25, Docker, and Docker Compose 2.2.0 or newer. The Maven wrapper
+downloads Maven 3.9.12 with a SHA-256 check; Maven installs Node 24.13.1 and npm
+11.8.0 under `target/`.
 
 ```sh
-export DATABASE_PASSWORD='choose-a-local-password'
-docker compose up -d --wait db
-./mvnw --batch-mode --no-transfer-progress clean verify
-java -jar target/swedishpolls-0.1.0.jar
+DATABASE_PASSWORD='choose-a-local-password' ./mvnw spring-boot:run
 ```
 
-Open http://localhost:8080. Set `DATABASE_URL`, `DATABASE_USER` and
-`DATABASE_PASSWORD` for another PostgreSQL instance. `DATABASE_URL` is a JDBC URL.
-Flyway migrates and validates the database on startup. Database unavailability or
-an invalid migration fails startup. Compose binds PostgreSQL only on localhost
-and retains it in a named volume. Never use `docker compose down -v` on retained data.
+Open http://localhost:8080. Spring Boot starts PostgreSQL from `compose.dev.yaml`,
+waits for it, and stops it with the application. It leaves an already running service
+alone. Compose binds PostgreSQL only on localhost and retains it in a named volume.
+Never use `docker compose down -v` on retained data.
 
-For an occupied local port, set `DATABASE_PORT=55432` for Compose and
-`DATABASE_URL=jdbc:postgresql://localhost:55432/swedishpolls` for Maven and Java.
+For an occupied local port, add `DATABASE_PORT=55432`; Spring Boot connects to the
+mapped port. To connect to another PostgreSQL instance, disable Compose support and
+set the JDBC connection values:
+
+```sh
+SPRING_DOCKER_COMPOSE_ENABLED=false \
+  DATABASE_URL='jdbc:postgresql://localhost:5432/swedishpolls' \
+  DATABASE_USER='swedishpolls' DATABASE_PASSWORD='password' \
+  ./mvnw spring-boot:run
+```
+
+Maven tests do not start `compose.dev.yaml`. Start or provide their PostgreSQL
+service separately, then build the repackaged application:
+
+```sh
+DATABASE_PASSWORD='choose-a-local-password' \
+  docker compose -f compose.dev.yaml up -d --wait db
+DATABASE_PASSWORD='choose-a-local-password' \
+  ./mvnw --batch-mode --no-transfer-progress clean verify
+DATABASE_PASSWORD='choose-a-local-password' java -jar target/swedishpolls-0.1.0.jar
+```
+
+The repackaged JAR does not include Docker Compose support. Set `DATABASE_URL`,
+`DATABASE_USER`, and `DATABASE_PASSWORD` when it uses another PostgreSQL instance.
+`DATABASE_URL` is a JDBC URL. Flyway migrates and validates the database on startup.
+Database unavailability or an invalid migration fails startup.
 
 Frontend-only work uses Node 24.13.1 and npm 11.8.0:
 
