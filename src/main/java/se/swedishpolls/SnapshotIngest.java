@@ -1,27 +1,24 @@
 package se.swedishpolls;
 
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.service.annotation.GetExchange;
+import org.springframework.web.service.annotation.HttpExchange;
 import tools.jackson.databind.json.JsonMapper;
 
 @Component
-@ConditionalOnProperty(name = "polls.ingest.enabled", havingValue = "true", matchIfMissing = true)
 public class SnapshotIngest {
   public enum Result {
     CHANGED,
@@ -31,30 +28,29 @@ public class SnapshotIngest {
 
   public record Snapshot(long id, String sha256) {}
 
+  @HttpExchange(accept = "text/csv")
+  interface PollSourceClient {
+    @GetExchange
+    ResponseEntity<byte[]> fetch(
+        @RequestHeader(name = "If-None-Match", required = false) String etag,
+        @RequestHeader(name = "If-Modified-Since", required = false) String modified);
+  }
+
   private final JdbcClient db;
+  private final PollSourceClient pollSource;
   private final TransactionTemplate transaction;
   private final String sourceUrl;
   private final JsonMapper json = JsonMapper.builder().build();
 
   public SnapshotIngest(
       JdbcClient db,
+      PollSourceClient pollSource,
       PlatformTransactionManager transactions,
-      @Value(
-              "${polls.source-url:https://raw.githubusercontent.com/MansMeg/SwedishPolls/master/Data/Polls.csv}")
-          String sourceUrl) {
+      @Value("${polls.source-url}") String sourceUrl) {
     this.db = db;
+    this.pollSource = pollSource;
     this.transaction = new TransactionTemplate(transactions);
     this.sourceUrl = URI.create(sourceUrl).toString();
-  }
-
-  @Scheduled(fixedRate = 30 * 60 * 1000)
-  public void scheduledCheck() {
-    try {
-      check();
-    } catch (RuntimeException e) {
-      LoggerFactory.getLogger(SnapshotIngest.class)
-          .error("Poll source check failed; active snapshot retained", e);
-    }
   }
 
   /** One transaction prevents partial archives or overlapping workers from changing membership. */
@@ -72,33 +68,27 @@ public class SnapshotIngest {
                   .query()
                   .singleRow();
           var previous = activeSnapshot();
-          var request =
-              HttpRequest.newBuilder(URI.create(sourceUrl))
-                  .timeout(Duration.ofSeconds(30))
-                  .header("Accept", "text/csv");
-          if (previous.isPresent()) {
-            if (source.get("etag") instanceof String etag) request.header("If-None-Match", etag);
-            if (source.get("last_modified") instanceof String modified)
-              request.header("If-Modified-Since", modified);
-          }
-          var response = fetch(request.build());
-          if (response.statusCode() == 304) {
+          var response =
+              fetch(
+                  previous.isPresent() ? (String) source.get("etag") : null,
+                  previous.isPresent() ? (String) source.get("last_modified") : null);
+          if (response.getStatusCode().value() == 304) {
             if (previous.isEmpty())
               throw new IllegalStateException("304 without an archived snapshot");
             updateSource(
                 previous.get().id(),
-                response.headers().firstValue("ETag").orElse((String) source.get("etag")),
-                response
-                    .headers()
-                    .firstValue("Last-Modified")
+                Optional.ofNullable(response.getHeaders().getFirst("ETag"))
+                    .orElse((String) source.get("etag")),
+                Optional.ofNullable(response.getHeaders().getFirst("Last-Modified"))
                     .orElse((String) source.get("last_modified")));
             return Result.UNCHANGED;
           }
-          if (response.statusCode() != 200
-              || response.headers().firstValue("Content-Range").isPresent())
+          if (response.getStatusCode().value() != 200
+              || response.getHeaders().getFirst("Content-Range") != null)
             throw new IllegalStateException(
-                "Expected a complete source response, got HTTP " + response.statusCode());
-          var bytes = response.body();
+                "Expected a complete source response, got HTTP "
+                    + response.getStatusCode().value());
+          var bytes = Optional.ofNullable(response.getBody()).orElseGet(() -> new byte[0]);
           var hash = sha256(bytes);
           var existing =
               db.sql("SELECT id FROM poll_snapshot WHERE source_url = ? AND sha256 = ?")
@@ -125,8 +115,8 @@ public class SnapshotIngest {
           }
           updateSource(
               id,
-              response.headers().firstValue("ETag").orElse(null),
-              response.headers().firstValue("Last-Modified").orElse(null));
+              response.getHeaders().getFirst("ETag"),
+              response.getHeaders().getFirst("Last-Modified"));
           return previous.isPresent() && previous.get().id() == id
               ? Result.UNCHANGED
               : Result.CHANGED;
@@ -171,17 +161,10 @@ public class SnapshotIngest {
         .list();
   }
 
-  private static HttpResponse<byte[]> fetch(HttpRequest request) {
-    try (var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()) {
-      return client.send(
-          request,
-          info ->
-              HttpResponse.BodySubscribers.limiting(
-                  HttpResponse.BodySubscribers.ofByteArray(), 16 * 1024 * 1024));
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new IllegalStateException("Source fetch interrupted", e);
-    } catch (java.io.IOException e) {
+  private ResponseEntity<byte[]> fetch(String etag, String modified) {
+    try {
+      return pollSource.fetch(etag, modified);
+    } catch (RestClientException e) {
       throw new IllegalStateException("Source fetch failed", e);
     }
   }
