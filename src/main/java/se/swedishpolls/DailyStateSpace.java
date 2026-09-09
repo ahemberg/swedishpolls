@@ -109,8 +109,8 @@ public final class DailyStateSpace {
     int dimension = batch.components().size() - 1;
     for (var observation : batch.observations()) {
       if (observation.midpoint().isBefore(batch.period().effectiveFrom())
-          || batch.period().effectiveTo() != null
-              && observation.midpoint().isAfter(batch.period().effectiveTo()))
+          || (batch.period().effectiveTo() != null
+              && observation.midpoint().isAfter(batch.period().effectiveTo())))
         throw new IllegalArgumentException("Observation outside coverage period");
       if (observation.ilr().getNumRows() != dimension
           || observation.ilr().getNumCols() != 1
@@ -243,7 +243,7 @@ public final class DailyStateSpace {
     var starts = new ArrayList<>(List.of(start));
     LocalDate previous = null;
     for (var election : elections) {
-      if (election == null || previous != null && !election.isAfter(previous))
+      if (election == null || (previous != null && !election.isAfter(previous)))
         throw new IllegalArgumentException("Election dates must be distinct and ascending");
       previous = election;
       if (election.isAfter(start) && !election.isAfter(last)) starts.add(election);

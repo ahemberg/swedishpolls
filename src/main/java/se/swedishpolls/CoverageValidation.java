@@ -51,7 +51,7 @@ public final class CoverageValidation {
         throw new IllegalArgumentException("At least one boundary shift is required");
       for (int i = 0; i < boundaryShiftDays.size(); i++)
         if (boundaryShiftDays.get(i) < 1
-            || i > 0 && boundaryShiftDays.get(i) <= boundaryShiftDays.get(i - 1))
+            || (i > 0 && boundaryShiftDays.get(i) <= boundaryShiftDays.get(i - 1)))
           throw new IllegalArgumentException("Boundary shifts must be positive and ascending");
     }
   }
@@ -149,7 +149,7 @@ public final class CoverageValidation {
       var shifts = new ArrayList<Integer>();
       for (var shift : required(rules, "boundary_shift_days", file)) shifts.add(shift.intValue());
       return new Rules(
-          LocalDate.parse(required(rules, "development_through", file).asText()),
+          LocalDate.parse(required(rules, "development_through", file).asString()),
           required(rules, "min_observations", file).intValue(),
           required(rules, "min_institutes", file).intValue(),
           required(rules, "max_internal_gap_days", file).intValue(),
