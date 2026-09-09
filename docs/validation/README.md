@@ -462,6 +462,101 @@ first registered shift and costs about 40 seconds. `./mvnw clean verify
 1m40s wall on the development machine. These are development observations for
 checkpoint 10 to measure properly, not frozen bounds.
 
+### Daily estimate history, issue #18 checkpoint 6
+
+`EstimateHistory` turns the validated coverage evidence into the daily series a
+publication reads. It registers no new constant: the gap rule it cuts on is the
+`max_internal_gap_days` of [protocol.json](protocol.json) that checkpoint 5 already
+froze, read from the [coverage report](coverage.json) it is handed.
+
+`estimate(period, polls, elections, parameters, rules)` applies the same development
+window and supported-date trim as checkpoint 5, fits once and reports the smoothed
+composition of every retained day in percent. The series runs from the period's first
+eligible collection date through the last observation midpoint and stops there. Days
+between polls carry an estimate, which is the point of a daily state space; days after
+the last midpoint do not exist, because walking the state forward would be a
+projection.
+
+Support is cut, never bridged. When the run between two consecutive observation
+midpoints exceeds the registered maximum, the observations are split there and **each
+side is fitted separately**, over the outermost collection dates of the polls it kept
+and with its own diffuse prior. Fitting once and slicing the output afterwards would
+leave the daily walk propagating through the unsupported run, so the later level would
+still borrow strength from the earlier polls: presentable, but bridged underneath. The
+days inside the run appear in no segment, and unsupported is absent rather than zero.
+
+`history(periods, polls, elections, coverage)` assembles the published record from the
+periods whose roster is `support_validated` and whose recorded coverage evidence
+passed. A period that is validated but whose evidence failed publishes nothing and
+adds its own reason to the gate; a validated period with no recorded evidence at all
+is an error rather than an empty curve. The coverage gate carries in whole, so while
+the tuning boundary decision is open nothing here is a release value. A component that
+only an unvalidated period models is listed under `unavailable` with a reason, which is
+how FI leaves this checkpoint.
+
+#### Boundaries and what may not cross them
+
+Three kinds of date are marked, and no automatic change may cross any of them:
+
+- `coverage_period_start`, where a separate fit begins with its own diffuse prior.
+- `unsupported_gap`, where support ended and resumed.
+- `centering_reference_change`, at a cycle reset whose institute ensemble differs from
+  the previous cycle's. Checkpoint 3 left this one here: the level is centered on the
+  institutes active in a cycle, so when that ensemble changes the reported level can
+  step against a changed reference. On the archived rows **every** election reset is
+  one, 2010-09-19, 2014-09-14 and 2018-09-09, so this is the boundary that bites in
+  practice rather than a theoretical case.
+
+`change(history, periodId, date, days)` returns a per-component difference only when
+both days are estimated **by that period** and no boundary of it lies in
+`(date - days, date]`. Otherwise it returns the reason:
+`date_outside_supported_history`, `comparison_date_outside_supported_history` or
+`comparison_date_across_boundary`. The period is an argument rather than a lookup
+because coverage periods overlap in time: `fi_candidate_2014_2018` sits inside
+`eight_party_2010`, so once a second period publishes, a date-only lookup would resolve
+a change against the wrong series or suppress it on a foreign boundary. Criterion 7
+owns change suppression proper; this is the enforcement of the boundaries checkpoint 5
+handed here, and checkpoint 8 may take it over.
+
+#### The headline and the internal filtered states
+
+The headline is the last estimated day, reported as of the last fieldwork date of its
+period. Those are two different dates and the record keeps both: on the archived rows
+the estimate is `estimatedOn` 2021-09-20 and `asOf` 2021-10-03, a lag of 13 days,
+because the poll with the latest fieldwork end has an earlier midpoint than the poll
+with the latest midpoint. Closing that lag would mean walking the state forward with no
+observation behind it, which the estimand forbids.
+
+`internalFiltered` returns the filtered states of the same days. They condition only on
+the polls seen up to each day, which is what a publication-time check needs and what a
+published history must not show. `History` has no filtered field, so the published
+record cannot carry them by accident.
+
+#### The archived run
+
+[history.json](history.json) stores the run of 2026-09-09 as a summary: each segment's
+edges and day counts rather than every daily composition, with every composition in
+roster order. The eight-party period is one
+unbroken segment of 4,278 days from 2010-01-04 to 2021-09-20, since its largest internal
+gap of 43 days sits inside the registered 45. It opens at S 35.09, M 26.57 and closes at
+S 25.55, M 22.07, SD 20.05. `fi_candidate_2014_2018` publishes nothing and FI is
+`no_validated_coverage_period`.
+
+`EstimateHistoryTest` checks the retained days between polls and the stop at the last
+midpoint, an over-long gap cut into two separately fitted segments with nothing
+published between them and a discontinuous level across the cut,
+the headline's two dates, changes inside one segment and suppressed across a gap and
+across a reference change, filtered states differing from smoothed and absent from the
+report, an unvalidated period leaving its party unavailable rather than zero, the
+summary shape, and the rejected period with no recorded evidence.
+`EstimateHistoryIT` builds the history of the archived development rows from the
+committed coverage evidence.
+
+Run `./mvnw -Dtest=EstimateHistoryTest test` for the rules and `./mvnw clean verify`
+against PostgreSQL 18 for the suite, where the integration test costs about 10 seconds.
+`./mvnw clean verify -Dhistory.full=true` rewrites `history.json`. These are development
+observations for checkpoint 10 to measure properly, not frozen bounds.
+
 ### Conventions for the estimator
 
 Midpoint is `start + floor(days_between(start,end)/2)`. A half-day rounds toward

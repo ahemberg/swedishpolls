@@ -450,4 +450,13 @@ public final class CoverageValidation {
   public static String report(Report report) {
     return JSON.writerWithDefaultPrettyPrinter().writeValueAsString(report);
   }
+
+  /** Reads back a stored run of {@link #report}. */
+  public static Report validation(Path file) {
+    try {
+      return JSON.readValue(Files.readAllBytes(file), Report.class);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
 }

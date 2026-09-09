@@ -1,0 +1,76 @@
+{
+  "protocolVersion" : "v1-development-1",
+  "gate" : {
+    "blocked" : true,
+    "reasons" : [ "development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol" ]
+  },
+  "segments" : [ {
+    "periodId" : "eight_party_2010",
+    "from" : "2010-01-04",
+    "to" : "2021-09-20",
+    "days" : 4278,
+    "firstShares" : {
+      "S" : 35.09234856566843,
+      "M" : 26.5682183956171,
+      "SD" : 4.747938651615271,
+      "V" : 5.2915446132824115,
+      "C" : 4.736018425740112,
+      "KD" : 4.468001622010793,
+      "L" : 6.489037128765412,
+      "MP" : 10.553169994014102,
+      "OTHER" : 2.0537226032863547
+    },
+    "lastShares" : {
+      "S" : 25.554236218870475,
+      "M" : 22.067389754739402,
+      "SD" : 20.048592719086038,
+      "V" : 10.599296285742096,
+      "C" : 8.661203997926078,
+      "KD" : 4.809630551051208,
+      "L" : 2.7301517138516016,
+      "MP" : 3.962992591939603,
+      "OTHER" : 1.5665061667934979
+    }
+  } ],
+  "boundaries" : [ {
+    "kind" : "coverage_period_start",
+    "date" : "2010-01-04",
+    "periodId" : "eight_party_2010",
+    "note" : "A separate fit starts here with its own diffuse prior; the step at this date is a change of modeled membership, never voter movement."
+  }, {
+    "kind" : "centering_reference_change",
+    "date" : "2010-09-19",
+    "periodId" : "eight_party_2010",
+    "note" : "The institutes the level is centered on changed at this cycle reset, so the level can step against a changed reference rather than against voter movement."
+  }, {
+    "kind" : "centering_reference_change",
+    "date" : "2014-09-14",
+    "periodId" : "eight_party_2010",
+    "note" : "The institutes the level is centered on changed at this cycle reset, so the level can step against a changed reference rather than against voter movement."
+  }, {
+    "kind" : "centering_reference_change",
+    "date" : "2018-09-09",
+    "periodId" : "eight_party_2010",
+    "note" : "The institutes the level is centered on changed at this cycle reset, so the level can step against a changed reference rather than against voter movement."
+  } ],
+  "headline" : {
+    "periodId" : "eight_party_2010",
+    "asOf" : "2021-10-03",
+    "estimatedOn" : "2021-09-20",
+    "shares" : {
+      "S" : 25.554236218870475,
+      "M" : 22.067389754739402,
+      "SD" : 20.048592719086038,
+      "V" : 10.599296285742096,
+      "C" : 8.661203997926078,
+      "KD" : 4.809630551051208,
+      "L" : 2.7301517138516016,
+      "MP" : 3.962992591939603,
+      "OTHER" : 1.5665061667934979
+    }
+  },
+  "unavailable" : [ {
+    "component" : "FI",
+    "reason" : "no_validated_coverage_period"
+  } ]
+}
