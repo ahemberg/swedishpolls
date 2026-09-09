@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/polls.csv"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "ETag": "\"scheduled\""
+    },
+    "body": "PublYearMonth,Company,M,L,C,KD,S,V,MP,SD,FI,Uncertain,n,PublDate,house,collectPeriodFrom,collectPeriodTo,approxPeriod\n2020-01,Ipsos,20.123,5,8,5,30,8,5,17,1,10,1000,2020-01-20,Ipsos,2020-01-01,2020-01-19,FALSE\n"
+  }
+}

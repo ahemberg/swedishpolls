@@ -1,58 +1,59 @@
 package se.swedishpolls;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.moreThan;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import java.nio.charset.StandardCharsets;
 import org.flywaydb.core.Flyway;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.wiremock.spring.EnableWireMock;
+import org.wiremock.spring.InjectWireMock;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.NONE,
     properties = {
+      "logging.level.WireMock=warn",
       "polls.ingest.enabled=false",
+      "polls.source-url=${wiremock.server.baseUrl}/polls.csv",
       "spring.docker.compose.enabled=false",
       "spring.flyway.clean-disabled=false"
     })
 @Import(TestDatabase.Configuration.class)
+@EnableWireMock
 class SnapshotIngestIT {
-  private static final WireMockServer SERVER = new WireMockServer(options().dynamicPort());
-
-  static {
-    SERVER.start();
-  }
-
   @Autowired private JdbcClient db;
   @Autowired private Flyway flyway;
   @Autowired private SnapshotIngest ingest;
   @Autowired private PlatformTransactionManager transactions;
+  @InjectWireMock private WireMockServer wireMock;
 
   private byte[] body = PollCsvTest.csv(PollCsvTest.ROW);
   private int status = 200;
   private String etag = "\"first\"";
   private StubMapping stub;
 
-  @DynamicPropertySource
-  static void properties(DynamicPropertyRegistry properties) {
-    properties.add("polls.source-url", () -> SERVER.baseUrl() + "/polls.csv");
-  }
-
   @BeforeEach
   void reset() {
-    SERVER.resetAll();
+    wireMock.resetAll();
     flyway.clean();
     flyway.migrate();
     body = PollCsvTest.csv(PollCsvTest.ROW);
@@ -61,22 +62,17 @@ class SnapshotIngestIT {
     stub = null;
   }
 
-  @AfterAll
-  static void stop() {
-    SERVER.stop();
-  }
-
   private SnapshotIngest.Result check() {
     return check(ingest);
   }
 
   private SnapshotIngest.Result check(SnapshotIngest target) {
-    if (stub != null) SERVER.removeStub(stub);
+    if (stub != null) wireMock.removeStub(stub);
     var response =
         aResponse().withStatus(status).withHeader("Last-Modified", "Mon, 07 Sep 2026 05:09:49 GMT");
     if (etag != null) response.withHeader("ETag", etag);
     if (status != 304) response.withBody(body);
-    stub = SERVER.stubFor(get(urlEqualTo("/polls.csv")).willReturn(response));
+    stub = wireMock.stubFor(get(urlEqualTo("/polls.csv")).willReturn(response));
     return target.check();
   }
 
@@ -112,7 +108,7 @@ class SnapshotIngestIT {
   @Test
   void conditionalRequestsAndHashesAvoidReimportAndCanRestoreAnEarlierSnapshot() {
     assertEquals(SnapshotIngest.Result.CHANGED, check());
-    SERVER.verify(
+    wireMock.verify(
         1,
         getRequestedFor(urlEqualTo("/polls.csv"))
             .withoutHeader("If-None-Match")
@@ -120,7 +116,7 @@ class SnapshotIngestIT {
     var first = ingest.activeSnapshot().orElseThrow();
     status = 304;
     assertEquals(SnapshotIngest.Result.UNCHANGED, check());
-    SERVER.verify(
+    wireMock.verify(
         1,
         getRequestedFor(urlEqualTo("/polls.csv"))
             .withHeader("If-None-Match", equalTo("\"first\""))
@@ -163,7 +159,7 @@ class SnapshotIngestIT {
       assertThrows(IllegalArgumentException.class, this::check);
       assertEquals(first.id(), ingest.activeSnapshot().orElseThrow().id());
     }
-    SERVER.verify(
+    wireMock.verify(
         moreThan(0),
         getRequestedFor(urlEqualTo("/polls.csv"))
             .withHeader("If-None-Match", equalTo("\"first\"")));
@@ -202,7 +198,7 @@ class SnapshotIngestIT {
             throw new AssertionError(e);
           }
         });
-    SERVER.verify(0, getRequestedFor(urlEqualTo("/polls.csv")));
+    wireMock.verify(0, getRequestedFor(urlEqualTo("/polls.csv")));
     assertTrue(ingest.activeSnapshot().isEmpty());
     assertEquals(SnapshotIngest.Result.CHANGED, check());
   }
