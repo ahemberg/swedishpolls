@@ -13,7 +13,8 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Random;
+import java.util.random.RandomGenerator;
+import java.util.random.RandomGeneratorFactory;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.simple.SimpleMatrix;
 import tools.jackson.databind.JsonNode;
@@ -27,6 +28,8 @@ public final class JointUncertainty {
   private JointUncertainty() {}
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
+  private static final RandomGeneratorFactory<RandomGenerator> RANDOM_FACTORY =
+      RandomGeneratorFactory.of("Random");
 
   /** The estimator classes the implementation digest covers, hashed in this order. */
   private static final List<Class<?>> IMPLEMENTATION =
@@ -350,7 +353,7 @@ public final class JointUncertainty {
       Rules rules) {
     var factor = cholesky(day.smoothedCovariance(), periodId, day.date());
     var mean = day.smoothedMean().toArray();
-    var random = new Random(daySeed(periodId, day.date(), rules.seed()));
+    var random = RANDOM_FACTORY.create(daySeed(periodId, day.date(), rules.seed()));
     var draws = new double[rules.draws()][batch.components().size()];
     var normal = new double[mean.length];
     var state = new double[mean.length];
