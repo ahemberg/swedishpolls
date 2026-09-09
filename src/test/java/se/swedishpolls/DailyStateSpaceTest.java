@@ -66,8 +66,8 @@ class DailyStateSpaceTest {
           new PollObservations.Observation(
               batch.observations().getFirst().poll(),
               START,
-              value,
-              SimpleMatrix.identity(dimension).scale(2),
+              ModelValues.copyOf(value),
+              ModelValues.copyOf(SimpleMatrix.identity(dimension).scale(2)),
               0);
       var fit =
           DailyStateSpace.fit(
@@ -287,9 +287,10 @@ class DailyStateSpaceTest {
     var weights = new SimpleMatrix(8, cycle.smoothedMean().getNumRows());
     for (int effect = 0; effect < cycle.weights().size(); effect++)
       for (int i = 0; i < 8; i++) weights.set(i, effect * 8 + i, cycle.weights().get(effect));
-    assertTrue(weights.mult(cycle.smoothedMean()).elementMaxAbs() < 1e-12);
+    assertTrue(weights.mult(cycle.smoothedMean().copy()).elementMaxAbs() < 1e-12);
     assertTrue(
-        weights.mult(cycle.smoothedCovariance()).mult(weights.transpose()).elementMaxAbs() < 1e-12);
+        weights.mult(cycle.smoothedCovariance().copy()).mult(weights.transpose()).elementMaxAbs()
+            < 1e-12);
     var eigenvalues = cycle.smoothedCovariance().eig().getEigenvalues();
     double largest =
         eigenvalues.stream().mapToDouble(org.ejml.data.Complex_F64::getReal).max().orElseThrow();
@@ -443,7 +444,7 @@ class DailyStateSpaceTest {
           replace(
               batch,
               new PollObservations.Observation(
-                  observation.poll(), START, observation.ilr(), covariance, 0));
+                  observation.poll(), START, observation.ilr(), ModelValues.copyOf(covariance), 0));
       assertThrows(
           IllegalArgumentException.class,
           () -> DailyStateSpace.fit(invalid, ELECTIONS, PARAMETERS));
@@ -455,7 +456,11 @@ class DailyStateSpaceTest {
           replace(
               batch,
               new PollObservations.Observation(
-                  observation.poll(), START, mean, observation.covariance(), 0));
+                  observation.poll(),
+                  START,
+                  ModelValues.copyOf(mean),
+                  observation.covariance(),
+                  0));
       assertThrows(
           IllegalArgumentException.class,
           () -> DailyStateSpace.fit(invalid, ELECTIONS, PARAMETERS));
@@ -526,6 +531,14 @@ class DailyStateSpaceTest {
         () -> "Maximum error: " + expected.minus(actual).elementMaxAbs());
   }
 
+  private static void assertMatrix(SimpleMatrix expected, ModelValues actual, double tolerance) {
+    assertMatrix(expected, actual.copy(), tolerance);
+  }
+
+  private static void assertMatrix(ModelValues expected, ModelValues actual, double tolerance) {
+    assertMatrix(expected.copy(), actual.copy(), tolerance);
+  }
+
   private record Reference(
       SimpleMatrix opinionMean,
       SimpleMatrix opinionCovariance,
@@ -569,7 +582,7 @@ class DailyStateSpaceTest {
       var observation = used.get(i);
       long t = ChronoUnit.DAYS.between(start, observation.midpoint());
       int effect = identities.indexOf(identity(observation, start, elections));
-      values.insertIntoThis(i * dimension, 0, observation.ilr());
+      values.insertIntoThis(i * dimension, 0, observation.ilr().copy());
       cross.insertIntoThis(
           0,
           i * dimension,

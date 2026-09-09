@@ -17,8 +17,8 @@ public final class PollObservations {
   public record Observation(
       PollCsv.Poll poll,
       LocalDate midpoint,
-      SimpleMatrix ilr,
-      SimpleMatrix covariance,
+      ModelValues ilr,
+      ModelValues covariance,
       int replacedZeros) {}
 
   public record Exclusion(int rowNumber, List<String> reasons) {
@@ -30,7 +30,7 @@ public final class PollObservations {
   public record Batch(
       Roster.CoveragePeriod period,
       List<String> components,
-      SimpleMatrix basis,
+      ModelValues basis,
       List<Observation> observations,
       List<Exclusion> exclusions) {
     public Batch {
@@ -44,6 +44,10 @@ public final class PollObservations {
    * The composition of one ilr state, in percent and component order. The basis rows span the
    * orthogonal complement of the constant vector, so {@code p} is the closure of {@code exp(H' z)}.
    */
+  public static Map<String, Double> shares(Batch batch, ModelValues ilr) {
+    return shares(batch, ilr.copy());
+  }
+
   public static Map<String, Double> shares(Batch batch, SimpleMatrix ilr) {
     if (ilr.getNumRows() != batch.components().size() - 1
         || ilr.getNumCols() != 1
@@ -134,8 +138,14 @@ public final class PollObservations {
       var midpoint =
           poll.collectionFrom()
               .plusDays(ChronoUnit.DAYS.between(poll.collectionFrom(), poll.collectionTo()) / 2);
-      observations.add(new Observation(poll, midpoint, basis.mult(log), covariance, zeros));
+      observations.add(
+          new Observation(
+              poll,
+              midpoint,
+              ModelValues.owned(basis.mult(log)),
+              ModelValues.owned(covariance),
+              zeros));
     }
-    return new Batch(period, components, basis, observations, exclusions);
+    return new Batch(period, components, ModelValues.owned(basis), observations, exclusions);
   }
 }

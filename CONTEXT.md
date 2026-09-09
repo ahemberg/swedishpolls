@@ -25,6 +25,10 @@ A party share reported by a poll, preserved with its date and provenance. Its ex
 **Modeled component**:
 A party or aggregate whose support is estimated jointly with the other components of the voting-intention composition. It is distinct from an individual source observation or a grouping chosen for display.
 
+**Model values**:
+The fixed numerical coordinates, transformations, and covariance relationships used by a modeled composition or fitted state. Once attached to a source observation or estimate, they do not change.
+_Avoid_: matrix
+
 **Comparable remainder**:
 Combined support outside the fixed eight parties S, M, SD, V, C, KD, L and MP. It includes FI in every period, unlike OTHER when FI is individually represented.
 
