@@ -3,6 +3,36 @@
 Issues and specs live in GitHub Issues for ahemberg/swedishpolls.
 Use the gh CLI from this repository.
 
+## Claiming
+
+Claim a ticket before editing anything. Without a claim, two agents can read
+the same `ready-for-agent` ticket and start the same work.
+
+1. Claim, then verify. GitHub has no compare-and-set, so assign first and read
+   back afterwards:
+
+       gh issue edit <number> --add-assignee @me --remove-label "ready-for-agent"
+       gh issue view <number> --json assignees,labels
+
+   If the read back shows another assignee, drop the ticket and pick another
+   one. Removing `ready-for-agent` is the half that matters:
+   `gh issue list --state open --label ready-for-agent` is then the queue of
+   unclaimed work, and the next agent never sees the ticket.
+
+2. Comment the claim on the issue, naming the session. Every agent assigns the
+   same GitHub account, so the assignee says claimed, not by whom.
+
+3. Push the task branch immediately, before the first real commit. A local-only
+   branch is invisible to other agents; `git ls-remote --heads origin` is the
+   second, independent claim signal.
+
+4. Release explicitly when abandoning work: re-add `ready-for-agent`, unassign,
+   and comment why. An unreleased claim parks the ticket forever.
+
+5. A claim spans every checkpoint. The ticket stays assigned until its last
+   checkpoint closes it, so a later session finds the ticket already assigned to
+   itself and continues.
+
 ## Branches and pull requests
 
 - All repository changes, including code, documentation, configuration and follow-up fixes, go through a topic branch and a pull request targeting `main`. Never commit or push changes directly to `main`.
@@ -29,6 +59,8 @@ implemented in one pass.
 - Read labels: gh issue view <number> --json labels
 - List: gh issue list --state open --json number,title,body,labels
 - Comment: gh issue comment <number> --body-file <file>
+- Assign: gh issue edit <number> --add-assignee @me
+- Unassign: gh issue edit <number> --remove-assignee @me
 - Apply labels: gh issue edit <number> --add-label "<label>"
 - Remove labels: gh issue edit <number> --remove-label "<label>"
 - Close: gh issue close <number>
