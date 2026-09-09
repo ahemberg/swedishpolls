@@ -17,3 +17,9 @@ Use the five default triage labels. Before triaging, read
 
 Use a single-context layout. Before exploring domain concepts or decisions,
 read [domain.md](docs/agents/domain.md).
+
+### Formatting
+
+`./mvnw verify` fails on any unformatted Java, `pom.xml`, YAML or Markdown file, and
+`spotless:check` also runs at `validate` so the failure arrives in seconds. Run
+`./mvnw spotless:apply` to fix the whole tree before committing.
