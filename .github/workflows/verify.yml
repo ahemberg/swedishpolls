@@ -117,6 +117,13 @@ jobs:
             fi
             exit "$status"
           }
+          wait_for_app() {
+            for attempt in $(seq 1 120); do
+              if curl --fail --silent http://127.0.0.1:8080/ >/dev/null; then return; fi
+              sleep 1
+            done
+            return 1
+          }
           trap cleanup EXIT
           for ARCH in amd64 arm64; do
             export ARCH
@@ -128,6 +135,7 @@ jobs:
               if [ -n "$id" ]; then docker image rm "$id"; fi
             done
             docker compose --project-name "$project" up --detach --wait
+            wait_for_app
             app=$(docker compose --project-name "$project" ps --quiet app)
             docker exec --user 10001:10001 "$app" sh -c \
               'printf persisted > /var/lib/swedishpolls/publications/restart-smoke'
@@ -135,11 +143,7 @@ jobs:
             app=$(docker compose --project-name "$project" ps --quiet app)
             docker exec --user 10001:10001 "$app" grep -qx persisted \
               /var/lib/swedishpolls/publications/restart-smoke
-            for attempt in $(seq 1 60); do
-              if curl --fail --silent http://127.0.0.1:8080/ >/dev/null; then break; fi
-              if [ "$attempt" = 60 ]; then exit 1; fi
-              sleep 1
-            done
+            wait_for_app
             docker compose --project-name "$project" logs --no-color \
               >"target/image-smoke/compose-${ARCH}.log"
             docker compose --project-name "$project" down --volumes
