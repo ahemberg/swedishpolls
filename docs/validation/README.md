@@ -90,6 +90,42 @@ followed by a new development freeze, rather than relaxed coverage targets.
 
 ## Numerical conventions and development tolerances
 
+### Observation implementation, issue #18 checkpoint 1
+
+`PollObservations.prepare(period, ingest.polls(snapshotId))` converts the normalized
+records from one archived snapshot into one observation per eligible poll. Supply
+one explicit coverage period per call. The returned batch keeps the period,
+ordered component names, basis, original poll records, midpoint dates, zero counts
+and row-numbered exclusions. Same-day polls remain separate observations. Unknown
+publication dates remain usable for corrected history; development-fold callers
+must apply the publication-time restrictions above before calling this method.
+Election reference tables are never read. Ingest exclusions, including exit polls,
+and roster exclusions carry through unchanged.
+
+The basis rows are Helmert contrasts in the declared roster order, followed by
+OTHER or RESIDUAL. Row `r`, numbered from zero, gives the first `r+1` components
+weight `1/sqrt((r+1)*(r+2))`, the next component weight `-(r+1)/sqrt((r+1)*(r+2))`,
+and the rest zero. For proportions `p`, the observation is `H log(p)` and its
+sampling covariance is `H diag(1/p) H' / n`. This is the full delta-method
+multinomial covariance: its rank-one term cancels because `H 1 = 0`. The ilr
+covariance retains off-diagonal entries. No overdispersion multiplier is fitted
+in this checkpoint.
+
+`PollObservationsTest` checks both rosters against 50-digit decimal reference
+calculations and the unsimplified dense `J Cov(p) J'` expression. It checks basis
+orthonormality, covariance symmetry and positive definiteness, midpoint rounding,
+zero replacement, small positive shares and exclusions. Numerical failures stop
+conversion without jitter or clipping. An unrepresentable positive decimal is
+never reclassified as an exact zero. `SnapshotIngestIT` also converts archived
+pre-2022 development rows, including the 388 FI candidate observations. Candidate
+conversion does not validate FI support or enable estimates. These are local
+numerical checks, not frozen release tolerances or the final statistical audit.
+
+Run the numerical checks with `./mvnw -Dtest=PollObservationsTest test`; run the
+archive checks and full suite with `./mvnw clean verify` against PostgreSQL 18.
+
+### Conventions for the estimator
+
 Midpoint is `start + floor(days_between(start,end)/2)`. A half-day rounds toward
 the earlier date. One-day polls stay on that day. Reject reversed/missing dates.
 Validate finite shares, positive sample size, the roster, missingness and residuals

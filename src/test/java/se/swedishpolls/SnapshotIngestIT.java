@@ -186,6 +186,24 @@ class SnapshotIngestIT {
         assertEquals("27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608", snapshot.sha256());
         assertArrayEquals(body, snapshot.rawCsv());
         assertEquals(expected, newIngest().polls(snapshot.id()));
+        var db = JdbcClient.create(dataSource);
+        assertEquals(4, db.sql("SELECT count(*) FROM election_reference").query(Integer.class).single());
+        // Only pre-2022 development inputs enter the numerical checks. Official outcomes stay in their own tables.
+        var development = newIngest().polls(snapshot.id()).stream().filter(poll -> poll.collectionTo() != null
+                && poll.collectionTo().isBefore(java.time.LocalDate.of(2022, 1, 1))).toList();
+        var periods = new Roster(db).periods();
+        var eight = PollObservations.prepare(periods.getFirst(), development);
+        var fi = PollObservations.prepare(periods.get(1), development);
+        assertEquals(388, fi.observations().size());
+        assertTrue(eight.observations().size() > fi.observations().size());
+        for (var batch : java.util.List.of(eight, fi)) {
+            assertEquals(development.size(), batch.observations().size() + batch.exclusions().size());
+            assertTrue(batch.observations().stream().allMatch(o -> o.poll().surveyType().equals("voting_intention")));
+            assertEquals(batch.observations().size(), batch.observations().stream().map(o -> o.poll().rowNumber()).distinct().count());
+            assertTrue(batch.observations().stream().allMatch(o -> !o.ilr().hasUncountable() && !o.covariance().hasUncountable()));
+        }
+        assertFalse(fi.period().supportValidated());
+        assertEquals(expected, newIngest().polls(snapshot.id()));
         assertEquals(SnapshotIngest.Result.UNCHANGED, newIngest().check());
         assertEquals(snapshot.id(), newIngest().activeSnapshot().orElseThrow().id());
     }
