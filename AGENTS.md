@@ -24,6 +24,13 @@ read [domain.md](docs/agents/domain.md).
 `spotless:check` also runs at `validate` so the failure arrives in seconds. Run
 `./mvnw spotless:apply` to fix the whole tree before committing.
 
+The frontend is gated by `npm run check` (`tsc --noEmit` plus `biome check .`) inside the
+Maven `verify` lifecycle. TypeScript runs every strictness flag beyond `strict`, and Biome
+runs its `style` and `complexity` groups at error severity with no carve-outs, so rules such
+as `noJsxLiterals` and `noDefaultExport` apply. Run `npx biome check --write .` from
+`frontend` to format and apply safe lint fixes before committing. Disabling a rule is a
+recorded decision: give it its own pull request and note it in [ADR 0002](docs/adr/0002-codestyle-gating.md).
+
 Run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per checkout so
 `git blame` skips the whole-tree reformat and attributes lines to the commit that
 wrote them. GitHub applies the file automatically.

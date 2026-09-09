@@ -8,7 +8,9 @@
   },
   "linter": {
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "style": "error",
+      "complexity": "error"
     }
   }
 }
