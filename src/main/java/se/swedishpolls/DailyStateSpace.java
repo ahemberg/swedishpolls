@@ -49,6 +49,25 @@ public final class DailyStateSpace {
 
     /** Returns internal daily states from the period start through the last observation midpoint. */
     public static Fit fit(PollObservations.Batch batch, List<LocalDate> elections, Parameters parameters) {
+        var prepared = prepare(batch, elections, parameters);
+        var forward = forward(prepared, parameters, true);
+        var smoothed = smooth(prepared, forward, parameters);
+        return new Fit(batch, parameters, smoothed.days(), smoothed.cycles(), forward.logLikelihood());
+    }
+
+    /**
+     * Returns the plug-in marginal likelihood of one parameter point, running the same forward filter without
+     * retaining daily states or smoothing. Every per-observation factorization check still applies.
+     */
+    public static double logLikelihood(PollObservations.Batch batch, List<LocalDate> elections,
+                                       Parameters parameters) {
+        return forward(prepare(batch, elections, parameters), parameters, false).logLikelihood();
+    }
+
+    private record Prepared(LocalDate start, int count, int dimension, List<PollObservations.Observation> observations,
+                            List<Layout> layouts, List<SimpleMatrix> centers) {}
+
+    private static Prepared prepare(PollObservations.Batch batch, List<LocalDate> elections, Parameters parameters) {
         if (!Double.isFinite(parameters.walkVariance()) || parameters.walkVariance() < 0
                 || !Double.isFinite(parameters.houseScale()) || parameters.houseScale() <= 0
                 || !Double.isFinite(parameters.covarianceMultiplier()) || parameters.covarianceMultiplier() <= 0)
@@ -72,18 +91,30 @@ public final class DailyStateSpace {
         var last = observations.getLast().midpoint();
         var layouts = layouts(observations, elections, start, last, dimension);
         var centers = layouts.stream().map(DailyStateSpace::center).toList();
-        int count = (int) ChronoUnit.DAYS.between(start, last) + 1;
-        var cycleOfDay = new int[count];
-        var anchors = new ArrayList<Anchor>();
-        var filteredMeans = new SimpleMatrix[count];
-        var filteredCovariances = new SimpleMatrix[count];
+        return new Prepared(start, (int) ChronoUnit.DAYS.between(start, last) + 1, dimension, observations,
+                layouts, centers);
+    }
+
+    private record Forward(double logLikelihood, SimpleMatrix[] filteredMeans, SimpleMatrix[] filteredCovariances,
+                           int[] cycleOfDay, List<Anchor> anchors) {}
+
+    /** The Kalman forward pass. Daily centered states and smoothing anchors are retained only when asked for. */
+    private static Forward forward(Prepared prepared, Parameters parameters, boolean retain) {
+        var observations = prepared.observations();
+        var layouts = prepared.layouts();
+        int dimension = prepared.dimension();
+        int count = prepared.count();
+        var cycleOfDay = retain ? new int[count] : null;
+        var anchors = retain ? new ArrayList<Anchor>() : null;
+        var filteredMeans = retain ? new SimpleMatrix[count] : null;
+        var filteredCovariances = retain ? new SimpleMatrix[count] : null;
         var mean = new SimpleMatrix(layouts.getFirst().size(), 1);
         var covariance = prior(layouts.getFirst(), parameters);
         double logLikelihood = 0;
         int index = 0;
         int cycle = 0;
         for (int day = 0; day < count; day++) {
-            var date = start.plusDays(day);
+            var date = prepared.start().plusDays(day);
             boolean anchored = day == 0;
             if (day > 0 && cycle + 1 < layouts.size() && layouts.get(cycle + 1).start().equals(date)) {
                 var reset = reset(mean, covariance, layouts.get(++cycle), parameters);
@@ -93,7 +124,7 @@ public final class DailyStateSpace {
             } else if (day > 0) {
                 addWalk(covariance, dimension, parameters.walkVariance());
             }
-            cycleOfDay[day] = cycle;
+            if (retain) cycleOfDay[day] = cycle;
             while (index < observations.size() && observations.get(index).midpoint().equals(date)) {
                 var observation = observations.get(index++);
                 var design = design(layouts.get(cycle), layouts.get(cycle).effects()
@@ -114,15 +145,14 @@ public final class DailyStateSpace {
             }
             if (mean.hasUncountable() || !Double.isFinite(logLikelihood))
                 throw new IllegalArgumentException("Nonfinite filtered state or likelihood");
+            if (!retain) continue;
             factor(covariance);
             if (anchored) anchors.add(new Anchor(day, mean.copy(), covariance.copy()));
-            var centered = project(centers.get(cycle), mean, covariance);
+            var centered = project(prepared.centers().get(cycle), mean, covariance);
             filteredMeans[day] = centered.mean();
             filteredCovariances[day] = centered.covariance();
         }
-        var smoothed = smooth(start, filteredMeans, filteredCovariances, layouts, centers, cycleOfDay, anchors,
-                parameters);
-        return new Fit(batch, parameters, smoothed.days(), smoothed.cycles(), logLikelihood);
+        return new Forward(logLikelihood, filteredMeans, filteredCovariances, cycleOfDay, anchors);
     }
 
     /** Cycles start at the coverage-period start and at every election day it contains. */
@@ -165,9 +195,14 @@ public final class DailyStateSpace {
     private record Smoothed(List<Day> days, List<Cycle> cycles) {}
 
     /** Adds the Rauch-Tung-Striebel smoothed states to the filtered days and centers each cycle's effects. */
-    private static Smoothed smooth(LocalDate start, SimpleMatrix[] filteredMeans, SimpleMatrix[] filteredCovariances,
-                                   List<Layout> layouts, List<SimpleMatrix> centers, int[] cycleOfDay,
-                                   List<Anchor> anchors, Parameters parameters) {
+    private static Smoothed smooth(Prepared prepared, Forward forward, Parameters parameters) {
+        var start = prepared.start();
+        var filteredMeans = forward.filteredMeans();
+        var filteredCovariances = forward.filteredCovariances();
+        var layouts = prepared.layouts();
+        var centers = prepared.centers();
+        var cycleOfDay = forward.cycleOfDay();
+        var anchors = forward.anchors();
         var days = new Day[filteredMeans.length];
         var cycles = new Cycle[layouts.size()];
         int anchor = anchors.size() - 1;
