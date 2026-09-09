@@ -209,13 +209,26 @@ public final class EstimateHistory {
       CoverageValidation.Rules rules) {
     var fitted = fitted(period, polls, elections, parameters, rules);
     var segments = new ArrayList<Segment>();
-    var boundaries = new ArrayList<Boundary>();
     for (var span : fitted.spans()) {
       var days = new ArrayList<Day>();
       for (var day : span.fit().days())
         days.add(new Day(day.date(), PollObservations.shares(span.batch(), day.smoothedMean())));
       segments.add(new Segment(period.id(), days.getFirst().date(), days.getLast().date(), days));
-      boundaries.add(opening(period, days.getFirst().date(), span.gapDays(), rules));
+    }
+    return new Estimated(
+        period.id(), fitted.support(), segments, boundaries(period, fitted, rules));
+  }
+
+  /**
+   * The dates the history must render as a break rather than as movement. The joint draws read the
+   * same fitted runs, so every summary drawn from them marks these same boundaries instead of
+   * deriving its own.
+   */
+  static List<Boundary> boundaries(
+      Roster.CoveragePeriod period, Fitted fitted, CoverageValidation.Rules rules) {
+    var boundaries = new ArrayList<Boundary>();
+    for (var span : fitted.spans()) {
+      boundaries.add(opening(period, span.fit().days().getFirst().date(), span.gapDays(), rules));
       for (int cycle = 1; cycle < span.fit().cycles().size(); cycle++)
         if (!span.fit()
             .cycles()
@@ -232,7 +245,7 @@ public final class EstimateHistory {
                       + " movement."));
     }
     boundaries.sort(Comparator.comparing(Boundary::date));
-    return new Estimated(period.id(), fitted.support(), segments, boundaries);
+    return List.copyOf(boundaries);
   }
 
   private static Boundary opening(

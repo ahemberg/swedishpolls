@@ -342,7 +342,7 @@ public final class JointUncertainty {
    * and transforming once afterwards would report a different composition, so the transform comes
    * first and every summary below reads these rows.
    */
-  private static double[][] transformed(
+  static double[][] transformed(
       PollObservations.Batch batch,
       double[][] basis,
       String periodId,
@@ -402,7 +402,7 @@ public final class JointUncertainty {
   }
 
   /** The order statistic at {@code h = (n-1)p}, interpolated linearly between its neighbours. */
-  private static double quantile(double[] sorted, double probability) {
+  static double quantile(double[] sorted, double probability) {
     double position = (sorted.length - 1) * probability;
     int low = (int) Math.floor(position);
     int high = Math.min(low + 1, sorted.length - 1);

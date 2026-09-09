@@ -238,6 +238,13 @@
     "precision": "repeat the whole run with the registered seed and its successors and report the largest movement of any mean or interval endpoint; the manifest resolves no tolerance for it, so the spread is recorded evidence rather than a gate",
     "reproduction": "a rerun at the same seed must reproduce every retained draw exactly; the run records the seed, roster, basis, input rows, parameters, implementation digest and runtime versions needed to repeat it"
   },
+  "remainder_rules": {
+    "membership": "support outside the fixed eight parties S, M, SD, V, C, KD, L and MP; FI and the residual are combined only where the roster keeps FI separate, since OTHER already contains FI everywhere else",
+    "summary": "the remainder is summed inside each joint draw and only then averaged and cut into quantiles, so an interval endpoint is never the sum of two marginal endpoints",
+    "draws": "the same per-day streams the component summaries read, so the remainder and the components describe one set of draws rather than two runs",
+    "boundaries": "the remainder is cut at the same separate fits, unsupported gaps and centering-reference changes as the daily history, and a change spanning any of them is suppressed rather than presented as movement",
+    "elections": "an official result is grouped into the period's own components before it is displayed against that period, and its comparable remainder combines FI and the residual in every period so the aggregate means the same thing across a roster change; election results are references, never observations"
+  },
   "paired_hac_lag_folds": 3,
   "reference_max_paired_se_loss": 1,
   "predictive_coverage95": [
