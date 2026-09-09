@@ -64,3 +64,100 @@ jobs:
           name: fallow-reports
           path: fallow-reports/
           if-no-files-found: error
+  images:
+    name: Build, verify and publish images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build, fallow]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '25.0.4+7.0.LTS'
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+        with:
+          image: docker.io/tonistiigi/binfmt@sha256:8f58e6214f4cc9dc83ce8f5acad1ece508eb6b20e696a8c1e9f274481982c541
+          platforms: arm64
+      - name: Build exact architecture images
+        run: ./mvnw --batch-mode --no-transfer-progress -Pdocker -Dimage.version=${GITHUB_SHA} verify
+      - name: Verify headless Java2D and Swedish fonts
+        run: |
+          mkdir -p target/image-smoke
+          for arch in amd64 arm64; do
+            image="ghcr.io/ahemberg/swedishpolls:${GITHUB_SHA}-${arch}"
+            container=$(docker create --platform "linux/${arch}" --entrypoint java "$image" \
+              -Djava.awt.headless=true -cp '/app/resources:/app/classes:/app/libs/*' \
+              se.swedishpolls.ImageSmokeCheck /tmp/image-smoke.png)
+            docker start --attach "$container"
+            docker cp "$container:/tmp/image-smoke.png" "target/image-smoke/${arch}.png"
+            docker rm "$container"
+          done
+      - name: Verify Compose and restart persistence
+        env:
+          APP_VERSION: ${{ github.sha }}
+          DATABASE_PASSWORD: compose-smoke-password
+          POLLS_INGEST_ENABLED: 'false'
+          PUBLIC_ORIGIN: https://polls.example
+          SITE_NAME: Swedish Polls smoke test
+        run: |
+          project=
+          cleanup() {
+            status=$?
+            if [ -n "$project" ]; then
+              docker compose --project-name "$project" logs --no-color \
+                >"target/image-smoke/compose-${ARCH}.log" 2>&1 || true
+              docker compose --project-name "$project" down --volumes || true
+            fi
+            exit "$status"
+          }
+          trap cleanup EXIT
+          for ARCH in amd64 arm64; do
+            export ARCH
+            project="swedishpolls-${ARCH}"
+            for base in \
+              busybox:1.37.0@sha256:9db7b59979c38555a39def84a31fb98b5296952f9e3afd4f6f11f05b07adfab0 \
+              postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636; do
+              id=$(docker image inspect --format '{{.Id}}' "$base" 2>/dev/null || true)
+              if [ -n "$id" ]; then docker image rm "$id"; fi
+            done
+            docker compose --project-name "$project" up --detach --wait
+            app=$(docker compose --project-name "$project" ps --quiet app)
+            docker exec --user 10001:10001 "$app" sh -c \
+              'printf persisted > /var/lib/swedishpolls/publications/restart-smoke'
+            docker compose --project-name "$project" restart app
+            app=$(docker compose --project-name "$project" ps --quiet app)
+            docker exec --user 10001:10001 "$app" grep -qx persisted \
+              /var/lib/swedishpolls/publications/restart-smoke
+            for attempt in $(seq 1 60); do
+              if curl --fail --silent http://127.0.0.1:8080/ >/dev/null; then break; fi
+              if [ "$attempt" = 60 ]; then exit 1; fi
+              sleep 1
+            done
+            docker compose --project-name "$project" logs --no-color \
+              >"target/image-smoke/compose-${ARCH}.log"
+            docker compose --project-name "$project" down --volumes
+            project=
+          done
+          trap - EXIT
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: image-smoke
+          path: target/image-smoke/
+          if-no-files-found: error
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish commit-tagged images
+        run: |
+          docker push "ghcr.io/ahemberg/swedishpolls:${GITHUB_SHA}-amd64"
+          docker push "ghcr.io/ahemberg/swedishpolls:${GITHUB_SHA}-arm64"

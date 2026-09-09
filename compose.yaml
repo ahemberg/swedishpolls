@@ -1,0 +1,47 @@
+services:
+  publication-volume-init:
+    image: busybox:1.37.0@sha256:9db7b59979c38555a39def84a31fb98b5296952f9e3afd4f6f11f05b07adfab0
+    platform: linux/${ARCH:?Set ARCH to amd64 or arm64}
+    command: ["chown", "-R", "10001:10001", "/publications"]
+    volumes:
+      - publications:/publications
+  app:
+    image: ghcr.io/ahemberg/swedishpolls:${APP_VERSION:?Set APP_VERSION}-${ARCH:?Set ARCH to amd64 or arm64}
+    platform: linux/${ARCH}
+    restart: unless-stopped
+    depends_on:
+      publication-volume-init:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/swedishpolls
+      DATABASE_USER: swedishpolls
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
+      PUBLICATION_ROOT: /var/lib/swedishpolls/publications
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN}
+      SITE_NAME: ${SITE_NAME:?Set SITE_NAME}
+      POLLS_INGEST_ENABLED: ${POLLS_INGEST_ENABLED:-true}
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
+    volumes:
+      - publications:/var/lib/swedishpolls/publications
+  db:
+    image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+    platform: linux/${ARCH}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: swedishpolls
+      POSTGRES_USER: swedishpolls
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swedishpolls -d swedishpolls"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - database:/var/lib/postgresql
+volumes:
+  database:
+  publications:

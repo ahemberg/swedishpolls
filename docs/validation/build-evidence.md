@@ -25,6 +25,22 @@ GitHub-hosted workflow execution and required-merge-check enforcement are not
 claimed by these local results. The private repository's plan returned HTTP 403
 for branch protection. The owner accepted this limitation on 2026-09-08, keeping
 the repository private on the free plan. Enforced merge checks are waived, not
-a remaining blocker. No image was published. Both production architectures and
-font rendering remain #27's checks. Fallow reports and Maven test results are
+a remaining blocker. No image was published during #16. Fallow reports and Maven test results are
 configured as CI artifacts; local generated reports are ignored by Git.
+
+## Production image verification
+
+Verified locally on 2026-09-09 for #27. Jib built separate amd64 and arm64 images
+from the pinned Temurin 25.0.4+7 Noble index. The exact images ran the synthetic
+headless Java2D check natively and under QEMU respectively. Both produced a 640 by
+120 PNG using DejaVu Sans and displayed `åäö ÅÄÖ`. The amd64 Compose setup waited
+for PostgreSQL, served the bundled application, wrote publication storage as UID
+10001 and retained that file across an application restart.
+
+The `images` job repeats both image checks and the full Compose readiness, non-root
+write and restart-persistence check for both architectures on `main`. It uploads PNGs
+and Compose logs before publishing either image. Publishing has
+`needs: [build, fallow]`; the representative unused-export regression recorded above
+therefore blocks image publication as well as the merge check, without regenerating
+or absorbing a baseline. Hosted image publication and arm64 Compose evidence require
+the first successful `main` run of this workflow.
