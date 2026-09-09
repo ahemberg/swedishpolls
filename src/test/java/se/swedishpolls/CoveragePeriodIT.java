@@ -8,20 +8,12 @@ import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 class CoveragePeriodIT {
   @Test
   void migrationRecordsRostersWithEffectivePeriodsAndKeepsCandidateFiUnvalidated() {
     var schema = "rosters_" + UUID.randomUUID().toString().replace("-", "");
-    var url =
-        System.getenv()
-            .getOrDefault("DATABASE_URL", "jdbc:postgresql://localhost:5432/swedishpolls");
-    var dataSource =
-        new DriverManagerDataSource(
-            url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema,
-            System.getenv().getOrDefault("DATABASE_USER", "swedishpolls"),
-            System.getenv("DATABASE_PASSWORD"));
+    var dataSource = TestDatabase.dataSource(schema);
     var flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {
