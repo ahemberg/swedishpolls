@@ -12,7 +12,9 @@
   <version>0.1.0</version>
   <properties>
     <java.version>25</java.version>
+    <jib-maven-plugin.version>3.5.2</jib-maven-plugin.version>
     <project.build.outputTimestamp>2026-09-08T00:00:00Z</project.build.outputTimestamp>
+    <runtime.image>eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e</runtime.image>
   </properties>
   <dependencies>
     <dependency>
@@ -233,4 +235,101 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>docker</id>
+      <properties>
+        <image.version>${git.commit.id.abbrev}</image.version>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.github.git-commit-id</groupId>
+            <artifactId>git-commit-id-maven-plugin</artifactId>
+            <version>10.0.0</version>
+            <configuration>
+              <abbrevLength>7</abbrevLength>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>revision</goal>
+                </goals>
+                <phase>initialize</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>jib-maven-plugin</artifactId>
+            <version>${jib-maven-plugin.version}</version>
+            <configuration>
+              <from>
+                <image>${runtime.image}</image>
+              </from>
+              <to>
+                <image>ghcr.io/ahemberg/swedishpolls:${image.version}</image>
+              </to>
+              <container>
+                <mainClass>se.swedishpolls.Application</mainClass>
+                <jvmFlags>
+                  <jvmFlag>-Djava.awt.headless=true</jvmFlag>
+                </jvmFlags>
+                <labels>
+                  <org.opencontainers.image.revision>${git.commit.id}</org.opencontainers.image.revision>
+                  <org.opencontainers.image.source>https://github.com/ahemberg/swedishpolls</org.opencontainers.image.source>
+                </labels>
+                <ports>
+                  <port>8080</port>
+                </ports>
+                <user>10001:10001</user>
+              </container>
+            </configuration>
+            <executions>
+              <execution>
+                <id>amd64</id>
+                <goals>
+                  <goal>dockerBuild</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <from>
+                    <platforms>
+                      <platform>
+                        <architecture>amd64</architecture>
+                        <os>linux</os>
+                      </platform>
+                    </platforms>
+                  </from>
+                  <to>
+                    <image>ghcr.io/ahemberg/swedishpolls:${image.version}-amd64</image>
+                  </to>
+                </configuration>
+              </execution>
+              <execution>
+                <id>arm64</id>
+                <goals>
+                  <goal>dockerBuild</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <from>
+                    <platforms>
+                      <platform>
+                        <architecture>arm64</architecture>
+                        <os>linux</os>
+                      </platform>
+                    </platforms>
+                  </from>
+                  <to>
+                    <image>ghcr.io/ahemberg/swedishpolls:${image.version}-arm64</image>
+                  </to>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

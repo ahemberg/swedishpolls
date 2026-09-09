@@ -85,14 +85,36 @@ The project uses React 19.2.8, Vite 8.2.2 and TypeScript 5.9.3.
 include Java 25; Vite 8.2.2's package declares Node `^20.19.0 || >=22.12.0`.
 Compilation and the integration checks verify the selected combination locally.
 
-The Dockerfile pins Temurin 25.0.4+7 Noble's multi-platform image index. Compose and
-CI pin the PostgreSQL 18.4 index. Both indexes contain amd64 and arm64 manifests.
-The application image runs as UID/GID 10001. The complete production Compose setup,
-image publishing, Java2D/font checks and architecture validation belong to #27.
+The Maven `docker` profile uses Jib 3.5.2 and pins Temurin 25.0.4+7 Noble's
+multi-platform image index. That runtime includes fontconfig, FreeType and DejaVu fonts.
+The application image runs as UID/GID 10001 with headless Java2D enabled. To build both
+architecture-specific images into the local Docker daemon:
 
 ```sh
-docker build -t swedishpolls:local .
+./mvnw -Pdocker -Dimage.version=local verify
 ```
+
+## Production Compose
+
+CI publishes `ghcr.io/ahemberg/swedishpolls:<commit>-amd64` and
+`ghcr.io/ahemberg/swedishpolls:<commit>-arm64` after the build and Fallow jobs pass on
+`main`. It keeps commit tags and never deploys to the host. Set the exact commit and host
+architecture when starting Compose:
+
+```sh
+APP_VERSION='<full-main-commit>' ARCH=amd64 \
+  DATABASE_PASSWORD='choose-a-production-password' \
+  PUBLIC_ORIGIN='https://polls.example' SITE_NAME='Swedish Polls' \
+  docker compose up -d --wait
+```
+
+Use `ARCH=arm64` only on a 64-bit ARM operating system. `PUBLIC_ORIGIN` is the public
+HTTPS origin without a path. `SITE_NAME` is the public name shown in page and sharing
+metadata. Put a TLS reverse proxy in front of the localhost-only application port.
+Compose waits for PostgreSQL, initializes the publication volume for UID/GID 10001, and
+retains database and publication data in named volumes across restarts. Do not run
+`docker compose down --volumes` on production data. Backups, restore testing, recovery
+controls and external failure notifications are deferred.
 
 ## CI and merge policy
 
@@ -101,8 +123,8 @@ pass before merging, and review baseline/protocol changes. These are manual
 project conventions; GitHub does not enforce them. Fallow
 uses full Git history, the PR base SHA and a separately pinned action and CLI.
 Tool/configuration errors and audit regressions fail the job; reports upload even
-on failure. Any image-publishing job added by #27 must use `needs: [build, fallow]`
-in this workflow or depend on equivalent successful checks for the exact commit.
+on failure. The image job uses `needs: [build, fallow]`, so either failed check blocks
+image building and publication for that commit.
 
 Owner decision, 2026-09-08: keep the repository private on its current free plan
 and accept the absence of enforced merge checks and code-owner approval. This
