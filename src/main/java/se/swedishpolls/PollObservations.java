@@ -95,6 +95,27 @@ public final class PollObservations {
   }
 
   /**
+   * The multinomial delta covariance of the ilr coordinates at one composition and sample size:
+   * {@code H diag(1/p) [diag(p) - p p'] diag(1/p) H'/n = H diag(1/p) H'/n}, since {@code H 1 = 0}.
+   */
+  static SimpleMatrix deltaCovariance(
+      SimpleMatrix basis, double[] proportions, double n, String where) {
+    int size = proportions.length;
+    var covariance = new SimpleMatrix(size - 1, size - 1);
+    for (int r = 0; r < size - 1; r++)
+      for (int c = 0; c <= r; c++) {
+        double value = 0;
+        for (int j = 0; j < size; j++)
+          value += basis.get(r, j) * basis.get(c, j) / (n * proportions[j]);
+        if (!Double.isFinite(value))
+          throw new IllegalArgumentException("Nonfinite observation covariance at " + where);
+        covariance.set(r, c, value);
+        covariance.set(c, r, value);
+      }
+    return covariance;
+  }
+
+  /**
    * Explicit candidate periods are allowed for development; this does not validate their support.
    */
   public static Batch prepare(Roster.CoveragePeriod period, List<PollCsv.Poll> polls) {
@@ -143,20 +164,7 @@ public final class PollObservations {
       }
       var log = new SimpleMatrix(size, 1);
       for (int c = 0; c < size; c++) log.set(c, Math.log(proportions[c]));
-      var covariance = new SimpleMatrix(size - 1, size - 1);
-      // H diag(1/p) [diag(p)-p p'] diag(1/p) H'/n = H diag(1/p) H'/n, since H 1 = 0.
-      for (int r = 0; r < size - 1; r++) {
-        for (int c = 0; c <= r; c++) {
-          double value = 0;
-          for (int j = 0; j < size; j++)
-            value += basis.get(r, j) * basis.get(c, j) / (n * proportions[j]);
-          if (!Double.isFinite(value))
-            throw new IllegalArgumentException(
-                "Nonfinite observation covariance at row " + poll.rowNumber());
-          covariance.set(r, c, value);
-          covariance.set(c, r, value);
-        }
-      }
+      var covariance = deltaCovariance(basis, proportions, n, "row " + poll.rowNumber());
       if (!DecompositionFactory_DDRM.chol(size - 1, true).decompose(covariance.getDDRM().copy()))
         throw new IllegalArgumentException(
             "Observation covariance is not positive definite at row " + poll.rowNumber());
