@@ -75,7 +75,7 @@ class SnapshotIngestIT {
     body = PollCsvTest.csv(original + PollCsvTest.ROW.replace("Ipsos", "Novus"));
     assertEquals(SnapshotIngest.Result.CHANGED, ingest.check());
     var first = ingest.activeSnapshot().orElseThrow();
-    assertArrayEquals(body, first.rawCsv());
+    assertArrayEquals(body, ingest.rawCsv(first.id()));
     assertEquals(2, ingest.polls(first.id()).size());
 
     // A corrected share, changed sample-size key and deleted Novus row replace the whole active
@@ -91,7 +91,8 @@ class SnapshotIngestIT {
     assertTrue(ingest.polls(second.id()).getFirst().eligible());
     assertFalse(ingest.polls(second.id()).getFirst().publicationTimeEligible());
     assertEquals(2, newIngest().polls(first.id()).size());
-    assertArrayEquals(first.rawCsv(), newIngest().snapshot(first.id()).rawCsv());
+    assertEquals(first, newIngest().snapshot(first.id()));
+    assertArrayEquals(ingest.rawCsv(first.id()), newIngest().rawCsv(first.id()));
     assertEquals(second.id(), newIngest().activeSnapshot().orElseThrow().id());
   }
 
@@ -110,7 +111,7 @@ class SnapshotIngestIT {
     assertEquals(first.id(), ingest.activeSnapshot().orElseThrow().id());
     body = PollCsvTest.csv(PollCsvTest.ROW.replace("20.123", "20.125"));
     assertEquals(SnapshotIngest.Result.CHANGED, ingest.check());
-    body = first.rawCsv();
+    body = ingest.rawCsv(first.id());
     assertEquals(SnapshotIngest.Result.CHANGED, ingest.check());
     assertEquals(first.id(), ingest.activeSnapshot().orElseThrow().id());
     assertEquals(1, ingest.polls(first.id()).size());
@@ -143,7 +144,7 @@ class SnapshotIngestIT {
       assertEquals(first.id(), ingest.activeSnapshot().orElseThrow().id());
       assertEquals("\"first\"", receivedEtag);
     }
-    body = first.rawCsv();
+    body = ingest.rawCsv(first.id());
     assertEquals(SnapshotIngest.Result.UNCHANGED, ingest.check());
   }
 
@@ -223,7 +224,7 @@ class SnapshotIngestIT {
     var snapshot = ingest.activeSnapshot().orElseThrow();
     assertEquals(
         "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608", snapshot.sha256());
-    assertArrayEquals(body, snapshot.rawCsv());
+    assertArrayEquals(body, ingest.rawCsv(snapshot.id()));
     assertEquals(expected, newIngest().polls(snapshot.id()));
     var db = JdbcClient.create(dataSource);
     assertEquals(

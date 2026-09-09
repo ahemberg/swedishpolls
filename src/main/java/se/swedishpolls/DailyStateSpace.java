@@ -139,11 +139,12 @@ public final class DailyStateSpace {
         centers);
   }
 
+  /** Retained components are null when the forward pass was asked not to retain daily states. */
   private record Forward(
       double logLikelihood,
-      SimpleMatrix[] filteredMeans,
-      SimpleMatrix[] filteredCovariances,
-      int[] cycleOfDay,
+      List<SimpleMatrix> filteredMeans,
+      List<SimpleMatrix> filteredCovariances,
+      List<Integer> cycleOfDay,
       List<Anchor> anchors) {}
 
   /**
@@ -212,12 +213,22 @@ public final class DailyStateSpace {
       filteredMeans[day] = centered.mean();
       filteredCovariances[day] = centered.covariance();
     }
-    return new Forward(logLikelihood, filteredMeans, filteredCovariances, cycleOfDay, anchors);
+    return new Forward(
+        logLikelihood,
+        retain ? List.of(filteredMeans) : null,
+        retain ? List.of(filteredCovariances) : null,
+        retain ? Arrays.stream(cycleOfDay).boxed().toList() : null,
+        anchors);
   }
 
   /** Cycles start at the coverage-period start and at every election day it contains. */
   private record Layout(
-      LocalDate start, LocalDate end, int dimension, List<String> effects, double[] weights) {
+      LocalDate start, LocalDate end, int dimension, List<String> effects, List<Double> weights) {
+    Layout {
+      effects = List.copyOf(effects);
+      weights = List.copyOf(weights);
+    }
+
     int size() {
       return dimension * (1 + effects.size());
     }
@@ -253,7 +264,8 @@ public final class DailyStateSpace {
       for (var institute : eras.values())
         for (var era : institute)
           weights[effects.indexOf(era)] += 1.0 / (eras.size() * institute.size());
-      layouts.add(new Layout(from, to, dimension, effects, weights));
+      layouts.add(
+          new Layout(from, to, dimension, effects, Arrays.stream(weights).boxed().toList()));
     }
     return layouts;
   }
@@ -276,18 +288,18 @@ public final class DailyStateSpace {
     var centers = prepared.centers();
     var cycleOfDay = forward.cycleOfDay();
     var anchors = forward.anchors();
-    var days = new Day[filteredMeans.length];
+    var days = new Day[filteredMeans.size()];
     var cycles = new Cycle[layouts.size()];
     int anchor = anchors.size() - 1;
     State smoothed = null;
     for (int day = days.length - 1; day >= 0; day--) {
       while (anchors.get(anchor).day() > day) anchor--;
-      var layout = layouts.get(cycleOfDay[day]);
+      var layout = layouts.get(cycleOfDay.get(day));
       var filtered = filtered(anchors.get(anchor), day, layout, parameters);
       if (smoothed == null) smoothed = filtered;
       else {
-        var next = layouts.get(cycleOfDay[day + 1]);
-        boolean transition = cycleOfDay[day] != cycleOfDay[day + 1];
+        var next = layouts.get(cycleOfDay.get(day + 1));
+        boolean transition = !cycleOfDay.get(day).equals(cycleOfDay.get(day + 1));
         var predicted =
             transition
                 ? reset(filtered.mean(), filtered.covariance(), next, parameters)
@@ -316,24 +328,25 @@ public final class DailyStateSpace {
         factor(covariance);
         smoothed = new State(mean, covariance);
       }
-      var centered = project(centers.get(cycleOfDay[day]), smoothed.mean(), smoothed.covariance());
+      var centered =
+          project(centers.get(cycleOfDay.get(day)), smoothed.mean(), smoothed.covariance());
       days[day] =
           new Day(
               start.plusDays(day),
-              filteredMeans[day],
-              filteredCovariances[day],
+              filteredMeans.get(day),
+              filteredCovariances.get(day),
               centered.mean(),
               centered.covariance());
       if (layout.end().equals(days[day].date())) {
         var deviation = deviation(layout);
         var effects = project(deviation, filtered.mean(), filtered.covariance());
         var smoothedEffects = project(deviation, smoothed.mean(), smoothed.covariance());
-        cycles[cycleOfDay[day]] =
+        cycles[cycleOfDay.get(day)] =
             new Cycle(
                 layout.start(),
                 layout.end(),
                 layout.effects(),
-                Arrays.stream(layout.weights()).boxed().toList(),
+                layout.weights(),
                 effects.mean(),
                 effects.covariance(),
                 smoothedEffects.mean(),
@@ -414,7 +427,7 @@ public final class DailyStateSpace {
     for (int i = 0; i < dimension; i++) {
       center.set(i, i, 1);
       for (int e = 0; e < layout.effects().size(); e++)
-        center.set(i, dimension * (1 + e) + i, layout.weights()[e]);
+        center.set(i, dimension * (1 + e) + i, layout.weights().get(e));
     }
     return center;
   }
@@ -427,7 +440,9 @@ public final class DailyStateSpace {
       for (int f = 0; f < effects; f++)
         for (int i = 0; i < dimension; i++)
           deviation.set(
-              dimension * e + i, dimension * (1 + f) + i, (e == f ? 1 : 0) - layout.weights()[f]);
+              dimension * e + i,
+              dimension * (1 + f) + i,
+              (e == f ? 1 : 0) - layout.weights().get(f));
     return deviation;
   }
 
