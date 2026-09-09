@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.DuplicateHeaderMode;
 
@@ -41,6 +42,8 @@ public final class PollCsv {
           "house");
   private static final String METHOD_EVIDENCE =
       "https://github.com/MansMeg/SwedishPolls/blob/f0390c05854d87bbf21db9d31c6431ffa0f07f7e/RPackage/R/handle_demoskop_inizio_merger.R";
+  private static final Pattern EXIT_POLL =
+      Pattern.compile("valu|valdag|exit|svt|tv4", Pattern.CASE_INSENSITIVE);
 
   public record Poll(
       int rowNumber,
@@ -133,13 +136,7 @@ public final class PollCsv {
         var institute = raw.get("house");
         if (missing(company)) reasons.add("missing_company");
         if (missing(institute)) reasons.add("missing_institute");
-        var name = (company + " " + institute).toLowerCase(java.util.Locale.ROOT);
-        boolean exit =
-            name.contains("valu")
-                || name.contains("valdag")
-                || name.contains("exit")
-                || name.contains("svt")
-                || name.contains("tv4");
+        boolean exit = EXIT_POLL.matcher(company + " " + institute).find();
         if (exit) reasons.add("exit_or_election_day");
         String era = "Inizio".equals(institute) ? "inizio_continuation" : null;
         if ("Demoskop".equals(institute) && publication != null)
