@@ -124,6 +124,43 @@ numerical checks, not frozen release tolerances or the final statistical audit.
 Run the numerical checks with `./mvnw -Dtest=PollObservationsTest test`; run the
 archive checks and full suite with `./mvnw clean verify` against PostgreSQL 18.
 
+### Daily state-space implementation, issue #18 checkpoint 2
+
+`DailyStateSpace.fit(batch, parameters)` fits one prepared batch with a fixed daily
+ilr walk variance and pooled observation-covariance multiplier. It starts at the
+batch's coverage-period start with mean zero and covariance `4 * I`. Each later
+calendar day adds `walkVariance * I`, including days without polls. Each poll
+updates the state once, on its midpoint. Same-day polls are processed separately,
+ordered by archived row number after sorting by midpoint. There is no election
+input. A zero walk variance is allowed as the static-state limit.
+
+The fit returns filtered and smoothed ilr means and full covariance matrices,
+plus the Gaussian innovation log likelihood and its input batch and parameters.
+Filtering uses Cholesky solves and a Joseph covariance update; smoothing uses the
+[Rauch–Tung–Striebel recursion](https://users.aalto.fi/~ssarkka/pub/bfs_book_2023_online.pdf).
+Nonfinite values, asymmetric input covariance and failed positive-definite
+factorizations stop the fit. No jitter or eigenvalue clipping is applied.
+Covariance symmetry is checked to a relative `1e-12`; computed covariances are
+averaged with their transpose to remove roundoff asymmetry.
+
+These internal states run through the last midpoint. Coverage validation, public
+history and last-fieldwork headline dating remain checkpoints 5 and 6. House
+effects and tuning remain checkpoints 3 and 4. Candidate FI fits here do not
+establish supported dates, and the fixed test parameters are not fitted values.
+
+`DailyStateSpaceTest` checks the first update against a scalar conjugate-normal
+reference, then compares every daily filtered and smoothed state and the joint
+likelihood with independent dense Gaussian conditioning for both rosters. The
+cases include unobserved days before and between polls, overlapping windows,
+same-day polls, reversed input order, zero walk variance and numerical failures.
+State comparisons use absolute `1e-11` and likelihood comparisons `1e-10` in these
+small systems. These are test tolerances, not frozen development release bounds.
+`SnapshotIngestIT` fits both rosters using archived pre-2022 development rows and
+checks finite daily results. It does not run the reserved final statistical audit.
+
+Run `./mvnw -Dtest=DailyStateSpaceTest test` for the numerical checks and
+`./mvnw clean verify` against PostgreSQL 18 for the full suite.
+
 ### Conventions for the estimator
 
 Midpoint is `start + floor(days_between(start,end)/2)`. A half-day rounds toward

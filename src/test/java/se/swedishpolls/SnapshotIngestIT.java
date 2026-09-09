@@ -201,6 +201,13 @@ class SnapshotIngestIT {
             assertTrue(batch.observations().stream().allMatch(o -> o.poll().surveyType().equals("voting_intention")));
             assertEquals(batch.observations().size(), batch.observations().stream().map(o -> o.poll().rowNumber()).distinct().count());
             assertTrue(batch.observations().stream().allMatch(o -> !o.ilr().hasUncountable() && !o.covariance().hasUncountable()));
+            var fit = DailyStateSpace.fit(batch, new DailyStateSpace.Parameters(0.0001, 1.5));
+            assertTrue(Double.isFinite(fit.logLikelihood()));
+            assertEquals(batch.period().effectiveFrom(), fit.days().getFirst().date());
+            assertEquals(batch.observations().stream().map(PollObservations.Observation::midpoint)
+                    .max(java.time.LocalDate::compareTo).orElseThrow(), fit.days().getLast().date());
+            assertTrue(fit.days().stream().allMatch(day -> !day.filteredMean().hasUncountable()
+                    && !day.smoothedMean().hasUncountable() && !day.smoothedCovariance().hasUncountable()));
         }
         assertFalse(fi.period().supportValidated());
         assertEquals(expected, newIngest().polls(snapshot.id()));
