@@ -2,12 +2,14 @@ package se.swedishpolls;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class DevelopmentTuningTest {
   private static final LocalDate START = LocalDate.of(2014, 1, 1);
@@ -17,6 +19,8 @@ class DevelopmentTuningTest {
       new DevelopmentTuning.Fold(LocalDate.of(2014, 6, 30), LocalDate.of(2014, 8, 4));
   private static final DevelopmentTuning.Grid GRID =
       new DevelopmentTuning.Grid(List.of(1e-5, 1e-4, 1e-3), List.of(0.05, 0.2), List.of(1.0, 2.0));
+
+  @TempDir Path temp;
 
   /**
    * One eligible poll, published on its collection end unless the caller overrides the publication
@@ -265,5 +269,16 @@ class DevelopmentTuningTest {
     assertEquals(List.of(0.02, 0.05, 0.1, 0.2), protocol.grid().houseScales());
     assertEquals(List.of(1.0, 1.5, 2.0, 3.0), protocol.grid().covarianceMultipliers());
     assertEquals(80, protocol.grid().points().size());
+  }
+
+  @Test
+  void anIncompleteProtocolNamesTheMissingField() throws Exception {
+    var file = temp.resolve("protocol.json");
+    Files.writeString(file, "{\"version\":\"test\",\"development_folds\":[],\"tuning_grid\":{}}");
+
+    var error =
+        assertThrows(IllegalArgumentException.class, () -> DevelopmentTuning.protocol(file));
+
+    assertTrue(error.getMessage().contains("walk_variance"), error::getMessage);
   }
 }
