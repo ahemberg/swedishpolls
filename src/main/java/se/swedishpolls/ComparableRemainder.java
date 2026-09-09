@@ -22,9 +22,6 @@ public final class ComparableRemainder {
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
-  /** The aggregate's name, shared with the boundary evidence that already reports it. */
-  public static final String REMAINDER = CoverageValidation.REMAINDER;
-
   /** The ten components an official election result is reported in before it is grouped. */
   public static final List<String> REFERENCE_COMPONENTS = referenceComponents();
 

@@ -1,0 +1,165 @@
+{
+  "protocolVersion" : "v1-development-1",
+  "gate" : {
+    "blocked" : true,
+    "reasons" : [ "development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol" ]
+  },
+  "rules" : {
+    "seed" : 20260908,
+    "draws" : 10000,
+    "intervalLevels" : [ 0.5, 0.95 ],
+    "precisionRepeats" : 8
+  },
+  "periods" : [ {
+    "periodId" : "eight_party_2010",
+    "members" : [ "OTHER" ],
+    "headline" : {
+      "date" : "2021-09-20",
+      "mean" : 1.5676447837245695,
+      "intervals" : [ {
+        "level" : 0.5,
+        "lower" : 1.496445799481855,
+        "upper" : 1.633519717783358
+      }, {
+        "level" : 0.95,
+        "lower" : 1.376953054646518,
+        "upper" : 1.7786933940802212
+      } ]
+    },
+    "segmentEdges" : [ {
+      "date" : "2010-01-04",
+      "mean" : 2.0541686857652732,
+      "intervals" : [ {
+        "level" : 0.5,
+        "lower" : 1.960907085021893,
+        "upper" : 2.1425487248268213
+      }, {
+        "level" : 0.95,
+        "lower" : 1.8022273541331733,
+        "upper" : 2.3354689368525037
+      } ]
+    }, {
+      "date" : "2021-09-20",
+      "mean" : 1.5676447837245695,
+      "intervals" : [ {
+        "level" : 0.5,
+        "lower" : 1.496445799481855,
+        "upper" : 1.633519717783358
+      }, {
+        "level" : 0.95,
+        "lower" : 1.376953054646518,
+        "upper" : 1.7786933940802212
+      } ]
+    } ],
+    "estimatedDays" : 4278,
+    "maxEndpointSumErrorPoints" : 0.0,
+    "elections" : [ {
+      "date" : "2010-09-19",
+      "periodId" : "eight_party_2010",
+      "shares" : {
+        "S" : 30.660602428558583,
+        "M" : 30.061130043446692,
+        "SD" : 5.6977643141207786,
+        "V" : 5.60453244140334,
+        "C" : 6.556665248419236,
+        "KD" : 5.598542918538462,
+        "L" : 7.0552888325765615,
+        "MP" : 7.339011020722071,
+        "OTHER" : 1.426462752214278
+      },
+      "comparableRemainder" : 1.426462752214278,
+      "insideSupportedHistory" : true
+    }, {
+      "date" : "2014-09-14",
+      "periodId" : "eight_party_2010",
+      "shares" : {
+        "S" : 31.01481760704721,
+        "M" : 23.32504168690634,
+        "SD" : 12.85675382443566,
+        "V" : 5.718154950603965,
+        "C" : 6.113015124752611,
+        "KD" : 4.570370915978999,
+        "L" : 5.420348923137063,
+        "MP" : 6.888710121826383,
+        "OTHER" : 4.092786845311769
+      },
+      "comparableRemainder" : 4.092786845311769,
+      "insideSupportedHistory" : true
+    }, {
+      "date" : "2018-09-09",
+      "periodId" : "eight_party_2010",
+      "shares" : {
+        "S" : 28.260980665382583,
+        "M" : 19.835611362223965,
+        "SD" : 17.533969714632008,
+        "V" : 8.004879009067082,
+        "C" : 8.607745426893993,
+        "KD" : 6.3223002366165,
+        "L" : 5.489595435964936,
+        "MP" : 4.4142525736386835,
+        "OTHER" : 1.530665575580251
+      },
+      "comparableRemainder" : 1.530665575580251,
+      "insideSupportedHistory" : true
+    }, {
+      "date" : "2022-09-11",
+      "periodId" : "eight_party_2010",
+      "shares" : {
+        "S" : 30.325456894675337,
+        "M" : 19.102095255149376,
+        "SD" : 20.536140179716796,
+        "V" : 6.7467123188282745,
+        "C" : 6.714217571245313,
+        "KD" : 5.336733575487383,
+        "L" : 4.608573364804098,
+        "MP" : 5.082487260669623,
+        "OTHER" : 1.5475835794238009
+      },
+      "comparableRemainder" : 1.5475835794238009,
+      "insideSupportedHistory" : false
+    } ],
+    "changes" : [ {
+      "available" : true,
+      "from" : "2010-01-04",
+      "to" : "2010-09-18",
+      "points" : -0.27569045058927055,
+      "reason" : null
+    }, {
+      "available" : true,
+      "from" : "2010-09-19",
+      "to" : "2014-09-13",
+      "points" : 2.3779848815211073,
+      "reason" : null
+    }, {
+      "available" : true,
+      "from" : "2014-09-14",
+      "to" : "2018-09-08",
+      "points" : -1.25280079548362,
+      "reason" : null
+    }, {
+      "available" : true,
+      "from" : "2018-09-09",
+      "to" : "2021-09-20",
+      "points" : -0.8972939732314364,
+      "reason" : null
+    }, {
+      "available" : false,
+      "from" : "2010-09-18",
+      "to" : "2010-09-19",
+      "points" : 0.0,
+      "reason" : "comparison_date_across_boundary"
+    }, {
+      "available" : false,
+      "from" : "2014-09-13",
+      "to" : "2014-09-14",
+      "points" : 0.0,
+      "reason" : "comparison_date_across_boundary"
+    }, {
+      "available" : false,
+      "from" : "2018-09-08",
+      "to" : "2018-09-09",
+      "points" : 0.0,
+      "reason" : "comparison_date_across_boundary"
+    } ]
+  } ]
+}

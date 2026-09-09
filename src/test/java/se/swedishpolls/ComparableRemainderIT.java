@@ -12,7 +12,6 @@ import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 /**
  * Draws the comparable remainder of the archived pre-2022 development rows at the registered seed
@@ -27,14 +26,7 @@ class ComparableRemainderIT {
   @Test
   void summarizesTheRemainderFromTheSameDrawsAndGroupsEveryElectionTheSameWay() throws Exception {
     var schema = "remainder_" + UUID.randomUUID().toString().replace("-", "");
-    var url =
-        System.getenv()
-            .getOrDefault("DATABASE_URL", "jdbc:postgresql://localhost:5432/swedishpolls");
-    var dataSource =
-        new DriverManagerDataSource(
-            url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema,
-            System.getenv().getOrDefault("DATABASE_USER", "swedishpolls"),
-            System.getenv("DATABASE_PASSWORD"));
+    var dataSource = TestDatabase.dataSource(schema);
     var flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {

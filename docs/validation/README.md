@@ -647,6 +647,76 @@ for its two full runs. `./mvnw clean verify -Duncertainty.full=true` runs the ei
 precision study and rewrites `uncertainty.json` in about 150 seconds. These are
 development observations for checkpoint 10 to measure properly, not frozen bounds.
 
+### Comparable remainder and changes, issue #18 checkpoint 8
+
+`ComparableRemainder` summarizes the support outside the fixed eight parties S, M, SD,
+V, C, KD, L and MP. It registers no new constant: it draws at the `seed`, `final_draws`
+and `interval_levels` checkpoint 7 already froze, and it adds `remainder_rules` prose to
+[protocol.json](protocol.json).
+
+**The remainder is summed inside each draw.** Every draw of a day is transformed to
+percent, its remainder members are added within that draw, and only the resulting column
+of sums is averaged and cut into quantiles. Adding the members' own interval endpoints
+instead would ignore how they covary and would report an interval nothing was drawn
+from. The run measures the difference and records it as `maxEndpointSumErrorPoints`, so
+the two are visibly not the same number rather than assumed to differ.
+
+FI and the residual are combined **only where the roster keeps FI separate**. Where FI
+is not individually represented, OTHER already contains it, so the remainder is OTHER
+itself and the two agree to the last bit: the archived run reports
+`maxEndpointSumErrorPoints` of exactly 0 for `eight_party_2010`, which is a one-member
+sum. The FI-separate case is a unit check, since no validated period represents FI yet.
+
+The remainder reads the same fitted runs and the same per-day draw streams as the
+component summaries, through the same `EstimateHistory.fitted` split, so the two are one
+set of draws rather than two runs of the estimator. Its segments and its boundaries are
+therefore the daily history's own, and `change` suppresses a span across a separate fit,
+an unsupported gap or a changed centering reference with the reason checkpoint 6
+registered. `changes(estimated)` reports the change over each run a segment is cut into
+by its boundaries and the one-day change across each boundary, which needs no horizon
+constant to demonstrate what may span a break and what may not.
+
+#### Grouping an election reference
+
+An official result arrives in ten components: the eight parties, FI and the residual.
+`group(period, election, segments)` reads it in the period's own components before it is
+displayed against that period, so the same result shows OTHER where FI is not separate
+and FI beside RESIDUAL where it is. The comparable remainder combines FI and the
+residual in every period, so the aggregate means one thing across a roster change and
+two periods' remainders can be compared at all. Election results stay references: they
+are never observations, and grouping one does not extend the estimated history to its
+date.
+
+#### Results, in [remainder.json](remainder.json)
+
+- The headline remainder of 2021-09-20 is **1.57 [1.38, 1.78]** at 95% and
+  [1.50, 1.63] at 50%, over 4,278 estimated days in one segment.
+- The four official results are grouped into the eight-party components and each closes
+  to 100. Their comparable remainders are 1.43 (2010), 4.09 (2014), 1.53 (2018) and 1.55
+  (2022); 2014 is the FI year. The 2022 result is outside the development history and is
+  marked `insideSupportedHistory: false` rather than dropped.
+- The segment carries three centering-reference changes, one at each election cycle
+  reset. The remainder change is available over each of the four runs between them, at
+  -0.28, +2.38, -1.25 and -0.90 points, and is suppressed across every reset.
+
+The coverage gate carries in whole, so the tuning boundary decision still blocks every
+number here from being a release value.
+
+`ComparableRemainderTest` checks that FI and the residual are combined only where FI is
+separate, that the one-member remainder equals OTHER's own summary to 1e-12, that the
+summed-draw interval is neither the sum of the members' endpoints nor as wide as it,
+that the levels nest and stay inside the composition, that the segments and boundaries
+are the daily history's own, each suppression reason, a change across a centering
+reference inside one segment, one election grouped two ways into the same aggregate,
+inadmissible references, an election outside the estimated history, and a report that
+publishes only validated periods and carries the gate. `ComparableRemainderIT` draws the
+archived development rows at the registered seed and count in about 38 seconds;
+`-Dremainder.full=true` rewrites `remainder.json`.
+
+Run `./mvnw -Dtest=ComparableRemainderTest test` for the unit checks and
+`./mvnw clean verify` for the suite. These are development observations for checkpoint
+10 to measure properly, not frozen bounds.
+
 ### Conventions for the estimator
 
 Midpoint is `start + floor(days_between(start,end)/2)`. A half-day rounds toward
