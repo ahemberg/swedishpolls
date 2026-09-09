@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -144,22 +145,28 @@ public final class CoverageValidation {
 
   public static Rules rules(Path file) {
     try {
-      var rules = JSON.readTree(Files.readAllBytes(file)).get("coverage_validation");
+      var rules = required(JSON.readTree(Files.readAllBytes(file)), "coverage_validation", file);
       var shifts = new ArrayList<Integer>();
-      for (var shift : rules.get("boundary_shift_days")) shifts.add(shift.intValue());
+      for (var shift : required(rules, "boundary_shift_days", file)) shifts.add(shift.intValue());
       return new Rules(
-          LocalDate.parse(rules.get("development_through").asText()),
-          rules.get("min_observations").intValue(),
-          rules.get("min_institutes").intValue(),
-          rules.get("max_internal_gap_days").intValue(),
+          LocalDate.parse(required(rules, "development_through", file).asText()),
+          required(rules, "min_observations", file).intValue(),
+          required(rules, "min_institutes", file).intValue(),
+          required(rules, "max_internal_gap_days", file).intValue(),
           shifts,
-          rules.get("stability_burn_in_days").intValue(),
-          rules.get("max_stability_shift_points").doubleValue());
+          required(rules, "stability_burn_in_days", file).intValue(),
+          required(rules, "max_stability_shift_points", file).doubleValue());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
-    } catch (NullPointerException e) {
-      throw new IllegalArgumentException("Incomplete coverage validation rules in " + file, e);
     }
+  }
+
+  private static JsonNode required(JsonNode parent, String field, Path file) {
+    var value = parent == null ? null : parent.get(field);
+    if (value == null || value.isNull())
+      throw new IllegalArgumentException(
+          "Incomplete coverage validation rules in " + file + ": missing " + field);
+    return value;
   }
 
   /**

@@ -84,9 +84,11 @@ class CoverageValidationTest {
             () -> new CoverageValidation.Rules(THROUGH, 30, 5, 45, List.of(7), 60, Double.NaN),
             () -> new CoverageValidation.Rules(null, 30, 5, 45, List.of(7), 60, 0.5)))
       assertThrows(IllegalArgumentException.class, inadmissible);
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> CoverageValidation.rules(Path.of("docs", "validation", "tuning.json")));
+    var incomplete =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> CoverageValidation.rules(Path.of("docs", "validation", "tuning.json")));
+    assertTrue(incomplete.getMessage().contains("coverage_validation"), incomplete::getMessage);
   }
 
   @Test
