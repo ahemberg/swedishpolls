@@ -192,6 +192,8 @@ class SnapshotIngestIT {
         var development = newIngest().polls(snapshot.id()).stream().filter(poll -> poll.collectionTo() != null
                 && poll.collectionTo().isBefore(java.time.LocalDate.of(2022, 1, 1))).toList();
         var periods = new Roster(db).periods();
+        var elections = db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
+                .query(java.time.LocalDate.class).list();
         var eight = PollObservations.prepare(periods.getFirst(), development);
         var fi = PollObservations.prepare(periods.get(1), development);
         assertEquals(388, fi.observations().size());
@@ -201,13 +203,32 @@ class SnapshotIngestIT {
             assertTrue(batch.observations().stream().allMatch(o -> o.poll().surveyType().equals("voting_intention")));
             assertEquals(batch.observations().size(), batch.observations().stream().map(o -> o.poll().rowNumber()).distinct().count());
             assertTrue(batch.observations().stream().allMatch(o -> !o.ilr().hasUncountable() && !o.covariance().hasUncountable()));
-            var fit = DailyStateSpace.fit(batch, new DailyStateSpace.Parameters(0.0001, 1.5));
+            var fit = DailyStateSpace.fit(batch, elections, new DailyStateSpace.Parameters(0.0001, 0.05, 1.5));
             assertTrue(Double.isFinite(fit.logLikelihood()));
             assertEquals(batch.period().effectiveFrom(), fit.days().getFirst().date());
             assertEquals(batch.observations().stream().map(PollObservations.Observation::midpoint)
                     .max(java.time.LocalDate::compareTo).orElseThrow(), fit.days().getLast().date());
             assertTrue(fit.days().stream().allMatch(day -> !day.filteredMean().hasUncountable()
                     && !day.smoothedMean().hasUncountable() && !day.smoothedCovariance().hasUncountable()));
+            // House effects reset on every election day the fitted span contains and center over its active institutes.
+            assertEquals(elections.stream().filter(date -> date.isAfter(batch.period().effectiveFrom())
+                    && !date.isAfter(fit.days().getLast().date())).toList(),
+                    fit.cycles().stream().skip(1).map(DailyStateSpace.Cycle::start).toList());
+            for (var cycle : fit.cycles()) {
+                assertEquals(1, cycle.weights().stream().mapToDouble(Double::doubleValue).sum(), 1e-12);
+                assertEquals(cycle.effects().size() * (batch.components().size() - 1), cycle.smoothedMean().getNumRows());
+                assertFalse(cycle.smoothedMean().hasUncountable() || cycle.smoothedCovariance().hasUncountable());
+                int dimension = batch.components().size() - 1;
+                var weighted = new org.ejml.simple.SimpleMatrix(dimension, 1);
+                for (int effect = 0; effect < cycle.effects().size(); effect++)
+                    weighted.setTo(weighted.plus(cycle.smoothedMean()
+                            .extractMatrix(effect * dimension, (effect + 1) * dimension, 0, 1)
+                            .scale(cycle.weights().get(effect))));
+                assertTrue(weighted.elementMaxAbs() < 1e-12, () -> "Uncentered ensemble: " + weighted.elementMaxAbs());
+            }
+            // Ingestion documents Demoskop's method break, so its two eras keep separate effect identities.
+            assertTrue(fit.cycles().getLast().effects().containsAll(
+                    java.util.List.of("demoskop_before_2019_11", "inizio_continuation")));
         }
         assertFalse(fi.period().supportValidated());
         assertEquals(expected, newIngest().polls(snapshot.id()));

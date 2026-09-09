@@ -161,6 +161,80 @@ checks finite daily results. It does not run the reserved final statistical audi
 Run `./mvnw -Dtest=DailyStateSpaceTest test` for the numerical checks and
 `./mvnw clean verify` against PostgreSQL 18 for the full suite.
 
+### House effects and cycle transitions, issue #18 checkpoint 3
+
+`DailyStateSpace.fit(batch, elections, parameters)` now takes the official election
+dates and a `houseScale` parameter between the walk variance and the pooled
+multiplier. The state is the joint vector of the daily opinion ilr coordinates and
+one house effect per active effect identity in the current election cycle. A poll
+observes its opinion state plus its own effect. House effects are static within a
+cycle, so only the opinion block takes the daily walk.
+
+An effect identity is the method era ingestion documented for the poll, otherwise
+its institute. `demoskop_before_2019_11` and `inizio_continuation` therefore stay
+separate, and Demoskop's continuation shares one identity with Inizio. Archived
+Demoskop rows without a publication date carry no documented era and form a third,
+institute-named identity; the fit shrinks it like any other sparse identity rather
+than assuming which era produced it. Zero-mean priors are the shrinkage: an identity
+with few polls stays near zero, and there is no separate sparse-institute rule.
+
+Cycles start at the coverage-period start and at every election date inside the
+fitted span. Election results remain reference outcomes and never enter the
+likelihood; only their dates define the reset. At a reset the opinion mean and
+covariance carry across with that day's walk, while every house effect is redrawn
+from an independent zero-mean prior with covariance `houseScale^2 * I`. Coverage
+periods are separate batches, so a period boundary is never bridged and restarts
+the diffuse `4 * I` opinion prior as well.
+
+Centering transforms the joint state and covariance with one linear map per cycle.
+Each active institute carries total weight `1/H` split equally over the method eras
+it used in that cycle, so an era shared by two institutes carries both their shares
+and an institute gains no extra weight when its method changes. The reported opinion
+is `x + sum_e w_e h_e` and the reported effects are `h_e - sum_f w_f h_f`. The
+centered effect covariance is singular by construction, with the weighted ensemble
+exactly zero in both mean and covariance. Filtering and smoothing solve in the
+uncentered coordinates, which stay positive definite.
+
+Each cycle centers on its own institute ensemble, which resolves the reported level
+as support relative to the institutes active in that cycle. When the ensemble keeps
+the same composition across a reset the level is continuous, and the test fixture
+bounds that step at 0.01 in ilr units while both institutes swap their deviations.
+When the composition changes the level can step, because the reference itself
+changed. That step is a change of reference, never voter movement: checkpoint 6
+treats it like the other boundaries it must not present as movement, and checkpoint
+9 reports its size per cycle.
+
+`Fit` returns the centered opinion per day and one `Cycle` per election cycle with
+its effects, weights, and filtered and smoothed centered effect means and
+covariances conditioned on the cycle's last day. Daily joint covariances are not
+retained: the filter stores the joint state only where it changes, since the
+covariance grows by a fixed diagonal on days without a poll. The predictive scoring
+above also needs the opinion-to-effect cross-covariance on a scoring day, which this
+shape does not expose yet; checkpoint 4 or 9 has to add that accessor rather than
+recomputing it from the returned blocks.
+
+`DailyStateSpaceTest` checks the single-institute first update against a scalar
+conjugate-normal reference, then compares every daily centered state, every cycle's
+centered effects and the joint likelihood with independent dense Gaussian
+conditioning over the opinion path and all cycle effects, for both rosters and
+across an election boundary. It also checks the era split and its weights, the
+sum-to-zero centering with a singular positive semidefinite covariance, stronger
+shrinkage for a single-poll identity than a repeated one, a swap of deviations at a
+reset with a continuous opinion level, an empty cycle, a restarted coverage period
+and rejected election orderings. `SnapshotIngestIT` fits both archived pre-2022
+development rosters, checks that the cycles match the contained election dates, that
+weights sum to one, that the weighted ensemble effect is zero within `1e-12` and
+that Demoskop's two eras are present.
+
+The eight-party 2010-2021 development fit ran in 8.6 seconds with a 144 MB heap
+delta, and the FI candidate fit in 3.3 seconds, measured once on the development
+machine with fixed unfitted parameters. These are development observations for
+checkpoint 10 to measure properly, not frozen bounds. Tuning, coverage validation
+and public history remain checkpoints 4 to 6.
+
+Run `./mvnw -Dtest=DailyStateSpaceTest test` for the numerical checks and
+`./mvnw clean verify` against PostgreSQL 18 for the full suite.
+
 ### Conventions for the estimator
 
 Midpoint is `start + floor(days_between(start,end)/2)`. A half-day rounds toward
