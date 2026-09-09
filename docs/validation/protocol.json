@@ -208,6 +208,23 @@
     "boundary": "an optimum at either end of an axis is recorded and requires a documented grid expansion with a repeat of every affected development check",
     "per_institute_variance": "not tuned in v1-development-1; a per-institute observation variance requires older-fold evidence first"
   },
+  "coverage_validation": {
+    "development_through": "2021-10-05",
+    "min_observations": 30,
+    "min_institutes": 5,
+    "max_internal_gap_days": 45,
+    "boundary_shift_days": [7, 14, 30],
+    "stability_burn_in_days": 60,
+    "max_stability_shift_points": 0.5
+  },
+  "coverage_rules": {
+    "development_window": "coverage evidence reads only fieldwork ending by the last development fold cutoff, so the reserved 2022 comparison and the prospective 2026 window stay outside it",
+    "supported_dates": "the outermost collection dates of the eligible observations the period's own roster composes completely, taken from corrected history rather than a publication-time fold",
+    "gap": "the longest run between consecutive observation midpoints inside the supported window; a longer run splits or ends support rather than being bridged",
+    "stability": "refit with both supported boundaries pulled in by each shift and compare the smoothed daily composition of every modeled component over the interior, burning in the same number of days at each end; the largest movement in percentage points must stay within the maximum",
+    "failure": "a failed rule leaves the individual estimate unavailable while the source observations are retained; it never lowers a rule",
+    "parameters": "the last development fold's tuned point for the period; its tuning gate carries into the coverage gate, so no result here is a release value"
+  },
   "paired_hac_lag_folds": 3,
   "reference_max_paired_se_loss": 1,
   "predictive_coverage95": [

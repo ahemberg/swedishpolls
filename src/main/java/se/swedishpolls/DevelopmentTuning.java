@@ -328,4 +328,30 @@ public final class DevelopmentTuning {
   public static String report(Tuning tuning) {
     return JSON.writerWithDefaultPrettyPrinter().writeValueAsString(tuning);
   }
+
+  /** Reads back a stored run of {@link #report}. */
+  public static Tuning tuning(Path file) {
+    try {
+      return JSON.readValue(Files.readAllBytes(file), Tuning.class);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  /**
+   * The point each period resolved on its last cutoff, which trains on the most data. These are
+   * development parameters carrying the run's gate, never release values.
+   */
+  public static Map<String, DailyStateSpace.Parameters> latestParameters(Tuning tuning) {
+    var latest = new java.util.LinkedHashMap<String, Resolved>();
+    for (var resolved : tuning.resolved())
+      latest.merge(
+          resolved.periodId(),
+          resolved,
+          (kept, candidate) ->
+              candidate.fold().cutoff().isAfter(kept.fold().cutoff()) ? candidate : kept);
+    var parameters = new java.util.LinkedHashMap<String, DailyStateSpace.Parameters>();
+    latest.forEach((periodId, resolved) -> parameters.put(periodId, resolved.parameters()));
+    return Map.copyOf(parameters);
+  }
 }

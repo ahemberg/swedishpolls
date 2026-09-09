@@ -4,7 +4,9 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.simple.SimpleMatrix;
 
@@ -36,6 +38,31 @@ public final class PollObservations {
       observations = List.copyOf(observations);
       exclusions = List.copyOf(exclusions);
     }
+  }
+
+  /**
+   * The composition of one ilr state, in percent and component order. The basis rows span the
+   * orthogonal complement of the constant vector, so {@code p} is the closure of {@code exp(H' z)}.
+   */
+  public static Map<String, Double> shares(Batch batch, SimpleMatrix ilr) {
+    if (ilr.getNumRows() != batch.components().size() - 1
+        || ilr.getNumCols() != 1
+        || ilr.hasUncountable())
+      throw new IllegalArgumentException("Invalid ilr state for " + batch.period().id());
+    var log = batch.basis().transpose().mult(ilr);
+    double max = log.elementMax();
+    var weights = new double[log.getNumRows()];
+    double total = 0;
+    for (int c = 0; c < weights.length; c++) {
+      weights[c] = Math.exp(log.get(c) - max);
+      total += weights[c];
+    }
+    if (!Double.isFinite(total) || total <= 0)
+      throw new IllegalArgumentException("Unrepresentable composition for " + batch.period().id());
+    var shares = new LinkedHashMap<String, Double>();
+    for (int c = 0; c < weights.length; c++)
+      shares.put(batch.components().get(c), 100 * weights[c] / total);
+    return java.util.Collections.unmodifiableMap(shares);
   }
 
   /**

@@ -48,6 +48,34 @@ class PollObservationsTest {
     assertEquals(0.25, proportions(capped).get(8), 1e-14);
   }
 
+  @Test
+  void sharesInvertTheTransformBackToTheReplacedCompositionInComponentOrder() {
+    for (boolean fi : List.of(false, true)) {
+      var batch = PollObservations.prepare(period(fi), PollCsv.parse(PollCsvTest.csv(ROW)));
+      var shares = PollObservations.shares(batch, batch.observations().getFirst().ilr());
+      assertEquals(batch.components(), List.copyOf(shares.keySet()));
+      assertEquals(100, shares.values().stream().mapToDouble(Double::doubleValue).sum(), 1e-12);
+      var expected = proportions(batch);
+      for (int c = 0; c < batch.components().size(); c++)
+        assertEquals(100 * expected.get(c), shares.get(batch.components().get(c)), 1e-11);
+      assertEquals(20, shares.get("M"), 1e-11);
+      assertEquals(fi ? 1 : 2, shares.get(fi ? "FI" : "OTHER"), 1e-11);
+      // A state far from the data still closes to a composition instead of overflowing.
+      var extreme = batch.observations().getFirst().ilr().scale(400);
+      assertEquals(
+          100,
+          PollObservations.shares(batch, extreme).values().stream()
+              .mapToDouble(Double::doubleValue)
+              .sum(),
+          1e-12);
+      for (var invalid :
+          List.of(
+              new SimpleMatrix(batch.components().size(), 1),
+              new SimpleMatrix(batch.components().size() - 1, 2)))
+        assertThrows(IllegalArgumentException.class, () -> PollObservations.shares(batch, invalid));
+    }
+  }
+
   private static SimpleMatrix proportions(PollObservations.Batch batch) {
     var p = batch.basis().transpose().mult(batch.observations().getFirst().ilr()).elementExp();
     return p.divide(p.elementSum());
