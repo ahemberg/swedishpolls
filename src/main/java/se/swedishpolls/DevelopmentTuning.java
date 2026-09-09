@@ -50,7 +50,7 @@ public final class DevelopmentTuning {
       throw new IllegalArgumentException("Empty grid axis " + name);
     for (int i = 0; i < values.size(); i++) {
       double value = values.get(i);
-      if (!Double.isFinite(value) || value < 0 || value == 0 && !zeroAllowed)
+      if (!Double.isFinite(value) || value < 0 || (value == 0 && !zeroAllowed))
         throw new IllegalArgumentException("Inadmissible " + name + " grid value " + value);
       if (i > 0 && value <= values.get(i - 1))
         throw new IllegalArgumentException("Grid axis " + name + " must be strictly ascending");
@@ -132,11 +132,11 @@ public final class DevelopmentTuning {
       for (var fold : required(root, "development_folds", file))
         folds.add(
             new Fold(
-                LocalDate.parse(required(fold, "cutoff", file).asText()),
-                LocalDate.parse(required(fold, "score_through", file).asText())));
+                LocalDate.parse(required(fold, "cutoff", file).asString()),
+                LocalDate.parse(required(fold, "score_through", file).asString())));
       var grid = required(root, "tuning_grid", file);
       return new Protocol(
-          required(root, "version", file).asText(),
+          required(root, "version", file).asString(),
           folds,
           new Grid(
               values(grid, "walk_variance", file),

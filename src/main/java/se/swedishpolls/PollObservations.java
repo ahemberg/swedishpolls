@@ -103,7 +103,7 @@ public final class PollObservations {
         proportions[c] = share.doubleValue() / 100;
         if (!Double.isFinite(proportions[c])
             || share.signum() < 0
-            || share.signum() > 0 && proportions[c] <= 0)
+            || (share.signum() > 0 && proportions[c] <= 0))
           throw new IllegalArgumentException("Unrepresentable share at row " + poll.rowNumber());
         if (share.signum() == 0) zeros++;
       }
