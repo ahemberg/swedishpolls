@@ -11,7 +11,6 @@ import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 /**
  * Tunes the frozen development folds on the archived pre-2022 development rows. The default run
@@ -25,14 +24,7 @@ class DevelopmentTuningIT {
   @Test
   void resolvesFiniteParametersPerFoldAndRosterAndListsEveryGridBoundary() throws Exception {
     var schema = "tuning_" + UUID.randomUUID().toString().replace("-", "");
-    var url =
-        System.getenv()
-            .getOrDefault("DATABASE_URL", "jdbc:postgresql://localhost:5432/swedishpolls");
-    var dataSource =
-        new DriverManagerDataSource(
-            url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema,
-            System.getenv().getOrDefault("DATABASE_USER", "swedishpolls"),
-            System.getenv("DATABASE_PASSWORD"));
+    var dataSource = TestDatabase.dataSource(schema);
     var flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {

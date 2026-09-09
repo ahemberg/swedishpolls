@@ -34,14 +34,19 @@ SPRING_DOCKER_COMPOSE_ENABLED=false \
   ./mvnw spring-boot:run
 ```
 
-Maven tests do not start `compose.dev.yaml`. Start or provide their PostgreSQL
-service separately, then build the repackaged application:
+Maven tests do not start `compose.dev.yaml`. Integration tests need Docker;
+Testcontainers starts a temporary PostgreSQL 18.4 container and removes it when
+Maven exits. They do not use `DATABASE_URL`, `DATABASE_USER`, or
+`DATABASE_PASSWORD`.
 
 ```sh
-DATABASE_PASSWORD='choose-a-local-password' \
-  docker compose -f compose.dev.yaml up -d --wait db
-DATABASE_PASSWORD='choose-a-local-password' \
-  ./mvnw --batch-mode --no-transfer-progress clean verify
+./mvnw --batch-mode --no-transfer-progress clean verify
+```
+
+To run the repackaged application against the development database:
+
+```sh
+DATABASE_PASSWORD='choose-a-local-password' docker compose -f compose.dev.yaml up -d --wait db
 DATABASE_PASSWORD='choose-a-local-password' java -jar target/swedishpolls-0.1.0.jar
 ```
 

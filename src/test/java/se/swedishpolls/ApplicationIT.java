@@ -11,7 +11,6 @@ import java.time.Duration;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 class ApplicationIT {
   @Test
@@ -21,13 +20,16 @@ class ApplicationIT {
       port = socket.getLocalPort();
     }
     var log = Path.of("target", "application-integration.log").toFile();
+    var dataSource = TestDatabase.dataSource();
     var process =
-        new ProcessBuilder(
-                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-                "-jar",
-                "target/swedishpolls-0.1.0.jar",
-                "--server.port=" + port,
-                "--polls.ingest.enabled=false")
+        TestDatabase.configure(
+                new ProcessBuilder(
+                    Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                    "-jar",
+                    "target/swedishpolls-0.1.0.jar",
+                    "--server.port=" + port,
+                    "--polls.ingest.enabled=false"),
+                dataSource)
             .redirectErrorStream(true)
             .redirectOutput(log)
             .start();
@@ -60,14 +62,7 @@ class ApplicationIT {
       assertTrue(script.headers().firstValue("content-type").orElse("").contains("javascript"));
       assertTrue(script.body().contains("hydrateRoot"));
 
-      var db =
-          JdbcClient.create(
-              new DriverManagerDataSource(
-                  System.getenv()
-                      .getOrDefault(
-                          "DATABASE_URL", "jdbc:postgresql://localhost:5432/swedishpolls"),
-                  System.getenv().getOrDefault("DATABASE_USER", "swedishpolls"),
-                  System.getenv("DATABASE_PASSWORD")));
+      var db = JdbcClient.create(dataSource);
       assertEquals(
           "18.4", db.sql("SHOW server_version").query(String.class).single().split(" ")[0]);
       assertEquals(

@@ -31,14 +31,7 @@ class SnapshotIngestIT {
   @BeforeEach
   void start() throws Exception {
     var schema = "ingest_" + UUID.randomUUID().toString().replace("-", "");
-    var databaseUrl =
-        System.getenv()
-            .getOrDefault("DATABASE_URL", "jdbc:postgresql://localhost:5432/swedishpolls");
-    dataSource =
-        new DriverManagerDataSource(
-            databaseUrl + (databaseUrl.contains("?") ? "&" : "?") + "currentSchema=" + schema,
-            System.getenv().getOrDefault("DATABASE_USER", "swedishpolls"),
-            System.getenv("DATABASE_PASSWORD"));
+    dataSource = TestDatabase.dataSource(schema);
     flyway = Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     flyway.migrate();
     server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -199,7 +192,7 @@ class SnapshotIngestIT {
                 "--polls.source-url=" + url)
             .redirectErrorStream(true)
             .redirectOutput(log);
-    builder.environment().put("DATABASE_URL", dataSource.getUrl());
+    TestDatabase.configure(builder, dataSource);
     var process = builder.start();
     try {
       long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
