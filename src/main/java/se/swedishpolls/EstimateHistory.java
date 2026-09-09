@@ -127,10 +127,13 @@ public final class EstimateHistory {
     return Collections.unmodifiableMap(new LinkedHashMap<>(values));
   }
 
-  /** One separately fitted run of support, with the unsupported gap that opened it. */
-  private record Span(PollObservations.Batch batch, DailyStateSpace.Fit fit, int gapDays) {}
+  /**
+   * One separately fitted run of support, with the unsupported gap that opened it. Joint
+   * uncertainty draws from the same runs, so the split lives here rather than beside each reader.
+   */
+  record Span(PollObservations.Batch batch, DailyStateSpace.Fit fit, int gapDays) {}
 
-  private record Fitted(CoverageValidation.Support support, List<Span> spans) {}
+  record Fitted(CoverageValidation.Support support, List<Span> spans) {}
 
   /**
    * Splits the period's eligible observations wherever the run between two consecutive midpoints
@@ -138,7 +141,7 @@ public final class EstimateHistory {
    * fit would leave the walk propagating through the unsupported run, which is the bridge the
    * protocol forbids; each run gets its own window and its own diffuse prior instead.
    */
-  private static Fitted fitted(
+  static Fitted fitted(
       Roster.CoveragePeriod period,
       List<PollCsv.Poll> polls,
       List<LocalDate> elections,

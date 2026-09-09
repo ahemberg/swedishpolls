@@ -225,6 +225,19 @@
     "failure": "a failed rule leaves the individual estimate unavailable while the source observations are retained; it never lowers a rule",
     "parameters": "the last development fold's tuned point for the period; its tuning gate carries into the coverage gate, so no result here is a release value"
   },
+  "uncertainty": {
+    "interval_levels": [0.5, 0.95],
+    "precision_repeats": 8
+  },
+  "uncertainty_rules": {
+    "draws": "final_draws joint draws of the smoothed ilr state on every estimated day, not only on the final day, so a historical interval carries the same Monte Carlo precision as the headline",
+    "generator": "java.util.Random and its specified nextGaussian, whose algorithm and StrictMath calls the Java specification fixes, so a rerun on another architecture reproduces every draw",
+    "seeding": "each day draws from its own stream, seeded by the leading eight bytes of SHA-256 of '<periodId>|<date>|<seed>' read big-endian, so a day's draws never depend on how many days a run computes or on the order threads finish them",
+    "transform": "every draw is transformed to percent shares before any averaging; the reported mean is the arithmetic mean of transformed draws and never the transform of the mean state",
+    "quantile": "linear interpolation between the order statistics at h = (n-1)p on one component's sorted draws; marginal interval endpoints are never summed",
+    "precision": "repeat the whole run with the registered seed and its successors and report the largest movement of any mean or interval endpoint; the manifest resolves no tolerance for it, so the spread is recorded evidence rather than a gate",
+    "reproduction": "a rerun at the same seed must reproduce every retained draw exactly; the run records the seed, roster, basis, input rows, parameters, implementation digest and runtime versions needed to repeat it"
+  },
   "paired_hac_lag_folds": 3,
   "reference_max_paired_se_loss": 1,
   "predictive_coverage95": [
