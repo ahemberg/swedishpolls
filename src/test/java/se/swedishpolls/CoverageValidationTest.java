@@ -19,7 +19,7 @@ class CoverageValidationTest {
   private static final List<String> INSTITUTES =
       List.of("Sifo", "Novus", "Ipsos", "Skop", "Sentio", "YouGov");
 
-  private static Roster.CoveragePeriod period(
+  static Roster.CoveragePeriod period(
       String id, LocalDate from, LocalDate to, boolean fi, boolean validated) {
     var roster = new ArrayList<>(List.of("S", "M", "SD", "V", "C", "KD", "L", "MP"));
     if (fi) roster.add("FI");
@@ -28,7 +28,7 @@ class CoverageValidationTest {
   }
 
   /** One single-day poll. The drift keeps the eight parties summing to 98.123. */
-  private static String row(LocalDate date, String institute, double drift, String fi) {
+  static String row(LocalDate date, String institute, double drift, String fi) {
     return String.join(
             ",",
             date.toString().substring(0, 7),
@@ -52,7 +52,7 @@ class CoverageValidationTest {
         + "\n";
   }
 
-  private static List<PollCsv.Poll> weekly(LocalDate from, LocalDate to, String fi) {
+  static List<PollCsv.Poll> weekly(LocalDate from, LocalDate to, String fi) {
     var rows = new StringBuilder();
     int index = 0;
     for (var date = from; !date.isAfter(to); date = date.plusDays(7), index++)
