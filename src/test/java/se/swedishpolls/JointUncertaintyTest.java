@@ -173,6 +173,39 @@ class JointUncertaintyTest {
   }
 
   @Test
+  void theNarrowedFinalDayReturnsWhatTheWholeRunReturnsForThatDay() {
+    var period =
+        CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
+    var polls =
+        new ArrayList<>(
+            CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 3, 2), "1"));
+    polls.addAll(
+        CoverageValidationTest.weekly(LocalDate.of(2015, 6, 1), LocalDate.of(2015, 8, 3), "1"));
+
+    var whole = estimate(period, polls, RULES);
+    var narrowed = JointUncertainty.finalDay(period, polls, ELECTIONS, POINT, coverage(), RULES);
+
+    // The fixture is fitted twice over an unsupported run, so the narrowed calculation has to pick
+    // the last day of the last segment rather than the last day it fitted anything on.
+    assertEquals(2, whole.segments().size());
+    assertEquals(LocalDate.of(2015, 8, 3), narrowed.day().date());
+    // Every mean, state mean and interval endpoint of that day comes back unchanged, so a changed
+    // final-day summary fails here rather than in a whole-history integration run.
+    assertEquals(whole.segments().getLast().days().getLast(), narrowed.day());
+    assertEquals(whole.reproduction(), narrowed.reproduction());
+    // So do the retained draws the threshold and coalition quantities read.
+    var reproduced = JointUncertainty.reproduced(whole.finalDraws(), narrowed.draws());
+    assertTrue(reproduced.exact(), reproduced::toString);
+    assertEquals(RULES.draws() * 9, reproduced.comparedValues());
+    // The check has teeth: another seed draws the same day differently.
+    var other =
+        JointUncertainty.finalDay(
+            period, polls, ELECTIONS, POINT, coverage(), RULES.withSeed(RULES.seed() + 1));
+    assertEquals(narrowed.day().date(), other.day().date());
+    assertNotEquals(narrowed.day(), other.day());
+  }
+
+  @Test
   void repeatedSeedsMoveTheEndpointsOnlyByMonteCarloError() {
     var period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
