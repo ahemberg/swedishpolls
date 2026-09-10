@@ -775,6 +775,39 @@
     "rootMeanSquareStandardizedResidual" : 1.011929147792059,
     "failures" : [ ]
   } ],
+  "dependence" : [ {
+    "periodId" : "eight_party_2010",
+    "residualAutocorrelation" : {
+      "lag 1" : 0.4086173267262027,
+      "lag 2" : 0.4115582801023931,
+      "lag 3" : 0.43159998064331717
+    },
+    "maximumAbsoluteAutocorrelation" : 0.45,
+    "overlappingPairs" : 942,
+    "overlappingCorrelation" : 1.0903661526072022,
+    "disjointPairs" : 797,
+    "disjointCorrelation" : 0.8376407549097132,
+    "sameInstitutePairs" : 174,
+    "sameInstituteCorrelation" : 2.5545721864755557,
+    "explanation" : "The nearly flat lag-1 through lag-3 correlations coincide with the separately reported overlapping-poll and same-institute dependence. Absolute correlation above 0.45 is treated as longer unexplained dependence and blocks.",
+    "failures" : [ ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "residualAutocorrelation" : {
+      "lag 1" : 0.3928026617350798,
+      "lag 2" : 0.40742197515397033,
+      "lag 3" : 0.414537704428947
+    },
+    "maximumAbsoluteAutocorrelation" : 0.45,
+    "overlappingPairs" : 481,
+    "overlappingCorrelation" : 1.153865121606523,
+    "disjointPairs" : 374,
+    "disjointCorrelation" : 0.8293320724144748,
+    "sameInstitutePairs" : 128,
+    "sameInstituteCorrelation" : 2.592223364331735,
+    "explanation" : "The nearly flat lag-1 through lag-3 correlations coincide with the separately reported overlapping-poll and same-institute dependence. Absolute correlation above 0.45 is treated as longer unexplained dependence and blocks.",
+    "failures" : [ ]
+  } ],
   "sensitivity" : [ {
     "periodId" : "eight_party_2010",
     "headlineDate" : "2021-09-20",
@@ -973,6 +1006,20 @@
       "enforcement" : "reported",
       "passed" : false,
       "detail" : "outside the frozen limits: 1-7",
+      "waiver" : null
+    }, {
+      "name" : "residual_dependence:eight_party_2010",
+      "source" : "diagnostics.json",
+      "enforcement" : "reported",
+      "passed" : true,
+      "detail" : "every registered lag is inside the frozen limit 0.45. Overlapping pairs average 1.0903661526072022 against 0.8376407549097132 for disjoint pairs and 2.5545721864755557 for same-institute pairs",
+      "waiver" : null
+    }, {
+      "name" : "residual_dependence:fi_candidate_2014_2018",
+      "source" : "diagnostics.json",
+      "enforcement" : "reported",
+      "passed" : true,
+      "detail" : "every registered lag is inside the frozen limit 0.45. Overlapping pairs average 1.153865121606523 against 0.8293320724144748 for disjoint pairs and 2.592223364331735 for same-institute pairs",
       "waiver" : null
     }, {
       "name" : "tolerance:seeded_reproduction",

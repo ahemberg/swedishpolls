@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -92,7 +93,13 @@ public final class ReleaseAudit {
   }
 
   /** The approved behaviour where a roster does not meet the gates. */
-  public record Fallback(String id, String approval, String note) {}
+  public record Fallback(String id, String approval, String note) {
+    public Fallback {
+      if (id == null || id.isBlank() || approval == null || note == null) {
+        throw new IllegalArgumentException("A fallback names an id, a decision and its behaviour");
+      }
+    }
+  }
 
   /** The release registration, verified against what is on disk before the audit is read. */
   public record Frozen(
@@ -298,6 +305,47 @@ public final class ReleaseAudit {
     }
   }
 
+  /**
+   * One roster's residual dependence: the whitened autocorrelation at each registered lag against
+   * the frozen limit, and the overlapping, disjoint and same-institute pair measurements that say
+   * how much of it is structural.
+   */
+  public record Dependence(
+      String periodId,
+      Map<String, Double> residualAutocorrelation,
+      double maximumAbsoluteAutocorrelation,
+      long overlappingPairs,
+      double overlappingCorrelation,
+      long disjointPairs,
+      double disjointCorrelation,
+      long sameInstitutePairs,
+      double sameInstituteCorrelation,
+      String explanation,
+      List<String> failures) {
+    public Dependence {
+      residualAutocorrelation =
+          Collections.unmodifiableMap(new LinkedHashMap<>(residualAutocorrelation));
+      failures = List.copyOf(failures);
+      if (residualAutocorrelation.isEmpty() || explanation == null || explanation.isBlank()) {
+        throw new IllegalArgumentException("Residual dependence needs lags and an explanation");
+      }
+    }
+
+    public boolean passes() {
+      return failures.isEmpty();
+    }
+
+    @Override
+    public Map<String, Double> residualAutocorrelation() {
+      return Collections.unmodifiableMap(new LinkedHashMap<>(residualAutocorrelation));
+    }
+
+    @Override
+    public List<String> failures() {
+      return List.copyOf(failures);
+    }
+  }
+
   /** The two registered sensitivity reruns, and whether either needs adjacent disclosure. */
   public record Sensitivity(
       String periodId,
@@ -388,12 +436,19 @@ public final class ReleaseAudit {
       Frozen frozen,
       Election election,
       List<Misfit> misfit,
+      List<Dependence> dependence,
       List<Sensitivity> sensitivity,
       IndividualFi individualFi,
       Verdict verdict) {
     public Report {
       misfit = List.copyOf(misfit);
+      dependence = List.copyOf(dependence);
       sensitivity = List.copyOf(sensitivity);
+    }
+
+    @Override
+    public List<Dependence> dependence() {
+      return List.copyOf(dependence);
     }
 
     @Override
@@ -421,7 +476,7 @@ public final class ReleaseAudit {
       final JsonNode development = required(root, "development_protocol");
       final String developmentSha256 = required(development, "sha256").asString();
       final Path developmentFile = directory.resolve(required(development, "path").asString());
-      if (!sameDigest(developmentSha256, sha256(developmentFile))) {
+      if (!sameDigest(developmentSha256, DevelopmentGates.sha256(developmentFile))) {
         throw new IllegalArgumentException(
             "The development protocol moved after the release freeze");
       }
@@ -571,8 +626,9 @@ public final class ReleaseAudit {
    * that quotes one.
    */
   public static List<PollCsv.Poll> candidates(List<PollCsv.Poll> polls, Selection selection) {
+    final Set<Integer> lines = Set.copyOf(selection.lines());
     final List<PollCsv.Poll> selected =
-        polls.stream().filter(poll -> selection.lines().contains(poll.rowNumber() + 1)).toList();
+        polls.stream().filter(poll -> lines.contains(poll.rowNumber() + 1)).toList();
     if (selected.size() != selection.rows()) {
       throw new IllegalArgumentException("The parsed snapshot does not hold every candidate row");
     }
@@ -766,6 +822,67 @@ public final class ReleaseAudit {
     }
   }
 
+  /**
+   * Reads the residual autocorrelation and the overlap and institute pair measurements, and checks
+   * each registered lag against the frozen limit. The pair measurements are reported beside the
+   * correlations because they are what separates structural dependence from the rest; the
+   * registration carries the explanation rather than this code inferring one.
+   */
+  public static List<Dependence> dependence(Path developmentProtocolFile, Path diagnosticsFile) {
+    try {
+      final JsonNode protocol = JSON.readTree(Files.readAllBytes(developmentProtocolFile));
+      final JsonNode diagnostics = JSON.readTree(Files.readAllBytes(diagnosticsFile));
+      final JsonNode rules = required(protocol, "resolved_diagnostic_gates");
+      final double maximum =
+          required(rules, "maximum_absolute_residual_autocorrelation").doubleValue();
+      final String explanation = required(rules, "autocorrelation_explanation").asString();
+      if (explanation.isBlank()) {
+        throw new IllegalArgumentException("Residual autocorrelation needs an explanation");
+      }
+      final Map<String, Map<String, Double>> lags = new LinkedHashMap<>();
+      for (final JsonNode row : required(diagnostics, "autocorrelation")) {
+        lags.computeIfAbsent(required(row, "periodId").asString(), period -> new LinkedHashMap<>())
+            .put(
+                "lag " + required(row, "lag").intValue(),
+                required(row, "correlation").doubleValue());
+      }
+      final List<Dependence> results = new ArrayList<>();
+      for (final JsonNode row : required(diagnostics, "dependence")) {
+        final String periodId = required(row, "periodId").asString();
+        final Map<String, Double> correlations = lags.get(periodId);
+        if (correlations == null) {
+          throw new IllegalArgumentException("No residual autocorrelation for " + periodId);
+        }
+        final List<String> failures = new ArrayList<>();
+        correlations.forEach(
+            (lag, correlation) -> {
+              if (Math.abs(correlation) > maximum) {
+                failures.add(lag + " correlation " + correlation + " above " + maximum);
+              }
+            });
+        results.add(
+            new Dependence(
+                periodId,
+                correlations,
+                maximum,
+                required(row, "overlappingPairs").longValue(),
+                required(row, "overlappingCorrelation").doubleValue(),
+                required(row, "disjointPairs").longValue(),
+                required(row, "disjointCorrelation").doubleValue(),
+                required(row, "sameInstitutePairs").longValue(),
+                required(row, "sameInstituteCorrelation").doubleValue(),
+                explanation,
+                failures));
+      }
+      if (results.isEmpty()) {
+        throw new IllegalArgumentException("The diagnostics hold no residual dependence evidence");
+      }
+      return List.copyOf(results);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
   /** The registered centering and leave-one-institute-out reruns, per period. */
   public static List<Sensitivity> sensitivity(Path diagnosticsFile, Tolerances tolerances) {
     try {
@@ -855,6 +972,7 @@ public final class ReleaseAudit {
       DevelopmentGates.Report gates,
       Election election,
       List<Misfit> misfit,
+      List<Dependence> dependence,
       List<Sensitivity> sensitivity,
       IndividualFi individualFi) {
     final List<Gate> registered = new ArrayList<>();
@@ -875,6 +993,7 @@ public final class ReleaseAudit {
     registered.add(reproductionGate(election));
     registered.addAll(predictiveGates(frozen, diagnosticsFile));
     registered.addAll(misfitGates(misfit));
+    registered.addAll(dependenceGates(dependence));
     for (final DevelopmentGates.Tolerance tolerance : gates.tolerances()) {
       registered.add(
           new Gate(
@@ -945,6 +1064,7 @@ public final class ReleaseAudit {
         frozen,
         election,
         misfit,
+        dependence,
         sensitivity,
         individualFi,
         new Verdict(
@@ -966,17 +1086,7 @@ public final class ReleaseAudit {
       }
     }
     return gates.stream()
-        .map(
-            gate ->
-                reported.contains(gate.name())
-                    ? new Gate(
-                        gate.name(),
-                        gate.source(),
-                        REPORTED,
-                        gate.passed(),
-                        gate.detail(),
-                        gate.waiver())
-                    : gate)
+        .map(gate -> reported.contains(gate.name()) ? with(gate, REPORTED, gate.waiver()) : gate)
         .toList();
   }
 
@@ -994,15 +1104,14 @@ public final class ReleaseAudit {
         .map(
             gate ->
                 byGate.containsKey(gate.name())
-                    ? new Gate(
-                        gate.name(),
-                        gate.source(),
-                        gate.enforcement(),
-                        gate.passed(),
-                        gate.detail(),
-                        byGate.get(gate.name()))
+                    ? with(gate, gate.enforcement(), byGate.get(gate.name()))
                     : gate)
         .toList();
+  }
+
+  /** The same gate and outcome, re-recorded with another enforcement or waiver. */
+  private static Gate with(Gate gate, String enforcement, Waiver waiver) {
+    return new Gate(gate.name(), gate.source(), enforcement, gate.passed(), gate.detail(), waiver);
   }
 
   private static boolean waivedByName(List<Gate> gates, String name) {
@@ -1013,7 +1122,8 @@ public final class ReleaseAudit {
     final List<String> moved = new ArrayList<>();
     for (final Evidence evidence : frozen.evidence()) {
       try {
-        if (!sameDigest(evidence.sha256(), sha256(directory.resolve(evidence.path())))) {
+        if (!sameDigest(
+            evidence.sha256(), DevelopmentGates.sha256(directory.resolve(evidence.path())))) {
           moved.add(evidence.name());
         }
       } catch (IOException e) {
@@ -1186,6 +1296,30 @@ public final class ReleaseAudit {
     }
   }
 
+  private static List<Gate> dependenceGates(List<Dependence> dependence) {
+    return dependence.stream()
+        .map(
+            row ->
+                new Gate(
+                    "residual_dependence:" + row.periodId(),
+                    "diagnostics.json",
+                    REPORTED,
+                    row.passes(),
+                    (row.passes()
+                            ? "every registered lag is inside the frozen limit "
+                            : String.join("; ", row.failures()) + "; the frozen limit is ")
+                        + row.maximumAbsoluteAutocorrelation()
+                        + ". Overlapping pairs average "
+                        + row.overlappingCorrelation()
+                        + " against "
+                        + row.disjointCorrelation()
+                        + " for disjoint pairs and "
+                        + row.sameInstituteCorrelation()
+                        + " for same-institute pairs",
+                    null))
+        .toList();
+  }
+
   private static List<Gate> misfitGates(List<Misfit> misfit) {
     final Map<String, List<Misfit>> byPeriod = new LinkedHashMap<>();
     for (final Misfit subgroup : misfit) {
@@ -1247,10 +1381,6 @@ public final class ReleaseAudit {
       throw new IllegalArgumentException("Missing release audit field " + field);
     }
     return value;
-  }
-
-  public static String sha256(Path file) throws IOException {
-    return hex(sha256(Files.readAllBytes(file)));
   }
 
   /** Compares two hex digests without an early exit, which is what the security scanner asks. */

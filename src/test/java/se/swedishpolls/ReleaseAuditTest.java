@@ -123,6 +123,7 @@ class ReleaseAuditTest {
             gates(List.of()),
             election(99.5, 348, true),
             ReleaseAudit.misfit(directory.resolve("protocol.json"), diagnostics),
+            ReleaseAudit.dependence(directory.resolve("protocol.json"), diagnostics),
             ReleaseAudit.sensitivity(diagnostics, frozen.tolerances()),
             individualFi(frozen, gates(List.of())));
     assertEquals(ReleaseAudit.STATUS_BLOCKED, short349.verdict().status());
@@ -139,6 +140,7 @@ class ReleaseAuditTest {
             gates(List.of()),
             election(100, 349, false),
             ReleaseAudit.misfit(directory.resolve("protocol.json"), diagnostics),
+            ReleaseAudit.dependence(directory.resolve("protocol.json"), diagnostics),
             ReleaseAudit.sensitivity(diagnostics, frozen.tolerances()),
             individualFi(frozen, gates(List.of())));
     assertTrue(
@@ -194,6 +196,29 @@ class ReleaseAuditTest {
   }
 
   @Test
+  void residualDependenceReportsEveryLagAndItsPairMeasurements(@TempDir Path directory)
+      throws Exception {
+    final Path protocol = write(directory, "protocol.json", protocol());
+    final Path diagnostics = write(directory, "diagnostics.json", diagnostics(0.01));
+    final ReleaseAudit.Dependence inside =
+        ReleaseAudit.dependence(protocol, diagnostics).getFirst();
+    assertTrue(inside.passes());
+    assertEquals(Map.of("lag 1", 0.41), inside.residualAutocorrelation());
+    assertEquals(0.45, inside.maximumAbsoluteAutocorrelation());
+    assertEquals(1.09, inside.overlappingCorrelation());
+    assertEquals(0.84, inside.disjointCorrelation());
+    assertEquals(2.55, inside.sameInstituteCorrelation());
+    assertFalse(inside.explanation().isBlank());
+
+    write(directory, "diagnostics.json", diagnostics(0.01).replace("0.41", "0.5"));
+    final ReleaseAudit.Dependence outside =
+        ReleaseAudit.dependence(protocol, diagnostics).getFirst();
+    assertFalse(outside.passes());
+    assertEquals(1, outside.failures().size());
+    assertTrue(outside.failures().getFirst().startsWith("lag 1 correlation 0.5"));
+  }
+
+  @Test
   void theIndividualFiFallbackAppliesWhereTheRosterDoesNotMeetTheGates(@TempDir Path directory)
       throws Exception {
     write(directory, "protocol.json", protocol());
@@ -221,6 +246,7 @@ class ReleaseAuditTest {
         gates,
         election(100, 349, true),
         ReleaseAudit.misfit(directory.resolve("protocol.json"), diagnostics),
+        ReleaseAudit.dependence(directory.resolve("protocol.json"), diagnostics),
         ReleaseAudit.sensitivity(diagnostics, frozen.tolerances()),
         individualFi(frozen, gates));
   }
@@ -429,6 +455,12 @@ class ReleaseAuditTest {
              "name": "1-7", "cases": 370, "coverage95": 0.95, "coverage50": 0.5,
              "meanStandardizedResidual": 0.01, "rootMeanSquareStandardizedResidual": 1.0}
           ],
+          "autocorrelation": [{"periodId": "period", "lag": 1, "pairs": 322,
+                               "correlation": 0.41}],
+          "dependence": [{"periodId": "period", "overlappingPairs": 942,
+                          "overlappingCorrelation": 1.09, "disjointPairs": 797,
+                          "disjointCorrelation": 0.84, "sameInstitutePairs": 174,
+                          "sameInstituteCorrelation": 2.55}],
           "centering": [{"periodId": "period", "headlineDate": "2021-09-20",
                          "maxHeadlineShiftPoints": 0.28, "maxDailyShiftPoints": 0.33}],
           "leaveOneInstituteOut": [{"periodId": "period", "institute": "Sentio",
@@ -461,8 +493,8 @@ class ReleaseAuditTest {
         }
         """
         .formatted(
-            ReleaseAudit.sha256(directory.resolve("protocol.json")),
-            ReleaseAudit.sha256(directory.resolve("diagnostics.json")));
+            DevelopmentGates.sha256(directory.resolve("protocol.json")),
+            DevelopmentGates.sha256(directory.resolve("diagnostics.json")));
   }
 
   /** The same registration with one explicit owner waiver of the named gate. */

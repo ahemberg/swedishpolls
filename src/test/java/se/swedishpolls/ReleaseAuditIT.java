@@ -14,6 +14,7 @@ import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 /**
  * The once-only reserved 2022 comparison and the release verdict it feeds. The archived result is
@@ -49,6 +50,7 @@ class ReleaseAuditIT {
             gates,
             stored.election(),
             ReleaseAudit.misfit(PROTOCOL, DIAGNOSTICS),
+            ReleaseAudit.dependence(PROTOCOL, DIAGNOSTICS),
             ReleaseAudit.sensitivity(DIAGNOSTICS, frozen.tolerances()),
             stored.individualFi());
     assertEquals(ReleaseAudit.report(stored), ReleaseAudit.report(rebuilt));
@@ -78,6 +80,13 @@ class ReleaseAuditIT {
     assertEquals("individual_fi_estimate_unavailable", stored.individualFi().fallback().id());
     assertTrue(
         stored.sensitivity().stream().noneMatch(ReleaseAudit.Sensitivity::disclosureRequired));
+    assertEquals(2, stored.dependence().size());
+    assertTrue(
+        stored.dependence().stream()
+            .allMatch(row -> row.residualAutocorrelation().size() == 3 && row.passes()));
+    assertTrue(
+        stored.dependence().stream()
+            .allMatch(row -> row.overlappingCorrelation() > row.disjointCorrelation()));
 
     assertEquals(ReleaseAudit.STATUS_BLOCKED, stored.verdict().status());
     assertTrue(
@@ -93,7 +102,7 @@ class ReleaseAuditIT {
 
   private void rebuild() throws Exception {
     final String schema = "release_audit_" + UUID.randomUUID().toString().replace("-", "");
-    final var dataSource = TestDatabase.dataSource(schema);
+    final DriverManagerDataSource dataSource = TestDatabase.dataSource(schema);
     final Flyway flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {
@@ -164,6 +173,7 @@ class ReleaseAuditIT {
               DevelopmentGates.validation(DEVELOPMENT_GATES),
               election,
               ReleaseAudit.misfit(PROTOCOL, DIAGNOSTICS),
+              ReleaseAudit.dependence(PROTOCOL, DIAGNOSTICS),
               ReleaseAudit.sensitivity(DIAGNOSTICS, frozen.tolerances()),
               individualFi(frozen, periods, polls, elections, coverage));
       Files.writeString(RESULT, ReleaseAudit.report(report) + "\n", StandardCharsets.UTF_8);

@@ -1216,14 +1216,14 @@ second audit.
 
 ### The verdict, in [release-audit.json](release-audit.json)
 
-The report records 35 gates, six of them blocking. Five of the six pass: the frozen
+The report records 37 gates, six of them blocking. Five of the six pass: the frozen
 evidence digests, the frozen parameters and seed the reserved fit ran at, the composition
 summing to 100 within 1e-13 points from a finite fit, the 349-seat total, and the exact
 seeded reproduction. The sixth, `development_gates`, fails and carries all 49 reasons
 [#18](https://github.com/ahemberg/swedishpolls/issues/18) left standing, so the verdict is
 **blocked** on 50 reasons and `requireReleasable` throws.
 
-The remaining 29 gates are reported: they restate, per gate, what the aggregate flattens
+The remaining 31 gates are reported: they restate, per gate, what the aggregate flattens
 into a list of strings.
 
 - **Predictive comparison.** The midpoint candidate beats the recency baseline on both
@@ -1235,13 +1235,22 @@ into a list of strings.
   The grid-mixture fallback is therefore not invoked.
 - **Folds.** Both rosters clear the eight-fold minimum with 48 and 27 scored folds, and
   the FI roster carries 21 unscored folds rather than dropping them.
-- **Systematic misfit.** Itemized per subgroup against the frozen limits. On the
+- **Systematic misfit by party, institute and fieldwork length.** Itemized per subgroup
+  against the frozen limits. On the
   eight-party roster S, KD and OTHER fail by party and Sifo and Skop by institute, while
   all three fieldwork-length bands pass. On the FI roster S, KD, FI and RESIDUAL fail by
   party, Inizio, Sifo and Skop by institute, and the 1-7 day band fails. The misfit is
   concentrated in the small components and the short windows, which is what
   [checkpoint 9](#development-diagnostics-and-sensitivity-issue-18-checkpoint-9)
   measured; the frozen limits reject it rather than explain it away.
+- **Residual autocorrelation and overlap dependence.** Reported per roster with the pair
+  measurements that say how much of it is structural. All three registered lags are inside
+  the frozen 0.45 limit on both rosters, at 0.409 to 0.432 on the eight-party roster and
+  0.393 to 0.415 on the FI roster. Beside them, overlapping-fieldwork pairs average 1.09
+  and 1.15 against 0.84 and 0.83 for disjoint pairs, and same-institute pairs 2.55 and
+  2.59. Overlap adds dependence beyond the shared training state and institute clustering
+  dominates both, which is the registered explanation the gate carries rather than one this
+  code infers.
 - **Tolerances.** All eight frozen tolerances pass, each with its own evidence file and
   digest.
 - **Sensitivity.** Poll-count centering moves the headline by at most 0.28 points and
