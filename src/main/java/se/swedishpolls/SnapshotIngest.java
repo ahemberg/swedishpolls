@@ -62,13 +62,15 @@ public class SnapshotIngest {
           db.sql("INSERT INTO poll_source(source_url) VALUES (?) ON CONFLICT DO NOTHING")
               .param(sourceUrl)
               .update();
-          var source =
-              db.sql("SELECT etag, last_modified FROM poll_source WHERE source_url = ?")
-                  .param(sourceUrl)
-                  .query()
-                  .singleRow();
-          var previous = activeSnapshot();
-          var response =
+          final java.util.Map<java.lang.String, java.lang.@org.jspecify.annotations.Nullable Object>
+              source =
+                  db.sql("SELECT etag, last_modified FROM poll_source WHERE source_url = ?")
+                      .param(sourceUrl)
+                      .query()
+                      .singleRow();
+          final java.util.Optional<se.swedishpolls.SnapshotIngest.Snapshot> previous =
+              activeSnapshot();
+          final org.springframework.http.ResponseEntity<byte[]> response =
               fetch(
                   previous.isPresent() ? (String) source.get("etag") : null,
                   previous.isPresent() ? (String) source.get("last_modified") : null);
@@ -88,25 +90,25 @@ public class SnapshotIngest {
             throw new IllegalStateException(
                 "Expected a complete source response, got HTTP "
                     + response.getStatusCode().value());
-          var bytes = Optional.ofNullable(response.getBody()).orElseGet(() -> new byte[0]);
-          var hash = sha256(bytes);
-          var existing =
+          final byte[] bytes = Optional.ofNullable(response.getBody()).orElseGet(() -> new byte[0]);
+          final java.lang.String hash = sha256(bytes);
+          final java.util.Optional<java.lang.Long> existing =
               db.sql("SELECT id FROM poll_snapshot WHERE source_url = ? AND sha256 = ?")
                   .params(sourceUrl, hash)
                   .query(Long.class)
                   .optional();
-          long id;
+          final long id;
           if (existing.isPresent()) {
             id = existing.get();
           } else {
-            var polls = PollCsv.parse(bytes);
+            final java.util.List<se.swedishpolls.PollCsv.Poll> polls = PollCsv.parse(bytes);
             id =
                 db.sql(
                         "INSERT INTO poll_snapshot(source_url, sha256, raw_csv, parser_version) VALUES (?, ?, ?, 1) RETURNING id")
                     .params(sourceUrl, hash, bytes)
                     .query(Long.class)
                     .single();
-            for (var poll : polls) {
+            for (se.swedishpolls.PollCsv.Poll poll : polls) {
               db.sql(
                       "INSERT INTO snapshot_poll(snapshot_id, row_number, poll) VALUES (?, ?, ?::jsonb)")
                   .params(id, poll.rowNumber(), json.writeValueAsString(poll))

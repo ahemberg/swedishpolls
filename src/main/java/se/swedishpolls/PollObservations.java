@@ -53,19 +53,20 @@ public final class PollObservations {
         || ilr.getNumCols() != 1
         || ilr.hasUncountable())
       throw new IllegalArgumentException("Invalid ilr state for " + batch.period().id());
-    var state = new double[ilr.getNumRows()];
+    final double[] state = new double[ilr.getNumRows()];
     for (int r = 0; r < state.length; r++) state[r] = ilr.get(r);
-    var values = new double[batch.components().size()];
+    final double[] values = new double[batch.components().size()];
     close(transposedBasis(batch), state, values, batch.period().id());
-    var shares = new LinkedHashMap<String, Double>();
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> shares =
+        new LinkedHashMap<String, Double>();
     for (int c = 0; c < values.length; c++) shares.put(batch.components().get(c), values[c]);
     return java.util.Collections.unmodifiableMap(shares);
   }
 
   /** The batch basis transposed once, as {@code H'[component][coordinate]}. */
   static double[][] transposedBasis(Batch batch) {
-    int size = batch.components().size();
-    var transposed = new double[size][size - 1];
+    final int size = batch.components().size();
+    final double[][] transposed = new double[size][size - 1];
     for (int c = 0; c < size; c++)
       for (int r = 0; r < size - 1; r++) transposed[c][r] = batch.basis().get(r, c);
     return transposed;
@@ -100,8 +101,8 @@ public final class PollObservations {
    */
   static SimpleMatrix deltaCovariance(
       SimpleMatrix basis, double[] proportions, double n, String where) {
-    int size = proportions.length;
-    var covariance = new SimpleMatrix(size - 1, size - 1);
+    final int size = proportions.length;
+    final org.ejml.simple.SimpleMatrix covariance = new SimpleMatrix(size - 1, size - 1);
     for (int r = 0; r < size - 1; r++)
       for (int c = 0; c <= r; c++) {
         double value = 0;
@@ -119,37 +120,39 @@ public final class PollObservations {
    * Explicit candidate periods are allowed for development; this does not validate their support.
    */
   public static Batch prepare(Roster.CoveragePeriod period, List<PollCsv.Poll> polls) {
-    var expected = new HashSet<>(PollCsv.PARTIES);
+    final java.util.HashSet<java.lang.String> expected = new HashSet<>(PollCsv.PARTIES);
     if (period.individualFi()) expected.add("FI");
     if (period.roster().size() != expected.size()
         || !expected.equals(new HashSet<>(period.roster())))
       throw new IllegalArgumentException("Invalid roster for " + period.id());
-    var components = new ArrayList<>(period.roster());
+    final java.util.ArrayList<java.lang.String> components = new ArrayList<>(period.roster());
     components.add(period.individualFi() ? "RESIDUAL" : "OTHER");
-    int size = components.size();
+    final int size = components.size();
     // Rows are Helmert contrasts: first r+1 components versus component r+2.
-    var basis = new SimpleMatrix(size - 1, size);
+    final org.ejml.simple.SimpleMatrix basis = new SimpleMatrix(size - 1, size);
     for (int r = 0; r < size - 1; r++) {
-      double scale = Math.sqrt((r + 1.0) * (r + 2.0));
+      final double scale = Math.sqrt((r + 1.0) * (r + 2.0));
       for (int c = 0; c <= r; c++) basis.set(r, c, 1 / scale);
       basis.set(r, r + 1, -(r + 1) / scale);
     }
-    var observations = new ArrayList<Observation>();
-    var exclusions = new ArrayList<Exclusion>();
-    for (var poll : polls) {
-      var composition = Roster.compose(period, poll);
+    final java.util.ArrayList<se.swedishpolls.PollObservations.Observation> observations =
+        new ArrayList<Observation>();
+    final java.util.ArrayList<se.swedishpolls.PollObservations.Exclusion> exclusions =
+        new ArrayList<Exclusion>();
+    for (se.swedishpolls.PollCsv.Poll poll : polls) {
+      final se.swedishpolls.Roster.Composition composition = Roster.compose(period, poll);
       if (!composition.complete()) {
         exclusions.add(new Exclusion(poll.rowNumber(), composition.exclusionReasons()));
         continue;
       }
-      double n = poll.sampleSize().doubleValue();
+      final double n = poll.sampleSize().doubleValue();
       if (!Double.isFinite(n) || n <= 0)
         throw new IllegalArgumentException(
             "Unrepresentable sample size at row " + poll.rowNumber());
-      var proportions = new double[size];
+      final double[] proportions = new double[size];
       int zeros = 0;
       for (int c = 0; c < size; c++) {
-        var share = composition.components().get(components.get(c));
+        final java.math.BigDecimal share = composition.components().get(components.get(c));
         proportions[c] = share.doubleValue() / 100;
         if (!Double.isFinite(proportions[c])
             || share.signum() < 0
@@ -158,17 +161,18 @@ public final class PollObservations {
         if (share.signum() == 0) zeros++;
       }
       if (zeros > 0) {
-        double delta = Math.min(0.5 / n, 0.5 / zeros);
+        final double delta = Math.min(0.5 / n, 0.5 / zeros);
         for (int c = 0; c < size; c++)
           proportions[c] = proportions[c] == 0 ? delta : proportions[c] * (1 - zeros * delta);
       }
-      var log = new SimpleMatrix(size, 1);
+      final org.ejml.simple.SimpleMatrix log = new SimpleMatrix(size, 1);
       for (int c = 0; c < size; c++) log.set(c, Math.log(proportions[c]));
-      var covariance = deltaCovariance(basis, proportions, n, "row " + poll.rowNumber());
+      final org.ejml.simple.SimpleMatrix covariance =
+          deltaCovariance(basis, proportions, n, "row " + poll.rowNumber());
       if (!DecompositionFactory_DDRM.chol(size - 1, true).decompose(covariance.getDDRM().copy()))
         throw new IllegalArgumentException(
             "Observation covariance is not positive definite at row " + poll.rowNumber());
-      var midpoint =
+      final java.time.LocalDate midpoint =
           poll.collectionFrom()
               .plusDays(ChronoUnit.DAYS.between(poll.collectionFrom(), poll.collectionTo()) / 2);
       observations.add(

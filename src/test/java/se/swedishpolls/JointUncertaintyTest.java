@@ -32,7 +32,7 @@ class JointUncertaintyTest {
 
   @Test
   void readsTheRegisteredRulesAndRejectsInadmissibleOnes() {
-    var rules = JointUncertainty.rules(PROTOCOL);
+    final se.swedishpolls.JointUncertainty.Rules rules = JointUncertainty.rules(PROTOCOL);
     assertEquals(20260908, rules.seed());
     assertEquals(10000, rules.draws());
     assertEquals(List.of(0.5, 0.95), rules.intervalLevels());
@@ -42,7 +42,7 @@ class JointUncertaintyTest {
     assertEquals(8, JointUncertainty.precisionSeeds(rules).size());
     assertEquals(20260915, JointUncertainty.precisionSeeds(rules).getLast());
 
-    for (var inadmissible :
+    for (org.junit.jupiter.api.function.Executable inadmissible :
         List.<org.junit.jupiter.api.function.Executable>of(
             () -> new JointUncertainty.Rules(1, 1, List.of(0.95), 2),
             () -> new JointUncertainty.Rules(1, 10, List.of(0.95), 1),
@@ -60,16 +60,17 @@ class JointUncertaintyTest {
 
   @Test
   void transformsEveryDrawBeforeAveragingSupport() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
-    var estimated = estimate(period, polls, RULES);
+    final se.swedishpolls.JointUncertainty.Estimated estimated = estimate(period, polls, RULES);
 
-    var days = estimated.segments().getFirst().days();
+    final java.util.List<se.swedishpolls.JointUncertainty.Day> days =
+        estimated.segments().getFirst().days();
     assertEquals(148, days.size());
-    for (var day : days) {
+    for (se.swedishpolls.JointUncertainty.Day day : days) {
       assertEquals(9, day.components().size());
       // Each draw is a composition, so both the drawn mean and the state mean close to 100.
       assertEquals(
@@ -81,20 +82,22 @@ class JointUncertaintyTest {
     }
     // The transform is nonlinear, so averaging transformed draws is not transforming the mean.
     // Publishing the state mean would report a different composition than the draws support.
-    var headline = days.getLast();
+    final se.swedishpolls.JointUncertainty.Day headline = days.getLast();
     assertTrue(
         headline.components().stream().anyMatch(summary -> summary.mean() != summary.stateMean()),
         headline::toString);
     // The daily history publishes the drawn mean over these same runs and draws, and keeps the
     // state mean as the internal diagnostic. The two agree on the fitted state and differ only in
     // how support is averaged.
-    var history = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, coverage(), RULES);
-    var published = history.segments().getFirst().days().getLast();
+    final se.swedishpolls.EstimateHistory.Estimated history =
+        EstimateHistory.estimate(period, polls, ELECTIONS, POINT, coverage(), RULES);
+    final se.swedishpolls.EstimateHistory.Day published =
+        history.segments().getFirst().days().getLast();
     assertEquals(headline.date(), published.date());
-    var diagnostic =
+    final se.swedishpolls.EstimateHistory.Composition diagnostic =
         EstimateHistory.internalStateMean(period, polls, ELECTIONS, POINT, coverage()).getLast();
     assertEquals(headline.date(), diagnostic.date());
-    for (var summary : headline.components()) {
+    for (se.swedishpolls.JointUncertainty.Component summary : headline.components()) {
       assertEquals(summary.mean(), published.shares().get(summary.component()));
       assertEquals(summary.stateMean(), diagnostic.shares().get(summary.component()));
     }
@@ -102,17 +105,18 @@ class JointUncertaintyTest {
 
   @Test
   void intervalsNestByLevelAndBracketTheDrawnMean() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
-    var day = estimate(period, polls, RULES).segments().getFirst().days().getLast();
+    final se.swedishpolls.JointUncertainty.Day day =
+        estimate(period, polls, RULES).segments().getFirst().days().getLast();
 
-    for (var summary : day.components()) {
+    for (se.swedishpolls.JointUncertainty.Component summary : day.components()) {
       assertEquals(List.of(0.5, 0.95), summary.intervals().stream().map(i -> i.level()).toList());
-      var half = summary.intervals().getFirst();
-      var wide = summary.intervals().getLast();
+      final se.swedishpolls.JointUncertainty.Interval half = summary.intervals().getFirst();
+      final se.swedishpolls.JointUncertainty.Interval wide = summary.intervals().getLast();
       assertTrue(wide.lower() < half.lower(), summary::toString);
       assertTrue(half.upper() < wide.upper(), summary::toString);
       assertTrue(wide.lower() < summary.mean() && summary.mean() < wide.upper(), summary::toString);
@@ -123,16 +127,18 @@ class JointUncertaintyTest {
 
   @Test
   void reproducesEveryDrawAtTheSameSeedAndMovesAtAnother() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
-    var first = estimate(period, polls, RULES);
-    var again = estimate(period, polls, RULES);
-    var other = estimate(period, polls, RULES.withSeed(RULES.seed() + 1));
+    final se.swedishpolls.JointUncertainty.Estimated first = estimate(period, polls, RULES);
+    final se.swedishpolls.JointUncertainty.Estimated again = estimate(period, polls, RULES);
+    final se.swedishpolls.JointUncertainty.Estimated other =
+        estimate(period, polls, RULES.withSeed(RULES.seed() + 1));
 
-    var reproduced = JointUncertainty.reproduced(first.finalDraws(), again.finalDraws());
+    final se.swedishpolls.JointUncertainty.Reproduced reproduced =
+        JointUncertainty.reproduced(first.finalDraws(), again.finalDraws());
     assertTrue(reproduced.exact(), reproduced::toString);
     assertEquals(0, reproduced.maxAbsoluteDifference());
     assertEquals(RULES.draws() * 9, reproduced.comparedValues());
@@ -147,16 +153,17 @@ class JointUncertaintyTest {
 
   @Test
   void aDayDrawsFromItsOwnStreamSoItDoesNotDependOnTheRunAroundIt() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
         new ArrayList<>(
             CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 3, 2), "1"));
     polls.addAll(
         CoverageValidationTest.weekly(LocalDate.of(2015, 6, 1), LocalDate.of(2015, 8, 3), "1"));
 
-    var estimated = estimate(period, polls, RULES);
-    var shorter = estimate(period, polls.subList(0, 9), RULES);
+    final se.swedishpolls.JointUncertainty.Estimated estimated = estimate(period, polls, RULES);
+    final se.swedishpolls.JointUncertainty.Estimated shorter =
+        estimate(period, polls.subList(0, 9), RULES);
 
     // The unsupported run splits the period into two separately fitted segments, and the retained
     // draws belong to the last day of the last one.
@@ -180,16 +187,17 @@ class JointUncertaintyTest {
 
   @Test
   void theNarrowedFinalDayReturnsWhatTheWholeRunReturnsForThatDay() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
         new ArrayList<>(
             CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 3, 2), "1"));
     polls.addAll(
         CoverageValidationTest.weekly(LocalDate.of(2015, 6, 1), LocalDate.of(2015, 8, 3), "1"));
 
-    var whole = estimate(period, polls, RULES);
-    var narrowed = JointUncertainty.finalDay(period, polls, ELECTIONS, POINT, coverage(), RULES);
+    final se.swedishpolls.JointUncertainty.Estimated whole = estimate(period, polls, RULES);
+    final se.swedishpolls.JointUncertainty.FinalDay narrowed =
+        JointUncertainty.finalDay(period, polls, ELECTIONS, POINT, coverage(), RULES);
 
     // The fixture is fitted twice over an unsupported run, so the narrowed calculation has to pick
     // the last day of the last segment rather than the last day it fitted anything on.
@@ -200,11 +208,12 @@ class JointUncertaintyTest {
     assertEquals(whole.segments().getLast().days().getLast(), narrowed.day());
     assertEquals(whole.reproduction(), narrowed.reproduction());
     // So do the retained draws the threshold and coalition quantities read.
-    var reproduced = JointUncertainty.reproduced(whole.finalDraws(), narrowed.draws());
+    final se.swedishpolls.JointUncertainty.Reproduced reproduced =
+        JointUncertainty.reproduced(whole.finalDraws(), narrowed.draws());
     assertTrue(reproduced.exact(), reproduced::toString);
     assertEquals(RULES.draws() * 9, reproduced.comparedValues());
     // The check has teeth: another seed draws the same day differently.
-    var other =
+    final se.swedishpolls.JointUncertainty.FinalDay other =
         JointUncertainty.finalDay(
             period, polls, ELECTIONS, POINT, coverage(), RULES.withSeed(RULES.seed() + 1));
     assertEquals(narrowed.day().date(), other.day().date());
@@ -213,18 +222,20 @@ class JointUncertaintyTest {
 
   @Test
   void repeatedSeedsMoveTheEndpointsOnlyByMonteCarloError() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 4, 6), "1");
-    var repeats = new ArrayList<JointUncertainty.Estimated>();
+    final java.util.ArrayList<se.swedishpolls.JointUncertainty.Estimated> repeats =
+        new ArrayList<JointUncertainty.Estimated>();
     for (long seed : JointUncertainty.precisionSeeds(RULES))
       repeats.add(estimate(period, polls, RULES.withSeed(seed)));
 
-    var precision = JointUncertainty.precision(repeats);
+    final java.util.List<se.swedishpolls.JointUncertainty.Precision> precision =
+        JointUncertainty.precision(repeats);
 
     assertEquals(18, precision.size());
-    for (var measured : precision) {
+    for (se.swedishpolls.JointUncertainty.Precision measured : precision) {
       assertEquals(4, measured.seeds());
       assertEquals(repeats.getFirst().segments().getFirst().days().size(), measured.comparedDays());
       // Four seeds over one component and level: the sample moves, the estimate underneath does
@@ -240,17 +251,18 @@ class JointUncertaintyTest {
 
   @Test
   void recordsTheInputsBasisAndVersionsARerunNeeds() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var candidate =
+    final se.swedishpolls.Roster.CoveragePeriod candidate =
         CoverageValidationTest.period(
             "candidate", LocalDate.of(2015, 1, 1), LocalDate.of(2015, 6, 1), true, false);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
-    var fewer =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> fewer =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 5, 25), "1");
 
-    var run = estimate(period, polls, RULES).reproduction();
+    final se.swedishpolls.JointUncertainty.Reproduction run =
+        estimate(period, polls, RULES).reproduction();
 
     assertEquals(RULES.seed(), run.seed());
     assertEquals(RULES.draws(), run.draws());
@@ -269,7 +281,8 @@ class JointUncertaintyTest {
         run.inputRowsSha256(), estimate(period, polls, RULES).reproduction().inputRowsSha256());
     assertNotEquals(
         run.inputRowsSha256(), estimate(period, fewer, RULES).reproduction().inputRowsSha256());
-    var other = estimate(candidate, polls, RULES).reproduction();
+    final se.swedishpolls.JointUncertainty.Reproduction other =
+        estimate(candidate, polls, RULES).reproduction();
     assertNotEquals(run.basisSha256(), other.basisSha256());
     assertEquals(10, other.components().size());
     assertEquals(run.implementationSha256(), other.implementationSha256());
@@ -277,30 +290,31 @@ class JointUncertaintyTest {
 
   @Test
   void aNonPositiveDefiniteOrUnrepresentableStateStopsTheRunWithoutJitter() {
-    var date = LocalDate.of(2015, 3, 2);
-    var positiveDefinite = org.ejml.simple.SimpleMatrix.identity(3).scale(4);
+    final java.time.LocalDate date = LocalDate.of(2015, 3, 2);
+    final org.ejml.simple.SimpleMatrix positiveDefinite =
+        org.ejml.simple.SimpleMatrix.identity(3).scale(4);
     assertEquals(
         2.0, JointUncertainty.cholesky(ModelValues.copyOf(positiveDefinite), "eight", date)[0][0]);
 
-    var singular = positiveDefinite.copy();
+    final org.ejml.simple.SimpleMatrix singular = positiveDefinite.copy();
     singular.set(2, 2, 0);
-    var asymmetric = positiveDefinite.copy();
+    final org.ejml.simple.SimpleMatrix asymmetric = positiveDefinite.copy();
     asymmetric.set(0, 1, 1);
-    var nonfinite = positiveDefinite.copy();
+    final org.ejml.simple.SimpleMatrix nonfinite = positiveDefinite.copy();
     nonfinite.set(1, 1, Double.NaN);
     // A covariance that cannot be factorized blocks the run: there is no jitter and no clipping.
-    for (var rejected : List.of(singular, asymmetric, nonfinite))
+    for (org.ejml.simple.SimpleMatrix rejected : List.of(singular, asymmetric, nonfinite))
       assertThrows(
           IllegalArgumentException.class,
           () -> JointUncertainty.cholesky(ModelValues.copyOf(rejected), "eight", date));
 
-    var batch =
+    final se.swedishpolls.PollObservations.Batch batch =
         PollObservations.prepare(
             CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true),
             CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), date, "1"));
-    var basis = PollObservations.transposedBasis(batch);
-    var shares = new double[9];
-    var unrepresentable = new double[8];
+    final double[][] basis = PollObservations.transposedBasis(batch);
+    final double[] shares = new double[9];
+    final double[] unrepresentable = new double[8];
     unrepresentable[0] = Double.POSITIVE_INFINITY;
     assertThrows(
         IllegalArgumentException.class,

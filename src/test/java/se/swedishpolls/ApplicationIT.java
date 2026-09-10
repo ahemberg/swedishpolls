@@ -15,13 +15,14 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 class ApplicationIT {
   @Test
   void packagedApplicationServesBundledAssetsAndMigratesPostgres() throws Exception {
-    int port;
-    try (var socket = new java.net.ServerSocket(0)) {
+    final int port;
+    try (final java.net.ServerSocket socket = new java.net.ServerSocket(0)) {
       port = socket.getLocalPort();
     }
-    var log = Path.of("target", "application-integration.log").toFile();
-    var dataSource = TestDatabase.dataSource();
-    var process =
+    final java.io.File log = Path.of("target", "application-integration.log").toFile();
+    final org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+        TestDatabase.dataSource();
+    final java.lang.Process process =
         TestDatabase.configure(
                 new ProcessBuilder(
                     Path.of(System.getProperty("java.home"), "bin", "java").toString(),
@@ -33,10 +34,11 @@ class ApplicationIT {
             .redirectErrorStream(true)
             .redirectOutput(log)
             .start();
-    try (var http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).build()) {
-      var root = URI.create("http://127.0.0.1:" + port);
+    try (final java.net.http.HttpClient http =
+        HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).build()) {
+      final java.net.URI root = URI.create("http://127.0.0.1:" + port);
       HttpResponse<String> response = null;
-      long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+      final long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
       while (System.nanoTime() < deadline && process.isAlive()) {
         try {
           response =
@@ -52,9 +54,10 @@ class ApplicationIT {
       assertNotNull(response, "Server did not start; see " + log);
       assertEquals(200, response.statusCode());
       assertTrue(response.body().contains("Skattningar är ännu inte tillgängliga."));
-      var asset = Pattern.compile("src=\"(/assets/[^\"]+\\.js)\"").matcher(response.body());
+      final java.util.regex.Matcher asset =
+          Pattern.compile("src=\"(/assets/[^\"]+\\.js)\"").matcher(response.body());
       assertTrue(asset.find(), "HTML must reference compiled JavaScript");
-      var script =
+      final java.net.http.HttpResponse<java.lang.String> script =
           http.send(
               HttpRequest.newBuilder(root.resolve(asset.group(1))).build(),
               HttpResponse.BodyHandlers.ofString());
@@ -62,8 +65,9 @@ class ApplicationIT {
       assertTrue(script.headers().firstValue("content-type").orElse("").contains("javascript"));
       assertTrue(script.body().contains("hydrateRoot"));
 
-      var db = JdbcClient.create(dataSource);
-      var serverVersion = db.sql("SHOW server_version").query(String.class).single();
+      final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
+      final java.lang.String serverVersion =
+          db.sql("SHOW server_version").query(String.class).single();
       assertEquals("18.4", serverVersion.substring(0, serverVersion.indexOf(' ')));
       assertEquals(
           1,

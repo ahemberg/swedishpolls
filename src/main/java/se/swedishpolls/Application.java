@@ -37,7 +37,7 @@ public class Application {
     @Override
     public byte[] readInternal(Class<? extends byte[]> type, HttpInputMessage input)
         throws IOException {
-      var bytes = input.getBody().readNBytes(MAX_SOURCE_BYTES + 1);
+      final byte[] bytes = input.getBody().readNBytes(MAX_SOURCE_BYTES + 1);
       if (bytes.length > MAX_SOURCE_BYTES) throw new IOException("Source exceeds 16 MiB");
       return bytes;
     }

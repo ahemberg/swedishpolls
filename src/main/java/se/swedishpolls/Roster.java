@@ -98,16 +98,18 @@ public class Roster {
   }
 
   public static Composition compose(CoveragePeriod period, PollCsv.Poll poll) {
-    var reasons = new ArrayList<>(poll.exclusionReasons());
+    final java.util.ArrayList<java.lang.String> reasons = new ArrayList<>(poll.exclusionReasons());
     if (!period.covers(poll)) reasons.add("outside_coverage_period:" + period.id());
-    var fi = poll.shares().get("FI");
+    final java.math.BigDecimal fi = poll.shares().get("FI");
     if (period.individualFi() && fi == null) reasons.add("missing_share:FI");
-    var residual =
+    final java.math.BigDecimal residual =
         reasons.isEmpty() && period.individualFi() ? poll.remainder().subtract(fi) : null;
     if (residual != null && residual.signum() < 0) reasons.add("negative_residual");
-    var components = new LinkedHashMap<String, BigDecimal>();
+    final java.util.LinkedHashMap<java.lang.String, java.math.BigDecimal> components =
+        new LinkedHashMap<String, BigDecimal>();
     if (reasons.isEmpty()) {
-      for (var party : PollCsv.PARTIES) components.put(party, poll.shares().get(party));
+      for (java.lang.String party : PollCsv.PARTIES)
+        components.put(party, poll.shares().get(party));
       // The eight-party remainder already contains FI; adding FI again would double-count it.
       if (residual == null) components.put("OTHER", poll.remainder());
       else {

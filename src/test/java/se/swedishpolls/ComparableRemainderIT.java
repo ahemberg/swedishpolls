@@ -25,52 +25,56 @@ class ComparableRemainderIT {
 
   @Test
   void summarizesTheRemainderFromTheSameDrawsAndGroupsEveryElectionTheSameWay() throws Exception {
-    var schema = "remainder_" + UUID.randomUUID().toString().replace("-", "");
-    var dataSource = TestDatabase.dataSource(schema);
-    var flyway =
+    final java.lang.String schema = "remainder_" + UUID.randomUUID().toString().replace("-", "");
+    final org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+        TestDatabase.dataSource(schema);
+    final org.flywaydb.core.Flyway flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {
       flyway.migrate();
-      var db = JdbcClient.create(dataSource);
-      var periods = new Roster(db).periods();
-      var elections = elections(db);
-      List<PollCsv.Poll> polls;
-      try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+      final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
+      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
+          new Roster(db).periods();
+      final java.util.List<se.swedishpolls.ComparableRemainder.Reference> elections = elections(db);
+      final List<PollCsv.Poll> polls;
+      try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
         polls = PollCsv.parse(input.readAllBytes());
       }
-      var coverage = CoverageValidation.validation(COVERAGE);
-      var rules = JointUncertainty.rules(PROTOCOL);
+      final se.swedishpolls.CoverageValidation.Report coverage =
+          CoverageValidation.validation(COVERAGE);
+      final se.swedishpolls.JointUncertainty.Rules rules = JointUncertainty.rules(PROTOCOL);
 
-      var report = ComparableRemainder.report(periods, polls, elections, coverage, rules);
+      final se.swedishpolls.ComparableRemainder.Report report =
+          ComparableRemainder.report(periods, polls, elections, coverage, rules);
 
       // Only the validated roster publishes; the candidate FI segment publishes nothing here.
       assertEquals(1, report.periods().size());
-      var published = report.periods().getFirst();
+      final se.swedishpolls.ComparableRemainder.Published published = report.periods().getFirst();
       assertEquals("eight_party_2010", published.periodId());
       assertEquals(4278, published.estimatedDays());
       // FI is not separate in this period, so OTHER is already the comparable remainder.
       assertEquals(List.of("OTHER"), published.members());
       assertEquals(0, published.maxEndpointSumErrorPoints());
 
-      var headline = published.headline();
+      final se.swedishpolls.ComparableRemainder.Day headline = published.headline();
       assertEquals(LocalDate.of(2021, 9, 20), headline.date());
       assertEquals(
           List.of(0.5, 0.95),
           headline.intervals().stream().map(JointUncertainty.Interval::level).toList());
-      var half = headline.intervals().getFirst();
-      var wide = headline.intervals().getLast();
+      final se.swedishpolls.JointUncertainty.Interval half = headline.intervals().getFirst();
+      final se.swedishpolls.JointUncertainty.Interval wide = headline.intervals().getLast();
       assertTrue(wide.lower() < half.lower() && half.upper() < wide.upper(), headline::toString);
       assertTrue(wide.lower() < headline.mean() && headline.mean() < wide.upper());
 
       // The remainder is the same draws the component summaries read, not a second run. Only the
       // final day is compared, so only the final day is summarized.
-      var period =
+      final se.swedishpolls.Roster.CoveragePeriod period =
           periods.stream()
               .filter(candidate -> candidate.id().equals(published.periodId()))
               .findFirst()
               .orElseThrow();
-      var validated = coverage.periods().getFirst();
-      var uncertainty =
+      final se.swedishpolls.CoverageValidation.Validated validated = coverage.periods().getFirst();
+      final se.swedishpolls.JointUncertainty.FinalDay uncertainty =
           JointUncertainty.finalDay(
               period,
               polls,
@@ -78,7 +82,7 @@ class ComparableRemainderIT {
               validated.parameters(),
               coverage.rules(),
               rules);
-      var other =
+      final se.swedishpolls.JointUncertainty.Component other =
           uncertainty.day().components().stream()
               .filter(component -> component.component().equals("OTHER"))
               .findFirst()
@@ -90,7 +94,7 @@ class ComparableRemainderIT {
       // Every election is grouped into this period's components; the 2022 result is outside the
       // development history and is marked so rather than dropped.
       assertEquals(4, published.elections().size());
-      for (var election : published.elections()) {
+      for (se.swedishpolls.ComparableRemainder.Grouped election : published.elections()) {
         assertEquals(
             List.of("S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER"),
             List.copyOf(election.shares().keySet()));
@@ -136,8 +140,10 @@ class ComparableRemainderIT {
   /** The official results in their own reported components, as percentages of the valid votes. */
   private static List<ComparableRemainder.Reference> elections(JdbcClient db) {
     record Share(LocalDate date, String component, double share) {}
-    var shares = new LinkedHashMap<LocalDate, LinkedHashMap<String, Double>>();
-    for (var row :
+    final java.util.LinkedHashMap<
+            java.time.LocalDate, java.util.LinkedHashMap<java.lang.String, java.lang.Double>>
+        shares = new LinkedHashMap<LocalDate, LinkedHashMap<String, Double>>();
+    for (Share row :
         db.sql(
                 """
                 SELECT election_date, component, 100.0 * votes / valid_votes AS share

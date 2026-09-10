@@ -288,8 +288,8 @@ public final class DevelopmentDiagnostics {
 
   public static Rules rules(Path file) {
     try {
-      var root = JSON.readTree(Files.readAllBytes(file));
-      var diagnostics = required(root, "diagnostics", file);
+      final tools.jackson.databind.JsonNode root = JSON.readTree(Files.readAllBytes(file));
+      final tools.jackson.databind.JsonNode diagnostics = required(root, "diagnostics", file);
       return new Rules(
           required(root, "seed", file).longValue(),
           required(root, "score_horizon_days", file).intValue(),
@@ -305,7 +305,7 @@ public final class DevelopmentDiagnostics {
   }
 
   private static JsonNode required(JsonNode parent, String field, Path file) {
-    var value = parent == null ? null : parent.get(field);
+    final tools.jackson.databind.JsonNode value = parent == null ? null : parent.get(field);
     if (value == null || value.isNull())
       throw new IllegalArgumentException(
           "Incomplete diagnostic rules in " + file + ": missing " + field);
@@ -313,14 +313,16 @@ public final class DevelopmentDiagnostics {
   }
 
   private static List<Integer> integers(JsonNode parent, String field, Path file) {
-    var values = new ArrayList<Integer>();
-    for (var value : required(parent, field, file)) values.add(value.intValue());
+    final java.util.ArrayList<java.lang.Integer> values = new ArrayList<Integer>();
+    for (tools.jackson.databind.JsonNode value : required(parent, field, file))
+      values.add(value.intValue());
     return values;
   }
 
   private static List<Double> doubles(JsonNode parent, String field, Path file) {
-    var values = new ArrayList<Double>();
-    for (var value : required(parent, field, file)) values.add(value.doubleValue());
+    final java.util.ArrayList<java.lang.Double> values = new ArrayList<Double>();
+    for (tools.jackson.databind.JsonNode value : required(parent, field, file))
+      values.add(value.doubleValue());
     return values;
   }
 
@@ -330,7 +332,7 @@ public final class DevelopmentDiagnostics {
    */
   public static List<PollCsv.Poll> heldOut(
       List<PollCsv.Poll> polls, DevelopmentTuning.Fold fold, Rules rules) {
-    var through = fold.cutoff().plusDays(rules.scoreHorizonDays());
+    final java.time.LocalDate through = fold.cutoff().plusDays(rules.scoreHorizonDays());
     if (!through.equals(fold.scoreThrough()))
       throw new IllegalArgumentException(
           "Fold " + fold.cutoff() + " scores through " + fold.scoreThrough() + ", not " + through);
@@ -362,20 +364,20 @@ public final class DevelopmentDiagnostics {
       ModelValues covariance,
       Rules rules,
       String stream) {
-    int dimension = mean.getNumRows();
-    var matrix = new double[dimension][dimension];
+    final int dimension = mean.getNumRows();
+    final double[][] matrix = new double[dimension][dimension];
     for (int r = 0; r < dimension; r++)
       for (int c = 0; c < dimension; c++) matrix[r][c] = covariance.get(r, c);
-    var factor = WindowFilter.factor(matrix);
-    var innovation = new double[dimension];
+    final double[][] factor = WindowFilter.factor(matrix);
+    final double[] innovation = new double[dimension];
     for (int i = 0; i < dimension; i++) innovation[i] = observation.ilr().get(i) - mean.get(i);
-    var solved = WindowFilter.solve(factor, innovation);
+    final double[] solved = WindowFilter.solve(factor, innovation);
     double quadratic = 0;
     for (int i = 0; i < dimension; i++) quadratic += innovation[i] * solved[i];
-    double logScore =
+    final double logScore =
         -0.5
             * (dimension * Math.log(2 * Math.PI) + WindowFilter.logDeterminant(factor) + quadratic);
-    var whitened = new ArrayList<Double>(dimension);
+    final java.util.ArrayList<java.lang.Double> whitened = new ArrayList<Double>(dimension);
     for (int r = 0; r < dimension; r++) {
       double value = innovation[r];
       for (int c = 0; c < r; c++) value -= factor[r][c] * whitened.get(c);
@@ -383,13 +385,14 @@ public final class DevelopmentDiagnostics {
     }
     // Coverage is read off joint draws of the predictive distribution, transformed one draw at a
     // time, because a marginal share is not a coordinate of the Gaussian.
-    var basis = PollObservations.transposedBasis(batch);
-    int components = batch.components().size();
-    var draws = new double[components][rules.scoreDraws()];
-    var random = RANDOM_FACTORY.create(streamSeed(stream, rules.seed()));
-    var normal = new double[dimension];
-    var state = new double[dimension];
-    var shares = new double[components];
+    final double[][] basis = PollObservations.transposedBasis(batch);
+    final int components = batch.components().size();
+    final double[][] draws = new double[components][rules.scoreDraws()];
+    final java.util.random.RandomGenerator random =
+        RANDOM_FACTORY.create(streamSeed(stream, rules.seed()));
+    final double[] normal = new double[dimension];
+    final double[] state = new double[dimension];
+    final double[] shares = new double[components];
     for (int draw = 0; draw < rules.scoreDraws(); draw++) {
       for (int i = 0; i < dimension; i++) normal[i] = random.nextGaussian();
       for (int i = 0; i < dimension; i++) {
@@ -401,20 +404,21 @@ public final class DevelopmentDiagnostics {
       for (int component = 0; component < components; component++)
         draws[component][draw] = shares[component];
     }
-    var observed = PollObservations.shares(batch, observation.ilr());
-    var covered95 = new ArrayList<Boolean>(components);
-    var covered50 = new ArrayList<Boolean>(components);
-    var standardized = new ArrayList<Double>(components);
+    final java.util.Map<java.lang.String, java.lang.Double> observed =
+        PollObservations.shares(batch, observation.ilr());
+    final java.util.ArrayList<java.lang.Boolean> covered95 = new ArrayList<Boolean>(components);
+    final java.util.ArrayList<java.lang.Boolean> covered50 = new ArrayList<Boolean>(components);
+    final java.util.ArrayList<java.lang.Double> standardized = new ArrayList<Double>(components);
     for (int component = 0; component < components; component++) {
-      var column = draws[component];
+      final double[] column = draws[component];
       double total = 0;
       for (double value : column) total += value;
-      double drawnMean = total / column.length;
+      final double drawnMean = total / column.length;
       double variance = 0;
       for (double value : column) variance += (value - drawnMean) * (value - drawnMean);
       variance /= column.length - 1;
       Arrays.sort(column);
-      double share = observed.get(batch.components().get(component));
+      final double share = observed.get(batch.components().get(component));
       standardized.add(variance > 0 ? (share - drawnMean) / Math.sqrt(variance) : 0);
       covered95.add(inside(column, share, 0.95));
       covered50.add(inside(column, share, 0.5));
@@ -439,7 +443,7 @@ public final class DevelopmentDiagnostics {
   /** Each scored poll draws from its own stream, named by the fold, candidate and source row. */
   private static long streamSeed(String stream, long seed) {
     try {
-      var digest =
+      final byte[] digest =
           MessageDigest.getInstance("SHA-256")
               .digest((stream + "|" + seed).getBytes(StandardCharsets.UTF_8));
       long value = 0;
@@ -453,8 +457,8 @@ public final class DevelopmentDiagnostics {
 
   /** The SHA-256 of the ordered {@code row:sha256} identities of one fold's rows. */
   private static String rowsSha256(List<PollCsv.Poll> polls) {
-    var rows = new StringBuilder();
-    for (var poll : polls)
+    final java.lang.StringBuilder rows = new StringBuilder();
+    for (se.swedishpolls.PollCsv.Poll poll : polls)
       rows.append(poll.rowNumber())
           .append(':')
           .append(sha256(String.join(",", poll.raw().values())))
@@ -483,12 +487,12 @@ public final class DevelopmentDiagnostics {
       DevelopmentTuning.Fold fold,
       List<LocalDate> elections,
       DevelopmentTuning.Grid grid) {
-    var points = grid.points();
-    var likelihoods =
+    final java.util.List<se.swedishpolls.DailyStateSpace.Parameters> points = grid.points();
+    final double[] likelihoods =
         points.parallelStream()
             .mapToDouble(
                 point -> {
-                  double likelihood =
+                  final double likelihood =
                       WindowFilter.logLikelihood(
                           training, elections, point, WindowFilter.Convention.FIELDWORK);
                   if (!Double.isFinite(likelihood))
@@ -504,8 +508,8 @@ public final class DevelopmentDiagnostics {
             .toArray();
     int best = 0;
     for (int i = 1; i < likelihoods.length; i++) if (likelihoods[i] > likelihoods[best]) best = i;
-    var resolved = points.get(best);
-    var boundaries = new ArrayList<String>();
+    final se.swedishpolls.DailyStateSpace.Parameters resolved = points.get(best);
+    final java.util.ArrayList<java.lang.String> boundaries = new ArrayList<String>();
     boundary(boundaries, "walkVariance", grid.walkVariances(), resolved.walkVariance());
     boundary(boundaries, "houseScale", grid.houseScales(), resolved.houseScale());
     boundary(
@@ -547,38 +551,47 @@ public final class DevelopmentDiagnostics {
       DevelopmentTuning.Grid grid,
       DailyStateSpace.Parameters candidateParameters,
       Rules rules) {
-    var trainingPolls = DevelopmentTuning.training(polls, fold);
-    var training = PollObservations.prepare(period, trainingPolls);
+    final java.util.List<se.swedishpolls.PollCsv.Poll> trainingPolls =
+        DevelopmentTuning.training(polls, fold);
+    final se.swedishpolls.PollObservations.Batch training =
+        PollObservations.prepare(period, trainingPolls);
     if (training.observations().isEmpty())
       throw new IllegalArgumentException("no eligible training observation in the period");
-    var heldOutPolls = heldOut(polls, fold, rules);
-    var heldOut = PollObservations.prepare(period, heldOutPolls);
+    final java.util.List<se.swedishpolls.PollCsv.Poll> heldOutPolls = heldOut(polls, fold, rules);
+    final se.swedishpolls.PollObservations.Batch heldOut =
+        PollObservations.prepare(period, heldOutPolls);
     if (heldOut.observations().isEmpty())
       throw new IllegalArgumentException("no held-out observation the period can compose");
-    var observations = heldOut.observations();
-    var reference = tuneReference(training, period.id(), fold, elections, grid);
-    var candidatePredictions =
+    final java.util.List<se.swedishpolls.PollObservations.Observation> observations =
+        heldOut.observations();
+    final se.swedishpolls.DevelopmentTuning.Resolved reference =
+        tuneReference(training, period.id(), fold, elections, grid);
+    final se.swedishpolls.WindowFilter.Scored candidatePredictions =
         WindowFilter.score(
             training,
             observations,
             elections,
             candidateParameters,
             WindowFilter.Convention.MIDPOINT);
-    var referencePredictions =
+    final se.swedishpolls.WindowFilter.Scored referencePredictions =
         WindowFilter.score(
             training,
             observations,
             elections,
             reference.parameters(),
             WindowFilter.Convention.FIELDWORK);
-    var baseline = RecencyBaseline.fit(training, fold.cutoff());
-    var scored = new LinkedHashMap<String, List<Scored>>();
+    final se.swedishpolls.RecencyBaseline.Fit baseline =
+        RecencyBaseline.fit(training, fold.cutoff());
+    final java.util.LinkedHashMap<
+            java.lang.String, java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored>>
+        scored = new LinkedHashMap<String, List<Scored>>();
     scored.put(
         CANDIDATE, scoreAll(heldOut, observations, candidatePredictions, fold, CANDIDATE, rules));
     scored.put(
         REFERENCE, scoreAll(heldOut, observations, referencePredictions, fold, REFERENCE, rules));
-    var baselineScored = new ArrayList<Scored>();
-    for (var observation : observations)
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Scored> baselineScored =
+        new ArrayList<Scored>();
+    for (se.swedishpolls.PollObservations.Observation observation : observations)
       baselineScored.add(
           score(
               heldOut,
@@ -588,14 +601,18 @@ public final class DevelopmentDiagnostics {
               rules,
               stream(period.id(), fold, BASELINE, observation)));
     scored.put(BASELINE, List.copyOf(baselineScored));
-    var meanLogScore = new LinkedHashMap<String, Double>();
-    for (var candidate : scored.entrySet())
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> meanLogScore =
+        new LinkedHashMap<String, Double>();
+    for (java.util.Map.Entry<
+            java.lang.String, java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored>>
+        candidate : scored.entrySet())
       meanLogScore.put(
           candidate.getKey(),
           candidate.getValue().stream().mapToDouble(Scored::logScore).average().orElseThrow());
-    var reasons = new TreeMap<String, Integer>();
-    for (var exclusion : heldOut.exclusions())
-      for (var reason : exclusion.reasons()) reasons.merge(reason, 1, Integer::sum);
+    final java.util.TreeMap<java.lang.String, java.lang.Integer> reasons =
+        new TreeMap<String, Integer>();
+    for (se.swedishpolls.PollObservations.Exclusion exclusion : heldOut.exclusions())
+      for (java.lang.String reason : exclusion.reasons()) reasons.merge(reason, 1, Integer::sum);
     return new Folded(
         new Fold(
             period.id(),
@@ -626,12 +643,15 @@ public final class DevelopmentDiagnostics {
       throw new IllegalStateException("Every held-out poll is predicted exactly once");
     // Predictions come back in the order their windows resolve, which is not the order the polls
     // were composed in, so they are matched by source row.
-    var byRow = new LinkedHashMap<Integer, WindowFilter.Prediction>();
-    for (var prediction : predictions.predictions())
+    final java.util.LinkedHashMap<java.lang.Integer, se.swedishpolls.WindowFilter.Prediction>
+        byRow = new LinkedHashMap<Integer, WindowFilter.Prediction>();
+    for (se.swedishpolls.WindowFilter.Prediction prediction : predictions.predictions())
       byRow.put(prediction.poll().rowNumber(), prediction);
-    var scored = new ArrayList<Scored>();
-    for (var observation : observations) {
-      var prediction = byRow.get(observation.poll().rowNumber());
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Scored> scored =
+        new ArrayList<Scored>();
+    for (se.swedishpolls.PollObservations.Observation observation : observations) {
+      final se.swedishpolls.WindowFilter.Prediction prediction =
+          byRow.get(observation.poll().rowNumber());
       if (prediction == null)
         throw new IllegalStateException(
             "No prediction for held-out row " + observation.poll().rowNumber());
@@ -661,13 +681,18 @@ public final class DevelopmentDiagnostics {
    * dependence is visible rather than selected against.
    */
   static Paired paired(String periodId, List<Fold> folds, Rules rules) {
-    var candidate = folds.stream().mapToDouble(f -> f.meanLogScore().get(CANDIDATE)).toArray();
-    var baseline = folds.stream().mapToDouble(f -> f.meanLogScore().get(BASELINE)).toArray();
-    var reference = folds.stream().mapToDouble(f -> f.meanLogScore().get(REFERENCE)).toArray();
-    var gate = PredictiveComparison.evaluate(candidate, baseline, reference);
-    var differences = new double[candidate.length];
+    final double[] candidate =
+        folds.stream().mapToDouble(f -> f.meanLogScore().get(CANDIDATE)).toArray();
+    final double[] baseline =
+        folds.stream().mapToDouble(f -> f.meanLogScore().get(BASELINE)).toArray();
+    final double[] reference =
+        folds.stream().mapToDouble(f -> f.meanLogScore().get(REFERENCE)).toArray();
+    final se.swedishpolls.PredictiveComparison.Result gate =
+        PredictiveComparison.evaluate(candidate, baseline, reference);
+    final double[] differences = new double[candidate.length];
     for (int i = 0; i < differences.length; i++) differences[i] = candidate[i] - reference[i];
-    var byLag = new TreeMap<Integer, Double>();
+    final java.util.TreeMap<java.lang.Integer, java.lang.Double> byLag =
+        new TreeMap<Integer, Double>();
     for (int lag : rules.pairedStandardErrorLags())
       byLag.put(lag, pairedStandardError(differences, lag));
     return new Paired(
@@ -682,8 +707,8 @@ public final class DevelopmentDiagnostics {
 
   /** The Bartlett/Newey-West standard error of a paired mean at one truncation lag. */
   static double pairedStandardError(double[] differences, int lag) {
-    int count = differences.length;
-    double mean = Arrays.stream(differences).average().orElseThrow();
+    final int count = differences.length;
+    final double mean = Arrays.stream(differences).average().orElseThrow();
     double variance = 0;
     for (int l = 0; l <= lag; l++) {
       double covariance = 0;
@@ -736,10 +761,13 @@ public final class DevelopmentDiagnostics {
    */
   static List<Misfit> misfit(
       String periodId, List<String> components, Map<String, List<Scored>> scored, Rules rules) {
-    var misfit = new ArrayList<Misfit>();
-    for (var candidate : scored.entrySet()) {
-      var pooled = new Group();
-      for (var poll : candidate.getValue()) {
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Misfit> misfit =
+        new ArrayList<Misfit>();
+    for (java.util.Map.Entry<
+            java.lang.String, java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored>>
+        candidate : scored.entrySet()) {
+      final se.swedishpolls.DevelopmentDiagnostics.Group pooled = new Group();
+      for (se.swedishpolls.DevelopmentDiagnostics.Scored poll : candidate.getValue()) {
         pooled.polls++;
         pooled.logScore += poll.logScore();
         for (int component = 0; component < components.size(); component++)
@@ -747,19 +775,26 @@ public final class DevelopmentDiagnostics {
       }
       misfit.add(pooled.misfit(periodId, candidate.getKey(), "all", "all"));
     }
-    var polls = scored.get(CANDIDATE);
-    var parties = new LinkedHashMap<String, Group>();
-    var institutes = new TreeMap<String, Group>();
-    var bands = new TreeMap<Integer, Group>();
-    for (var poll : polls) {
-      var institute = institutes.computeIfAbsent(poll.poll().institute(), name -> new Group());
-      var band = bands.computeIfAbsent(band(poll.window().days(), rules), days -> new Group());
+    final java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored> polls =
+        scored.get(CANDIDATE);
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.DevelopmentDiagnostics.Group>
+        parties = new LinkedHashMap<String, Group>();
+    final java.util.TreeMap<java.lang.String, se.swedishpolls.DevelopmentDiagnostics.Group>
+        institutes = new TreeMap<String, Group>();
+    final java.util.TreeMap<java.lang.Integer, se.swedishpolls.DevelopmentDiagnostics.Group> bands =
+        new TreeMap<Integer, Group>();
+    for (se.swedishpolls.DevelopmentDiagnostics.Scored poll : polls) {
+      final se.swedishpolls.DevelopmentDiagnostics.Group institute =
+          institutes.computeIfAbsent(poll.poll().institute(), name -> new Group());
+      final se.swedishpolls.DevelopmentDiagnostics.Group band =
+          bands.computeIfAbsent(band(poll.window().days(), rules), days -> new Group());
       institute.polls++;
       institute.logScore += poll.logScore();
       band.polls++;
       band.logScore += poll.logScore();
       for (int component = 0; component < components.size(); component++) {
-        var party = parties.computeIfAbsent(components.get(component), name -> new Group());
+        final se.swedishpolls.DevelopmentDiagnostics.Group party =
+            parties.computeIfAbsent(components.get(component), name -> new Group());
         party.polls++;
         party.logScore += poll.logScore();
         party.add(poll, component);
@@ -767,11 +802,14 @@ public final class DevelopmentDiagnostics {
         band.add(poll, component);
       }
     }
-    for (var party : parties.entrySet())
+    for (java.util.Map.Entry<java.lang.String, se.swedishpolls.DevelopmentDiagnostics.Group> party :
+        parties.entrySet())
       misfit.add(party.getValue().misfit(periodId, CANDIDATE, "party", party.getKey()));
-    for (var institute : institutes.entrySet())
+    for (java.util.Map.Entry<java.lang.String, se.swedishpolls.DevelopmentDiagnostics.Group>
+        institute : institutes.entrySet())
       misfit.add(institute.getValue().misfit(periodId, CANDIDATE, "institute", institute.getKey()));
-    for (var band : bands.entrySet())
+    for (java.util.Map.Entry<java.lang.Integer, se.swedishpolls.DevelopmentDiagnostics.Group> band :
+        bands.entrySet())
       misfit.add(
           band.getValue()
               .misfit(periodId, CANDIDATE, "fieldwork_days", bandName(band.getKey(), rules)));
@@ -785,7 +823,7 @@ public final class DevelopmentDiagnostics {
   }
 
   private static String bandName(int band, Rules rules) {
-    int index = rules.fieldworkBands().indexOf(band);
+    final int index = rules.fieldworkBands().indexOf(band);
     return index + 1 < rules.fieldworkBands().size()
         ? band + "-" + (rules.fieldworkBands().get(index + 1) - 1)
         : band + "+";
@@ -798,20 +836,21 @@ public final class DevelopmentDiagnostics {
    */
   static List<Autocorrelation> autocorrelation(
       String periodId, List<List<Scored>> byFold, Rules rules) {
-    var autocorrelation = new ArrayList<Autocorrelation>();
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Autocorrelation>
+        autocorrelation = new ArrayList<Autocorrelation>();
     for (int lag : rules.residualLags()) {
       double product = 0;
       double squared = 0;
       int pairs = 0;
       int values = 0;
-      for (var fold : byFold) {
-        var ordered =
+      for (java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored> fold : byFold) {
+        final java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored> ordered =
             fold.stream()
                 .sorted(
                     Comparator.comparing((Scored scored) -> scored.window().to())
                         .thenComparingInt(scored -> scored.poll().rowNumber()))
                 .toList();
-        for (var scored : ordered)
+        for (se.swedishpolls.DevelopmentDiagnostics.Scored scored : ordered)
           for (double residual : scored.whitened()) {
             squared += residual * residual;
             values++;
@@ -848,12 +887,12 @@ public final class DevelopmentDiagnostics {
     int overlappingPairs = 0;
     int disjointPairs = 0;
     int institutePairs = 0;
-    for (var fold : byFold)
+    for (java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored> fold : byFold)
       for (int i = 0; i < fold.size(); i++)
         for (int j = i + 1; j < fold.size(); j++) {
           double correlation = 0;
-          var left = fold.get(i);
-          var right = fold.get(j);
+          final se.swedishpolls.DevelopmentDiagnostics.Scored left = fold.get(i);
+          final se.swedishpolls.DevelopmentDiagnostics.Scored right = fold.get(j);
           for (int c = 0; c < left.whitened().size(); c++)
             correlation +=
                 left.whitened().get(c) * right.whitened().get(c) / left.whitened().size();
@@ -889,15 +928,16 @@ public final class DevelopmentDiagnostics {
       List<LocalDate> elections,
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules rules) {
-    var equal =
+    final se.swedishpolls.EstimateHistory.Fitted equal =
         EstimateHistory.fitted(
             period, polls, elections, parameters, rules, DailyStateSpace.Centering.EQUAL_INSTITUTE);
-    var counted =
+    final se.swedishpolls.EstimateHistory.Fitted counted =
         EstimateHistory.fitted(
             period, polls, elections, parameters, rules, DailyStateSpace.Centering.POLL_COUNT);
-    var compared = compare(equal, counted);
-    var headline = lastDay(equal);
-    var shifts = shift(equal, counted, headline);
+    final se.swedishpolls.DevelopmentDiagnostics.Compared compared = compare(equal, counted);
+    final java.time.LocalDate headline = lastDay(equal);
+    final java.util.Map<java.lang.String, java.lang.Double> shifts =
+        shift(equal, counted, headline);
     return new CenteringShift(
         period.id(),
         headline,
@@ -918,22 +958,28 @@ public final class DevelopmentDiagnostics {
       List<LocalDate> elections,
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules rules) {
-    var whole = EstimateHistory.fitted(period, polls, elections, parameters, rules);
-    var counts = new TreeMap<String, Integer>();
-    for (var span : whole.spans())
-      for (var observation : span.batch().observations())
+    final se.swedishpolls.EstimateHistory.Fitted whole =
+        EstimateHistory.fitted(period, polls, elections, parameters, rules);
+    final java.util.TreeMap<java.lang.String, java.lang.Integer> counts =
+        new TreeMap<String, Integer>();
+    for (se.swedishpolls.EstimateHistory.Span span : whole.spans())
+      for (se.swedishpolls.PollObservations.Observation observation : span.batch().observations())
         counts.merge(observation.poll().institute(), 1, Integer::sum);
-    var left = new ArrayList<LeftOut>();
-    for (var counted : counts.entrySet()) {
-      var institute = counted.getKey();
-      var kept = polls.stream().filter(poll -> !institute.equals(poll.institute())).toList();
-      var dropped = EstimateHistory.fitted(period, kept, elections, parameters, rules);
-      var date = lastDay(dropped).isBefore(lastDay(whole)) ? lastDay(dropped) : lastDay(whole);
-      var shifts = shift(whole, dropped, date);
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.LeftOut> left =
+        new ArrayList<LeftOut>();
+    for (java.util.Map.Entry<java.lang.String, java.lang.Integer> counted : counts.entrySet()) {
+      final java.lang.String institute = counted.getKey();
+      final java.util.List<se.swedishpolls.PollCsv.Poll> kept =
+          polls.stream().filter(poll -> !institute.equals(poll.institute())).toList();
+      final se.swedishpolls.EstimateHistory.Fitted dropped =
+          EstimateHistory.fitted(period, kept, elections, parameters, rules);
+      final java.time.LocalDate date =
+          lastDay(dropped).isBefore(lastDay(whole)) ? lastDay(dropped) : lastDay(whole);
+      final java.util.Map<java.lang.String, java.lang.Double> shifts = shift(whole, dropped, date);
       // An institute that stopped publishing years ago barely moves the headline, so the largest
       // shift over the days both runs estimate is reported beside it.
-      var compared = compare(whole, dropped);
-      double worst = shifts.values().stream().mapToDouble(Math::abs).max().orElse(0);
+      final se.swedishpolls.DevelopmentDiagnostics.Compared compared = compare(whole, dropped);
+      final double worst = shifts.values().stream().mapToDouble(Math::abs).max().orElse(0);
       left.add(
           new LeftOut(
               period.id(),
@@ -957,14 +1003,15 @@ public final class DevelopmentDiagnostics {
     int days = 0;
     double worst = 0;
     LocalDate on = null;
-    for (var span : left.spans())
-      for (var day : span.fit().days()) {
-        var there = sharesOn(right, day.date());
+    for (se.swedishpolls.EstimateHistory.Span span : left.spans())
+      for (se.swedishpolls.DailyStateSpace.Day day : span.fit().days()) {
+        final java.util.Map<java.lang.String, java.lang.Double> there = sharesOn(right, day.date());
         if (there == null) continue;
         days++;
-        var here = PollObservations.shares(span.batch(), day.smoothedMean());
-        for (var component : here.entrySet()) {
-          double shift = Math.abs(there.get(component.getKey()) - component.getValue());
+        final java.util.Map<java.lang.String, java.lang.Double> here =
+            PollObservations.shares(span.batch(), day.smoothedMean());
+        for (java.util.Map.Entry<java.lang.String, java.lang.Double> component : here.entrySet()) {
+          final double shift = Math.abs(there.get(component.getKey()) - component.getValue());
           if (shift > worst) {
             worst = shift;
             on = day.date();
@@ -977,12 +1024,13 @@ public final class DevelopmentDiagnostics {
   /** One day's per-component movement from the first run to the second, in percentage points. */
   private static Map<String, Double> shift(
       EstimateHistory.Fitted from, EstimateHistory.Fitted to, LocalDate date) {
-    var here = sharesOn(from, date);
-    var there = sharesOn(to, date);
+    final java.util.Map<java.lang.String, java.lang.Double> here = sharesOn(from, date);
+    final java.util.Map<java.lang.String, java.lang.Double> there = sharesOn(to, date);
     if (here == null || there == null)
       throw new IllegalArgumentException("Neither run estimates " + date);
-    var shifts = new LinkedHashMap<String, Double>();
-    for (var component : here.entrySet())
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> shifts =
+        new LinkedHashMap<String, Double>();
+    for (java.util.Map.Entry<java.lang.String, java.lang.Double> component : here.entrySet())
       shifts.put(component.getKey(), there.get(component.getKey()) - component.getValue());
     return shifts;
   }
@@ -993,8 +1041,8 @@ public final class DevelopmentDiagnostics {
 
   /** The smoothed composition of one date, or null when no run of this fit estimates it. */
   private static Map<String, Double> sharesOn(EstimateHistory.Fitted fitted, LocalDate date) {
-    for (var span : fitted.spans()) {
-      var days = span.fit().days();
+    for (se.swedishpolls.EstimateHistory.Span span : fitted.spans()) {
+      final java.util.List<se.swedishpolls.DailyStateSpace.Day> days = span.fit().days();
       if (!date.isBefore(days.getFirst().date()) && !date.isAfter(days.getLast().date()))
         return PollObservations.shares(
             span.batch(),
@@ -1020,27 +1068,40 @@ public final class DevelopmentDiagnostics {
     // Folds are bounded by their own cutoff and horizon, not by the coverage-evidence window: a
     // poll published inside the horizon is scored even though its fieldwork ends after the last
     // cutoff. The horizon still stops before the reserved comparison.
-    for (var registered : protocol.folds())
+    for (se.swedishpolls.DevelopmentTuning.Fold registered : protocol.folds())
       if (!registered.scoreThrough().isBefore(RESERVED_FROM))
         throw new IllegalArgumentException(
             "Fold " + registered.cutoff() + " scores into the reserved comparison");
-    var resolved = new LinkedHashMap<String, DevelopmentTuning.Resolved>();
-    for (var point : tuning.resolved())
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.DevelopmentTuning.Resolved>
+        resolved = new LinkedHashMap<String, DevelopmentTuning.Resolved>();
+    for (se.swedishpolls.DevelopmentTuning.Resolved point : tuning.resolved())
       resolved.put(point.periodId() + "|" + point.fold().cutoff(), point);
-    var reasons = new ArrayList<String>();
-    for (var reason : coverage.gate().reasons()) reasons.add("coverage validation: " + reason);
-    var folds = new ArrayList<Fold>();
-    var unscored = new ArrayList<Unscored>();
-    var paired = new ArrayList<Paired>();
-    var misfit = new ArrayList<Misfit>();
-    var autocorrelation = new ArrayList<Autocorrelation>();
-    var dependence = new ArrayList<Dependence>();
-    for (var period : periods) {
-      var periodFolds = new ArrayList<Fold>();
-      var byFold = new ArrayList<List<Scored>>();
-      var pooled = new LinkedHashMap<String, List<Scored>>();
-      for (var fold : protocol.folds()) {
-        var point = resolved.get(period.id() + "|" + fold.cutoff());
+    final java.util.ArrayList<java.lang.String> reasons = new ArrayList<String>();
+    for (java.lang.String reason : coverage.gate().reasons())
+      reasons.add("coverage validation: " + reason);
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Fold> folds =
+        new ArrayList<Fold>();
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Unscored> unscored =
+        new ArrayList<Unscored>();
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Paired> paired =
+        new ArrayList<Paired>();
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Misfit> misfit =
+        new ArrayList<Misfit>();
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Autocorrelation>
+        autocorrelation = new ArrayList<Autocorrelation>();
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Dependence> dependence =
+        new ArrayList<Dependence>();
+    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
+      final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Fold> periodFolds =
+          new ArrayList<Fold>();
+      final java.util.ArrayList<java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored>>
+          byFold = new ArrayList<List<Scored>>();
+      final java.util.LinkedHashMap<
+              java.lang.String, java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored>>
+          pooled = new LinkedHashMap<String, List<Scored>>();
+      for (se.swedishpolls.DevelopmentTuning.Fold fold : protocol.folds()) {
+        final se.swedishpolls.DevelopmentTuning.Resolved point =
+            resolved.get(period.id() + "|" + fold.cutoff());
         if (point == null) {
           unscored.add(
               new Unscored(
@@ -1050,11 +1111,13 @@ public final class DevelopmentDiagnostics {
           continue;
         }
         try {
-          var folded =
+          final se.swedishpolls.DevelopmentDiagnostics.Folded folded =
               fold(period, polls, elections, fold, protocol.grid(), point.parameters(), rules);
           periodFolds.add(folded.fold());
           byFold.add(folded.scored().get(CANDIDATE));
-          for (var candidate : folded.scored().entrySet())
+          for (java.util.Map.Entry<
+                  java.lang.String, java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored>>
+              candidate : folded.scored().entrySet())
             pooled
                 .computeIfAbsent(candidate.getKey(), name -> new ArrayList<>())
                 .addAll(candidate.getValue());
@@ -1073,7 +1136,8 @@ public final class DevelopmentDiagnostics {
                 + " the paired comparison requires");
         continue;
       }
-      var comparison = paired(period.id(), periodFolds, rules);
+      final se.swedishpolls.DevelopmentDiagnostics.Paired comparison =
+          paired(period.id(), periodFolds, rules);
       paired.add(comparison);
       if (comparison.baselineDifference() <= 0)
         reasons.add(
@@ -1088,12 +1152,14 @@ public final class DevelopmentDiagnostics {
                 + -comparison.referenceDifference()
                 + ", beyond the paired standard error of "
                 + comparison.pairedStandardError());
-      var components = PollObservations.prepare(period, polls).components();
-      var measured = misfit(period.id(), components, pooled, rules);
+      final java.util.List<java.lang.String> components =
+          PollObservations.prepare(period, polls).components();
+      final java.util.List<se.swedishpolls.DevelopmentDiagnostics.Misfit> measured =
+          misfit(period.id(), components, pooled, rules);
       misfit.addAll(measured);
       autocorrelation.addAll(autocorrelation(period.id(), byFold, rules));
       dependence.add(dependence(period.id(), byFold));
-      for (var row : measured)
+      for (se.swedishpolls.DevelopmentDiagnostics.Misfit row : measured)
         if (row.scope().equals("all") && row.candidate().equals(CANDIDATE)) {
           if (outside(row.coverage95(), rules.coverage95()))
             reasons.add(
@@ -1110,7 +1176,7 @@ public final class DevelopmentDiagnostics {
                     + " is outside the registered "
                     + rules.coverage50());
         }
-      for (var fold : periodFolds)
+      for (se.swedishpolls.DevelopmentDiagnostics.Fold fold : periodFolds)
         if (!fold.referenceGridBoundaries().isEmpty()) {
           reasons.add(
               period.id()
@@ -1122,14 +1188,18 @@ public final class DevelopmentDiagnostics {
           break;
         }
     }
-    for (var fold : unscored)
+    for (se.swedishpolls.DevelopmentDiagnostics.Unscored fold : unscored)
       reasons.add(fold.periodId() + " fold " + fold.cutoff() + " scored nothing: " + fold.reason());
-    var evidence = new LinkedHashMap<String, CoverageValidation.Validated>();
-    for (var validated : coverage.periods()) evidence.put(validated.periodId(), validated);
-    var centering = new ArrayList<CenteringShift>();
-    var leftOut = new ArrayList<LeftOut>();
-    for (var period : periods) {
-      var validated = evidence.get(period.id());
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.CoverageValidation.Validated>
+        evidence = new LinkedHashMap<String, CoverageValidation.Validated>();
+    for (se.swedishpolls.CoverageValidation.Validated validated : coverage.periods())
+      evidence.put(validated.periodId(), validated);
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.CenteringShift> centering =
+        new ArrayList<CenteringShift>();
+    final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.LeftOut> leftOut =
+        new ArrayList<LeftOut>();
+    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
+      final se.swedishpolls.CoverageValidation.Validated validated = evidence.get(period.id());
       if (!period.supportValidated() || validated == null || !validated.supported()) continue;
       centering.add(centering(period, polls, elections, validated.parameters(), coverage.rules()));
       leftOut.addAll(

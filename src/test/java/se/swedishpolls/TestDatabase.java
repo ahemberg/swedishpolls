@@ -24,7 +24,7 @@ final class TestDatabase {
   }
 
   static DriverManagerDataSource dataSource(String schema) {
-    var url = Shared.POSTGRESQL.getJdbcUrl();
+    final java.lang.String url = Shared.POSTGRESQL.getJdbcUrl();
     return dataSourceAt(url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema);
   }
 

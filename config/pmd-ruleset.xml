@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset
+    name="Swedish Polls Java style"
+    xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.github.io/ruleset_2_0_0.xsd">
+  <description>Project rules for explicit types and final local variables.</description>
+  <rule ref="category/java/codestyle.xml/LocalVariableCouldBeFinal">
+    <properties>
+      <property name="ignoreForEachDecl" value="true"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/codestyle.xml/UseExplicitTypes"/>
+  <rule
+      name="FinalTryResource"
+      language="java"
+      message="Try-with-resources variable should be declared final"
+      class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
+    <description>Requires final on try-with-resources variables.</description>
+    <priority>3</priority>
+    <properties>
+      <property name="xpath">
+        <value><![CDATA[
+//Resource/LocalVariableDeclaration/ModifierList[not(contains(@ExplicitModifiers, 'final'))]
+        ]]></value>
+      </property>
+    </properties>
+  </rule>
+</ruleset>

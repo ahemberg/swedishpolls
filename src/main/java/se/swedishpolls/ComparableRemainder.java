@@ -26,7 +26,7 @@ public final class ComparableRemainder {
   public static final List<String> REFERENCE_COMPONENTS = referenceComponents();
 
   private static List<String> referenceComponents() {
-    var components = new ArrayList<>(PollCsv.PARTIES);
+    final java.util.ArrayList<java.lang.String> components = new ArrayList<>(PollCsv.PARTIES);
     components.add("FI");
     components.add("RESIDUAL");
     return List.copyOf(components);
@@ -166,25 +166,32 @@ public final class ComparableRemainder {
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules coverage,
       JointUncertainty.Rules rules) {
-    var dates = elections.stream().map(Reference::date).toList();
-    var fitted = EstimateHistory.fitted(period, polls, dates, parameters, coverage);
-    var segments = new ArrayList<Segment>();
+    final java.util.List<java.time.LocalDate> dates =
+        elections.stream().map(Reference::date).toList();
+    final se.swedishpolls.EstimateHistory.Fitted fitted =
+        EstimateHistory.fitted(period, polls, dates, parameters, coverage);
+    final java.util.ArrayList<se.swedishpolls.ComparableRemainder.Segment> segments =
+        new ArrayList<Segment>();
     double endpointSumError = 0;
-    for (var span : fitted.spans()) {
-      var basis = PollObservations.transposedBasis(span.batch());
-      var members = members(span.batch(), period);
-      var summarized =
+    for (se.swedishpolls.EstimateHistory.Span span : fitted.spans()) {
+      final double[][] basis = PollObservations.transposedBasis(span.batch());
+      final int[] members = members(span.batch(), period);
+      final java.util.List<se.swedishpolls.ComparableRemainder.Summarized> summarized =
           span.fit().days().parallelStream()
               .map(day -> summarize(span.batch(), basis, period.id(), day, rules, members))
               .toList();
-      var days = summarized.stream().map(Summarized::day).toList();
-      for (var summary : summarized)
+      final java.util.List<se.swedishpolls.ComparableRemainder.Day> days =
+          summarized.stream().map(Summarized::day).toList();
+      for (se.swedishpolls.ComparableRemainder.Summarized summary : summarized)
         endpointSumError = Math.max(endpointSumError, summary.endpointSumErrorPoints());
       segments.add(new Segment(period.id(), days.getFirst().date(), days.getLast().date(), days));
     }
-    var boundaries = EstimateHistory.boundaries(period, fitted, coverage);
-    var grouped = new ArrayList<Grouped>();
-    for (var election : elections) grouped.add(group(period, election, segments));
+    final java.util.List<se.swedishpolls.EstimateHistory.Boundary> boundaries =
+        EstimateHistory.boundaries(period, fitted, coverage);
+    final java.util.ArrayList<se.swedishpolls.ComparableRemainder.Grouped> grouped =
+        new ArrayList<Grouped>();
+    for (se.swedishpolls.ComparableRemainder.Reference election : elections)
+      grouped.add(group(period, election, segments));
     return new Estimated(
         period.id(), memberNames(period), segments, boundaries, grouped, endpointSumError);
   }
@@ -195,8 +202,8 @@ public final class ComparableRemainder {
   }
 
   private static int[] members(PollObservations.Batch batch, Roster.CoveragePeriod period) {
-    var names = memberNames(period);
-    var indexes = new int[names.size()];
+    final java.util.List<java.lang.String> names = memberNames(period);
+    final int[] indexes = new int[names.size()];
     for (int member = 0; member < names.size(); member++) {
       indexes[member] = batch.components().indexOf(names.get(member));
       if (indexes[member] < 0)
@@ -221,14 +228,14 @@ public final class ComparableRemainder {
       DailyStateSpace.Day day,
       JointUncertainty.Rules rules,
       int[] members) {
-    var draws = JointUncertainty.transformed(batch, basis, periodId, day, rules);
-    var summed = new double[draws.length];
-    var marginal = new double[members.length][draws.length];
+    final double[][] draws = JointUncertainty.transformed(batch, basis, periodId, day, rules);
+    final double[] summed = new double[draws.length];
+    final double[][] marginal = new double[members.length][draws.length];
     double total = 0;
     for (int draw = 0; draw < draws.length; draw++) {
       double remainder = 0;
       for (int member = 0; member < members.length; member++) {
-        double share = draws[draw][members[member]];
+        final double share = draws[draw][members[member]];
         marginal[member][draw] = share;
         remainder += share;
       }
@@ -236,16 +243,17 @@ public final class ComparableRemainder {
       total += remainder;
     }
     Arrays.sort(summed);
-    for (var component : marginal) Arrays.sort(component);
-    var intervals = new ArrayList<JointUncertainty.Interval>(rules.intervalLevels().size());
+    for (double[] component : marginal) Arrays.sort(component);
+    final java.util.ArrayList<se.swedishpolls.JointUncertainty.Interval> intervals =
+        new ArrayList<JointUncertainty.Interval>(rules.intervalLevels().size());
     double error = 0;
     for (double level : rules.intervalLevels()) {
-      double lower = JointUncertainty.quantile(summed, (1 - level) / 2);
-      double upper = JointUncertainty.quantile(summed, (1 + level) / 2);
+      final double lower = JointUncertainty.quantile(summed, (1 - level) / 2);
+      final double upper = JointUncertainty.quantile(summed, (1 + level) / 2);
       intervals.add(new JointUncertainty.Interval(level, lower, upper));
       double summedLower = 0;
       double summedUpper = 0;
-      for (var component : marginal) {
+      for (double[] component : marginal) {
         summedLower += JointUncertainty.quantile(component, (1 - level) / 2);
         summedUpper += JointUncertainty.quantile(component, (1 + level) / 2);
       }
@@ -262,8 +270,10 @@ public final class ComparableRemainder {
    */
   public static Grouped group(
       Roster.CoveragePeriod period, Reference election, List<Segment> segments) {
-    var shares = new LinkedHashMap<String, Double>();
-    for (var component : period.roster()) shares.put(component, election.shares().get(component));
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> shares =
+        new LinkedHashMap<String, Double>();
+    for (java.lang.String component : period.roster())
+      shares.put(component, election.shares().get(component));
     if (period.individualFi()) shares.put("RESIDUAL", election.shares().get("RESIDUAL"));
     else shares.put("OTHER", election.comparableRemainder());
     return new Grouped(
@@ -281,10 +291,10 @@ public final class ComparableRemainder {
    */
   public static Change change(Estimated estimated, LocalDate to, int days) {
     if (days < 1) throw new IllegalArgumentException("A change spans at least one day");
-    var from = to.minusDays(days);
-    var target = segment(estimated, to);
+    final java.time.LocalDate from = to.minusDays(days);
+    final se.swedishpolls.ComparableRemainder.Segment target = segment(estimated, to);
     if (target == null) return new Change(false, from, to, 0, EstimateHistory.DATE_UNSUPPORTED);
-    var comparison = segment(estimated, from);
+    final se.swedishpolls.ComparableRemainder.Segment comparison = segment(estimated, from);
     if (comparison == null)
       return new Change(false, from, to, 0, EstimateHistory.COMPARISON_UNSUPPORTED);
     if (!comparison.from().equals(target.from())
@@ -311,20 +321,22 @@ public final class ComparableRemainder {
    * may not, without a horizon any registered rule would have to name.
    */
   public static List<Change> changes(Estimated estimated) {
-    var changes = new ArrayList<Change>();
-    for (var segment : estimated.segments()) {
-      var starts = new ArrayList<LocalDate>();
+    final java.util.ArrayList<se.swedishpolls.ComparableRemainder.Change> changes =
+        new ArrayList<Change>();
+    for (se.swedishpolls.ComparableRemainder.Segment segment : estimated.segments()) {
+      final java.util.ArrayList<java.time.LocalDate> starts = new ArrayList<LocalDate>();
       starts.add(segment.from());
-      for (var boundary : estimated.boundaries())
+      for (se.swedishpolls.EstimateHistory.Boundary boundary : estimated.boundaries())
         if (boundary.date().isAfter(segment.from()) && !boundary.date().isAfter(segment.to()))
           starts.add(boundary.date());
       for (int run = 0; run < starts.size(); run++) {
-        var end = run + 1 < starts.size() ? starts.get(run + 1).minusDays(1) : segment.to();
+        final java.time.LocalDate end =
+            run + 1 < starts.size() ? starts.get(run + 1).minusDays(1) : segment.to();
         if (end.isAfter(starts.get(run)))
           changes.add(change(estimated, end, (int) ChronoUnit.DAYS.between(starts.get(run), end)));
       }
     }
-    for (var boundary : estimated.boundaries())
+    for (se.swedishpolls.EstimateHistory.Boundary boundary : estimated.boundaries())
       if (!boundary.date().equals(estimated.segments().getFirst().from()))
         changes.add(change(estimated, boundary.date(), 1));
     return List.copyOf(changes);
@@ -393,24 +405,29 @@ public final class ComparableRemainder {
       List<Reference> elections,
       CoverageValidation.Report coverage,
       JointUncertainty.Rules rules) {
-    var evidence = new LinkedHashMap<String, CoverageValidation.Validated>();
-    for (var validated : coverage.periods()) evidence.put(validated.periodId(), validated);
-    var reasons = new ArrayList<>(coverage.gate().reasons());
-    var published = new ArrayList<Published>();
-    for (var period : periods) {
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.CoverageValidation.Validated>
+        evidence = new LinkedHashMap<String, CoverageValidation.Validated>();
+    for (se.swedishpolls.CoverageValidation.Validated validated : coverage.periods())
+      evidence.put(validated.periodId(), validated);
+    final java.util.ArrayList<java.lang.String> reasons =
+        new ArrayList<>(coverage.gate().reasons());
+    final java.util.ArrayList<se.swedishpolls.ComparableRemainder.Published> published =
+        new ArrayList<Published>();
+    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
       if (!period.supportValidated()) continue;
-      var validated = evidence.get(period.id());
+      final se.swedishpolls.CoverageValidation.Validated validated = evidence.get(period.id());
       if (validated == null)
         throw new IllegalArgumentException("No recorded coverage evidence for " + period.id());
       if (!validated.supported()) {
         reasons.add(period.id() + ": coverage evidence failed, so no remainder is published");
         continue;
       }
-      var estimated =
+      final se.swedishpolls.ComparableRemainder.Estimated estimated =
           estimate(period, polls, elections, validated.parameters(), coverage.rules(), rules);
-      var edges = new ArrayList<Day>();
+      final java.util.ArrayList<se.swedishpolls.ComparableRemainder.Day> edges =
+          new ArrayList<Day>();
       int days = 0;
-      for (var segment : estimated.segments()) {
+      for (se.swedishpolls.ComparableRemainder.Segment segment : estimated.segments()) {
         edges.add(segment.days().getFirst());
         edges.add(segment.days().getLast());
         days += segment.days().size();

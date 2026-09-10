@@ -140,30 +140,31 @@ public final class WindowFilter {
     DailyStateSpace.checkParameters(parameters);
     if (training.observations().isEmpty())
       throw new IllegalArgumentException("No observations to fit");
-    int dimension = training.components().size() - 1;
-    var start = training.period().effectiveFrom();
-    var lastTraining = start;
-    for (var observation : training.observations()) {
-      var window = convention.window(observation);
+    final int dimension = training.components().size() - 1;
+    final java.time.LocalDate start = training.period().effectiveFrom();
+    java.time.LocalDate lastTraining = start;
+    for (se.swedishpolls.PollObservations.Observation observation : training.observations()) {
+      final se.swedishpolls.WindowFilter.Window window = convention.window(observation);
       if (window.from().isBefore(start))
         throw new IllegalArgumentException("An observation window starts before the period");
       if (window.to().isAfter(lastTraining)) lastTraining = window.to();
     }
-    var lastDay = lastTraining;
-    for (var observation : heldOut) {
-      var window = convention.window(observation);
+    java.time.LocalDate lastDay = lastTraining;
+    for (se.swedishpolls.PollObservations.Observation observation : heldOut) {
+      final se.swedishpolls.WindowFilter.Window window = convention.window(observation);
       if (window.from().isBefore(start))
         throw new IllegalArgumentException("A held-out window starts before the period");
       if (window.to().isAfter(lastDay)) lastDay = window.to();
     }
-    var starts = cycleStarts(elections, start, lastDay);
-    var pending = new ArrayList<Pending>();
-    for (var observation : training.observations()) {
-      var window = convention.window(observation);
+    final java.util.List<java.time.LocalDate> starts = cycleStarts(elections, start, lastDay);
+    final java.util.ArrayList<se.swedishpolls.WindowFilter.Pending> pending =
+        new ArrayList<Pending>();
+    for (se.swedishpolls.PollObservations.Observation observation : training.observations()) {
+      final se.swedishpolls.WindowFilter.Window window = convention.window(observation);
       pending.add(new Pending(observation, window, window.to(), false, cycle(starts, window.to())));
     }
-    for (var observation : heldOut) {
-      var window = convention.window(observation);
+    for (se.swedishpolls.PollObservations.Observation observation : heldOut) {
+      final se.swedishpolls.WindowFilter.Window window = convention.window(observation);
       pending.add(
           new Pending(
               observation,
@@ -172,27 +173,31 @@ public final class WindowFilter {
               true,
               cycle(starts, window.to())));
     }
-    var cycles = cycles(starts, pending);
+    final java.util.List<se.swedishpolls.WindowFilter.Cycle> cycles = cycles(starts, pending);
     // A training observation resolves when its own window closes; a held-out one only once the
     // last training observation is filtered, so no prediction misses part of the training set.
-    var resolving = new ArrayList<>(pending);
+    final java.util.ArrayList<se.swedishpolls.WindowFilter.Pending> resolving =
+        new ArrayList<>(pending);
     resolving.sort(
         Comparator.comparing((Pending slot) -> slot.resolveOn)
             .thenComparing(slot -> slot.heldOut)
             .thenComparingInt(slot -> slot.observation.poll().rowNumber()));
-    var opening = new ArrayList<>(pending);
+    final java.util.ArrayList<se.swedishpolls.WindowFilter.Pending> opening =
+        new ArrayList<>(pending);
     opening.sort(
         Comparator.comparing((Pending slot) -> slot.window.from())
             .thenComparingInt(slot -> slot.observation.poll().rowNumber()));
 
-    var filter = new Filter(dimension, parameters);
-    var effects = new ArrayList<Map<String, Block>>();
-    var open = new ArrayList<Pending>();
-    var predictions = new ArrayList<Prediction>();
+    final se.swedishpolls.WindowFilter.Filter filter = new Filter(dimension, parameters);
+    final java.util.ArrayList<java.util.Map<java.lang.String, se.swedishpolls.WindowFilter.Block>>
+        effects = new ArrayList<Map<String, Block>>();
+    final java.util.ArrayList<se.swedishpolls.WindowFilter.Pending> open = new ArrayList<Pending>();
+    final java.util.ArrayList<se.swedishpolls.WindowFilter.Prediction> predictions =
+        new ArrayList<Prediction>();
     int cycle = -1;
     int opened = 0;
     int resolved = 0;
-    for (var date = start; !date.isAfter(lastDay); date = date.plusDays(1)) {
+    for (java.time.LocalDate date = start; !date.isAfter(lastDay); date = date.plusDays(1)) {
       if (!date.equals(start)) filter.walk();
       if (cycle + 1 < cycles.size() && cycles.get(cycle + 1).start().equals(date)) {
         // A finished cycle's effects leave the state only once every poll measured in it has
@@ -203,22 +208,24 @@ public final class WindowFilter {
             effects.set(past, Map.of());
           }
         cycle++;
-        var claimed = new LinkedHashMap<String, Block>();
-        for (var effect : cycles.get(cycle).effects())
+        final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.WindowFilter.Block>
+            claimed = new LinkedHashMap<String, Block>();
+        for (java.lang.String effect : cycles.get(cycle).effects())
           claimed.put(effect, filter.claim(parameters.houseScale() * parameters.houseScale()));
         effects.add(claimed);
       }
       while (opened < opening.size() && opening.get(opened).window.from().equals(date)) {
-        var slot = opening.get(opened++);
+        final se.swedishpolls.WindowFilter.Pending slot = opening.get(opened++);
         slot.sum = filter.claim(0);
         open.add(slot);
       }
-      for (var slot : open)
+      for (se.swedishpolls.WindowFilter.Pending slot : open)
         if (!slot.window.from().isAfter(date) && !slot.window.to().isBefore(date))
           filter.accumulate(slot.sum);
       while (resolved < resolving.size() && resolving.get(resolved).resolveOn.equals(date)) {
-        var slot = resolving.get(resolved++);
-        var effect = effects.get(slot.cycle).get(effectIdentity(slot.observation));
+        final se.swedishpolls.WindowFilter.Pending slot = resolving.get(resolved++);
+        final se.swedishpolls.WindowFilter.Block effect =
+            effects.get(slot.cycle).get(effectIdentity(slot.observation));
         if (slot.heldOut) predictions.add(filter.predict(slot, effect));
         else filter.update(slot, effect);
         open.remove(slot);
@@ -237,9 +244,9 @@ public final class WindowFilter {
   /** Cycles start at the coverage-period start and at every election day the run covers. */
   private static List<LocalDate> cycleStarts(
       List<LocalDate> elections, LocalDate start, LocalDate lastDay) {
-    var starts = new ArrayList<>(List.of(start));
+    final java.util.ArrayList<java.time.LocalDate> starts = new ArrayList<>(List.of(start));
     LocalDate previous = null;
-    for (var election : elections) {
+    for (java.time.LocalDate election : elections) {
       if (election == null || (previous != null && !election.isAfter(previous)))
         throw new IllegalArgumentException("Election dates must be distinct and ascending");
       previous = election;
@@ -260,11 +267,11 @@ public final class WindowFilter {
    * day one of its polls resolves on, which is when its effects may leave the state.
    */
   private static List<Cycle> cycles(List<LocalDate> starts, List<Pending> pending) {
-    var cycles = new ArrayList<Cycle>();
+    final java.util.ArrayList<se.swedishpolls.WindowFilter.Cycle> cycles = new ArrayList<Cycle>();
     for (int index = 0; index < starts.size(); index++) {
-      var effects = new TreeSet<String>();
-      var lastNeeded = starts.get(index);
-      for (var slot : pending)
+      final java.util.TreeSet<java.lang.String> effects = new TreeSet<String>();
+      java.time.LocalDate lastNeeded = starts.get(index);
+      for (se.swedishpolls.WindowFilter.Pending slot : pending)
         if (slot.cycle == index) {
           if (!slot.heldOut) effects.add(effectIdentity(slot.observation));
           if (slot.resolveOn.isAfter(lastNeeded)) lastNeeded = slot.resolveOn;
@@ -318,14 +325,14 @@ public final class WindowFilter {
 
     /** Appends an independent block with the given prior variance, and returns it. */
     private Block claim(double variance) {
-      int resized = size + dimension;
-      var grownMean = new double[resized];
-      var grownCovariance = new double[resized][resized];
+      final int resized = size + dimension;
+      final double[] grownMean = new double[resized];
+      final double[][] grownCovariance = new double[resized][resized];
       System.arraycopy(mean, 0, grownMean, 0, size);
       for (int r = 0; r < size; r++)
         System.arraycopy(covariance[r], 0, grownCovariance[r], 0, size);
       for (int i = size; i < resized; i++) grownCovariance[i][i] = variance;
-      var block = new Block(size);
+      final se.swedishpolls.WindowFilter.Block block = new Block(size);
       blocks.add(block);
       size = resized;
       mean = grownMean;
@@ -335,12 +342,12 @@ public final class WindowFilter {
 
     /** Drops resolved blocks and closes the gaps they leave. */
     private void release(List<Block> released) {
-      for (var block : released) {
-        int resized = size - dimension;
-        var shrunkMean = new double[resized];
-        var shrunkCovariance = new double[resized][resized];
+      for (se.swedishpolls.WindowFilter.Block block : released) {
+        final int resized = size - dimension;
+        final double[] shrunkMean = new double[resized];
+        final double[][] shrunkCovariance = new double[resized][resized];
         for (int r = 0; r < resized; r++) {
-          int source = r < block.offset ? r : r + dimension;
+          final int source = r < block.offset ? r : r + dimension;
           shrunkMean[r] = mean[source];
           for (int c = 0; c < resized; c++)
             shrunkCovariance[r][c] = covariance[source][c < block.offset ? c : c + dimension];
@@ -349,7 +356,8 @@ public final class WindowFilter {
         mean = shrunkMean;
         covariance = shrunkCovariance;
         blocks.remove(block);
-        for (var other : blocks) if (other.offset > block.offset) other.offset -= dimension;
+        for (se.swedishpolls.WindowFilter.Block other : blocks)
+          if (other.offset > block.offset) other.offset -= dimension;
       }
     }
 
@@ -365,8 +373,8 @@ public final class WindowFilter {
 
     /** The predicted mean of one window's average observation, before its own sampling noise. */
     private double[] predictedMean(Pending slot, Block effect) {
-      double days = slot.window.days();
-      var predicted = new double[dimension];
+      final double days = slot.window.days();
+      final double[] predicted = new double[dimension];
       for (int i = 0; i < dimension; i++)
         predicted[i] =
             mean[slot.sum.offset + i] / days + (effect == null ? 0 : mean[effect.offset + i]);
@@ -375,8 +383,8 @@ public final class WindowFilter {
 
     /** The covariance of the state with that observation, {@code P H'}. */
     private double[][] cross(Pending slot, Block effect) {
-      double days = slot.window.days();
-      var cross = new double[size][dimension];
+      final double days = slot.window.days();
+      final double[][] cross = new double[size][dimension];
       for (int r = 0; r < size; r++)
         for (int i = 0; i < dimension; i++)
           cross[r][i] =
@@ -391,8 +399,8 @@ public final class WindowFilter {
      * of the state and adds only its own variance.
      */
     private double[][] system(Pending slot, Block effect, double[][] cross) {
-      double days = slot.window.days();
-      var system = new double[dimension][dimension];
+      final double days = slot.window.days();
+      final double[][] system = new double[dimension][dimension];
       for (int i = 0; i < dimension; i++)
         for (int j = 0; j < dimension; j++)
           system[i][j] =
@@ -405,7 +413,7 @@ public final class WindowFilter {
     }
 
     private Prediction predict(Pending slot, Block effect) {
-      var system = system(slot, effect, cross(slot, effect));
+      final double[][] system = system(slot, effect, cross(slot, effect));
       factor(system);
       return new Prediction(
           slot.observation.poll(),
@@ -420,18 +428,18 @@ public final class WindowFilter {
     private void update(Pending slot, Block effect) {
       if (effect == null)
         throw new IllegalStateException("A training observation always carries its own effect");
-      var cross = cross(slot, effect);
-      var factor = factor(system(slot, effect, cross));
-      var predicted = predictedMean(slot, effect);
-      var innovation = new double[dimension];
+      final double[][] cross = cross(slot, effect);
+      final double[][] factor = factor(system(slot, effect, cross));
+      final double[] predicted = predictedMean(slot, effect);
+      final double[] innovation = new double[dimension];
       for (int i = 0; i < dimension; i++)
         innovation[i] = slot.observation.ilr().get(i) - predicted[i];
-      var solved = solve(factor, innovation);
+      final double[] solved = solve(factor, innovation);
       double quadratic = 0;
       for (int i = 0; i < dimension; i++) quadratic += innovation[i] * solved[i];
       logLikelihood -=
           0.5 * (dimension * Math.log(2 * Math.PI) + logDeterminant(factor) + quadratic);
-      var gain = new double[size][dimension];
+      final double[][] gain = new double[size][dimension];
       for (int r = 0; r < size; r++) gain[r] = solve(factor, cross[r]);
       for (int r = 0; r < size; r++)
         for (int i = 0; i < dimension; i++) mean[r] += gain[r][i] * innovation[i];
@@ -445,16 +453,16 @@ public final class WindowFilter {
      * equal covariances.
      */
     private void joseph(Pending slot, Block effect, double[][] gain, double[][] cross) {
-      double days = slot.window.days();
-      var reduced = new double[size][size];
+      final double days = slot.window.days();
+      final double[][] reduced = new double[size][size];
       for (int r = 0; r < size; r++)
         for (int c = 0; c < size; c++) {
           double value = covariance[r][c];
           for (int i = 0; i < dimension; i++) value -= gain[r][i] * cross[c][i];
           reduced[r][c] = value;
         }
-      var reducedCross = new double[size][dimension];
-      var noise = new double[size][dimension];
+      final double[][] reducedCross = new double[size][dimension];
+      final double[][] noise = new double[size][dimension];
       for (int r = 0; r < size; r++)
         for (int i = 0; i < dimension; i++) {
           reducedCross[r][i] =
@@ -487,14 +495,14 @@ public final class WindowFilter {
   }
 
   private static double[][] symmetric(double[][] matrix) {
-    var balanced = new double[matrix.length][matrix.length];
+    final double[][] balanced = new double[matrix.length][matrix.length];
     for (int r = 0; r < matrix.length; r++)
       for (int c = 0; c < matrix.length; c++) balanced[r][c] = 0.5 * (matrix[r][c] + matrix[c][r]);
     return balanced;
   }
 
   private static double[][] matrix(double[] column) {
-    var matrix = new double[column.length][1];
+    final double[][] matrix = new double[column.length][1];
     for (int r = 0; r < column.length; r++) matrix[r][0] = column[r];
     return matrix;
   }
@@ -504,8 +512,8 @@ public final class WindowFilter {
    * symmetric and positive definite stops the run; there is no jitter and no clipping.
    */
   static double[][] factor(double[][] symmetric) {
-    int size = symmetric.length;
-    var lower = new double[size][size];
+    final int size = symmetric.length;
+    final double[][] lower = new double[size][size];
     for (int r = 0; r < size; r++)
       for (int c = 0; c <= r; c++) {
         double value = symmetric[r][c];
@@ -529,8 +537,8 @@ public final class WindowFilter {
 
   /** Solves {@code L L' x = right} by forward and back substitution. */
   static double[] solve(double[][] factor, double[] right) {
-    int size = factor.length;
-    var solved = right.clone();
+    final int size = factor.length;
+    final double[] solved = right.clone();
     for (int r = 0; r < size; r++) {
       for (int c = 0; c < r; c++) solved[r] -= factor[r][c] * solved[c];
       solved[r] /= factor[r][r];

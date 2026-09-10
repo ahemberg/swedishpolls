@@ -146,9 +146,11 @@ public final class CoverageValidation {
 
   public static Rules rules(Path file) {
     try {
-      var rules = required(JSON.readTree(Files.readAllBytes(file)), "coverage_validation", file);
-      var shifts = new ArrayList<Integer>();
-      for (var shift : required(rules, "boundary_shift_days", file)) shifts.add(shift.intValue());
+      final tools.jackson.databind.JsonNode rules =
+          required(JSON.readTree(Files.readAllBytes(file)), "coverage_validation", file);
+      final java.util.ArrayList<java.lang.Integer> shifts = new ArrayList<Integer>();
+      for (tools.jackson.databind.JsonNode shift : required(rules, "boundary_shift_days", file))
+        shifts.add(shift.intValue());
       return new Rules(
           LocalDate.parse(required(rules, "development_through", file).asString()),
           required(rules, "min_observations", file).intValue(),
@@ -163,7 +165,7 @@ public final class CoverageValidation {
   }
 
   private static JsonNode required(JsonNode parent, String field, Path file) {
-    var value = parent == null ? null : parent.get(field);
+    final tools.jackson.databind.JsonNode value = parent == null ? null : parent.get(field);
     if (value == null || value.isNull())
       throw new IllegalArgumentException(
           "Incomplete coverage validation rules in " + file + ": missing " + field);
@@ -187,34 +189,37 @@ public final class CoverageValidation {
    */
   public static Support support(
       Roster.CoveragePeriod period, List<PollCsv.Poll> polls, Rules rules) {
-    var batch = PollObservations.prepare(period, development(polls, rules));
+    final se.swedishpolls.PollObservations.Batch batch =
+        PollObservations.prepare(period, development(polls, rules));
     if (batch.observations().isEmpty())
       throw new IllegalArgumentException("No eligible observation in " + period.id());
-    var from =
+    final java.time.LocalDate from =
         batch.observations().stream()
             .map(o -> o.poll().collectionFrom())
             .min(LocalDate::compareTo)
             .orElseThrow();
-    var to =
+    final java.time.LocalDate to =
         batch.observations().stream()
             .map(o -> o.poll().collectionTo())
             .max(LocalDate::compareTo)
             .orElseThrow();
-    var institutes = new TreeSet<String>();
-    var midpoints = new ArrayList<LocalDate>();
-    for (var observation : batch.observations()) {
+    final java.util.TreeSet<java.lang.String> institutes = new TreeSet<String>();
+    final java.util.ArrayList<java.time.LocalDate> midpoints = new ArrayList<LocalDate>();
+    for (se.swedishpolls.PollObservations.Observation observation : batch.observations()) {
       institutes.add(observation.poll().institute());
       midpoints.add(observation.midpoint());
     }
     midpoints.sort(LocalDate::compareTo);
-    var largest = new Gap(midpoints.getFirst(), midpoints.getFirst(), 0);
+    se.swedishpolls.CoverageValidation.Gap largest =
+        new Gap(midpoints.getFirst(), midpoints.getFirst(), 0);
     for (int i = 1; i < midpoints.size(); i++) {
-      int days = (int) ChronoUnit.DAYS.between(midpoints.get(i - 1), midpoints.get(i));
+      final int days = (int) ChronoUnit.DAYS.between(midpoints.get(i - 1), midpoints.get(i));
       if (days > largest.days()) largest = new Gap(midpoints.get(i - 1), midpoints.get(i), days);
     }
-    var reasons = new TreeMap<String, Integer>();
-    for (var exclusion : batch.exclusions())
-      for (var reason : exclusion.reasons()) reasons.merge(reason, 1, Integer::sum);
+    final java.util.TreeMap<java.lang.String, java.lang.Integer> reasons =
+        new TreeMap<String, Integer>();
+    for (se.swedishpolls.PollObservations.Exclusion exclusion : batch.exclusions())
+      for (java.lang.String reason : exclusion.reasons()) reasons.merge(reason, 1, Integer::sum);
     return new Support(
         from,
         to,
@@ -248,12 +253,15 @@ public final class CoverageValidation {
       List<LocalDate> elections,
       DailyStateSpace.Parameters parameters,
       Rules rules) {
-    var development = development(polls, rules);
-    var support = support(period, development, rules);
-    var trimmed = supported(period, support);
-    var batch = PollObservations.prepare(trimmed, development);
-    var baseline = daily(batch, DailyStateSpace.fit(batch, elections, parameters));
-    var failures = new ArrayList<String>();
+    final java.util.List<se.swedishpolls.PollCsv.Poll> development = development(polls, rules);
+    final se.swedishpolls.CoverageValidation.Support support = support(period, development, rules);
+    final se.swedishpolls.Roster.CoveragePeriod trimmed = supported(period, support);
+    final se.swedishpolls.PollObservations.Batch batch =
+        PollObservations.prepare(trimmed, development);
+    final java.util.NavigableMap<
+            java.time.LocalDate, java.util.Map<java.lang.String, java.lang.Double>>
+        baseline = daily(batch, DailyStateSpace.fit(batch, elections, parameters));
+    final java.util.ArrayList<java.lang.String> failures = new ArrayList<String>();
     if (support.observations() < rules.minObservations())
       failures.add(
           "only "
@@ -270,19 +278,20 @@ public final class CoverageValidation {
               + support.largestGap().from()
               + " exceeds "
               + rules.maxInternalGapDays());
-    var stability = new ArrayList<Stability>();
+    final java.util.ArrayList<se.swedishpolls.CoverageValidation.Stability> stability =
+        new ArrayList<Stability>();
     for (int shift : rules.boundaryShiftDays()) {
-      var from = support.from().plusDays(shift);
-      var to = support.to().minusDays(shift);
+      final java.time.LocalDate from = support.from().plusDays(shift);
+      final java.time.LocalDate to = support.to().minusDays(shift);
       // Both ends burn in: the days next to a moved boundary lose the polls the shift removed, so
       // only the interior says whether the boundary choice drives the estimate.
-      var comparedFrom = from.plusDays(rules.stabilityBurnInDays());
-      var comparedTo = to.minusDays(rules.stabilityBurnInDays());
+      final java.time.LocalDate comparedFrom = from.plusDays(rules.stabilityBurnInDays());
+      final java.time.LocalDate comparedTo = to.minusDays(rules.stabilityBurnInDays());
       if (!comparedFrom.isBefore(comparedTo)) {
         failures.add("boundary shift of " + shift + " days leaves no comparable span");
         continue;
       }
-      var variant =
+      final se.swedishpolls.Roster.CoveragePeriod variant =
           new Roster.CoveragePeriod(
               period.id(),
               from,
@@ -291,18 +300,23 @@ public final class CoverageValidation {
               period.individualFi(),
               period.supportValidated(),
               period.decisionUrl());
-      var variantBatch = PollObservations.prepare(variant, development);
+      final se.swedishpolls.PollObservations.Batch variantBatch =
+          PollObservations.prepare(variant, development);
       if (variantBatch.observations().isEmpty()) {
         failures.add("boundary shift of " + shift + " days leaves no observation");
         continue;
       }
-      var shifted = daily(variantBatch, DailyStateSpace.fit(variantBatch, elections, parameters));
-      var compared = compare(baseline, shifted, comparedFrom, comparedTo);
+      final java.util.NavigableMap<
+              java.time.LocalDate, java.util.Map<java.lang.String, java.lang.Double>>
+          shifted = daily(variantBatch, DailyStateSpace.fit(variantBatch, elections, parameters));
+      final java.util.NavigableMap<
+              java.time.LocalDate, java.util.Map<java.lang.String, java.lang.Double>>
+          compared = compare(baseline, shifted, comparedFrom, comparedTo);
       if (compared.isEmpty()) {
         failures.add("boundary shift of " + shift + " days leaves no compared day");
         continue;
       }
-      var measured =
+      final se.swedishpolls.CoverageValidation.Stability measured =
           new Stability(
               shift,
               compared.firstKey(),
@@ -333,22 +347,27 @@ public final class CoverageValidation {
       List<LocalDate> elections,
       DevelopmentTuning.Tuning tuning,
       Rules rules) {
-    var development = development(polls, rules);
-    var parameters = DevelopmentTuning.latestParameters(tuning);
-    var validated = new ArrayList<Validated>();
-    var supports = new LinkedHashMap<String, Support>();
-    for (var period : periods) {
-      var point = parameters.get(period.id());
+    final java.util.List<se.swedishpolls.PollCsv.Poll> development = development(polls, rules);
+    final java.util.Map<java.lang.String, se.swedishpolls.DailyStateSpace.Parameters> parameters =
+        DevelopmentTuning.latestParameters(tuning);
+    final java.util.ArrayList<se.swedishpolls.CoverageValidation.Validated> validated =
+        new ArrayList<Validated>();
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.CoverageValidation.Support>
+        supports = new LinkedHashMap<String, Support>();
+    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
+      final se.swedishpolls.DailyStateSpace.Parameters point = parameters.get(period.id());
       if (point == null)
         throw new IllegalArgumentException("No tuned parameters for " + period.id());
-      var result = validate(period, development, elections, point, rules);
+      final se.swedishpolls.CoverageValidation.Validated result =
+          validate(period, development, elections, point, rules);
       validated.add(result);
       supports.put(period.id(), result.support());
     }
-    var effects = new ArrayList<BoundaryEffect>();
-    for (var period : periods)
+    final java.util.ArrayList<se.swedishpolls.CoverageValidation.BoundaryEffect> effects =
+        new ArrayList<BoundaryEffect>();
+    for (se.swedishpolls.Roster.CoveragePeriod period : periods)
       if (period.individualFi())
-        for (var against : periods)
+        for (se.swedishpolls.Roster.CoveragePeriod against : periods)
           if (!against.individualFi() && against.supportValidated())
             effects.addAll(
                 boundaryEffects(
@@ -359,10 +378,12 @@ public final class CoverageValidation {
                     development,
                     elections,
                     parameters));
-    var reasons = new ArrayList<String>();
-    for (var reason : tuning.gate().reasons()) reasons.add("development tuning: " + reason);
-    for (var result : validated)
-      for (var failure : result.failures()) reasons.add(result.periodId() + ": " + failure);
+    final java.util.ArrayList<java.lang.String> reasons = new ArrayList<String>();
+    for (java.lang.String reason : tuning.gate().reasons())
+      reasons.add("development tuning: " + reason);
+    for (se.swedishpolls.CoverageValidation.Validated result : validated)
+      for (java.lang.String failure : result.failures())
+        reasons.add(result.periodId() + ": " + failure);
     return new Report(
         tuning.protocolVersion(), rules, new Gate(!reasons.isEmpty(), reasons), validated, effects);
   }
@@ -380,24 +401,33 @@ public final class CoverageValidation {
       List<PollCsv.Poll> polls,
       List<LocalDate> elections,
       Map<String, DailyStateSpace.Parameters> parameters) {
-    var batch = PollObservations.prepare(supported(period, support), polls);
-    var inside = daily(batch, DailyStateSpace.fit(batch, elections, parameters.get(period.id())));
-    var againstBatch = PollObservations.prepare(supported(against, againstSupport), polls);
-    var outside =
-        daily(
-            againstBatch,
-            DailyStateSpace.fit(againstBatch, elections, parameters.get(against.id())));
-    var effects = new ArrayList<BoundaryEffect>();
+    final se.swedishpolls.PollObservations.Batch batch =
+        PollObservations.prepare(supported(period, support), polls);
+    final java.util.NavigableMap<
+            java.time.LocalDate, java.util.Map<java.lang.String, java.lang.Double>>
+        inside = daily(batch, DailyStateSpace.fit(batch, elections, parameters.get(period.id())));
+    final se.swedishpolls.PollObservations.Batch againstBatch =
+        PollObservations.prepare(supported(against, againstSupport), polls);
+    final java.util.NavigableMap<
+            java.time.LocalDate, java.util.Map<java.lang.String, java.lang.Double>>
+        outside =
+            daily(
+                againstBatch,
+                DailyStateSpace.fit(againstBatch, elections, parameters.get(against.id())));
+    final java.util.ArrayList<se.swedishpolls.CoverageValidation.BoundaryEffect> effects =
+        new ArrayList<BoundaryEffect>();
     // The candidate estimate exists from its period start through its last observation midpoint,
     // so those retained days are where its edges can be compared at all.
-    for (var date : List.of(inside.firstKey(), inside.lastKey())) {
-      var here = inside.get(date);
-      var there = outside.get(date);
+    for (java.time.LocalDate date : List.of(inside.firstKey(), inside.lastKey())) {
+      final java.util.Map<java.lang.String, java.lang.Double> here = inside.get(date);
+      final java.util.Map<java.lang.String, java.lang.Double> there = outside.get(date);
       if (there == null)
         throw new IllegalArgumentException(
             "The surrounding fit of " + against.id() + " does not reach " + date);
-      var steps = new LinkedHashMap<String, Double>();
-      for (var party : PollCsv.PARTIES) steps.put(party, here.get(party) - there.get(party));
+      final java.util.LinkedHashMap<java.lang.String, java.lang.Double> steps =
+          new LinkedHashMap<String, Double>();
+      for (java.lang.String party : PollCsv.PARTIES)
+        steps.put(party, here.get(party) - there.get(party));
       steps.put(REMAINDER, remainder(here) - remainder(there));
       effects.add(new BoundaryEffect(date, period.id(), against.id(), steps));
     }
@@ -414,8 +444,9 @@ public final class CoverageValidation {
   /** The smoothed composition of every retained day, in percent. */
   private static NavigableMap<LocalDate, Map<String, Double>> daily(
       PollObservations.Batch batch, DailyStateSpace.Fit fit) {
-    var daily = new TreeMap<LocalDate, Map<String, Double>>();
-    for (var day : fit.days())
+    final java.util.TreeMap<java.time.LocalDate, java.util.Map<java.lang.String, java.lang.Double>>
+        daily = new TreeMap<LocalDate, Map<String, Double>>();
+    for (se.swedishpolls.DailyStateSpace.Day day : fit.days())
       daily.put(day.date(), PollObservations.shares(batch, day.smoothedMean()));
     return daily;
   }
@@ -425,8 +456,10 @@ public final class CoverageValidation {
       NavigableMap<LocalDate, Map<String, Double>> shifted,
       LocalDate from,
       LocalDate to) {
-    var compared = new TreeMap<LocalDate, Map<String, Double>>();
-    for (var day : shifted.subMap(from, true, to, true).entrySet())
+    final java.util.TreeMap<java.time.LocalDate, java.util.Map<java.lang.String, java.lang.Double>>
+        compared = new TreeMap<LocalDate, Map<String, Double>>();
+    for (java.util.Map.Entry<java.time.LocalDate, java.util.Map<java.lang.String, java.lang.Double>>
+        day : shifted.subMap(from, true, to, true).entrySet())
       if (baseline.containsKey(day.getKey())) compared.put(day.getKey(), day.getValue());
     return compared;
   }
@@ -435,11 +468,12 @@ public final class CoverageValidation {
       Map<LocalDate, Map<String, Double>> baseline,
       Map<LocalDate, Map<String, Double>> shifted,
       java.util.NavigableSet<LocalDate> days) {
-    var deviations = new LinkedHashMap<String, Double>();
-    for (var date : days) {
-      var here = shifted.get(date);
-      var there = baseline.get(date);
-      for (var component : here.entrySet())
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> deviations =
+        new LinkedHashMap<String, Double>();
+    for (java.time.LocalDate date : days) {
+      final java.util.Map<java.lang.String, java.lang.Double> here = shifted.get(date);
+      final java.util.Map<java.lang.String, java.lang.Double> there = baseline.get(date);
+      for (java.util.Map.Entry<java.lang.String, java.lang.Double> component : here.entrySet())
         deviations.merge(
             component.getKey(),
             Math.abs(component.getValue() - there.get(component.getKey())),

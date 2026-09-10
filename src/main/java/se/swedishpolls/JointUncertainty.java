@@ -53,7 +53,7 @@ public final class JointUncertainty {
       if (intervalLevels.isEmpty())
         throw new IllegalArgumentException("At least one interval level is required");
       for (int i = 0; i < intervalLevels.size(); i++) {
-        double level = intervalLevels.get(i);
+        final double level = intervalLevels.get(i);
         if (!Double.isFinite(level) || level <= 0 || level >= 1)
           throw new IllegalArgumentException("Inadmissible interval level " + level);
         if (i > 0 && level <= intervalLevels.get(i - 1))
@@ -270,10 +270,10 @@ public final class JointUncertainty {
 
   public static Rules rules(Path file) {
     try {
-      var root = JSON.readTree(Files.readAllBytes(file));
-      var uncertainty = required(root, "uncertainty", file);
-      var levels = new ArrayList<Double>();
-      for (var level : required(uncertainty, "interval_levels", file))
+      final tools.jackson.databind.JsonNode root = JSON.readTree(Files.readAllBytes(file));
+      final tools.jackson.databind.JsonNode uncertainty = required(root, "uncertainty", file);
+      final java.util.ArrayList<java.lang.Double> levels = new ArrayList<Double>();
+      for (tools.jackson.databind.JsonNode level : required(uncertainty, "interval_levels", file))
         levels.add(level.doubleValue());
       return new Rules(
           required(root, "seed", file).longValue(),
@@ -286,7 +286,7 @@ public final class JointUncertainty {
   }
 
   private static JsonNode required(JsonNode parent, String field, Path file) {
-    var value = parent == null ? null : parent.get(field);
+    final tools.jackson.databind.JsonNode value = parent == null ? null : parent.get(field);
     if (value == null || value.isNull())
       throw new IllegalArgumentException(
           "Incomplete uncertainty rules in " + file + ": missing " + field);
@@ -295,7 +295,7 @@ public final class JointUncertainty {
 
   /** The seeds of the repeated-seed precision study: the registered seed and its successors. */
   public static List<Long> precisionSeeds(Rules rules) {
-    var seeds = new ArrayList<Long>();
+    final java.util.ArrayList<java.lang.Long> seeds = new ArrayList<Long>();
     for (int repeat = 0; repeat < rules.precisionRepeats(); repeat++)
       seeds.add(rules.seed() + repeat);
     return List.copyOf(seeds);
@@ -312,19 +312,21 @@ public final class JointUncertainty {
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules coverage,
       Rules rules) {
-    var fitted = EstimateHistory.fitted(period, polls, elections, parameters, coverage);
-    var segments = new ArrayList<Segment>();
-    for (var span : fitted.spans()) {
-      var basis = PollObservations.transposedBasis(span.batch());
-      var days =
+    final se.swedishpolls.EstimateHistory.Fitted fitted =
+        EstimateHistory.fitted(period, polls, elections, parameters, coverage);
+    final java.util.ArrayList<se.swedishpolls.JointUncertainty.Segment> segments =
+        new ArrayList<Segment>();
+    for (se.swedishpolls.EstimateHistory.Span span : fitted.spans()) {
+      final double[][] basis = PollObservations.transposedBasis(span.batch());
+      final java.util.List<se.swedishpolls.JointUncertainty.Day> days =
           span.fit().days().parallelStream()
               .map(day -> summarize(span.batch(), basis, period.id(), day, rules))
               .toList();
       segments.add(new Segment(period.id(), days.getFirst().date(), days.getLast().date(), days));
     }
-    var last = fitted.spans().getLast();
-    var lastDay = last.fit().days().getLast();
-    var basis = PollObservations.transposedBasis(last.batch());
+    final se.swedishpolls.EstimateHistory.Span last = fitted.spans().getLast();
+    final se.swedishpolls.DailyStateSpace.Day lastDay = last.fit().days().getLast();
+    final double[][] basis = PollObservations.transposedBasis(last.batch());
     return new Estimated(
         period.id(),
         segments,
@@ -349,11 +351,12 @@ public final class JointUncertainty {
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules coverage,
       Rules rules) {
-    var fitted = EstimateHistory.fitted(period, polls, elections, parameters, coverage);
-    var last = fitted.spans().getLast();
-    var lastDay = last.fit().days().getLast();
-    var basis = PollObservations.transposedBasis(last.batch());
-    var draws = transformed(last.batch(), basis, period.id(), lastDay, rules);
+    final se.swedishpolls.EstimateHistory.Fitted fitted =
+        EstimateHistory.fitted(period, polls, elections, parameters, coverage);
+    final se.swedishpolls.EstimateHistory.Span last = fitted.spans().getLast();
+    final se.swedishpolls.DailyStateSpace.Day lastDay = last.fit().days().getLast();
+    final double[][] basis = PollObservations.transposedBasis(last.batch());
+    final double[][] draws = transformed(last.batch(), basis, period.id(), lastDay, rules);
     return new FinalDay(
         period.id(),
         summarize(last.batch(), basis, period.id(), lastDay, draws, rules),
@@ -368,7 +371,8 @@ public final class JointUncertainty {
       DailyStateSpace.Day day,
       double[][] draws,
       Rules rules) {
-    var shares = new SimpleMatrix(draws.length, batch.components().size());
+    final org.ejml.simple.SimpleMatrix shares =
+        new SimpleMatrix(draws.length, batch.components().size());
     for (int draw = 0; draw < draws.length; draw++)
       for (int component = 0; component < draws[draw].length; component++)
         shares.set(draw, component, draws[draw][component]);
@@ -391,12 +395,13 @@ public final class JointUncertainty {
       String periodId,
       DailyStateSpace.Day day,
       Rules rules) {
-    var factor = cholesky(day.smoothedCovariance(), periodId, day.date());
-    var mean = day.smoothedMean().toArray();
-    var random = RANDOM_FACTORY.create(daySeed(periodId, day.date(), rules.seed()));
-    var draws = new double[rules.draws()][batch.components().size()];
-    var normal = new double[mean.length];
-    var state = new double[mean.length];
+    final double[][] factor = cholesky(day.smoothedCovariance(), periodId, day.date());
+    final double[] mean = day.smoothedMean().toArray();
+    final java.util.random.RandomGenerator random =
+        RANDOM_FACTORY.create(daySeed(periodId, day.date(), rules.seed()));
+    final double[][] draws = new double[rules.draws()][batch.components().size()];
+    final double[] normal = new double[mean.length];
+    final double[] state = new double[mean.length];
     for (int draw = 0; draw < draws.length; draw++) {
       for (int i = 0; i < normal.length; i++) normal[i] = random.nextGaussian();
       for (int i = 0; i < state.length; i++) {
@@ -432,11 +437,12 @@ public final class JointUncertainty {
       DailyStateSpace.Day day,
       double[][] draws,
       Rules rules) {
-    var state = new double[batch.components().size()];
-    var mean = day.smoothedMean().toArray();
+    final double[] state = new double[batch.components().size()];
+    final double[] mean = day.smoothedMean().toArray();
     PollObservations.close(basis, mean, state, periodId);
-    var components = new ArrayList<Component>(state.length);
-    var column = new double[draws.length];
+    final java.util.ArrayList<se.swedishpolls.JointUncertainty.Component> components =
+        new ArrayList<Component>(state.length);
+    final double[] column = new double[draws.length];
     for (int component = 0; component < state.length; component++) {
       double total = 0;
       for (int draw = 0; draw < draws.length; draw++) {
@@ -444,7 +450,8 @@ public final class JointUncertainty {
         total += column[draw];
       }
       Arrays.sort(column);
-      var intervals = new ArrayList<Interval>(rules.intervalLevels().size());
+      final java.util.ArrayList<se.swedishpolls.JointUncertainty.Interval> intervals =
+          new ArrayList<Interval>(rules.intervalLevels().size());
       for (double level : rules.intervalLevels())
         intervals.add(
             new Interval(
@@ -461,9 +468,9 @@ public final class JointUncertainty {
 
   /** The order statistic at {@code h = (n-1)p}, interpolated linearly between its neighbours. */
   static double quantile(double[] sorted, double probability) {
-    double position = (sorted.length - 1) * probability;
-    int low = (int) Math.floor(position);
-    int high = Math.min(low + 1, sorted.length - 1);
+    final double position = (sorted.length - 1) * probability;
+    final int low = (int) Math.floor(position);
+    final int high = Math.min(low + 1, sorted.length - 1);
     return sorted[low] + (position - low) * (sorted[high] - sorted[low]);
   }
 
@@ -476,13 +483,14 @@ public final class JointUncertainty {
         || covariance.symmetryError() > 1e-12 * covariance.elementMaxAbs())
       throw new IllegalArgumentException(
           "Covariance of " + periodId + " on " + date + " must be finite and symmetric");
-    int size = covariance.getNumRows();
-    var decomposition = DecompositionFactory_DDRM.chol(size, true);
+    final int size = covariance.getNumRows();
+    final org.ejml.interfaces.decomposition.CholeskyDecomposition_F64<org.ejml.data.DMatrixRMaj>
+        decomposition = DecompositionFactory_DDRM.chol(size, true);
     if (!decomposition.decompose(covariance.matrixCopy()))
       throw new IllegalArgumentException(
           "Covariance of " + periodId + " on " + date + " is not positive definite");
-    var lower = decomposition.getT(null);
-    var factor = new double[size][size];
+    final org.ejml.data.DMatrixRMaj lower = decomposition.getT(null);
+    final double[][] factor = new double[size][size];
     for (int row = 0; row < size; row++)
       for (int column = 0; column <= row; column++) factor[row][column] = lower.get(row, column);
     return factor;
@@ -493,7 +501,8 @@ public final class JointUncertainty {
    * or on the order threads finish them.
    */
   private static long daySeed(String periodId, LocalDate date, long seed) {
-    var digest = sha256((periodId + "|" + date + "|" + seed).getBytes(StandardCharsets.UTF_8));
+    final byte[] digest =
+        sha256((periodId + "|" + date + "|" + seed).getBytes(StandardCharsets.UTF_8));
     long value = 0;
     for (int byteIndex = 0; byteIndex < Long.BYTES; byteIndex++)
       value = (value << 8) | (digest[byteIndex] & 0xFF);
@@ -505,11 +514,11 @@ public final class JointUncertainty {
       EstimateHistory.Fitted fitted,
       DailyStateSpace.Parameters parameters,
       Rules rules) {
-    var batch = fitted.spans().getFirst().batch();
-    var rows = new StringBuilder();
+    final se.swedishpolls.PollObservations.Batch batch = fitted.spans().getFirst().batch();
+    final java.lang.StringBuilder rows = new StringBuilder();
     int count = 0;
-    for (var span : fitted.spans())
-      for (var observation : span.batch().observations()) {
+    for (se.swedishpolls.EstimateHistory.Span span : fitted.spans())
+      for (se.swedishpolls.PollObservations.Observation observation : span.batch().observations()) {
         rows.append(observation.poll().rowNumber())
             .append(':')
             .append(hex(sha256(row(observation.poll()))))
@@ -540,7 +549,7 @@ public final class JointUncertainty {
 
   /** The roster and the orthonormal basis the draws are transformed through. */
   private static String basis(PollObservations.Batch batch) {
-    var text = new StringBuilder(String.join(",", batch.components()));
+    final java.lang.StringBuilder text = new StringBuilder(String.join(",", batch.components()));
     for (int row = 0; row < batch.basis().getNumRows(); row++)
       for (int column = 0; column < batch.basis().getNumCols(); column++)
         text.append('\n').append(Double.toString(batch.basis().get(row, column)));
@@ -549,10 +558,11 @@ public final class JointUncertainty {
 
   private static byte[] implementation() {
     try {
-      var digest = MessageDigest.getInstance("SHA-256");
-      for (var type : IMPLEMENTATION) {
-        var resource = "/" + type.getName().replace('.', '/') + ".class";
-        try (var bytes = JointUncertainty.class.getResourceAsStream(resource)) {
+      final java.security.MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      for (java.lang.Class<?> type : IMPLEMENTATION) {
+        final java.lang.String resource = "/" + type.getName().replace('.', '/') + ".class";
+        try (final java.io.InputStream bytes =
+            JointUncertainty.class.getResourceAsStream(resource)) {
           if (bytes == null)
             throw new IllegalStateException("No compiled bytecode for " + type.getName());
           digest.update(bytes.readAllBytes());
@@ -568,7 +578,7 @@ public final class JointUncertainty {
 
   /** The loaded jar's manifest where it carries one, otherwise the version compiled against. */
   private static String linearAlgebraVersion() {
-    var version = SimpleMatrix.class.getPackage().getImplementationVersion();
+    final java.lang.String version = SimpleMatrix.class.getPackage().getImplementationVersion();
     return version == null ? org.ejml.EjmlVersion.VERSION : version;
   }
 
@@ -617,31 +627,33 @@ public final class JointUncertainty {
   public static List<Precision> precision(List<Estimated> repeats) {
     if (repeats.size() < 2)
       throw new IllegalArgumentException("A precision study compares at least two runs");
-    var first = repeats.getFirst();
-    for (var repeat : repeats)
+    final se.swedishpolls.JointUncertainty.Estimated first = repeats.getFirst();
+    for (se.swedishpolls.JointUncertainty.Estimated repeat : repeats)
       if (!repeat.periodId().equals(first.periodId())
           || repeat.segments().size() != first.segments().size())
         throw new IllegalArgumentException("These runs did not estimate the same period");
     // One entry per component and level, holding the largest spread of the mean, the lower
     // endpoint and the upper endpoint over every compared day.
-    var spreads = new LinkedHashMap<Summarized, double[]>();
+    final java.util.LinkedHashMap<se.swedishpolls.JointUncertainty.Summarized, double[]> spreads =
+        new LinkedHashMap<Summarized, double[]>();
     int days = 0;
     for (int segment = 0; segment < first.segments().size(); segment++)
       for (int day = 0; day < first.segments().get(segment).days().size(); day++) {
         days++;
-        var reference = first.segments().get(segment).days().get(day).components();
+        final java.util.List<se.swedishpolls.JointUncertainty.Component> reference =
+            first.segments().get(segment).days().get(day).components();
         for (int component = 0; component < reference.size(); component++)
           for (int level = 0; level < reference.get(component).intervals().size(); level++) {
-            var summarized =
+            final se.swedishpolls.JointUncertainty.Summarized summarized =
                 new Summarized(
                     reference.get(component).component(),
                     reference.get(component).intervals().get(level).level());
-            var spread = spreads.computeIfAbsent(summarized, absent -> new double[3]);
-            var means = new double[repeats.size()];
-            var lowers = new double[repeats.size()];
-            var uppers = new double[repeats.size()];
+            final double[] spread = spreads.computeIfAbsent(summarized, absent -> new double[3]);
+            final double[] means = new double[repeats.size()];
+            final double[] lowers = new double[repeats.size()];
+            final double[] uppers = new double[repeats.size()];
             for (int repeat = 0; repeat < repeats.size(); repeat++) {
-              var summary =
+              final se.swedishpolls.JointUncertainty.Component summary =
                   repeats
                       .get(repeat)
                       .segments()
@@ -659,8 +671,10 @@ public final class JointUncertainty {
             spread[2] = Math.max(spread[2], range(uppers));
           }
       }
-    var precision = new ArrayList<Precision>();
-    for (var spread : spreads.entrySet())
+    final java.util.ArrayList<se.swedishpolls.JointUncertainty.Precision> precision =
+        new ArrayList<Precision>();
+    for (java.util.Map.Entry<se.swedishpolls.JointUncertainty.Summarized, double[]> spread :
+        spreads.entrySet())
       precision.add(
           new Precision(
               spread.getKey().component(),
@@ -693,21 +707,27 @@ public final class JointUncertainty {
       List<Long> seeds) {
     if (seeds.isEmpty() || seeds.getFirst() != rules.seed())
       throw new IllegalArgumentException("A run starts from the registered seed");
-    var evidence = new LinkedHashMap<String, CoverageValidation.Validated>();
-    for (var validated : coverage.periods()) evidence.put(validated.periodId(), validated);
-    var reasons = new ArrayList<>(coverage.gate().reasons());
-    var published = new ArrayList<Published>();
-    var tolerances = new ArrayList<ProposedTolerance>();
-    for (var period : periods) {
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.CoverageValidation.Validated>
+        evidence = new LinkedHashMap<String, CoverageValidation.Validated>();
+    for (se.swedishpolls.CoverageValidation.Validated validated : coverage.periods())
+      evidence.put(validated.periodId(), validated);
+    final java.util.ArrayList<java.lang.String> reasons =
+        new ArrayList<>(coverage.gate().reasons());
+    final java.util.ArrayList<se.swedishpolls.JointUncertainty.Published> published =
+        new ArrayList<Published>();
+    final java.util.ArrayList<se.swedishpolls.JointUncertainty.ProposedTolerance> tolerances =
+        new ArrayList<ProposedTolerance>();
+    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
       if (!period.supportValidated()) continue;
-      var validated = evidence.get(period.id());
+      final se.swedishpolls.CoverageValidation.Validated validated = evidence.get(period.id());
       if (validated == null)
         throw new IllegalArgumentException("No recorded coverage evidence for " + period.id());
       if (!validated.supported()) {
         reasons.add(period.id() + ": coverage evidence failed, so no draws are published");
         continue;
       }
-      var repeats = new ArrayList<Estimated>();
+      final java.util.ArrayList<se.swedishpolls.JointUncertainty.Estimated> repeats =
+          new ArrayList<Estimated>();
       for (long seed : seeds)
         repeats.add(
             estimate(
@@ -717,26 +737,28 @@ public final class JointUncertainty {
                 validated.parameters(),
                 coverage.rules(),
                 rules.withSeed(seed)));
-      var run = repeats.getFirst();
-      var rerun =
+      final se.swedishpolls.JointUncertainty.Estimated run = repeats.getFirst();
+      final se.swedishpolls.JointUncertainty.FinalDay rerun =
           finalDay(period, polls, elections, validated.parameters(), coverage.rules(), rules);
-      var reproduced = reproduced(run.finalDraws(), rerun.draws());
+      final se.swedishpolls.JointUncertainty.Reproduced reproduced =
+          reproduced(run.finalDraws(), rerun.draws());
       if (!reproduced.exact())
         reasons.add(
             period.id()
                 + ": a rerun at the registered seed moved a retained draw by "
                 + reproduced.maxAbsoluteDifference()
                 + " points, so the run does not reproduce");
-      var precision = repeats.size() > 1 ? precision(repeats) : List.<Precision>of();
-      var edges = new ArrayList<Day>();
+      final java.util.List<se.swedishpolls.JointUncertainty.Precision> precision =
+          repeats.size() > 1 ? precision(repeats) : List.<Precision>of();
+      final java.util.ArrayList<se.swedishpolls.JointUncertainty.Day> edges = new ArrayList<Day>();
       int days = 0;
       double shift = 0;
-      for (var segment : run.segments()) {
+      for (se.swedishpolls.JointUncertainty.Segment segment : run.segments()) {
         edges.add(segment.days().getFirst());
         edges.add(segment.days().getLast());
         days += segment.days().size();
-        for (var day : segment.days())
-          for (var component : day.components())
+        for (se.swedishpolls.JointUncertainty.Day day : segment.days())
+          for (se.swedishpolls.JointUncertainty.Component component : day.components())
             shift = Math.max(shift, Math.abs(component.mean() - component.stateMean()));
       }
       published.add(

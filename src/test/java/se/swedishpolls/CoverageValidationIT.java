@@ -25,25 +25,28 @@ class CoverageValidationIT {
   @Test
   void establishesSupportedDatesAndMeasuresTheCandidateBoundaryStepForEveryModeledParty()
       throws Exception {
-    var schema = "coverage_" + UUID.randomUUID().toString().replace("-", "");
-    var dataSource = TestDatabase.dataSource(schema);
-    var flyway =
+    final java.lang.String schema = "coverage_" + UUID.randomUUID().toString().replace("-", "");
+    final org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+        TestDatabase.dataSource(schema);
+    final org.flywaydb.core.Flyway flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {
       flyway.migrate();
-      var db = JdbcClient.create(dataSource);
-      var periods = new Roster(db).periods();
-      var elections =
+      final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
+      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
+          new Roster(db).periods();
+      final java.util.List<java.time.LocalDate> elections =
           db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
               .query(LocalDate.class)
               .list();
-      List<PollCsv.Poll> polls;
-      try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+      final List<PollCsv.Poll> polls;
+      try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
         polls = PollCsv.parse(input.readAllBytes());
       }
-      var registered = CoverageValidation.rules(PROTOCOL);
-      boolean full = Boolean.getBoolean("coverage.full");
-      var rules =
+      final se.swedishpolls.CoverageValidation.Rules registered =
+          CoverageValidation.rules(PROTOCOL);
+      final boolean full = Boolean.getBoolean("coverage.full");
+      final se.swedishpolls.CoverageValidation.Rules rules =
           full
               ? registered
               : new CoverageValidation.Rules(
@@ -54,13 +57,14 @@ class CoverageValidationIT {
                   List.of(registered.boundaryShiftDays().getFirst()),
                   registered.stabilityBurnInDays(),
                   registered.maxStabilityShiftPoints());
-      var tuning = DevelopmentTuning.tuning(TUNING);
+      final se.swedishpolls.DevelopmentTuning.Tuning tuning = DevelopmentTuning.tuning(TUNING);
 
-      var report = CoverageValidation.validateAll(periods, polls, elections, tuning, rules);
+      final se.swedishpolls.CoverageValidation.Report report =
+          CoverageValidation.validateAll(periods, polls, elections, tuning, rules);
 
       assertEquals(periods.size(), report.periods().size());
-      var eight = report.periods().getFirst();
-      var candidate = report.periods().get(1);
+      final se.swedishpolls.CoverageValidation.Validated eight = report.periods().getFirst();
+      final se.swedishpolls.CoverageValidation.Validated candidate = report.periods().get(1);
       assertEquals("eight_party_2010", eight.periodId());
       assertEquals("fi_candidate_2014_2018", candidate.periodId());
       // Supported dates come from the eligible observations, never from the declared endpoints.
@@ -70,14 +74,14 @@ class CoverageValidationIT {
       assertTrue(eight.support().from().isAfter(LocalDate.of(2009, 12, 31)));
       // The reserved 2022 comparison and the prospective 2026 window stay outside this evidence.
       assertFalse(eight.support().to().isAfter(registered.developmentThrough()));
-      for (var validated : report.periods()) {
+      for (se.swedishpolls.CoverageValidation.Validated validated : report.periods()) {
         assertTrue(validated.support().observations() >= registered.minObservations());
         assertTrue(validated.support().institutes() >= registered.minInstitutes());
         assertTrue(
             validated.support().largestGap().days() <= registered.maxInternalGapDays(),
             validated::toString);
         assertEquals(rules.boundaryShiftDays().size(), validated.stability().size());
-        for (var stability : validated.stability()) {
+        for (se.swedishpolls.CoverageValidation.Stability stability : validated.stability()) {
           assertEquals(
               validated.periodId().equals("eight_party_2010") ? 9 : 10,
               stability.maxShiftPoints().size());
@@ -93,7 +97,7 @@ class CoverageValidationIT {
       assertEquals(388, candidate.support().observations());
 
       assertEquals(2, report.boundaryEffects().size());
-      for (var effect : report.boundaryEffects()) {
+      for (se.swedishpolls.CoverageValidation.BoundaryEffect effect : report.boundaryEffects()) {
         assertEquals("fi_candidate_2014_2018", effect.periodId());
         assertEquals("eight_party_2010", effect.againstPeriodId());
         assertEquals(9, effect.stepPoints().size());

@@ -26,20 +26,22 @@ class ApiContractIT {
 
   @Test
   void describesTheStoredCoveragePeriodsElectionReferencesAndAllocationRule() throws Exception {
-    var schema = "contract_" + UUID.randomUUID().toString().replace("-", "");
-    var dataSource = TestDatabase.dataSource(schema);
-    var flyway =
+    final java.lang.String schema = "contract_" + UUID.randomUUID().toString().replace("-", "");
+    final org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+        TestDatabase.dataSource(schema);
+    final org.flywaydb.core.Flyway flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {
       flyway.migrate();
-      var db = JdbcClient.create(dataSource);
+      final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
 
-      var described = read("estimates-latest.json").get("coveragePeriods");
-      var stored = new Roster(db).periods();
+      final tools.jackson.databind.JsonNode described =
+          read("estimates-latest.json").get("coveragePeriods");
+      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> stored = new Roster(db).periods();
       assertEquals(stored.size(), described.size());
-      for (var index = 0; index < stored.size(); index++) {
-        var period = stored.get(index);
-        var example = described.get(index);
+      for (int index = 0; index < stored.size(); index++) {
+        final se.swedishpolls.Roster.CoveragePeriod period = stored.get(index);
+        final tools.jackson.databind.JsonNode example = described.get(index);
         assertEquals(period.id(), example.get("id").asString());
         assertEquals(period.effectiveFrom(), LocalDate.parse(example.get("from").asString()));
         assertEquals(
@@ -53,17 +55,21 @@ class ApiContractIT {
         assertEquals(!period.individualFi(), texts(example.get("otherMembers")).contains("FI"));
       }
 
-      var election = read("elections.json").get("elections").get(0);
-      var date = LocalDate.parse(election.get("electionDate").asString());
+      final tools.jackson.databind.JsonNode election =
+          read("elections.json").get("elections").get(0);
+      final java.time.LocalDate date = LocalDate.parse(election.get("electionDate").asString());
       assertEquals(
           db.sql("SELECT valid_votes FROM election_reference WHERE election_date = ?")
               .param(date)
               .query(Long.class)
               .single(),
           election.get("validVotes").asLong());
-      var votes = new LinkedHashMap<String, Long>();
-      var seats = new LinkedHashMap<String, Integer>();
-      for (var entry : election.get("results").properties()) {
+      final java.util.LinkedHashMap<java.lang.String, java.lang.Long> votes =
+          new LinkedHashMap<String, Long>();
+      final java.util.LinkedHashMap<java.lang.String, java.lang.Integer> seats =
+          new LinkedHashMap<String, Integer>();
+      for (java.util.Map.Entry<java.lang.String, tools.jackson.databind.JsonNode> entry :
+          election.get("results").properties()) {
         votes.put(entry.getKey(), entry.getValue().get("votes").asLong());
         seats.put(entry.getKey(), entry.getValue().get("officialSeats").asInt());
       }
@@ -93,12 +99,13 @@ class ApiContractIT {
                       row -> (Integer) row.get("official_seats"))),
           seats);
 
-      var rule = read("seats.json").get("allocationRule");
-      var storedRule =
-          db.sql("SELECT * FROM national_allocation_rule WHERE election_year = ?")
-              .param(rule.get("electionYear").asInt())
-              .query()
-              .singleRow();
+      final tools.jackson.databind.JsonNode rule = read("seats.json").get("allocationRule");
+      final java.util.Map<java.lang.String, java.lang.@org.jspecify.annotations.Nullable Object>
+          storedRule =
+              db.sql("SELECT * FROM national_allocation_rule WHERE election_year = ?")
+                  .param(rule.get("electionYear").asInt())
+                  .query()
+                  .singleRow();
       assertEquals(((Number) storedRule.get("seats")).intValue(), rule.get("seats").asInt());
       assertEquals(
           0,
@@ -125,15 +132,15 @@ class ApiContractIT {
 
       // Only parties of the validated roster can be allocated seats or joined into a preset
       // coalition.
-      var roster =
+      final java.util.List<java.lang.String> roster =
           Roster.supportedPeriod(
                   new Roster(db).periods(),
                   PollCsv.parse(PollCsvTest.csv(PollCsvTest.ROW)).getFirst())
               .roster();
-      for (var party : read("seats.json").get("parties"))
+      for (tools.jackson.databind.JsonNode party : read("seats.json").get("parties"))
         assertTrue(
             roster.contains(party.get("component").asString()), party.get("component").asString());
-      for (var coalition : read("coalitions.json").get("coalitions"))
+      for (tools.jackson.databind.JsonNode coalition : read("coalitions.json").get("coalitions"))
         assertTrue(
             roster.containsAll(texts(coalition.get("parties"))), coalition.get("id").asString());
     } finally {

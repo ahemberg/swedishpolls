@@ -102,9 +102,10 @@ public final class DailyStateSpace {
       List<LocalDate> elections,
       Parameters parameters,
       Centering centering) {
-    var prepared = prepare(batch, elections, parameters, centering);
-    var forward = forward(prepared, parameters, true);
-    var smoothed = smooth(prepared, forward, parameters);
+    final se.swedishpolls.DailyStateSpace.Prepared prepared =
+        prepare(batch, elections, parameters, centering);
+    final se.swedishpolls.DailyStateSpace.Forward forward = forward(prepared, parameters, true);
+    final se.swedishpolls.DailyStateSpace.Smoothed smoothed = smooth(prepared, forward, parameters);
     return new Fit(batch, parameters, smoothed.days(), smoothed.cycles(), forward.logLikelihood());
   }
 
@@ -136,8 +137,8 @@ public final class DailyStateSpace {
     checkParameters(parameters);
     if (batch.observations().isEmpty())
       throw new IllegalArgumentException("No observations to fit");
-    int dimension = batch.components().size() - 1;
-    for (var observation : batch.observations()) {
+    final int dimension = batch.components().size() - 1;
+    for (se.swedishpolls.PollObservations.Observation observation : batch.observations()) {
       if (observation.midpoint().isBefore(batch.period().effectiveFrom())
           || (batch.period().effectiveTo() != null
               && observation.midpoint().isAfter(batch.period().effectiveTo())))
@@ -150,16 +151,18 @@ public final class DailyStateSpace {
         throw new IllegalArgumentException("Invalid observation dimensions or values");
       factor(observation.covariance());
     }
-    var observations =
+    final java.util.List<se.swedishpolls.PollObservations.Observation> observations =
         batch.observations().stream()
             .sorted(
                 Comparator.comparing(PollObservations.Observation::midpoint)
                     .thenComparingInt(o -> o.poll().rowNumber()))
             .toList();
-    var start = batch.period().effectiveFrom();
-    var last = observations.getLast().midpoint();
-    var layouts = layouts(observations, elections, start, last, dimension, centering);
-    var centers = layouts.stream().map(DailyStateSpace::center).toList();
+    final java.time.LocalDate start = batch.period().effectiveFrom();
+    final java.time.LocalDate last = observations.getLast().midpoint();
+    final java.util.List<se.swedishpolls.DailyStateSpace.Layout> layouts =
+        layouts(observations, elections, start, last, dimension, centering);
+    final java.util.List<org.ejml.simple.SimpleMatrix> centers =
+        layouts.stream().map(DailyStateSpace::center).toList();
     return new Prepared(
         start,
         (int) ChronoUnit.DAYS.between(start, last) + 1,
@@ -182,24 +185,28 @@ public final class DailyStateSpace {
    * asked for.
    */
   private static Forward forward(Prepared prepared, Parameters parameters, boolean retain) {
-    var observations = prepared.observations();
-    var layouts = prepared.layouts();
-    int dimension = prepared.dimension();
-    int count = prepared.count();
-    var cycleOfDay = retain ? new int[count] : null;
-    var anchors = retain ? new ArrayList<Anchor>() : null;
-    var filteredMeans = retain ? new SimpleMatrix[count] : null;
-    var filteredCovariances = retain ? new SimpleMatrix[count] : null;
-    var mean = new SimpleMatrix(layouts.getFirst().size(), 1);
-    var covariance = prior(layouts.getFirst(), parameters);
+    final java.util.List<se.swedishpolls.PollObservations.Observation> observations =
+        prepared.observations();
+    final java.util.List<se.swedishpolls.DailyStateSpace.Layout> layouts = prepared.layouts();
+    final int dimension = prepared.dimension();
+    final int count = prepared.count();
+    final int[] cycleOfDay = retain ? new int[count] : null;
+    final java.util.ArrayList<se.swedishpolls.DailyStateSpace.Anchor> anchors =
+        retain ? new ArrayList<Anchor>() : null;
+    final org.ejml.simple.SimpleMatrix[] filteredMeans = retain ? new SimpleMatrix[count] : null;
+    final org.ejml.simple.SimpleMatrix[] filteredCovariances =
+        retain ? new SimpleMatrix[count] : null;
+    org.ejml.simple.SimpleMatrix mean = new SimpleMatrix(layouts.getFirst().size(), 1);
+    org.ejml.simple.SimpleMatrix covariance = prior(layouts.getFirst(), parameters);
     double logLikelihood = 0;
     int index = 0;
     int cycle = 0;
     for (int day = 0; day < count; day++) {
-      var date = prepared.start().plusDays(day);
+      final java.time.LocalDate date = prepared.start().plusDays(day);
       boolean anchored = day == 0;
       if (day > 0 && cycle + 1 < layouts.size() && layouts.get(cycle + 1).start().equals(date)) {
-        var reset = reset(mean, covariance, layouts.get(++cycle), parameters);
+        final se.swedishpolls.DailyStateSpace.State reset =
+            reset(mean, covariance, layouts.get(++cycle), parameters);
         mean = reset.mean();
         covariance = reset.covariance();
         anchored = true;
@@ -208,16 +215,18 @@ public final class DailyStateSpace {
       }
       if (retain) cycleOfDay[day] = cycle;
       while (index < observations.size() && observations.get(index).midpoint().equals(date)) {
-        var observation = observations.get(index++);
-        var design =
+        final se.swedishpolls.PollObservations.Observation observation = observations.get(index++);
+        final org.ejml.simple.SimpleMatrix design =
             design(
                 layouts.get(cycle),
                 layouts.get(cycle).effects().indexOf(effectIdentity(observation.poll())));
-        var noise = observation.covariance().scale(parameters.covarianceMultiplier());
-        var cross = covariance.mult(design.transpose());
-        var system = factor(symmetric(design.mult(cross)).plus(noise));
-        var gain = system.solve(cross.transpose()).transpose();
-        var innovation = observation.ilr().minus(design.mult(mean));
+        final org.ejml.simple.SimpleMatrix noise =
+            observation.covariance().scale(parameters.covarianceMultiplier());
+        final org.ejml.simple.SimpleMatrix cross = covariance.mult(design.transpose());
+        final se.swedishpolls.DailyStateSpace.Factor system =
+            factor(symmetric(design.mult(cross)).plus(noise));
+        final org.ejml.simple.SimpleMatrix gain = system.solve(cross.transpose()).transpose();
+        final org.ejml.simple.SimpleMatrix innovation = observation.ilr().minus(design.mult(mean));
         logLikelihood -=
             0.5
                 * (dimension * Math.log(2 * Math.PI)
@@ -229,7 +238,7 @@ public final class DailyStateSpace {
         // the transpose of the cross covariance above, and evaluating (I - KH) P (I - KH)' as
         // (P - K(HP)) - ((P - K(HP)) H')K' runs every product through the observation dimension
         // instead of multiplying two dense state-by-state matrices.
-        var reduced = covariance.minus(gain.mult(cross.transpose()));
+        final org.ejml.simple.SimpleMatrix reduced = covariance.minus(gain.mult(cross.transpose()));
         covariance =
             symmetric(
                 reduced
@@ -242,7 +251,8 @@ public final class DailyStateSpace {
       if (!retain) continue;
       factor(covariance);
       if (anchored) anchors.add(new Anchor(day, mean.copy(), covariance.copy()));
-      var centered = project(prepared.centers().get(cycle), mean, covariance);
+      final se.swedishpolls.DailyStateSpace.State centered =
+          project(prepared.centers().get(cycle), mean, covariance);
       filteredMeans[day] = centered.mean();
       filteredCovariances[day] = centered.covariance();
     }
@@ -274,30 +284,35 @@ public final class DailyStateSpace {
       LocalDate last,
       int dimension,
       Centering centering) {
-    var starts = new ArrayList<>(List.of(start));
+    final java.util.ArrayList<java.time.LocalDate> starts = new ArrayList<>(List.of(start));
     LocalDate previous = null;
-    for (var election : elections) {
+    for (java.time.LocalDate election : elections) {
       if (election == null || (previous != null && !election.isAfter(previous)))
         throw new IllegalArgumentException("Election dates must be distinct and ascending");
       previous = election;
       if (election.isAfter(start) && !election.isAfter(last)) starts.add(election);
     }
-    var layouts = new ArrayList<Layout>();
+    final java.util.ArrayList<se.swedishpolls.DailyStateSpace.Layout> layouts =
+        new ArrayList<Layout>();
     for (int cycle = 0; cycle < starts.size(); cycle++) {
-      var from = starts.get(cycle);
-      var to = cycle + 1 < starts.size() ? starts.get(cycle + 1).minusDays(1) : last;
-      var eras = new TreeMap<String, TreeSet<String>>();
-      var polls = new TreeMap<String, Integer>();
+      final java.time.LocalDate from = starts.get(cycle);
+      final java.time.LocalDate to =
+          cycle + 1 < starts.size() ? starts.get(cycle + 1).minusDays(1) : last;
+      final java.util.TreeMap<java.lang.String, java.util.TreeSet<java.lang.String>> eras =
+          new TreeMap<String, TreeSet<String>>();
+      final java.util.TreeMap<java.lang.String, java.lang.Integer> polls =
+          new TreeMap<String, Integer>();
       int cyclePolls = 0;
-      for (var observation : observations)
+      for (se.swedishpolls.PollObservations.Observation observation : observations)
         if (!observation.midpoint().isBefore(from) && !observation.midpoint().isAfter(to)) {
           eras.computeIfAbsent(observation.poll().institute(), institute -> new TreeSet<>())
               .add(effectIdentity(observation.poll()));
           polls.merge(effectIdentity(observation.poll()), 1, Integer::sum);
           cyclePolls++;
         }
-      var effects = eras.values().stream().flatMap(TreeSet::stream).distinct().sorted().toList();
-      var weights = new double[effects.size()];
+      final java.util.List<java.lang.String> effects =
+          eras.values().stream().flatMap(TreeSet::stream).distinct().sorted().toList();
+      final double[] weights = new double[effects.size()];
       if (centering == Centering.POLL_COUNT)
         // Each era carries its own share of the cycle's polls, so a frequent institute weighs more.
         for (int e = 0; e < effects.size(); e++)
@@ -305,8 +320,8 @@ public final class DailyStateSpace {
       else
         // Every active institute carries 1/H, split equally over the method eras it used in this
         // cycle.
-        for (var institute : eras.values())
-          for (var era : institute)
+        for (java.util.TreeSet<java.lang.String> institute : eras.values())
+          for (java.lang.String era : institute)
             weights[effects.indexOf(era)] += 1.0 / (eras.size() * institute.size());
       layouts.add(
           new Layout(from, to, dimension, effects, Arrays.stream(weights).boxed().toList()));
@@ -325,26 +340,28 @@ public final class DailyStateSpace {
    * effects.
    */
   private static Smoothed smooth(Prepared prepared, Forward forward, Parameters parameters) {
-    var start = prepared.start();
-    var filteredMeans = forward.filteredMeans();
-    var filteredCovariances = forward.filteredCovariances();
-    var layouts = prepared.layouts();
-    var centers = prepared.centers();
-    var cycleOfDay = forward.cycleOfDay();
-    var anchors = forward.anchors();
-    var days = new Day[filteredMeans.size()];
-    var cycles = new Cycle[layouts.size()];
+    final java.time.LocalDate start = prepared.start();
+    final java.util.List<org.ejml.simple.SimpleMatrix> filteredMeans = forward.filteredMeans();
+    final java.util.List<org.ejml.simple.SimpleMatrix> filteredCovariances =
+        forward.filteredCovariances();
+    final java.util.List<se.swedishpolls.DailyStateSpace.Layout> layouts = prepared.layouts();
+    final java.util.List<org.ejml.simple.SimpleMatrix> centers = prepared.centers();
+    final java.util.List<java.lang.Integer> cycleOfDay = forward.cycleOfDay();
+    final java.util.List<se.swedishpolls.DailyStateSpace.Anchor> anchors = forward.anchors();
+    final se.swedishpolls.DailyStateSpace.Day[] days = new Day[filteredMeans.size()];
+    final se.swedishpolls.DailyStateSpace.Cycle[] cycles = new Cycle[layouts.size()];
     int anchor = anchors.size() - 1;
     State smoothed = null;
     for (int day = days.length - 1; day >= 0; day--) {
       while (anchors.get(anchor).day() > day) anchor--;
-      var layout = layouts.get(cycleOfDay.get(day));
-      var filtered = filtered(anchors.get(anchor), day, layout, parameters);
+      final se.swedishpolls.DailyStateSpace.Layout layout = layouts.get(cycleOfDay.get(day));
+      final se.swedishpolls.DailyStateSpace.State filtered =
+          filtered(anchors.get(anchor), day, layout, parameters);
       if (smoothed == null) smoothed = filtered;
       else {
-        var next = layouts.get(cycleOfDay.get(day + 1));
-        boolean transition = !cycleOfDay.get(day).equals(cycleOfDay.get(day + 1));
-        var predicted =
+        final se.swedishpolls.DailyStateSpace.Layout next = layouts.get(cycleOfDay.get(day + 1));
+        final boolean transition = !cycleOfDay.get(day).equals(cycleOfDay.get(day + 1));
+        final se.swedishpolls.DailyStateSpace.State predicted =
             transition
                 ? reset(filtered.mean(), filtered.covariance(), next, parameters)
                 : new State(
@@ -352,16 +369,18 @@ public final class DailyStateSpace {
                     walked(filtered.covariance(), layout, parameters.walkVariance()));
         // A cycle transition keeps only the opinion block, so the cross-covariance drops the old
         // effects.
-        var cross = new SimpleMatrix(layout.size(), next.size());
+        final org.ejml.simple.SimpleMatrix cross = new SimpleMatrix(layout.size(), next.size());
         cross.insertIntoThis(
             0,
             0,
             transition
                 ? filtered.covariance().extractMatrix(0, layout.size(), 0, layout.dimension())
                 : filtered.covariance());
-        var gain = factor(predicted.covariance()).solve(cross.transpose()).transpose();
-        var mean = filtered.mean().plus(gain.mult(smoothed.mean().minus(predicted.mean())));
-        var covariance =
+        final org.ejml.simple.SimpleMatrix gain =
+            factor(predicted.covariance()).solve(cross.transpose()).transpose();
+        final org.ejml.simple.SimpleMatrix mean =
+            filtered.mean().plus(gain.mult(smoothed.mean().minus(predicted.mean())));
+        final org.ejml.simple.SimpleMatrix covariance =
             symmetric(
                 filtered
                     .covariance()
@@ -372,7 +391,7 @@ public final class DailyStateSpace {
         factor(covariance);
         smoothed = new State(mean, covariance);
       }
-      var centered =
+      final se.swedishpolls.DailyStateSpace.State centered =
           project(centers.get(cycleOfDay.get(day)), smoothed.mean(), smoothed.covariance());
       days[day] =
           new Day(
@@ -382,9 +401,11 @@ public final class DailyStateSpace {
               ModelValues.owned(centered.mean()),
               ModelValues.owned(centered.covariance()));
       if (layout.end().equals(days[day].date())) {
-        var deviation = deviation(layout);
-        var effects = project(deviation, filtered.mean(), filtered.covariance());
-        var smoothedEffects = project(deviation, smoothed.mean(), smoothed.covariance());
+        final org.ejml.simple.SimpleMatrix deviation = deviation(layout);
+        final se.swedishpolls.DailyStateSpace.State effects =
+            project(deviation, filtered.mean(), filtered.covariance());
+        final se.swedishpolls.DailyStateSpace.State smoothedEffects =
+            project(deviation, smoothed.mean(), smoothed.covariance());
         cycles[cycleOfDay.get(day)] =
             new Cycle(
                 layout.start(),
@@ -416,9 +437,9 @@ public final class DailyStateSpace {
    */
   private static State reset(
       SimpleMatrix mean, SimpleMatrix covariance, Layout to, Parameters parameters) {
-    int dimension = to.dimension();
-    var resetMean = new SimpleMatrix(to.size(), 1);
-    var resetCovariance = new SimpleMatrix(to.size(), to.size());
+    final int dimension = to.dimension();
+    final org.ejml.simple.SimpleMatrix resetMean = new SimpleMatrix(to.size(), 1);
+    final org.ejml.simple.SimpleMatrix resetCovariance = new SimpleMatrix(to.size(), to.size());
     resetMean.insertIntoThis(0, 0, mean.extractMatrix(0, dimension, 0, 1));
     resetCovariance.insertIntoThis(0, 0, covariance.extractMatrix(0, dimension, 0, dimension));
     addWalk(resetCovariance, dimension, parameters.walkVariance());
@@ -428,7 +449,7 @@ public final class DailyStateSpace {
   }
 
   private static SimpleMatrix walked(SimpleMatrix covariance, Layout layout, double amount) {
-    var walked = covariance.copy();
+    final org.ejml.simple.SimpleMatrix walked = covariance.copy();
     addWalk(walked, layout.dimension(), amount);
     return walked;
   }
@@ -439,7 +460,7 @@ public final class DailyStateSpace {
   }
 
   private static SimpleMatrix prior(Layout layout, Parameters parameters) {
-    var covariance = new SimpleMatrix(layout.size(), layout.size());
+    final org.ejml.simple.SimpleMatrix covariance = new SimpleMatrix(layout.size(), layout.size());
     for (int i = 0; i < layout.size(); i++)
       covariance.set(
           i, i, i < layout.dimension() ? 4 : parameters.houseScale() * parameters.houseScale());
@@ -452,8 +473,8 @@ public final class DailyStateSpace {
 
   /** One poll observes the opinion state plus its own effect identity. */
   private static SimpleMatrix design(Layout layout, int effect) {
-    int dimension = layout.dimension();
-    var design = new SimpleMatrix(dimension, layout.size());
+    final int dimension = layout.dimension();
+    final org.ejml.simple.SimpleMatrix design = new SimpleMatrix(dimension, layout.size());
     for (int i = 0; i < dimension; i++) {
       design.set(i, i, 1);
       design.set(i, dimension * (1 + effect) + i, 1);
@@ -466,8 +487,8 @@ public final class DailyStateSpace {
    * consistent.
    */
   private static SimpleMatrix center(Layout layout) {
-    int dimension = layout.dimension();
-    var center = new SimpleMatrix(dimension, layout.size());
+    final int dimension = layout.dimension();
+    final org.ejml.simple.SimpleMatrix center = new SimpleMatrix(dimension, layout.size());
     for (int i = 0; i < dimension; i++) {
       center.set(i, i, 1);
       for (int e = 0; e < layout.effects().size(); e++)
@@ -477,9 +498,10 @@ public final class DailyStateSpace {
   }
 
   private static SimpleMatrix deviation(Layout layout) {
-    int dimension = layout.dimension();
-    int effects = layout.effects().size();
-    var deviation = new SimpleMatrix(dimension * effects, layout.size());
+    final int dimension = layout.dimension();
+    final int effects = layout.effects().size();
+    final org.ejml.simple.SimpleMatrix deviation =
+        new SimpleMatrix(dimension * effects, layout.size());
     for (int e = 0; e < effects; e++)
       for (int f = 0; f < effects; f++)
         for (int i = 0; i < dimension; i++)
@@ -496,7 +518,8 @@ public final class DailyStateSpace {
 
   private record Factor(LinearSolverDense<DMatrixRMaj> solver, double logDeterminant) {
     SimpleMatrix solve(SimpleMatrix right) {
-      var result = new SimpleMatrix(right.getNumRows(), right.getNumCols());
+      final org.ejml.simple.SimpleMatrix result =
+          new SimpleMatrix(right.getNumRows(), right.getNumCols());
       solver.solve(right.getDDRM().copy(), result.getDDRM());
       return result;
     }
@@ -518,11 +541,12 @@ public final class DailyStateSpace {
   }
 
   private static Factor factor(int size, DMatrixRMaj covariance) {
-    var solver = LinearSolverFactory_DDRM.symmPosDef(size);
+    final org.ejml.interfaces.linsol.LinearSolverDense<org.ejml.data.DMatrixRMaj> solver =
+        LinearSolverFactory_DDRM.symmPosDef(size);
     if (!solver.setA(covariance))
       throw new IllegalArgumentException("Covariance is not positive definite");
-    CholeskyDecomposition_F64<DMatrixRMaj> decomposition = solver.getDecomposition();
-    var lower = decomposition.getT(null);
+    final CholeskyDecomposition_F64<DMatrixRMaj> decomposition = solver.getDecomposition();
+    final org.ejml.data.DMatrixRMaj lower = decomposition.getT(null);
     double logDeterminant = 0;
     for (int i = 0; i < lower.numRows; i++) logDeterminant += 2 * Math.log(lower.get(i, i));
     if (!Double.isFinite(logDeterminant))

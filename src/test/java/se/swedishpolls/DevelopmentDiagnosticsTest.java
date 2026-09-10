@@ -59,7 +59,8 @@ class DevelopmentDiagnosticsTest {
 
   @Test
   void registersTheProtocolRulesAndRejectsInadmissibleOnes() {
-    var rules = DevelopmentDiagnostics.rules(PROTOCOL);
+    final se.swedishpolls.DevelopmentDiagnostics.Rules rules =
+        DevelopmentDiagnostics.rules(PROTOCOL);
     assertEquals(35, rules.scoreHorizonDays());
     assertEquals(4000, rules.scoreDraws());
     assertEquals(List.of(1, 3, 6), rules.pairedStandardErrorLags());
@@ -120,7 +121,7 @@ class DevelopmentDiagnosticsTest {
 
   @Test
   void scoresEveryEligiblePollPublishedInsideTheHorizonAndNoOther() {
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         PollCsv.parse(
             PollCsvTest.csv(
                 row("Novus", 0, 2, 3, "20")
@@ -128,8 +129,10 @@ class DevelopmentDiagnosticsTest {
                     + row("Novus", 60, 62, 80, "22")
                     + row("Sifo", 80, 82, 100, "23")
                     + row("Skop", 41, 43, 44, "24").replace(",1000,", ",NA,")));
-    var fold = new DevelopmentTuning.Fold(START.plusDays(45), START.plusDays(80));
-    var heldOut = DevelopmentDiagnostics.heldOut(polls, fold, RULES);
+    final se.swedishpolls.DevelopmentTuning.Fold fold =
+        new DevelopmentTuning.Fold(START.plusDays(45), START.plusDays(80));
+    final java.util.List<se.swedishpolls.PollCsv.Poll> heldOut =
+        DevelopmentDiagnostics.heldOut(polls, fold, RULES);
     // Published on day 80, inside the horizon; the day 43 publication trained and the day 100 one
     // is beyond it. The missing sample size is ineligible and never scored.
     assertEquals(List.of(3), heldOut.stream().map(PollCsv.Poll::rowNumber).toList());
@@ -143,10 +146,10 @@ class DevelopmentDiagnosticsTest {
 
   @Test
   void thePairedStandardErrorAtTheFrozenLagIsTheGatesOwn() {
-    var differences = new double[] {-1, -1, -1, -1, 1, 1, 1, 1};
-    var candidate = new double[] {9, 9, 9, 9, 11, 11, 11, 11};
-    var baseline = new double[8];
-    var reference = new double[] {10, 10, 10, 10, 10, 10, 10, 10};
+    final double[] differences = new double[] {-1, -1, -1, -1, 1, 1, 1, 1};
+    final double[] candidate = new double[] {9, 9, 9, 9, 11, 11, 11, 11};
+    final double[] baseline = new double[8];
+    final double[] reference = new double[] {10, 10, 10, 10, 10, 10, 10, 10};
     assertEquals(
         PredictiveComparison.evaluate(candidate, baseline, reference).pairedStandardError(),
         DevelopmentDiagnostics.pairedStandardError(differences, 3),
@@ -164,30 +167,31 @@ class DevelopmentDiagnosticsTest {
 
   @Test
   void theBaselineAveragesItsWindowAndFallsBackToTheFiveMostRecentWhenItIsThin() {
-    var wide =
+    final se.swedishpolls.PollObservations.Batch wide =
         batch(
             row("Novus", 0, 2, 3, "20")
                 + row("Sifo", 30, 32, 33, "22")
                 + row("Novus", 60, 62, 63, "24")
                 + row("Sifo", 90, 92, 93, "26"));
-    var fit = RecencyBaseline.fit(wide, START.plusDays(93));
+    final se.swedishpolls.RecencyBaseline.Fit fit = RecencyBaseline.fit(wide, START.plusDays(93));
     assertEquals(4, fit.used().size());
     // Weights fall by half every 30 days, so the newest poll carries most of the average and M
     // lands above the midpoint of 20 and 26.
     assertTrue(fit.weights().getLast() > 8 * fit.weights().getFirst());
-    double m = fit.composition().get(0);
+    final double m = fit.composition().get(0);
     assertTrue(m > 24 && m < 26, () -> "Weighted M: " + m);
     assertTrue(fit.effectiveSampleSize() > 0 && fit.effectiveSampleSize() < 4000);
     // Only one poll falls inside the 120-day window, so the fallback reaches back for five.
-    var thin =
+    final se.swedishpolls.PollObservations.Batch thin =
         batch(
             row("Novus", 0, 2, 3, "20")
                 + row("Sifo", 10, 12, 13, "22")
                 + row("Novus", 20, 22, 23, "24")
                 + row("Sifo", 300, 302, 303, "26"));
-    var fallback = RecencyBaseline.fit(thin, START.plusDays(303));
+    final se.swedishpolls.RecencyBaseline.Fit fallback =
+        RecencyBaseline.fit(thin, START.plusDays(303));
     assertEquals(4, fallback.used().size());
-    var predictive =
+    final se.swedishpolls.ModelValues predictive =
         RecencyBaseline.predictiveCovariance(thin, fallback, thin.observations().getLast());
     // A held-out poll adds its own sampling variance, so the prediction is wider than the average.
     assertTrue(
@@ -199,15 +203,18 @@ class DevelopmentDiagnosticsTest {
 
   @Test
   void aFoldScoresAllThreeCandidatesOnTheSameHeldOutPollsAndRecordsWhatItRead() {
-    var rows = new StringBuilder();
+    final java.lang.StringBuilder rows = new StringBuilder();
     for (int week = 0; week < 20; week++) {
       rows.append(row("Novus", week * 7, week * 7 + 2, week * 7 + 3, "20"));
       rows.append(row("Sifo", week * 7 + 3, week * 7 + 5, week * 7 + 6, "22"));
     }
-    var polls = PollCsv.parse(PollCsvTest.csv(rows.toString()));
-    var fold = new DevelopmentTuning.Fold(START.plusDays(100), START.plusDays(135));
-    var grid = new DevelopmentTuning.Grid(List.of(0.0003), List.of(0.05, 0.1), List.of(1.0, 1.5));
-    var folded =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+        PollCsv.parse(PollCsvTest.csv(rows.toString()));
+    final se.swedishpolls.DevelopmentTuning.Fold fold =
+        new DevelopmentTuning.Fold(START.plusDays(100), START.plusDays(135));
+    final se.swedishpolls.DevelopmentTuning.Grid grid =
+        new DevelopmentTuning.Grid(List.of(0.0003), List.of(0.05, 0.1), List.of(1.0, 1.5));
+    final se.swedishpolls.DevelopmentDiagnostics.Folded folded =
         DevelopmentDiagnostics.fold(period(), polls, ELECTIONS, fold, grid, PARAMETERS, RULES);
     assertEquals("test", folded.fold().periodId());
     assertEquals(PARAMETERS, folded.fold().candidateParameters());
@@ -226,9 +233,10 @@ class DevelopmentDiagnosticsTest {
             DevelopmentDiagnostics.REFERENCE,
             DevelopmentDiagnostics.BASELINE),
         List.copyOf(folded.fold().meanLogScore().keySet()));
-    for (var scored : folded.scored().values())
-      assertEquals(folded.fold().scoredPolls(), scored.size());
-    for (var score : folded.fold().meanLogScore().values()) assertTrue(Double.isFinite(score));
+    for (java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored> scored :
+        folded.scored().values()) assertEquals(folded.fold().scoredPolls(), scored.size());
+    for (java.lang.Double score : folded.fold().meanLogScore().values())
+      assertTrue(Double.isFinite(score));
     // Three different predictive distributions of the same polls, so three different scores.
     assertEquals(3, folded.fold().meanLogScore().values().stream().distinct().count());
     // A fold whose horizon contains no publication scores nothing rather than an empty mean.
@@ -247,14 +255,15 @@ class DevelopmentDiagnosticsTest {
 
   @Test
   void coverageAndMisfitAreCountedPerPartyInstituteAndFieldworkBand() {
-    var rows = new StringBuilder();
+    final java.lang.StringBuilder rows = new StringBuilder();
     for (int week = 0; week < 24; week++) {
       rows.append(row("Novus", week * 7, week * 7, week * 7 + 1, "20"));
       rows.append(row("Sifo", week * 7 + 1, week * 7 + 8, week * 7 + 9, "22"));
       rows.append(row("Skop", week * 7 + 2, week * 7 + 18, week * 7 + 19, "21"));
     }
-    var polls = PollCsv.parse(PollCsvTest.csv(rows.toString()));
-    var folded =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+        PollCsv.parse(PollCsvTest.csv(rows.toString()));
+    final se.swedishpolls.DevelopmentDiagnostics.Folded folded =
         DevelopmentDiagnostics.fold(
             period(),
             polls,
@@ -263,35 +272,37 @@ class DevelopmentDiagnosticsTest {
             new DevelopmentTuning.Grid(List.of(0.0003), List.of(0.05), List.of(1.5)),
             PARAMETERS,
             RULES);
-    var components = batch(rows.toString()).components();
-    var misfit = DevelopmentDiagnostics.misfit("test", components, folded.scored(), RULES);
-    var pooled = misfit.stream().filter(row -> row.scope().equals("all")).toList();
+    final java.util.List<java.lang.String> components = batch(rows.toString()).components();
+    final java.util.List<se.swedishpolls.DevelopmentDiagnostics.Misfit> misfit =
+        DevelopmentDiagnostics.misfit("test", components, folded.scored(), RULES);
+    final java.util.List<se.swedishpolls.DevelopmentDiagnostics.Misfit> pooled =
+        misfit.stream().filter(row -> row.scope().equals("all")).toList();
     assertEquals(3, pooled.size());
-    for (var row : pooled) {
+    for (se.swedishpolls.DevelopmentDiagnostics.Misfit row : pooled) {
       assertEquals(row.polls() * components.size(), row.cases());
       assertTrue(row.coverage95() >= row.coverage50());
       assertTrue(row.coverage95() >= 0 && row.coverage95() <= 1);
     }
-    var parties =
+    final java.util.List<java.lang.String> parties =
         misfit.stream()
             .filter(row -> row.scope().equals("party"))
             .map(DevelopmentDiagnostics.Misfit::name)
             .toList();
     assertEquals(components, parties);
-    var institutes =
+    final java.util.List<java.lang.String> institutes =
         misfit.stream()
             .filter(row -> row.scope().equals("institute"))
             .map(DevelopmentDiagnostics.Misfit::name)
             .toList();
     assertEquals(List.of("Novus", "Sifo", "Skop"), institutes);
     // One-day, nine-day and nineteen-day fieldwork windows land in the three registered bands.
-    var bands =
+    final java.util.List<java.lang.String> bands =
         misfit.stream()
             .filter(row -> row.scope().equals("fieldwork_days"))
             .map(DevelopmentDiagnostics.Misfit::name)
             .toList();
     assertEquals(List.of("1-7", "8-14", "15+"), bands);
-    for (var row : misfit)
+    for (se.swedishpolls.DevelopmentDiagnostics.Misfit row : misfit)
       assertTrue(
           Double.isFinite(row.meanStandardizedResidual())
               && row.rootMeanSquareStandardizedResidual() >= 0);
@@ -301,29 +312,32 @@ class DevelopmentDiagnosticsTest {
   void pollCountCenteringMovesTheReferenceWithoutMovingTheFit() {
     // Novus polls three times as often as Sifo and sits above it, so weighting by poll count
     // moves the level the ensemble is centered on.
-    var rows = new StringBuilder();
+    final java.lang.StringBuilder rows = new StringBuilder();
     for (int week = 0; week < 30; week++) {
       rows.append(row("Novus", week * 7, week * 7 + 1, week * 7 + 2, "26"));
       rows.append(row("Novus", week * 7 + 2, week * 7 + 3, week * 7 + 4, "26"));
       rows.append(row("Novus", week * 7 + 4, week * 7 + 5, week * 7 + 6, "26"));
       if (week % 3 == 0) rows.append(row("Sifo", week * 7 + 6, week * 7 + 6, week * 7 + 7, "16"));
     }
-    var batch = batch(rows.toString());
+    final se.swedishpolls.PollObservations.Batch batch = batch(rows.toString());
     assertEquals(
         DailyStateSpace.fit(batch, ELECTIONS, PARAMETERS).logLikelihood(),
         DailyStateSpace.fit(batch, ELECTIONS, PARAMETERS, DailyStateSpace.Centering.POLL_COUNT)
             .logLikelihood(),
         0,
         "Centering changes the reference, never the fit");
-    var equal = DailyStateSpace.fit(batch, ELECTIONS, PARAMETERS);
-    var counted =
+    final se.swedishpolls.DailyStateSpace.Fit equal =
+        DailyStateSpace.fit(batch, ELECTIONS, PARAMETERS);
+    final se.swedishpolls.DailyStateSpace.Fit counted =
         DailyStateSpace.fit(batch, ELECTIONS, PARAMETERS, DailyStateSpace.Centering.POLL_COUNT);
     assertEquals(List.of(0.5, 0.5), equal.cycles().getFirst().weights());
     // Ninety Novus polls against ten from Sifo.
     assertEquals(0.9, counted.cycles().getFirst().weights().getFirst(), 1e-12);
     assertEquals(0.1, counted.cycles().getFirst().weights().getLast(), 1e-12);
-    var equalShares = PollObservations.shares(batch, equal.days().getLast().smoothedMean());
-    var countedShares = PollObservations.shares(batch, counted.days().getLast().smoothedMean());
+    final java.util.Map<java.lang.String, java.lang.Double> equalShares =
+        PollObservations.shares(batch, equal.days().getLast().smoothedMean());
+    final java.util.Map<java.lang.String, java.lang.Double> countedShares =
+        PollObservations.shares(batch, counted.days().getLast().smoothedMean());
     assertTrue(
         countedShares.get("M") > equalShares.get("M") + 0.5,
         () -> "Poll-count M " + countedShares.get("M") + " against equal " + equalShares.get("M"));

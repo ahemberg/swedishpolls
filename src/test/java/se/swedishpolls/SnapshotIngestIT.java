@@ -68,7 +68,7 @@ class SnapshotIngestIT {
 
   private SnapshotIngest.Result check(SnapshotIngest target) {
     if (stub != null) wireMock.removeStub(stub);
-    var response =
+    final com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder response =
         aResponse().withStatus(status).withHeader("Last-Modified", "Mon, 07 Sep 2026 05:09:49 GMT");
     if (etag != null) response.withHeader("ETag", etag);
     if (status != 304) response.withBody(body);
@@ -78,10 +78,10 @@ class SnapshotIngestIT {
 
   @Test
   void completeSnapshotsReplaceMembershipAndRemainReadable() {
-    var original = PollCsvTest.ROW.replace("2020-01-20", "NA");
+    final java.lang.String original = PollCsvTest.ROW.replace("2020-01-20", "NA");
     body = PollCsvTest.csv(original + PollCsvTest.ROW.replace("Ipsos", "Novus"));
     assertEquals(SnapshotIngest.Result.CHANGED, check());
-    var first = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.SnapshotIngest.Snapshot first = ingest.activeSnapshot().orElseThrow();
     assertArrayEquals(body, ingest.rawCsv(first.id()));
     assertEquals(2, ingest.polls(first.id()).size());
 
@@ -90,7 +90,7 @@ class SnapshotIngestIT {
     etag = "\"second\"";
     body = PollCsvTest.csv(original.replace("20.123", "20.124").replace(",1000,", ",1001,"));
     assertEquals(SnapshotIngest.Result.CHANGED, check());
-    var second = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.SnapshotIngest.Snapshot second = ingest.activeSnapshot().orElseThrow();
     assertNotEquals(first.id(), second.id());
     assertEquals(1, ingest.polls(second.id()).size());
     assertEquals("1001", ingest.polls(second.id()).getFirst().raw().get("n"));
@@ -113,7 +113,7 @@ class SnapshotIngestIT {
         getRequestedFor(urlEqualTo("/polls.csv"))
             .withoutHeader("If-None-Match")
             .withoutHeader("If-Modified-Since"));
-    var first = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.SnapshotIngest.Snapshot first = ingest.activeSnapshot().orElseThrow();
     status = 304;
     assertEquals(SnapshotIngest.Result.UNCHANGED, check());
     wireMock.verify(
@@ -140,7 +140,7 @@ class SnapshotIngestIT {
     assertTrue(ingest.activeSnapshot().isEmpty());
     status = 200;
     check();
-    var first = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.SnapshotIngest.Snapshot first = ingest.activeSnapshot().orElseThrow();
     etag = "\"bad\"";
     for (int code : new int[] {500, 206, 404}) {
       status = code;
@@ -170,7 +170,7 @@ class SnapshotIngestIT {
   @Test
   void aFailedRowWriteRollsBackTheArchiveAndPointerTogether() {
     check();
-    var first = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.SnapshotIngest.Snapshot first = ingest.activeSnapshot().orElseThrow();
     db.sql(
             "ALTER TABLE snapshot_poll ADD CONSTRAINT simulated_disk_failure CHECK (poll->>'company' <> 'Broken')")
         .update();
@@ -184,11 +184,13 @@ class SnapshotIngestIT {
 
   @Test
   void anotherWorkerCannotFetchWhileTheDatabaseLockIsHeld() {
-    var transaction = new TransactionTemplate(transactions);
+    final org.springframework.transaction.support.TransactionTemplate transaction =
+        new TransactionTemplate(transactions);
     transaction.executeWithoutResult(
         ignored -> {
           db.sql("SELECT pg_advisory_xact_lock(1717001)").query().singleRow();
-          try (var executor = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+          try (final java.util.concurrent.ExecutorService executor =
+              java.util.concurrent.Executors.newSingleThreadExecutor()) {
             assertEquals(
                 SnapshotIngest.Result.BUSY,
                 executor
@@ -205,12 +207,12 @@ class SnapshotIngestIT {
 
   @Test
   void archivesThePinnedAuditIncludingExcludedRowsAndExactAssessments() throws Exception {
-    try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+    try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
       body = input.readAllBytes();
     }
-    var expected = PollCsv.parse(body);
+    final java.util.List<se.swedishpolls.PollCsv.Poll> expected = PollCsv.parse(body);
     assertEquals(SnapshotIngest.Result.CHANGED, check());
-    var snapshot = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.SnapshotIngest.Snapshot snapshot = ingest.activeSnapshot().orElseThrow();
     assertEquals(
         "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608", snapshot.sha256());
     assertArrayEquals(body, ingest.rawCsv(snapshot.id()));
@@ -219,23 +221,25 @@ class SnapshotIngestIT {
         4, db.sql("SELECT count(*) FROM election_reference").query(Integer.class).single());
     // Only pre-2022 development inputs enter the numerical checks. Official outcomes stay in their
     // own tables.
-    var development =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> development =
         ingest.polls(snapshot.id()).stream()
             .filter(
                 poll ->
                     poll.collectionTo() != null
                         && poll.collectionTo().isBefore(java.time.LocalDate.of(2022, 1, 1)))
             .toList();
-    var periods = new Roster(db).periods();
-    var elections =
+    final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods = new Roster(db).periods();
+    final java.util.List<java.time.LocalDate> elections =
         db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
             .query(java.time.LocalDate.class)
             .list();
-    var eight = PollObservations.prepare(periods.getFirst(), development);
-    var fi = PollObservations.prepare(periods.get(1), development);
+    final se.swedishpolls.PollObservations.Batch eight =
+        PollObservations.prepare(periods.getFirst(), development);
+    final se.swedishpolls.PollObservations.Batch fi =
+        PollObservations.prepare(periods.get(1), development);
     assertEquals(388, fi.observations().size());
     assertTrue(eight.observations().size() > fi.observations().size());
-    for (var batch : java.util.List.of(eight, fi)) {
+    for (se.swedishpolls.PollObservations.Batch batch : java.util.List.of(eight, fi)) {
       assertEquals(development.size(), batch.observations().size() + batch.exclusions().size());
       assertTrue(
           batch.observations().stream()
@@ -246,7 +250,7 @@ class SnapshotIngestIT {
       assertTrue(
           batch.observations().stream()
               .allMatch(o -> !o.ilr().hasUncountable() && !o.covariance().hasUncountable()));
-      var fit =
+      final se.swedishpolls.DailyStateSpace.Fit fit =
           DailyStateSpace.fit(batch, elections, new DailyStateSpace.Parameters(0.0001, 0.05, 1.5));
       assertTrue(Double.isFinite(fit.logLikelihood()));
       assertEquals(batch.period().effectiveFrom(), fit.days().getFirst().date());
@@ -273,15 +277,16 @@ class SnapshotIngestIT {
                           && !date.isAfter(fit.days().getLast().date()))
               .toList(),
           fit.cycles().stream().skip(1).map(DailyStateSpace.Cycle::start).toList());
-      for (var cycle : fit.cycles()) {
+      for (se.swedishpolls.DailyStateSpace.Cycle cycle : fit.cycles()) {
         assertEquals(1, cycle.weights().stream().mapToDouble(Double::doubleValue).sum(), 1e-12);
         assertEquals(
             cycle.effects().size() * (batch.components().size() - 1),
             cycle.smoothedMean().getNumRows());
         assertFalse(
             cycle.smoothedMean().hasUncountable() || cycle.smoothedCovariance().hasUncountable());
-        int dimension = batch.components().size() - 1;
-        var weighted = new org.ejml.simple.SimpleMatrix(dimension, 1);
+        final int dimension = batch.components().size() - 1;
+        final org.ejml.simple.SimpleMatrix weighted =
+            new org.ejml.simple.SimpleMatrix(dimension, 1);
         for (int effect = 0; effect < cycle.effects().size(); effect++)
           weighted.setTo(
               weighted.plus(
@@ -310,7 +315,7 @@ class SnapshotIngestIT {
   @Test
   void oversizedDownloadsAreStoppedByTheHttpClientAndRetainTheArchive() {
     check();
-    var first = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.SnapshotIngest.Snapshot first = ingest.activeSnapshot().orElseThrow();
     body = new byte[16 * 1024 * 1024 + 1];
     assertThrows(IllegalStateException.class, this::check);
     assertEquals(first.id(), ingest.activeSnapshot().orElseThrow().id());

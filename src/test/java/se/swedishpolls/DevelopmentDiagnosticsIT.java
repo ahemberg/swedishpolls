@@ -27,49 +27,56 @@ class DevelopmentDiagnosticsIT {
   @Test
   void scoresEveryFoldAgainstTheBaselineAndReferenceAndMeasuresBothSensitivityCases()
       throws Exception {
-    var schema = "diagnostics_" + UUID.randomUUID().toString().replace("-", "");
-    var dataSource = TestDatabase.dataSource(schema);
-    var flyway =
+    final java.lang.String schema = "diagnostics_" + UUID.randomUUID().toString().replace("-", "");
+    final org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+        TestDatabase.dataSource(schema);
+    final org.flywaydb.core.Flyway flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {
       flyway.migrate();
-      var db = JdbcClient.create(dataSource);
-      var periods = new Roster(db).periods();
-      var elections =
+      final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
+      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
+          new Roster(db).periods();
+      final java.util.List<java.time.LocalDate> elections =
           db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
               .query(LocalDate.class)
               .list();
-      List<PollCsv.Poll> polls;
-      try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+      final List<PollCsv.Poll> polls;
+      try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
         polls = PollCsv.parse(input.readAllBytes());
       }
-      var registered = DevelopmentTuning.protocol(PROTOCOL);
-      var tuning = DevelopmentTuning.tuning(TUNING);
-      var coverage = CoverageValidation.validation(COVERAGE);
-      var rules = DevelopmentDiagnostics.rules(PROTOCOL);
-      boolean full = Boolean.getBoolean("diagnostics.full");
-      var folds =
+      final se.swedishpolls.DevelopmentTuning.Protocol registered =
+          DevelopmentTuning.protocol(PROTOCOL);
+      final se.swedishpolls.DevelopmentTuning.Tuning tuning = DevelopmentTuning.tuning(TUNING);
+      final se.swedishpolls.CoverageValidation.Report coverage =
+          CoverageValidation.validation(COVERAGE);
+      final se.swedishpolls.DevelopmentDiagnostics.Rules rules =
+          DevelopmentDiagnostics.rules(PROTOCOL);
+      final boolean full = Boolean.getBoolean("diagnostics.full");
+      final java.util.List<se.swedishpolls.DevelopmentTuning.Fold> folds =
           full
               ? registered.folds()
               : registered.folds().subList(0, DevelopmentDiagnostics.MIN_FOLDS);
-      var protocol = new DevelopmentTuning.Protocol(registered.version(), folds, registered.grid());
+      final se.swedishpolls.DevelopmentTuning.Protocol protocol =
+          new DevelopmentTuning.Protocol(registered.version(), folds, registered.grid());
 
-      var report =
+      final se.swedishpolls.DevelopmentDiagnostics.Report report =
           DevelopmentDiagnostics.report(
               periods, polls, elections, protocol, tuning, coverage, rules);
 
       // Every fold of every roster is either scored or listed with a reason; none is dropped.
       assertEquals(folds.size() * periods.size(), report.folds().size() + report.unscored().size());
-      for (var fold : report.folds()) {
+      for (se.swedishpolls.DevelopmentDiagnostics.Fold fold : report.folds()) {
         assertEquals(3, fold.meanLogScore().size());
-        for (var score : fold.meanLogScore().values()) assertTrue(Double.isFinite(score));
+        for (java.lang.Double score : fold.meanLogScore().values())
+          assertTrue(Double.isFinite(score));
         assertTrue(fold.scoredPolls() > 0 && fold.trainingObservations() > 0);
         assertEquals(64, fold.trainingRowsSha256().length());
         assertTrue(
             registered.grid().walkVariances().contains(fold.referenceParameters().walkVariance()));
       }
       // The eight-party roster scores every fold; only the candidate FI period can lack one.
-      var eight =
+      final java.util.List<se.swedishpolls.DevelopmentDiagnostics.Fold> eight =
           report.folds().stream().filter(f -> f.periodId().equals("eight_party_2010")).toList();
       assertEquals(folds.size(), eight.size());
       assertTrue(
@@ -77,7 +84,7 @@ class DevelopmentDiagnosticsIT {
               .allMatch(unscored -> unscored.periodId().equals("fi_candidate_2014_2018")),
           report.unscored()::toString);
 
-      var paired =
+      final se.swedishpolls.DevelopmentDiagnostics.Paired paired =
           report.paired().stream()
               .filter(comparison -> comparison.periodId().equals("eight_party_2010"))
               .findFirst()
@@ -91,16 +98,16 @@ class DevelopmentDiagnosticsIT {
           paired.passes());
 
       // Coverage is pooled per candidate and broken down for the estimator under test.
-      var pooled =
+      final java.util.List<se.swedishpolls.DevelopmentDiagnostics.Misfit> pooled =
           report.misfit().stream()
               .filter(row -> row.periodId().equals("eight_party_2010") && row.scope().equals("all"))
               .toList();
       assertEquals(3, pooled.size());
-      for (var row : pooled) {
+      for (se.swedishpolls.DevelopmentDiagnostics.Misfit row : pooled) {
         assertEquals(row.polls() * 9, row.cases());
         assertTrue(row.coverage95() >= row.coverage50(), row::toString);
       }
-      var parties =
+      final java.util.List<java.lang.String> parties =
           report.misfit().stream()
               .filter(
                   row -> row.periodId().equals("eight_party_2010") && row.scope().equals("party"))
@@ -118,7 +125,7 @@ class DevelopmentDiagnosticsIT {
               .filter(row -> row.periodId().equals("eight_party_2010"))
               .map(DevelopmentDiagnostics.Autocorrelation::lag)
               .toList());
-      var dependence =
+      final se.swedishpolls.DevelopmentDiagnostics.Dependence dependence =
           report.dependence().stream()
               .filter(row -> row.periodId().equals("eight_party_2010"))
               .findFirst()
@@ -127,13 +134,14 @@ class DevelopmentDiagnosticsIT {
 
       // Both sensitivity reruns describe the one validated period, and neither is a release value.
       assertEquals(1, report.centering().size());
-      var centering = report.centering().getFirst();
+      final se.swedishpolls.DevelopmentDiagnostics.CenteringShift centering =
+          report.centering().getFirst();
       assertEquals("eight_party_2010", centering.periodId());
       assertEquals(LocalDate.of(2021, 9, 20), centering.headlineDate());
       assertEquals(4278, centering.comparedDays());
       assertTrue(centering.maxDailyShiftPoints() >= centering.maxHeadlineShiftPoints());
       assertFalse(report.leaveOneInstituteOut().isEmpty());
-      for (var left : report.leaveOneInstituteOut()) {
+      for (se.swedishpolls.DevelopmentDiagnostics.LeftOut left : report.leaveOneInstituteOut()) {
         assertEquals("eight_party_2010", left.periodId());
         assertTrue(left.droppedPolls() > 0);
         assertEquals(

@@ -41,7 +41,7 @@ class DailyStateSpaceTest {
   }
 
   private static PollObservations.Batch batch(boolean fi, int days, String rows) {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         new Roster.CoveragePeriod(
             "test",
             START,
@@ -58,24 +58,24 @@ class DailyStateSpaceTest {
   @Test
   void firstPollUpdatesIndependentDiffuseOpinionAndHousePriorsForBothRosters() {
     for (boolean fi : List.of(false, true)) {
-      var batch = batch(fi, 30, row("Novus", 0, 0, "20"));
-      int dimension = batch.basis().getNumRows();
-      var value = new SimpleMatrix(dimension, 1);
+      final se.swedishpolls.PollObservations.Batch batch = batch(fi, 30, row("Novus", 0, 0, "20"));
+      final int dimension = batch.basis().getNumRows();
+      final org.ejml.simple.SimpleMatrix value = new SimpleMatrix(dimension, 1);
       value.fill(2);
-      var observation =
+      final se.swedishpolls.PollObservations.Observation observation =
           new PollObservations.Observation(
               batch.observations().getFirst().poll(),
               START,
               ModelValues.copyOf(value),
               ModelValues.copyOf(SimpleMatrix.identity(dimension).scale(2)),
               0);
-      var fit =
+      final se.swedishpolls.DailyStateSpace.Fit fit =
           DailyStateSpace.fit(
               replace(batch, observation),
               ELECTIONS,
               new DailyStateSpace.Parameters(0.01, Math.sqrt(2), 1));
       assertEquals(1, fit.days().size());
-      var day = fit.days().getFirst();
+      final se.swedishpolls.DailyStateSpace.Day day = fit.days().getFirst();
       assertEquals(START, day.date());
       // Scalar conjugate normal reference: the centered single institute observes x + h, prior
       // variance 4 + 2.
@@ -87,7 +87,7 @@ class DailyStateSpaceTest {
       assertEquals(-2.2086593040445903 * dimension, fit.logLikelihood(), 1e-12);
       // A single active institute carries the whole ensemble weight, so its centered effect is
       // exactly zero.
-      var cycle = fit.cycles().getFirst();
+      final se.swedishpolls.DailyStateSpace.Cycle cycle = fit.cycles().getFirst();
       assertEquals(List.of("Novus"), cycle.effects());
       assertEquals(List.of(1.0), cycle.weights());
       assertEquals(0, cycle.smoothedMean().normF());
@@ -100,7 +100,7 @@ class DailyStateSpaceTest {
     for (boolean fi : List.of(false, true)) {
       // Deliberately out of order. Two overlapping Novus windows share midpoint day 2; Sifo crosses
       // the election.
-      var batch =
+      final se.swedishpolls.PollObservations.Batch batch =
           batch(
               fi,
               200,
@@ -109,7 +109,8 @@ class DailyStateSpaceTest {
                   + row("Novus", 0, 4, "19")
                   + row("Sifo", 2, 2, "21")
                   + row("Novus", 100, 100, "18"));
-      var fit = DailyStateSpace.fit(batch, ELECTIONS, PARAMETERS);
+      final se.swedishpolls.DailyStateSpace.Fit fit =
+          DailyStateSpace.fit(batch, ELECTIONS, PARAMETERS);
       assertSame(batch, fit.batch());
       assertEquals(PARAMETERS, fit.parameters());
       assertEquals(101, fit.days().size());
@@ -121,19 +122,23 @@ class DailyStateSpaceTest {
           List.of(ELECTION.minusDays(1), START.plusDays(100)),
           fit.cycles().stream().map(DailyStateSpace.Cycle::end).toList());
       for (int t = 0; t < fit.days().size(); t++) {
-        var day = fit.days().get(t);
+        final se.swedishpolls.DailyStateSpace.Day day = fit.days().get(t);
         assertEquals(START.plusDays(t), day.date());
-        var filtered = dense(batch, ELECTIONS, day.date(), true, PARAMETERS);
-        var smoothed = dense(batch, ELECTIONS, day.date(), false, PARAMETERS);
+        final se.swedishpolls.DailyStateSpaceTest.Reference filtered =
+            dense(batch, ELECTIONS, day.date(), true, PARAMETERS);
+        final se.swedishpolls.DailyStateSpaceTest.Reference smoothed =
+            dense(batch, ELECTIONS, day.date(), false, PARAMETERS);
         assertMatrix(filtered.opinionMean(), day.filteredMean(), 1e-11);
         assertMatrix(filtered.opinionCovariance(), day.filteredCovariance(), 1e-11);
         assertMatrix(smoothed.opinionMean(), day.smoothedMean(), 1e-11);
         assertMatrix(smoothed.opinionCovariance(), day.smoothedCovariance(), 1e-11);
         assertEquals(smoothed.logLikelihood(), fit.logLikelihood(), 1e-10);
       }
-      for (var cycle : fit.cycles()) {
-        var filtered = dense(batch, ELECTIONS, cycle.end(), true, PARAMETERS);
-        var smoothed = dense(batch, ELECTIONS, cycle.end(), false, PARAMETERS);
+      for (se.swedishpolls.DailyStateSpace.Cycle cycle : fit.cycles()) {
+        final se.swedishpolls.DailyStateSpaceTest.Reference filtered =
+            dense(batch, ELECTIONS, cycle.end(), true, PARAMETERS);
+        final se.swedishpolls.DailyStateSpaceTest.Reference smoothed =
+            dense(batch, ELECTIONS, cycle.end(), false, PARAMETERS);
         assertEquals(List.of("Novus", "Sifo"), cycle.effects());
         assertEquals(List.of(0.5, 0.5), cycle.weights());
         assertMatrix(filtered.effectMean(), cycle.filteredMean(), 1e-11);
@@ -150,16 +155,17 @@ class DailyStateSpaceTest {
   void newCyclesResetHouseEffectsWhileTheOpinionStateCarriesAcrossTheElection() {
     // The two institutes swap their deviations at the election, leaving the ensemble reference
     // unchanged.
-    var rows = new StringBuilder();
+    final java.lang.StringBuilder rows = new StringBuilder();
     for (int week = 0; week < 20; week++)
       rows.append(row("Sifo", week * 7, week * 7 + 1, week * 7 < 100 ? "24" : "16"))
           .append(row("Novus", week * 7 + 2, week * 7 + 3, week * 7 + 2 < 100 ? "16" : "24"));
-    var fit = DailyStateSpace.fit(batch(false, 200, rows.toString()), ELECTIONS, PARAMETERS);
+    final se.swedishpolls.DailyStateSpace.Fit fit =
+        DailyStateSpace.fit(batch(false, 200, rows.toString()), ELECTIONS, PARAMETERS);
     assertEquals(2, fit.cycles().size());
     assertEquals(List.of("Novus", "Sifo"), fit.cycles().getFirst().effects());
     assertEquals(fit.cycles().getFirst().effects(), fit.cycles().get(1).effects());
-    var before = fit.cycles().getFirst().smoothedMean();
-    var after = fit.cycles().get(1).smoothedMean();
+    final se.swedishpolls.ModelValues before = fit.cycles().getFirst().smoothedMean();
+    final se.swedishpolls.ModelValues after = fit.cycles().get(1).smoothedMean();
     // Row 0 is the Novus effect and row 8 the Sifo effect in the first ilr coordinate, which
     // contrasts M with L.
     assertTrue(
@@ -170,7 +176,7 @@ class DailyStateSpaceTest {
         () -> "Effects after: " + after.get(0) + ", " + after.get(8));
     // The opinion state carries across the reset: the centered level does not jump on the election
     // day.
-    var day = (int) ChronoUnit.DAYS.between(START, ELECTION);
+    final int day = (int) ChronoUnit.DAYS.between(START, ELECTION);
     assertTrue(
         fit.days()
                 .get(day)
@@ -189,8 +195,8 @@ class DailyStateSpaceTest {
 
   @Test
   void sparseInstitutesShrinkTowardZeroWhileRepeatedOnesKeepTheirDeviation() {
-    var ensemble = new StringBuilder();
-    var novus = new StringBuilder();
+    final java.lang.StringBuilder ensemble = new StringBuilder();
+    final java.lang.StringBuilder novus = new StringBuilder();
     for (int week = 0; week < 12; week++) {
       ensemble
           .append(row("Sifo", week * 7, week * 7 + 1, "20"))
@@ -199,16 +205,17 @@ class DailyStateSpaceTest {
     }
     // A house scale near the per-poll observation noise makes the shrinkage of a single poll
     // visible.
-    var parameters = new DailyStateSpace.Parameters(0.003, 0.05, 1.5);
-    var many =
+    final se.swedishpolls.DailyStateSpace.Parameters parameters =
+        new DailyStateSpace.Parameters(0.003, 0.05, 1.5);
+    final se.swedishpolls.DailyStateSpace.Fit many =
         DailyStateSpace.fit(batch(false, 100, ensemble + novus.toString()), ELECTIONS, parameters);
-    var once =
+    final se.swedishpolls.DailyStateSpace.Fit once =
         DailyStateSpace.fit(
             batch(false, 100, ensemble + row("Novus", 2, 3, "26")), ELECTIONS, parameters);
-    int index = many.cycles().getFirst().effects().indexOf("Novus");
+    final int index = many.cycles().getFirst().effects().indexOf("Novus");
     assertEquals(index, once.cycles().getFirst().effects().indexOf("Novus"));
-    double repeatedEffect = many.cycles().getFirst().smoothedMean().get(index * 8);
-    double singleEffect = once.cycles().getFirst().smoothedMean().get(index * 8);
+    final double repeatedEffect = many.cycles().getFirst().smoothedMean().get(index * 8);
+    final double singleEffect = once.cycles().getFirst().smoothedMean().get(index * 8);
     assertTrue(repeatedEffect > 0.05, () -> "Repeated Novus effect: " + repeatedEffect);
     assertTrue(
         singleEffect > 0 && singleEffect < repeatedEffect / 2,
@@ -219,8 +226,8 @@ class DailyStateSpaceTest {
   void methodErasSplitOneInstituteAndShareTheContinuationWithoutExtraEnsembleWeight() {
     // Demoskop's era changes with its publication date; Inizio continues the same era under a new
     // name.
-    var start = LocalDate.of(2019, 6, 1);
-    var period =
+    final java.time.LocalDate start = LocalDate.of(2019, 6, 1);
+    final se.swedishpolls.Roster.CoveragePeriod period =
         new Roster.CoveragePeriod(
             "era",
             start,
@@ -229,7 +236,7 @@ class DailyStateSpaceTest {
             false,
             false,
             "https://example.invalid");
-    var rows = new StringBuilder();
+    final java.lang.StringBuilder rows = new StringBuilder();
     for (int week = 0; week < 6; week++) {
       rows.append(era("Demoskop", start.plusDays(week * 7L), "18"));
       rows.append(era("Demoskop", start.plusDays(200 + week * 7), "24"));
@@ -237,12 +244,12 @@ class DailyStateSpaceTest {
       rows.append(era("Novus", start.plusDays(week * 7 + 3), "21"));
       rows.append(era("Novus", start.plusDays(203 + week * 7), "21"));
     }
-    var fit =
+    final se.swedishpolls.DailyStateSpace.Fit fit =
         DailyStateSpace.fit(
             PollObservations.prepare(period, PollCsv.parse(PollCsvTest.csv(rows.toString()))),
             List.of(),
             PARAMETERS);
-    var cycle = fit.cycles().getFirst();
+    final se.swedishpolls.DailyStateSpace.Cycle cycle = fit.cycles().getFirst();
     assertEquals(
         List.of("Novus", "demoskop_before_2019_11", "inizio_continuation"), cycle.effects());
     // Three institutes: Demoskop splits its 1/3 over two eras, and Inizio adds its own 1/3 to the
@@ -275,24 +282,26 @@ class DailyStateSpaceTest {
 
   @Test
   void centeringLeavesTheWeightedEnsembleEffectAtZeroWithASingularPositiveSemidefiniteCovariance() {
-    var rows = new StringBuilder();
+    final java.lang.StringBuilder rows = new StringBuilder();
     for (int week = 0; week < 6; week++)
       rows.append(row("Sifo", week * 7, week * 7 + 1, "24"))
           .append(row("Novus", week * 7 + 2, week * 7 + 3, "18"))
           .append(row("Skop", week * 7 + 4, week * 7 + 5, "20"));
-    var cycle =
+    final se.swedishpolls.DailyStateSpace.Cycle cycle =
         DailyStateSpace.fit(batch(false, 100, rows.toString()), ELECTIONS, PARAMETERS)
             .cycles()
             .getFirst();
-    var weights = new SimpleMatrix(8, cycle.smoothedMean().getNumRows());
+    final org.ejml.simple.SimpleMatrix weights =
+        new SimpleMatrix(8, cycle.smoothedMean().getNumRows());
     for (int effect = 0; effect < cycle.weights().size(); effect++)
       for (int i = 0; i < 8; i++) weights.set(i, effect * 8 + i, cycle.weights().get(effect));
     assertTrue(weights.mult(cycle.smoothedMean().copy()).elementMaxAbs() < 1e-12);
     assertTrue(
         weights.mult(cycle.smoothedCovariance().copy()).mult(weights.transpose()).elementMaxAbs()
             < 1e-12);
-    var eigenvalues = cycle.smoothedCovariance().eig().getEigenvalues();
-    double largest =
+    final java.util.List<org.ejml.data.Complex_F64> eigenvalues =
+        cycle.smoothedCovariance().eig().getEigenvalues();
+    final double largest =
         eigenvalues.stream().mapToDouble(org.ejml.data.Complex_F64::getReal).max().orElseThrow();
     assertTrue(
         eigenvalues.stream()
@@ -305,7 +314,7 @@ class DailyStateSpaceTest {
   @Test
   void cyclesWithoutEligiblePollsHoldNoHouseEffects() {
     // The period opens well before the election, so its first cycle sees no poll at all.
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         new Roster.CoveragePeriod(
             "gap",
             START.minusYears(2),
@@ -314,9 +323,10 @@ class DailyStateSpaceTest {
             false,
             false,
             "https://example.invalid");
-    var batch =
+    final se.swedishpolls.PollObservations.Batch batch =
         PollObservations.prepare(period, PollCsv.parse(PollCsvTest.csv(row("Novus", 0, 1, "20"))));
-    var fit = DailyStateSpace.fit(batch, List.of(START.minusYears(1)), PARAMETERS);
+    final se.swedishpolls.DailyStateSpace.Fit fit =
+        DailyStateSpace.fit(batch, List.of(START.minusYears(1)), PARAMETERS);
     assertEquals(2, fit.cycles().size());
     assertEquals(List.of(), fit.cycles().getFirst().effects());
     assertEquals(0, fit.cycles().getFirst().smoothedMean().getNumRows());
@@ -328,12 +338,12 @@ class DailyStateSpaceTest {
 
   @Test
   void separateCoveragePeriodsRestartTheDiffusePriorAndCarryNoHouseEffects() {
-    var rows = new StringBuilder();
+    final java.lang.StringBuilder rows = new StringBuilder();
     for (int week = 0; week < 6; week++)
       rows.append(row("Sifo", week * 7, week * 7 + 1, "24"))
           .append(row("Novus", week * 7 + 2, week * 7 + 3, "18"));
-    var whole = batch(false, 100, rows.toString());
-    var later =
+    final se.swedishpolls.PollObservations.Batch whole = batch(false, 100, rows.toString());
+    final se.swedishpolls.Roster.CoveragePeriod later =
         new Roster.CoveragePeriod(
             "later",
             START.plusDays(22),
@@ -342,8 +352,10 @@ class DailyStateSpaceTest {
             false,
             false,
             "https://example.invalid");
-    var tail = PollObservations.prepare(later, PollCsv.parse(PollCsvTest.csv(rows.toString())));
-    var fit = DailyStateSpace.fit(tail, ELECTIONS, PARAMETERS);
+    final se.swedishpolls.PollObservations.Batch tail =
+        PollObservations.prepare(later, PollCsv.parse(PollCsvTest.csv(rows.toString())));
+    final se.swedishpolls.DailyStateSpace.Fit fit =
+        DailyStateSpace.fit(tail, ELECTIONS, PARAMETERS);
     assertEquals(START.plusDays(22), fit.days().getFirst().date());
     assertEquals(0, fit.days().getFirst().filteredMean().normF());
     // Nothing carries over: the opinion prior is 4 I and the two equally weighted house priors add
@@ -365,7 +377,7 @@ class DailyStateSpaceTest {
   @Test
   void theLikelihoodOnlyPathReturnsExactlyTheRetainedFitsLikelihoodAndRejectsTheSameInputs() {
     for (boolean fi : List.of(false, true)) {
-      var batch =
+      final se.swedishpolls.PollObservations.Batch batch =
           batch(
               fi,
               200,
@@ -374,13 +386,14 @@ class DailyStateSpaceTest {
                   + row("Novus", 0, 4, "19")
                   + row("Sifo", 2, 2, "21")
                   + row("Novus", 100, 100, "18"));
-      for (var parameters : List.of(PARAMETERS, new DailyStateSpace.Parameters(0, 0.05, 1)))
+      for (se.swedishpolls.DailyStateSpace.Parameters parameters :
+          List.of(PARAMETERS, new DailyStateSpace.Parameters(0, 0.05, 1)))
         assertEquals(
             DailyStateSpace.fit(batch, ELECTIONS, parameters).logLikelihood(),
             DailyStateSpace.logLikelihood(batch, ELECTIONS, parameters),
             0);
     }
-    var batch = batch(false, 30, row("Novus", 0, 0, "20"));
+    final se.swedishpolls.PollObservations.Batch batch = batch(false, 30, row("Novus", 0, 0, "20"));
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -396,7 +409,7 @@ class DailyStateSpaceTest {
 
   @Test
   void rejectsInvalidParametersElectionOrderEmptyBatchesAndInvalidNumericsWithoutRepair() {
-    var batch = batch(false, 30, row("Novus", 0, 0, "20"));
+    final se.swedishpolls.PollObservations.Batch batch = batch(false, 30, row("Novus", 0, 0, "20"));
     for (double value : new double[] {-1, Double.NaN, Double.POSITIVE_INFINITY})
       assertThrows(
           IllegalArgumentException.class,
@@ -414,7 +427,7 @@ class DailyStateSpaceTest {
               DailyStateSpace.fit(
                   batch, ELECTIONS, new DailyStateSpace.Parameters(0.003, 0.5, value)));
     }
-    for (var elections :
+    for (java.util.List<java.time.LocalDate> elections :
         List.of(
             List.of(ELECTION, ELECTION),
             List.of(ELECTION, ELECTION.minusDays(1)),
@@ -424,23 +437,24 @@ class DailyStateSpaceTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> DailyStateSpace.fit(batch(false, 30, ""), ELECTIONS, PARAMETERS));
-    var observation = batch.observations().getFirst();
-    int dimension = observation.ilr().getNumRows();
-    var asymmetric = SimpleMatrix.identity(dimension);
+    final se.swedishpolls.PollObservations.Observation observation =
+        batch.observations().getFirst();
+    final int dimension = observation.ilr().getNumRows();
+    final org.ejml.simple.SimpleMatrix asymmetric = SimpleMatrix.identity(dimension);
     asymmetric.set(0, 1, 0.1);
-    var indefinite = SimpleMatrix.identity(dimension);
+    final org.ejml.simple.SimpleMatrix indefinite = SimpleMatrix.identity(dimension);
     indefinite.set(0, 1, 2);
     indefinite.set(1, 0, 2);
-    var nonfinite = SimpleMatrix.identity(dimension);
+    final org.ejml.simple.SimpleMatrix nonfinite = SimpleMatrix.identity(dimension);
     nonfinite.set(0, 0, Double.NaN);
-    for (var covariance :
+    for (org.ejml.simple.SimpleMatrix covariance :
         List.of(
             asymmetric,
             indefinite,
             nonfinite,
             new SimpleMatrix(dimension, dimension),
             SimpleMatrix.identity(dimension - 1))) {
-      var invalid =
+      final se.swedishpolls.PollObservations.Batch invalid =
           replace(
               batch,
               new PollObservations.Observation(
@@ -449,10 +463,11 @@ class DailyStateSpaceTest {
           IllegalArgumentException.class,
           () -> DailyStateSpace.fit(invalid, ELECTIONS, PARAMETERS));
     }
-    var nonfiniteMean = observation.ilr().copy();
+    final org.ejml.simple.SimpleMatrix nonfiniteMean = observation.ilr().copy();
     nonfiniteMean.set(0, Double.POSITIVE_INFINITY);
-    for (var mean : List.of(nonfiniteMean, new SimpleMatrix(dimension, 2))) {
-      var invalid =
+    for (org.ejml.simple.SimpleMatrix mean :
+        List.of(nonfiniteMean, new SimpleMatrix(dimension, 2))) {
+      final se.swedishpolls.PollObservations.Batch invalid =
           replace(
               batch,
               new PollObservations.Observation(
@@ -465,8 +480,8 @@ class DailyStateSpaceTest {
           IllegalArgumentException.class,
           () -> DailyStateSpace.fit(invalid, ELECTIONS, PARAMETERS));
     }
-    for (var date : List.of(START.minusDays(1), START.plusDays(31))) {
-      var invalid =
+    for (java.time.LocalDate date : List.of(START.minusDays(1), START.plusDays(31))) {
+      final se.swedishpolls.PollObservations.Batch invalid =
           replace(
               batch,
               new PollObservations.Observation(
@@ -487,22 +502,28 @@ class DailyStateSpaceTest {
 
   @Test
   void zeroWalkIsAStaticFitAndReorderingInputsDoesNotChangeResultsOrMutateTheBatch() {
-    var batch = batch(true, 30, row("Novus", 0, 0, "20") + row("Sifo", 2, 4, "18"));
-    var original = batch.observations().getFirst().ilr().copy();
-    var covariance = batch.observations().getFirst().covariance().copy();
-    var parameters = new DailyStateSpace.Parameters(0, 0.5, 2);
-    var fit = DailyStateSpace.fit(batch, ELECTIONS, parameters);
-    var reversed =
+    final se.swedishpolls.PollObservations.Batch batch =
+        batch(true, 30, row("Novus", 0, 0, "20") + row("Sifo", 2, 4, "18"));
+    final org.ejml.simple.SimpleMatrix original = batch.observations().getFirst().ilr().copy();
+    final org.ejml.simple.SimpleMatrix covariance =
+        batch.observations().getFirst().covariance().copy();
+    final se.swedishpolls.DailyStateSpace.Parameters parameters =
+        new DailyStateSpace.Parameters(0, 0.5, 2);
+    final se.swedishpolls.DailyStateSpace.Fit fit =
+        DailyStateSpace.fit(batch, ELECTIONS, parameters);
+    final se.swedishpolls.PollObservations.Batch reversed =
         new PollObservations.Batch(
             batch.period(),
             batch.components(),
             batch.basis(),
             batch.observations().reversed(),
             batch.exclusions());
-    var rerun = DailyStateSpace.fit(reversed, ELECTIONS, parameters);
-    var reference = dense(batch, ELECTIONS, START, false, parameters);
+    final se.swedishpolls.DailyStateSpace.Fit rerun =
+        DailyStateSpace.fit(reversed, ELECTIONS, parameters);
+    final se.swedishpolls.DailyStateSpaceTest.Reference reference =
+        dense(batch, ELECTIONS, START, false, parameters);
     for (int i = 0; i < fit.days().size(); i++) {
-      var day = fit.days().get(i);
+      final se.swedishpolls.DailyStateSpace.Day day = fit.days().get(i);
       assertMatrix(reference.opinionMean(), day.smoothedMean(), 1e-11);
       assertMatrix(reference.opinionCovariance(), day.smoothedCovariance(), 1e-11);
       assertMatrix(day.filteredMean(), rerun.days().get(i).filteredMean(), 0);
@@ -542,19 +563,19 @@ class DailyStateSpaceTest {
           + row("Novus", 100, 100, "18");
 
   private static List<Scenario> scenarios() {
-    var ensemble = new StringBuilder();
+    final java.lang.StringBuilder ensemble = new StringBuilder();
     for (int week = 0; week < 12; week++)
       ensemble
           .append(row("Sifo", week * 7, week * 7 + 1, "20"))
           .append(row("Skop", week * 7 + 4, week * 7 + 5, "20"));
-    var eras = new StringBuilder();
-    var eraStart = LocalDate.of(2019, 6, 1);
+    final java.lang.StringBuilder eras = new StringBuilder();
+    final java.time.LocalDate eraStart = LocalDate.of(2019, 6, 1);
     for (int week = 0; week < 6; week++)
       eras.append(era("Demoskop", eraStart.plusDays(week * 7L), "18"))
           .append(era("Demoskop", eraStart.plusDays(200 + week * 7), "24"))
           .append(era("Inizio", eraStart.plusDays(210 + week * 7), "24"))
           .append(era("Novus", eraStart.plusDays(week * 7 + 3), "21"));
-    var eraPeriod =
+    final se.swedishpolls.Roster.CoveragePeriod eraPeriod =
         new Roster.CoveragePeriod(
             "era",
             eraStart,
@@ -645,10 +666,11 @@ class DailyStateSpaceTest {
 
   @Test
   void theCovarianceUpdateHoldsItsPinnedNumericsOnEveryRegressionScenario() {
-    for (var scenario : scenarios()) {
-      var batch = scenario.batch();
-      var fit = DailyStateSpace.fit(batch, scenario.elections(), scenario.parameters());
-      var pinned = scenario.pinned();
+    for (se.swedishpolls.DailyStateSpaceTest.Scenario scenario : scenarios()) {
+      final se.swedishpolls.PollObservations.Batch batch = scenario.batch();
+      final se.swedishpolls.DailyStateSpace.Fit fit =
+          DailyStateSpace.fit(batch, scenario.elections(), scenario.parameters());
+      final se.swedishpolls.DailyStateSpaceTest.Pinned pinned = scenario.pinned();
       // The tuning gate compares the two paths with Double.compare, so they must agree bit for bit.
       assertEquals(
           fit.logLikelihood(),
@@ -738,32 +760,33 @@ class DailyStateSpaceTest {
       LocalDate date,
       boolean filtered,
       DailyStateSpace.Parameters parameters) {
-    var start = batch.period().effectiveFrom();
-    int dimension = batch.basis().getNumRows();
-    var used =
+    final java.time.LocalDate start = batch.period().effectiveFrom();
+    final int dimension = batch.basis().getNumRows();
+    final java.util.List<se.swedishpolls.PollObservations.Observation> used =
         batch.observations().stream()
             .filter(o -> !filtered || !o.midpoint().isAfter(date))
             .toList();
-    var identities = new ArrayList<String>();
-    for (var observation : batch.observations()) {
-      var identity = identity(observation, start, elections);
+    final java.util.ArrayList<java.lang.String> identities = new ArrayList<String>();
+    for (se.swedishpolls.PollObservations.Observation observation : batch.observations()) {
+      final java.lang.String identity = identity(observation, start, elections);
       if (!identities.contains(identity)) identities.add(identity);
     }
-    var weights = weights(batch, elections, cycle(date, start, elections));
-    int latent = dimension * (1 + identities.size());
-    var prior = new SimpleMatrix(latent, latent);
+    final java.util.Map<java.lang.String, java.lang.Double> weights =
+        weights(batch, elections, cycle(date, start, elections));
+    final int latent = dimension * (1 + identities.size());
+    final org.ejml.simple.SimpleMatrix prior = new SimpleMatrix(latent, latent);
     for (int i = 0; i < dimension; i++)
       prior.set(i, i, 4 + parameters.walkVariance() * ChronoUnit.DAYS.between(start, date));
     for (int i = dimension; i < latent; i++)
       prior.set(i, i, parameters.houseScale() * parameters.houseScale());
-    int size = used.size() * dimension;
-    var joint = new SimpleMatrix(size, size);
-    var cross = new SimpleMatrix(latent, size);
-    var values = new SimpleMatrix(size, 1);
+    final int size = used.size() * dimension;
+    final org.ejml.simple.SimpleMatrix joint = new SimpleMatrix(size, size);
+    final org.ejml.simple.SimpleMatrix cross = new SimpleMatrix(latent, size);
+    final org.ejml.simple.SimpleMatrix values = new SimpleMatrix(size, 1);
     for (int i = 0; i < used.size(); i++) {
-      var observation = used.get(i);
-      long t = ChronoUnit.DAYS.between(start, observation.midpoint());
-      int effect = identities.indexOf(identity(observation, start, elections));
+      final se.swedishpolls.PollObservations.Observation observation = used.get(i);
+      final long t = ChronoUnit.DAYS.between(start, observation.midpoint());
+      final int effect = identities.indexOf(identity(observation, start, elections));
       values.insertIntoThis(i * dimension, 0, observation.ilr().copy());
       cross.insertIntoThis(
           0,
@@ -779,9 +802,9 @@ class DailyStateSpaceTest {
           SimpleMatrix.identity(dimension)
               .scale(parameters.houseScale() * parameters.houseScale()));
       for (int j = 0; j < used.size(); j++) {
-        var other = used.get(j);
-        long s = ChronoUnit.DAYS.between(start, other.midpoint());
-        var block =
+        final se.swedishpolls.PollObservations.Observation other = used.get(j);
+        final long s = ChronoUnit.DAYS.between(start, other.midpoint());
+        org.ejml.simple.SimpleMatrix block =
             SimpleMatrix.identity(dimension).scale(4 + parameters.walkVariance() * Math.min(t, s));
         if (identity(other, start, elections).equals(identity(observation, start, elections)))
           block =
@@ -793,11 +816,11 @@ class DailyStateSpaceTest {
         joint.insertIntoThis(i * dimension, j * dimension, block);
       }
     }
-    var mean = new SimpleMatrix(latent, 1);
-    var covariance = prior;
+    org.ejml.simple.SimpleMatrix mean = new SimpleMatrix(latent, 1);
+    org.ejml.simple.SimpleMatrix covariance = prior;
     double logLikelihood = 0;
     if (size > 0) {
-      var inverse = joint.invert();
+      final org.ejml.simple.SimpleMatrix inverse = joint.invert();
       mean = cross.mult(inverse).mult(values);
       covariance = prior.minus(cross.mult(inverse).mult(cross.transpose()));
       logLikelihood =
@@ -808,11 +831,12 @@ class DailyStateSpaceTest {
     }
     // The centering transform maps the latent vector onto the centered opinion and centered cycle
     // effects.
-    var active = weights.keySet().stream().toList();
-    var transform = new SimpleMatrix(dimension * (1 + active.size()), latent);
+    final java.util.List<java.lang.String> active = weights.keySet().stream().toList();
+    final org.ejml.simple.SimpleMatrix transform =
+        new SimpleMatrix(dimension * (1 + active.size()), latent);
     for (int i = 0; i < dimension; i++) transform.set(i, i, 1);
     for (int e = 0; e < active.size(); e++) {
-      int column = dimension * (1 + identities.indexOf(active.get(e)));
+      final int column = dimension * (1 + identities.indexOf(active.get(e)));
       for (int i = 0; i < dimension; i++) {
         transform.set(i, column + i, weights.get(active.get(e)));
         for (int f = 0; f < active.size(); f++)
@@ -820,9 +844,10 @@ class DailyStateSpaceTest {
               dimension * (1 + f) + i, column + i, (e == f ? 1 : 0) - weights.get(active.get(e)));
       }
     }
-    var centeredMean = transform.mult(mean);
-    var centeredCovariance = transform.mult(covariance).mult(transform.transpose());
-    int effects = dimension * active.size();
+    final org.ejml.simple.SimpleMatrix centeredMean = transform.mult(mean);
+    final org.ejml.simple.SimpleMatrix centeredCovariance =
+        transform.mult(covariance).mult(transform.transpose());
+    final int effects = dimension * active.size();
     return new Reference(
         centeredMean.extractMatrix(0, dimension, 0, 1),
         centeredCovariance.extractMatrix(0, dimension, 0, dimension),
@@ -853,15 +878,17 @@ class DailyStateSpaceTest {
    */
   private static Map<String, Double> weights(
       PollObservations.Batch batch, List<LocalDate> elections, int cycle) {
-    var start = batch.period().effectiveFrom();
-    var eras = new TreeMap<String, TreeSet<String>>();
-    for (var observation : batch.observations())
+    final java.time.LocalDate start = batch.period().effectiveFrom();
+    final java.util.TreeMap<java.lang.String, java.util.TreeSet<java.lang.String>> eras =
+        new TreeMap<String, TreeSet<String>>();
+    for (se.swedishpolls.PollObservations.Observation observation : batch.observations())
       if (cycle(observation.midpoint(), start, elections) == cycle)
         eras.computeIfAbsent(observation.poll().institute(), institute -> new TreeSet<>())
             .add(identity(observation, start, elections));
-    var weights = new TreeMap<String, Double>();
-    for (var institute : eras.values())
-      for (var era : institute)
+    final java.util.TreeMap<java.lang.String, java.lang.Double> weights =
+        new TreeMap<String, Double>();
+    for (java.util.TreeSet<java.lang.String> institute : eras.values())
+      for (java.lang.String era : institute)
         weights.merge(era, 1.0 / (eras.size() * institute.size()), Double::sum);
     return new LinkedHashMap<>(weights);
   }

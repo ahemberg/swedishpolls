@@ -9,10 +9,11 @@ class PredictiveComparisonTest {
   void usesPairedTemporalStandardErrorAndStrictBaselineImprovement() {
     // Candidate-reference differences: four -1s followed by four +1s.
     // Bartlett lag-3 long-run variance = 1 + 2*(.75*.625 + .5*.25 + .25*-.125) = 2.125.
-    double[] candidate = {9, 9, 9, 9, 11, 11, 11, 11};
-    double[] baseline = {8, 8, 8, 8, 8, 8, 8, 8};
-    double[] reference = {10, 10, 10, 10, 10, 10, 10, 10};
-    var result = PredictiveComparison.evaluate(candidate, baseline, reference);
+    final double[] candidate = {9, 9, 9, 9, 11, 11, 11, 11};
+    final double[] baseline = {8, 8, 8, 8, 8, 8, 8, 8};
+    final double[] reference = {10, 10, 10, 10, 10, 10, 10, 10};
+    final se.swedishpolls.PredictiveComparison.Result result =
+        PredictiveComparison.evaluate(candidate, baseline, reference);
     assertEquals(0.5153882032022076, result.pairedStandardError(), 1e-14);
     assertEquals(0, result.referenceDifference());
     assertTrue(result.passes());

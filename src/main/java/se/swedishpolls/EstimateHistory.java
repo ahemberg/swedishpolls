@@ -61,9 +61,10 @@ public final class EstimateHistory {
   /** The registered publication resolution. */
   public static Publication publication(Path file) {
     try {
-      var root = JSON.readTree(Files.readAllBytes(file));
-      var publication = root.get("publication");
-      var decimals = publication == null ? null : publication.get("decimals");
+      final tools.jackson.databind.JsonNode root = JSON.readTree(Files.readAllBytes(file));
+      final tools.jackson.databind.JsonNode publication = root.get("publication");
+      final tools.jackson.databind.JsonNode decimals =
+          publication == null ? null : publication.get("decimals");
       if (decimals == null || decimals.isNull())
         throw new IllegalArgumentException(
             "Incomplete publication rules in " + file + ": missing decimals");
@@ -102,8 +103,10 @@ public final class EstimateHistory {
 
     /** The point estimate of every component: the drawn mean, without its intervals. */
     public Map<String, Double> shares() {
-      var shares = new LinkedHashMap<String, Double>();
-      for (var component : components.entrySet())
+      final java.util.LinkedHashMap<java.lang.String, java.lang.Double> shares =
+          new LinkedHashMap<String, Double>();
+      for (java.util.Map.Entry<java.lang.String, se.swedishpolls.EstimateHistory.Estimate>
+          component : components.entrySet())
         shares.put(component.getKey(), component.getValue().mean());
       return ordered(shares);
     }
@@ -243,19 +246,21 @@ public final class EstimateHistory {
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules rules,
       DailyStateSpace.Centering centering) {
-    var development = CoverageValidation.development(polls, rules);
-    var support = CoverageValidation.support(period, development, rules);
-    var whole =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> development =
+        CoverageValidation.development(polls, rules);
+    final se.swedishpolls.CoverageValidation.Support support =
+        CoverageValidation.support(period, development, rules);
+    final se.swedishpolls.PollObservations.Batch whole =
         PollObservations.prepare(CoverageValidation.supported(period, support), development);
-    var observations =
+    final java.util.List<se.swedishpolls.PollObservations.Observation> observations =
         whole.observations().stream()
             .sorted(Comparator.comparing(PollObservations.Observation::midpoint))
             .toList();
-    var spans = new ArrayList<Span>();
+    final java.util.ArrayList<se.swedishpolls.EstimateHistory.Span> spans = new ArrayList<Span>();
     int start = 0;
     int opening = 0;
     for (int i = 1; i <= observations.size(); i++) {
-      int gap =
+      final int gap =
           i == observations.size()
               ? 0
               : (int)
@@ -278,8 +283,9 @@ public final class EstimateHistory {
       DailyStateSpace.Parameters parameters,
       int gapDays,
       DailyStateSpace.Centering centering) {
-    var polls = observations.stream().map(PollObservations.Observation::poll).toList();
-    var window =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+        observations.stream().map(PollObservations.Observation::poll).toList();
+    final se.swedishpolls.Roster.CoveragePeriod window =
         new Roster.CoveragePeriod(
             period.id(),
             polls.stream()
@@ -291,7 +297,7 @@ public final class EstimateHistory {
             period.individualFi(),
             period.supportValidated(),
             period.decisionUrl());
-    var batch = PollObservations.prepare(window, polls);
+    final se.swedishpolls.PollObservations.Batch batch = PollObservations.prepare(window, polls);
     return new Span(batch, DailyStateSpace.fit(batch, elections, parameters, centering), gapDays);
   }
 
@@ -310,11 +316,13 @@ public final class EstimateHistory {
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules rules,
       JointUncertainty.Rules draws) {
-    var fitted = fitted(period, polls, elections, parameters, rules);
-    var segments = new ArrayList<Segment>();
-    for (var span : fitted.spans()) {
-      var basis = PollObservations.transposedBasis(span.batch());
-      var days =
+    final se.swedishpolls.EstimateHistory.Fitted fitted =
+        fitted(period, polls, elections, parameters, rules);
+    final java.util.ArrayList<se.swedishpolls.EstimateHistory.Segment> segments =
+        new ArrayList<Segment>();
+    for (se.swedishpolls.EstimateHistory.Span span : fitted.spans()) {
+      final double[][] basis = PollObservations.transposedBasis(span.batch());
+      final java.util.List<se.swedishpolls.EstimateHistory.Day> days =
           span.fit().days().parallelStream()
               .map(
                   day ->
@@ -332,8 +340,9 @@ public final class EstimateHistory {
    * of the mean state beside them does not, because two numbers cannot both be the point estimate.
    */
   private static Day published(JointUncertainty.Day day) {
-    var components = new LinkedHashMap<String, Estimate>();
-    for (var component : day.components())
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.EstimateHistory.Estimate>
+        components = new LinkedHashMap<String, Estimate>();
+    for (se.swedishpolls.JointUncertainty.Component component : day.components())
       components.put(component.component(), new Estimate(component.mean(), component.intervals()));
     return new Day(day.date(), components);
   }
@@ -345,8 +354,9 @@ public final class EstimateHistory {
    */
   static List<Boundary> boundaries(
       Roster.CoveragePeriod period, Fitted fitted, CoverageValidation.Rules rules) {
-    var boundaries = new ArrayList<Boundary>();
-    for (var span : fitted.spans()) {
+    final java.util.ArrayList<se.swedishpolls.EstimateHistory.Boundary> boundaries =
+        new ArrayList<Boundary>();
+    for (se.swedishpolls.EstimateHistory.Span span : fitted.spans()) {
       boundaries.add(opening(period, span.fit().days().getFirst().date(), span.gapDays(), rules));
       for (int cycle = 1; cycle < span.fit().cycles().size(); cycle++)
         if (!span.fit()
@@ -422,9 +432,11 @@ public final class EstimateHistory {
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules rules,
       Function<DailyStateSpace.Day, ModelValues> state) {
-    var compositions = new ArrayList<Composition>();
-    for (var span : fitted(period, polls, elections, parameters, rules).spans())
-      for (var day : span.fit().days())
+    final java.util.ArrayList<se.swedishpolls.EstimateHistory.Composition> compositions =
+        new ArrayList<Composition>();
+    for (se.swedishpolls.EstimateHistory.Span span :
+        fitted(period, polls, elections, parameters, rules).spans())
+      for (se.swedishpolls.DailyStateSpace.Day day : span.fit().days())
         compositions.add(
             new Composition(day.date(), PollObservations.shares(span.batch(), state.apply(day))));
     return List.copyOf(compositions);
@@ -442,23 +454,29 @@ public final class EstimateHistory {
       CoverageValidation.Report coverage,
       JointUncertainty.Rules draws,
       Publication publication) {
-    var evidence = new LinkedHashMap<String, CoverageValidation.Validated>();
-    for (var validated : coverage.periods()) evidence.put(validated.periodId(), validated);
-    var reasons = new ArrayList<>(coverage.gate().reasons());
-    var segments = new ArrayList<Segment>();
-    var boundaries = new ArrayList<Boundary>();
-    var lastFieldwork = new LinkedHashMap<String, LocalDate>();
-    var published = new LinkedHashSet<String>();
-    for (var period : periods) {
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.CoverageValidation.Validated>
+        evidence = new LinkedHashMap<String, CoverageValidation.Validated>();
+    for (se.swedishpolls.CoverageValidation.Validated validated : coverage.periods())
+      evidence.put(validated.periodId(), validated);
+    final java.util.ArrayList<java.lang.String> reasons =
+        new ArrayList<>(coverage.gate().reasons());
+    final java.util.ArrayList<se.swedishpolls.EstimateHistory.Segment> segments =
+        new ArrayList<Segment>();
+    final java.util.ArrayList<se.swedishpolls.EstimateHistory.Boundary> boundaries =
+        new ArrayList<Boundary>();
+    final java.util.LinkedHashMap<java.lang.String, java.time.LocalDate> lastFieldwork =
+        new LinkedHashMap<String, LocalDate>();
+    final java.util.LinkedHashSet<java.lang.String> published = new LinkedHashSet<String>();
+    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
       if (!period.supportValidated()) continue;
-      var validated = evidence.get(period.id());
+      final se.swedishpolls.CoverageValidation.Validated validated = evidence.get(period.id());
       if (validated == null)
         throw new IllegalArgumentException("No recorded coverage evidence for " + period.id());
       if (!validated.supported()) {
         reasons.add(period.id() + ": coverage evidence failed, so no history is published");
         continue;
       }
-      var result =
+      final se.swedishpolls.EstimateHistory.Estimated result =
           estimate(period, polls, elections, validated.parameters(), coverage.rules(), draws);
       // The published curve and the recorded evidence must describe the same supported window.
       if (!result.support().from().equals(validated.support().from())
@@ -471,10 +489,11 @@ public final class EstimateHistory {
       published.addAll(period.roster());
       published.add(period.individualFi() ? "RESIDUAL" : "OTHER");
     }
-    var unavailable = new ArrayList<Unavailable>();
-    var seen = new LinkedHashSet<String>();
-    for (var period : periods)
-      for (var component : period.roster())
+    final java.util.ArrayList<se.swedishpolls.EstimateHistory.Unavailable> unavailable =
+        new ArrayList<Unavailable>();
+    final java.util.LinkedHashSet<java.lang.String> seen = new LinkedHashSet<String>();
+    for (se.swedishpolls.Roster.CoveragePeriod period : periods)
+      for (java.lang.String component : period.roster())
         if (!published.contains(component) && seen.add(component))
           unavailable.add(new Unavailable(component, NO_VALIDATED_PERIOD));
     return new History(
@@ -493,10 +512,10 @@ public final class EstimateHistory {
    */
   private static Headline headline(List<Segment> segments, Map<String, LocalDate> lastFieldwork) {
     Segment latest = null;
-    for (var segment : segments)
+    for (se.swedishpolls.EstimateHistory.Segment segment : segments)
       if (latest == null || segment.to().isAfter(latest.to())) latest = segment;
     if (latest == null) return null;
-    var last = latest.days().getLast();
+    final se.swedishpolls.EstimateHistory.Day last = latest.days().getLast();
     return new Headline(
         latest.periodId(), lastFieldwork.get(latest.periodId()), last.date(), last.shares());
   }
@@ -508,20 +527,21 @@ public final class EstimateHistory {
    */
   public static Change change(History history, String periodId, LocalDate to, int days) {
     if (days < 1) throw new IllegalArgumentException("A change spans at least one day");
-    var from = to.minusDays(days);
-    var target = segment(history, periodId, to);
+    final java.time.LocalDate from = to.minusDays(days);
+    final se.swedishpolls.EstimateHistory.Segment target = segment(history, periodId, to);
     if (target == null) return new Change(false, from, to, Map.of(), DATE_UNSUPPORTED);
-    var comparison = segment(history, periodId, from);
+    final se.swedishpolls.EstimateHistory.Segment comparison = segment(history, periodId, from);
     if (comparison == null) return new Change(false, from, to, Map.of(), COMPARISON_UNSUPPORTED);
     if (!comparison.from().equals(target.from())
         || history.boundaries().stream()
             .filter(boundary -> boundary.periodId().equals(periodId))
             .anyMatch(boundary -> boundary.date().isAfter(from) && !boundary.date().isAfter(to)))
       return new Change(false, from, to, Map.of(), ACROSS_BOUNDARY);
-    var before = day(comparison, from).shares();
-    var after = day(target, to).shares();
-    var points = new LinkedHashMap<String, Double>();
-    for (var component : after.entrySet())
+    final java.util.Map<java.lang.String, java.lang.Double> before = day(comparison, from).shares();
+    final java.util.Map<java.lang.String, java.lang.Double> after = day(target, to).shares();
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> points =
+        new LinkedHashMap<String, Double>();
+    for (java.util.Map.Entry<java.lang.String, java.lang.Double> component : after.entrySet())
       points.put(component.getKey(), component.getValue() - before.get(component.getKey()));
     return new Change(true, from, to, points, null);
   }
@@ -578,9 +598,10 @@ public final class EstimateHistory {
 
   /** The report quotes every number at the registered resolution; the series keeps its digits. */
   public static String report(History history) {
-    var publication = history.publication();
-    var segments = new ArrayList<SegmentSummary>();
-    for (var segment : history.segments())
+    final se.swedishpolls.EstimateHistory.Publication publication = history.publication();
+    final java.util.ArrayList<se.swedishpolls.EstimateHistory.SegmentSummary> segments =
+        new ArrayList<SegmentSummary>();
+    for (se.swedishpolls.EstimateHistory.Segment segment : history.segments())
       segments.add(
           new SegmentSummary(
               segment.periodId(),
@@ -589,7 +610,7 @@ public final class EstimateHistory {
               segment.days().size(),
               quote(segment.days().getFirst().components(), publication),
               quote(segment.days().getLast().components(), publication)));
-    var headline = history.headline();
+    final se.swedishpolls.EstimateHistory.Headline headline = history.headline();
     return JSON.writerWithDefaultPrettyPrinter()
         .writeValueAsString(
             new Summary(
@@ -610,10 +631,13 @@ public final class EstimateHistory {
 
   private static Map<String, Estimate> quote(
       Map<String, Estimate> components, Publication publication) {
-    var quoted = new LinkedHashMap<String, Estimate>();
-    for (var component : components.entrySet()) {
-      var intervals = new ArrayList<JointUncertainty.Interval>();
-      for (var interval : component.getValue().intervals())
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.EstimateHistory.Estimate>
+        quoted = new LinkedHashMap<String, Estimate>();
+    for (java.util.Map.Entry<java.lang.String, se.swedishpolls.EstimateHistory.Estimate> component :
+        components.entrySet()) {
+      final java.util.ArrayList<se.swedishpolls.JointUncertainty.Interval> intervals =
+          new ArrayList<JointUncertainty.Interval>();
+      for (se.swedishpolls.JointUncertainty.Interval interval : component.getValue().intervals())
         intervals.add(
             new JointUncertainty.Interval(
                 interval.level(),
@@ -628,8 +652,9 @@ public final class EstimateHistory {
 
   private static Map<String, Double> quoteShares(
       Map<String, Double> shares, Publication publication) {
-    var quoted = new LinkedHashMap<String, Double>();
-    for (var share : shares.entrySet())
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> quoted =
+        new LinkedHashMap<String, Double>();
+    for (java.util.Map.Entry<java.lang.String, java.lang.Double> share : shares.entrySet())
       quoted.put(share.getKey(), publication.quote(share.getValue()));
     return quoted;
   }
