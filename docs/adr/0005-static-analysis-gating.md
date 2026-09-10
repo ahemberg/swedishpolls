@@ -61,6 +61,37 @@ No off-by-default check is promoted. The relevant correctness checks already bel
 Prone's defaults, while the two disabled checks are migration or style checks that add no safety
 here.
 
+## Picnic Error Prone Support evaluation
+
+Error Prone Support 0.30.0 (compatible with the pinned Error Prone 2.50.0) was run over main and
+test sources by adding `error-prone-contrib` and `refaster-runner` to the annotation processor
+path. The ruleset reported 702 findings: 606 Refaster rewriting opportunities, 8 bug-checker
+warnings and 88 lower-severity style findings.
+
+| Category | Findings | Observation |
+| --- | ---: | --- |
+| `JUnitToAssertJRules` (test sources) | 321 | Rewrites every JUnit assertion to AssertJ. A wholesale test-idiom rewrite, not a correctness gain. |
+| `ImmutableListRules` / `ImmutableMapRules` | 258 | Rewrite `List.of`/`Map.of` to Guava's `ImmutableList`/`ImmutableMap`. The project has no Guava dependency. |
+| `StaticImport`, annotation ordering, misc. style | ~90 | Pure style, currently a human judgement call. |
+| Guava `Preconditions` templates | 8 | Rewrite JDK `assert`/`Objects` checks to Guava `Preconditions`. |
+| `CollectorMutability` | 8 | Steers towards Guava's immutable collectors. |
+| `OptionalOrElseGet`, `RedundantStringConversion`, `ComparatorRules`, small Refaster rules | 17 | The only findings that are uncontroversial improvements, none of them a bug. |
+
+The decision is to decline. Three reasons:
+
+- The bulk of the findings are Refaster templates that rewrite the tree towards libraries this
+  project did not choose: Guava for collections and preconditions, AssertJ for test assertions.
+  Adopting them mechanically means adopting those dependencies, which contradicts the minimal
+  dependency posture this ADR's other rejections follow.
+- Adopting a subset is impractical: the contributed checks activate with their default severities
+  once the artifact is on the processor path, so a subset would mean listing roughly a hundred
+  checks as disabled by name in `pom.xml`, configuration without a payoff.
+- The ruleset is version-coupled: Error Prone Support releases support a narrow range of Error
+  Prone versions, so every future Error Prone upgrade here would wait on a matching upstream
+  release. The default check set plus Spotless already gate formatting and compiler-visible
+  correctness; the remaining Picnic checks encode idiom preference, which ADR 0002 leaves to
+  the team, not the build.
+
 ## Considered options
 
 - Promoting default warnings to explicit errors: rejected because `-Werror` already makes them
@@ -75,6 +106,8 @@ here.
   vulnerable dependencies without build time or another repository secret.
 - A findings baseline: rejected because the current tree is small and clean. There is no debt to
   preserve.
+- Picnic Error Prone Support 0.30.0: rejected after running the ruleset against the tree; see the
+  evaluation above. Its findings are dominated by Refaster rewrites towards Guava and AssertJ.
 
 ## Consequences
 
