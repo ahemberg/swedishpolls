@@ -293,8 +293,21 @@
     0.6
   ],
   "final_draws": 10000,
-  "tolerance_status": "awaiting-development-evidence",
-  "resolved_tolerances": null,
+  "tolerance_status": "frozen-development",
+  "resolved_tolerances": {
+    "seeded_reproduction_points": 2e-14,
+    "historical_interval_endpoint_precision_points": 0.12,
+    "coverage_boundary_stability_points": 0.5,
+    "snapshot_drift_points": 0.44
+  },
+  "resource_measurement": {
+    "full_estimator_target_millis": 10000,
+    "drift_poll_selection": "the last eligible development poll from each institute, ordered by midpoint then source row",
+    "correction": "move 0.1 percentage points from OTHER to M in each selected poll; removing the row measures deletion and its reverse measures addition",
+    "runtime_scope": "one production-shaped corrected-history, joint-component uncertainty and comparable-remainder run; database setup and evidence parsing excluded",
+    "memory_scope": "sum of the JVM peak-used heap pools after their counters are reset immediately before the measured run",
+    "performance_gate": "the ten-second recompute target is measured and reported but is not an unconditional release gate"
+  },
   "election_audit2022": {
     "cutoff": "2022-09-10",
     "election_date": "2022-09-11",

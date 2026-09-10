@@ -1,0 +1,239 @@
+{
+  "protocolVersion" : "v1-development-1",
+  "gate" : {
+    "blocked" : true,
+    "reasons" : [ "coverage validation: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "coverage validation: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol", "eight_party_2010: the midpoint candidate loses to the ilr-window reference by 0.023579124341236275, beyond the paired standard error of 0.011921334731399268", "eight_party_2010: the ilr-window reference resolved on a grid boundary in 18 folds, which needs the same documented expansion as the candidate's", "fi_candidate_2014_2018: the ilr-window reference resolved on a grid boundary in 17 folds, which needs the same documented expansion as the candidate's", "fi_candidate_2014_2018 fold 2014-01-15 scored nothing: the tuning run resolved no parameters for this fold", "fi_candidate_2014_2018 fold 2014-03-16 scored nothing: the tuning run resolved no parameters for this fold", "fi_candidate_2014_2018 fold 2018-10-21 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2018-12-20 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-02-18 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-04-19 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-06-18 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-08-17 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-10-16 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-12-15 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-02-13 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-04-13 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-06-12 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-08-11 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-10-10 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-12-09 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-02-07 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-04-08 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-06-07 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-08-06 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-10-05 scored nothing: no held-out observation the period can compose" ]
+  },
+  "uncertaintyFallback" : "not_required",
+  "tolerances" : [ {
+    "name" : "seeded_reproduction",
+    "units" : "percentage points between retained draws of two runs at the same seed",
+    "maximum" : 2.0E-14,
+    "maxObservedError" : 1.7763568394002505E-14,
+    "cases" : 180000,
+    "seeds" : [ 20260908 ],
+    "evidence" : "docs/validation/uncertainty.json",
+    "evidenceSha256" : "a08300e32e5ba3f85adf8ec9198d81a6c5458a6a07c5850f7ae919dccd8c0d39",
+    "rationale" : "A rerun on one implementation and architecture must return every retained draw unchanged. The recorded amd64 and arm64 runs compare the same values; their maximum floating-point difference sets the cross-architecture bound."
+  }, {
+    "name" : "interval_endpoint_precision",
+    "units" : "percentage points between the extreme interval endpoints of runs differing only in seed",
+    "maximum" : 0.12,
+    "maxObservedError" : 0.11533204035549716,
+    "cases" : 77004,
+    "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
+    "evidence" : "docs/validation/uncertainty.json",
+    "evidenceSha256" : "a08300e32e5ba3f85adf8ec9198d81a6c5458a6a07c5850f7ae919dccd8c0d39",
+    "rationale" : "The Monte Carlo error of a published interval endpoint at 10000 draws per day. It bounds how much of a reported interval is sampling noise rather than estimated uncertainty, and it is measured, never enlarged afterwards."
+  }, {
+    "name" : "coverage_boundary_stability",
+    "units" : "percentage points over retained days after moving both support boundaries",
+    "maximum" : 0.5,
+    "maxObservedError" : 0.4252180277614137,
+    "cases" : 155469,
+    "seeds" : [ ],
+    "evidence" : "docs/validation/coverage.json",
+    "evidenceSha256" : "843fdd1ba7dcf4f70cf253996be366ff8793114676b5d24bc0777d518ab364e1",
+    "rationale" : "The registered 7, 14 and 30 day boundary shifts remain below the frozen support bound for every modeled component."
+  }, {
+    "name" : "snapshot_drift",
+    "units" : "percentage points after an addition/deletion or fixed correction of one source row",
+    "maximum" : 0.44,
+    "maxObservedError" : 0.43734777067339436,
+    "cases" : 770004,
+    "seeds" : [ ],
+    "evidence" : "src/test/resources/polls/audit.csv",
+    "evidenceSha256" : "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+    "rationale" : "The largest corrected-history revision after removing each institute's last eligible development poll, which also measures adding it back, or moving 0.1 points from OTHER to M in that poll."
+  } ],
+  "drift" : {
+    "inputSha256" : "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+    "perturbations" : [ {
+      "kind" : "addition_deletion",
+      "rowNumber" : 407,
+      "institute" : "Novus",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.16159165851688329,
+      "maxShiftOn" : "2021-09-16",
+      "component" : "M"
+    }, {
+      "kind" : "correction",
+      "rowNumber" : 407,
+      "institute" : "Novus",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.03581157785167832,
+      "maxShiftOn" : "2021-09-16",
+      "component" : "M"
+    }, {
+      "kind" : "addition_deletion",
+      "rowNumber" : 408,
+      "institute" : "Ipsos",
+      "comparedValues" : 38466,
+      "maxShiftPoints" : 0.12364901205185674,
+      "maxShiftOn" : "2021-09-16",
+      "component" : "SD"
+    }, {
+      "kind" : "correction",
+      "rowNumber" : 408,
+      "institute" : "Ipsos",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.01724261641949454,
+      "maxShiftOn" : "2021-09-20",
+      "component" : "M"
+    }, {
+      "kind" : "addition_deletion",
+      "rowNumber" : 409,
+      "institute" : "Sifo",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.20168102427771117,
+      "maxShiftOn" : "2021-09-11",
+      "component" : "SD"
+    }, {
+      "kind" : "correction",
+      "rowNumber" : 409,
+      "institute" : "Sifo",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.03993391157478854,
+      "maxShiftOn" : "2021-09-11",
+      "component" : "M"
+    }, {
+      "kind" : "addition_deletion",
+      "rowNumber" : 410,
+      "institute" : "Skop",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.07201097074759844,
+      "maxShiftOn" : "2021-09-07",
+      "component" : "V"
+    }, {
+      "kind" : "correction",
+      "rowNumber" : 410,
+      "institute" : "Skop",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.00792474356751427,
+      "maxShiftOn" : "2021-09-07",
+      "component" : "M"
+    }, {
+      "kind" : "addition_deletion",
+      "rowNumber" : 411,
+      "institute" : "Demoskop",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.43734777067339436,
+      "maxShiftOn" : "2021-09-04",
+      "component" : "S"
+    }, {
+      "kind" : "correction",
+      "rowNumber" : 411,
+      "institute" : "Demoskop",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.01645762089311731,
+      "maxShiftOn" : "2021-09-04",
+      "component" : "M"
+    }, {
+      "kind" : "addition_deletion",
+      "rowNumber" : 428,
+      "institute" : "SCB",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.18904438786082878,
+      "maxShiftOn" : "2021-05-12",
+      "component" : "SD"
+    }, {
+      "kind" : "correction",
+      "rowNumber" : 428,
+      "institute" : "SCB",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.018913413395360124,
+      "maxShiftOn" : "2021-05-12",
+      "component" : "M"
+    }, {
+      "kind" : "addition_deletion",
+      "rowNumber" : 429,
+      "institute" : "Sentio",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.1335029924072053,
+      "maxShiftOn" : "2021-05-22",
+      "component" : "M"
+    }, {
+      "kind" : "correction",
+      "rowNumber" : 429,
+      "institute" : "Sentio",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.005849049518165117,
+      "maxShiftOn" : "2021-05-22",
+      "component" : "M"
+    }, {
+      "kind" : "addition_deletion",
+      "rowNumber" : 534,
+      "institute" : "Inizio",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.08124074410874371,
+      "maxShiftOn" : "2019-10-11",
+      "component" : "S"
+    }, {
+      "kind" : "correction",
+      "rowNumber" : 534,
+      "institute" : "Inizio",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.010355201842674688,
+      "maxShiftOn" : "2019-10-11",
+      "component" : "M"
+    }, {
+      "kind" : "addition_deletion",
+      "rowNumber" : 625,
+      "institute" : "YouGov",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.09315055594963084,
+      "maxShiftOn" : "2018-08-31",
+      "component" : "S"
+    }, {
+      "kind" : "correction",
+      "rowNumber" : 625,
+      "institute" : "YouGov",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.004044110739808815,
+      "maxShiftOn" : "2018-08-31",
+      "component" : "M"
+    }, {
+      "kind" : "addition_deletion",
+      "rowNumber" : 1005,
+      "institute" : "United Minds",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.09526433074178442,
+      "maxShiftOn" : "2014-09-09",
+      "component" : "M"
+    }, {
+      "kind" : "correction",
+      "rowNumber" : 1005,
+      "institute" : "United Minds",
+      "comparedValues" : 38502,
+      "maxShiftPoints" : 0.005600463257177779,
+      "maxShiftOn" : "2014-09-09",
+      "component" : "M"
+    } ]
+  },
+  "crossArchitecture" : {
+    "comparedValues" : 90000,
+    "differingValues" : 34142,
+    "maxAbsoluteDifferencePoints" : 1.7763568394002505E-14,
+    "runs" : [ {
+      "architecture" : "amd64",
+      "javaRuntime" : "25.0.4+7-1-24.04-Ubuntu",
+      "drawsSha256" : "c31fa2ded51156e28980b1bc836d5ca25a456e0b02774abcbd3f37aec542d8ea"
+    }, {
+      "architecture" : "arm64",
+      "javaRuntime" : "25.0.4+7-LTS",
+      "drawsSha256" : "b45689b93087b5c5a25f116a13da05649cef82ae7ab02956b7d6aa0c520c8711"
+    } ]
+  },
+  "resources" : {
+    "runtimeMillis" : 50255,
+    "peakHeapBytes" : 494154496,
+    "targetMillis" : 10000,
+    "inputPolls" : 1038,
+    "estimatedDays" : 4278,
+    "finalDraws" : 10000,
+    "architecture" : "amd64",
+    "javaRuntime" : "25.0.4+7-1-24.04-Ubuntu",
+    "vm" : "OpenJDK 64-Bit Server VM 25.0.4+7-1-24.04-Ubuntu",
+    "os" : "Linux 6.17.0-1020-oracle"
+  }
+}

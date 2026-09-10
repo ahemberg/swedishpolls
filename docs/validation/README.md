@@ -938,6 +938,58 @@ Run `./mvnw -Dtest=DevelopmentDiagnosticsTest test` for the rules and `./mvnw cl
 verify` for the suite. These are development observations for checkpoint 10 to measure
 properly, not frozen bounds.
 
+### Development gates and resources, issue #18 checkpoint 10
+
+`DevelopmentGates` reads the frozen protocol and the committed coverage, uncertainty
+and diagnostic evidence into one fail-closed result. `requirePassed` throws while that
+result is blocked, which gives the later publication worker one check before it can
+expose an estimate. The report preserves every upstream reason rather than replacing a
+failed model with a different estimator.
+
+The development-derived bounds are now frozen in [protocol.json](protocol.json):
+
+| Check | Frozen maximum | Largest observed | Evidence |
+| --- | ---: | ---: | --- |
+| Seeded reproduction | 0.00000000000002 points | 0.000000000000017763568394002505 points | 180,000 retained values at seed 20260908 |
+| Historical interval endpoint precision | 0.12 points | 0.11533204035549716 points | 77,004 component, level and day comparisons over eight seeds |
+| Coverage-boundary stability | 0.5 points | 0.4252180277614137 points | 155,469 component-day comparisons over the registered 7, 14 and 30 day shifts |
+| Changed-snapshot drift | 0.44 points | 0.43734777067339436 points | 770,004 component-day comparisons over 20 source perturbations |
+
+The same-seed rerun on amd64 remains bit-for-bit exact. The matching arm64 run used
+the same compiled classes, archived input, parameters and seed. Floating-point paths
+differed in 34,142 of 90,000 retained final-day values, with a maximum difference of
+`1.7763568394002505e-14` percentage points. [cross-architecture.json](cross-architecture.json)
+records both Java 25.0.4 runtimes and draw digests. The frozen `2e-14` bound therefore
+describes numerical reproduction across the two architectures instead of claiming
+false byte identity.
+
+The drift study selects the last eligible development poll from each of the ten
+institutes. Removing a row measures a deletion and, in reverse, a newly added row. A
+second case moves 0.1 percentage points from OTHER to M in that row. Every case refits
+the corrected history and compares every component on every retained common day. The
+largest revision is the addition or deletion of Demoskop row 411, 0.43735 points on S
+on 2021-09-04. The largest fixed correction moves M by 0.03993 points. The source bytes
+retain SHA-256 `27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608`.
+
+The production-shaped resource run computes corrected history, joint component
+uncertainty and the comparable remainder once, excluding database setup and evidence
+parsing. On amd64 with Java 25.0.4 it took 50,255 ms for 1,038 observations, 4,278 days
+and 10,000 final draws. The sum of peak-used JVM heap pools was 494,154,496 bytes. This
+misses the registered ten-second optimization target; that target is not an
+unconditional release gate.
+
+[development-gates.json](development-gates.json) contains the complete result and
+evidence hashes. Conditional predictive coverage is inside both registered bands, so
+the hyperparameter grid-mixture fallback is not required. The result is still blocked
+by the carried tuning failures, the eight-party loss to the ilr-window reference and
+the unscored FI folds. No fallback, implicit estimator change or waiver clears those
+failures, and no 2022 audit input was read.
+
+Run `./mvnw -Dtest=DevelopmentGatesTest,DevelopmentGatesIT test` for the executable
+stop and evidence checks. `-Dgates.full=true` repeats the drift and resource study and
+rewrites the report. `ReproductionProbe` emits the retained-draw digest or binary values
+for the same native and emulated architecture comparison recorded above.
+
 ### Conventions for the estimator
 
 Midpoint is `start + floor(days_between(start,end)/2)`. A half-day rounds toward

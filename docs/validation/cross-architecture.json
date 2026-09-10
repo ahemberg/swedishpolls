@@ -1,0 +1,17 @@
+{
+  "comparedValues": 90000,
+  "differingValues": 34142,
+  "maxAbsoluteDifferencePoints": 1.7763568394002505e-14,
+  "runs": [
+    {
+      "architecture": "amd64",
+      "javaRuntime": "25.0.4+7-1-24.04-Ubuntu",
+      "drawsSha256": "c31fa2ded51156e28980b1bc836d5ca25a456e0b02774abcbd3f37aec542d8ea"
+    },
+    {
+      "architecture": "arm64",
+      "javaRuntime": "25.0.4+7-LTS",
+      "drawsSha256": "b45689b93087b5c5a25f116a13da05649cef82ae7ab02956b7d6aa0c520c8711"
+    }
+  ]
+}
