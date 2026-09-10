@@ -1,2 +1,5 @@
 # Gate formatting with Spotless and reformat the tree (#46)
 2354c8cd93f3b5c5e75b05931dfea203e13fe614
+
+# Renormalize mvnw.cmd to LF to match its eol=crlf attribute (#92)
+021af83dc2bf4ae0de5b1e85a960822eb75ee974
