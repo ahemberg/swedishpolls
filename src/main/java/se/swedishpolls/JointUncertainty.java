@@ -757,8 +757,8 @@ public final class JointUncertainty {
               reproduced.comparedValues(),
               List.of(rules.seed()),
               "A rerun of the same seed on the same implementation must return every draw"
-                  + " unchanged, so the proposed bound is exactly zero. Cross-architecture reruns"
-                  + " are still owed before this becomes a resolved tolerance."));
+                  + " unchanged, so the proposed bound is exactly zero. Cross-architecture"
+                  + " reproduction uses a separately resolved bound."));
       if (!precision.isEmpty())
         tolerances.add(
             new ProposedTolerance(

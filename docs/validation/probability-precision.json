@@ -1,0 +1,121 @@
+{
+  "periodId" : "eight_party_2010",
+  "date" : "2021-09-20",
+  "inputRowsSha256" : "8c3b3db1648d6a61a0f078e2155a9b139be94920a1a7e2c8b8fd8a0d99df04d5",
+  "implementationSha256" : "3139c010a07a0caf68a94e8a45ff9c358c0cc7ff834d93090f4c33d445f02a05",
+  "components" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER" ],
+  "rules" : {
+    "seats" : 349,
+    "thresholdPercent" : 4.0,
+    "firstDivisor" : 1.2,
+    "majoritySeats" : 175,
+    "tieOrder" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "FI" ]
+  },
+  "majorityCoalition" : [ "M", "L", "KD", "SD" ],
+  "drawsPerSeed" : 10000,
+  "runs" : [ {
+    "seed" : 20260908,
+    "thresholdProbabilities" : {
+      "S" : 1.0,
+      "M" : 1.0,
+      "SD" : 1.0,
+      "V" : 1.0,
+      "C" : 1.0,
+      "KD" : 1.0,
+      "L" : 0.0,
+      "MP" : 0.4113
+    },
+    "majorityProbability" : 0.5814
+  }, {
+    "seed" : 20260909,
+    "thresholdProbabilities" : {
+      "S" : 1.0,
+      "M" : 1.0,
+      "SD" : 1.0,
+      "V" : 1.0,
+      "C" : 1.0,
+      "KD" : 1.0,
+      "L" : 0.0,
+      "MP" : 0.4273
+    },
+    "majorityProbability" : 0.5662
+  }, {
+    "seed" : 20260910,
+    "thresholdProbabilities" : {
+      "S" : 1.0,
+      "M" : 1.0,
+      "SD" : 1.0,
+      "V" : 1.0,
+      "C" : 1.0,
+      "KD" : 1.0,
+      "L" : 0.0,
+      "MP" : 0.4174
+    },
+    "majorityProbability" : 0.575
+  }, {
+    "seed" : 20260911,
+    "thresholdProbabilities" : {
+      "S" : 1.0,
+      "M" : 1.0,
+      "SD" : 1.0,
+      "V" : 1.0,
+      "C" : 1.0,
+      "KD" : 1.0,
+      "L" : 0.0,
+      "MP" : 0.4216
+    },
+    "majorityProbability" : 0.5739
+  }, {
+    "seed" : 20260912,
+    "thresholdProbabilities" : {
+      "S" : 1.0,
+      "M" : 1.0,
+      "SD" : 1.0,
+      "V" : 1.0,
+      "C" : 1.0,
+      "KD" : 1.0,
+      "L" : 0.0,
+      "MP" : 0.4185
+    },
+    "majorityProbability" : 0.5721
+  }, {
+    "seed" : 20260913,
+    "thresholdProbabilities" : {
+      "S" : 1.0,
+      "M" : 1.0,
+      "SD" : 1.0,
+      "V" : 1.0,
+      "C" : 1.0,
+      "KD" : 0.9999,
+      "L" : 0.0,
+      "MP" : 0.428
+    },
+    "majorityProbability" : 0.567
+  }, {
+    "seed" : 20260914,
+    "thresholdProbabilities" : {
+      "S" : 1.0,
+      "M" : 1.0,
+      "SD" : 1.0,
+      "V" : 1.0,
+      "C" : 1.0,
+      "KD" : 1.0,
+      "L" : 0.0,
+      "MP" : 0.4149
+    },
+    "majorityProbability" : 0.5781
+  }, {
+    "seed" : 20260915,
+    "thresholdProbabilities" : {
+      "S" : 1.0,
+      "M" : 1.0,
+      "SD" : 1.0,
+      "V" : 1.0,
+      "C" : 1.0,
+      "KD" : 0.9999,
+      "L" : 0.0,
+      "MP" : 0.4218
+    },
+    "majorityProbability" : 0.5706
+  } ]
+}
