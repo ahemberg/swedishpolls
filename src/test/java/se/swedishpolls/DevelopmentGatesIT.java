@@ -37,12 +37,14 @@ class DevelopmentGatesIT {
             COVERAGE,
             UNCERTAINTY,
             DIAGNOSTICS,
+            CROSS_ARCHITECTURE,
             stored.drift(),
-            DevelopmentGates.crossArchitecture(CROSS_ARCHITECTURE),
+            stored.probabilityPrecision(),
             stored.resources());
     assertEquals(DevelopmentGates.report(stored), DevelopmentGates.report(rebuilt));
     assertEquals(DevelopmentGates.FALLBACK_NOT_REQUIRED, stored.uncertaintyFallback());
     assertTrue(stored.tolerances().stream().allMatch(DevelopmentGates.Tolerance::passes));
+    assertEquals(8, stored.probabilityPrecision().runs().size());
     assertEquals(
         List.of("amd64", "arm64"),
         stored.crossArchitecture().runs().stream()
@@ -66,7 +68,9 @@ class DevelopmentGatesIT {
       var db = JdbcClient.create(dataSource);
       var periods = new Roster(db).periods();
       var elections =
-          db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
+          db.sql(
+                  "SELECT election_date FROM election_reference WHERE election_date < DATE"
+                      + " '2022-09-11' ORDER BY election_date")
               .query(LocalDate.class)
               .list();
       List<PollCsv.Poll> polls;
@@ -91,18 +95,38 @@ class DevelopmentGatesIT {
           drift(period, polls, elections, coverage.rules(), validated.parameters(), baseline);
       var retained = new ArrayList<Object>();
       var uncertaintyRules = JointUncertainty.rules(PROTOCOL);
+      var probability = new ArrayList<DevelopmentGates.ProbabilityPrecision>();
+      var precisionSeeds = JointUncertainty.precisionSeeds(uncertaintyRules);
+      var allocationRules = DevelopmentGates.allocationRules(PROTOCOL);
+      var coalition = List.of("M", "L", "KD", "SD");
       var resources =
           DevelopmentGates.measure(
               () -> {
                 retained.add(EstimateHistory.history(periods, polls, elections, coverage));
-                retained.add(
+                var joint =
                     JointUncertainty.estimate(
                         period,
                         polls,
                         elections,
                         validated.parameters(),
                         coverage.rules(),
-                        uncertaintyRules));
+                        uncertaintyRules);
+                retained.add(joint);
+                var measured =
+                    DevelopmentGates.probabilityPrecision(
+                        JointUncertainty.finalDraws(
+                            period,
+                            polls,
+                            elections,
+                            validated.parameters(),
+                            coverage.rules(),
+                            uncertaintyRules,
+                            precisionSeeds),
+                        precisionSeeds,
+                        allocationRules,
+                        coalition);
+                probability.add(measured);
+                retained.add(measured);
                 retained.add(
                     ComparableRemainder.estimate(
                         period,
@@ -116,15 +140,16 @@ class DevelopmentGatesIT {
               validated.support().observations(),
               baseline.segments().stream().mapToInt(segment -> segment.days().size()).sum(),
               uncertaintyRules.draws());
-      assertEquals(3, retained.size());
+      assertEquals(4, retained.size());
       var report =
           DevelopmentGates.evaluate(
               PROTOCOL,
               COVERAGE,
               UNCERTAINTY,
               DIAGNOSTICS,
+              CROSS_ARCHITECTURE,
               drift,
-              DevelopmentGates.crossArchitecture(CROSS_ARCHITECTURE),
+              probability.getFirst(),
               resources);
       Files.writeString(RESULT, DevelopmentGates.report(report) + "\n", StandardCharsets.UTF_8);
     } finally {
@@ -209,6 +234,7 @@ class DevelopmentGatesIT {
                 """
                 SELECT election_date, component, 100.0 * votes / valid_votes AS share
                 FROM election_party_reference JOIN election_reference USING (election_date)
+                WHERE election_date < DATE '2022-09-11'
                 ORDER BY election_date, component
                 """)
             .query(

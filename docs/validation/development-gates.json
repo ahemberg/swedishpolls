@@ -2,19 +2,29 @@
   "protocolVersion" : "v1-development-1",
   "gate" : {
     "blocked" : true,
-    "reasons" : [ "coverage validation: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "coverage validation: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol", "eight_party_2010: the midpoint candidate loses to the ilr-window reference by 0.023579124341236275, beyond the paired standard error of 0.011921334731399268", "eight_party_2010: the ilr-window reference resolved on a grid boundary in 18 folds, which needs the same documented expansion as the candidate's", "fi_candidate_2014_2018: the ilr-window reference resolved on a grid boundary in 17 folds, which needs the same documented expansion as the candidate's", "fi_candidate_2014_2018 fold 2014-01-15 scored nothing: the tuning run resolved no parameters for this fold", "fi_candidate_2014_2018 fold 2014-03-16 scored nothing: the tuning run resolved no parameters for this fold", "fi_candidate_2014_2018 fold 2018-10-21 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2018-12-20 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-02-18 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-04-19 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-06-18 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-08-17 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-10-16 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-12-15 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-02-13 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-04-13 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-06-12 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-08-11 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-10-10 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-12-09 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-02-07 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-04-08 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-06-07 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-08-06 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-10-05 scored nothing: no held-out observation the period can compose" ]
+    "reasons" : [ "coverage: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "coverage: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol", "uncertainty: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "uncertainty: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol", "diagnostics: coverage validation: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "diagnostics: coverage validation: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol", "diagnostics: eight_party_2010: the midpoint candidate loses to the ilr-window reference by 0.023579124341236275, beyond the paired standard error of 0.011921334731399268", "diagnostics: eight_party_2010: the ilr-window reference resolved on a grid boundary in 18 folds, which needs the same documented expansion as the candidate's", "diagnostics: fi_candidate_2014_2018: the ilr-window reference resolved on a grid boundary in 17 folds, which needs the same documented expansion as the candidate's", "diagnostics: fi_candidate_2014_2018 fold 2014-01-15 scored nothing: the tuning run resolved no parameters for this fold", "diagnostics: fi_candidate_2014_2018 fold 2014-03-16 scored nothing: the tuning run resolved no parameters for this fold", "diagnostics: fi_candidate_2014_2018 fold 2018-10-21 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2018-12-20 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2019-02-18 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2019-04-19 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2019-06-18 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2019-08-17 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2019-10-16 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2019-12-15 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2020-02-13 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2020-04-13 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2020-06-12 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2020-08-11 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2020-10-10 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2020-12-09 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2021-02-07 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2021-04-08 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2021-06-07 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2021-08-06 scored nothing: no held-out observation the period can compose", "diagnostics: fi_candidate_2014_2018 fold 2021-10-05 scored nothing: no held-out observation the period can compose", "eight_party_2010 party S has unexplained subgroup coverage 95/50=0.9837837837837838/0.6405405405405405", "eight_party_2010 party KD has unexplained subgroup coverage 95/50=0.8648648648648649/0.4189189189189189", "eight_party_2010 party KD has root-mean-square standardized residual 1.8415414088541135", "eight_party_2010 party OTHER has unexplained subgroup coverage 95/50=0.8486486486486486/0.3918918918918919", "eight_party_2010 institute Sifo has unexplained subgroup coverage 95/50=0.8977072310405644/0.5114638447971781", "eight_party_2010 institute Skop has unexplained subgroup coverage 95/50=0.8275862068965517/0.42528735632183906", "eight_party_2010 institute Skop has root-mean-square standardized residual 1.6927416450632502", "fi_candidate_2014_2018 party S has unexplained subgroup coverage 95/50=0.985/0.63", "fi_candidate_2014_2018 party KD has unexplained subgroup coverage 95/50=0.855/0.41", "fi_candidate_2014_2018 party KD has absolute mean standardized residual 0.5153675945957608", "fi_candidate_2014_2018 party KD has root-mean-square standardized residual 2.04693378853195", "fi_candidate_2014_2018 party FI has unexplained subgroup coverage 95/50=0.895/0.48", "fi_candidate_2014_2018 party RESIDUAL has unexplained subgroup coverage 95/50=0.825/0.345", "fi_candidate_2014_2018 party RESIDUAL has root-mean-square standardized residual 1.8642180365539271", "fi_candidate_2014_2018 institute Inizio has unexplained subgroup coverage 95/50=0.8952380952380953/0.4857142857142857", "fi_candidate_2014_2018 institute Sifo has unexplained subgroup coverage 95/50=0.8837837837837837/0.46756756756756757", "fi_candidate_2014_2018 institute Skop has unexplained subgroup coverage 95/50=0.8181818181818182/0.34545454545454546", "fi_candidate_2014_2018 institute Skop has root-mean-square standardized residual 1.837189673272659", "fi_candidate_2014_2018 fieldwork_days 1-7 has unexplained subgroup coverage 95/50=0.8985915492957747/0.44647887323943664" ]
   },
   "uncertaintyFallback" : "not_required",
   "tolerances" : [ {
     "name" : "seeded_reproduction",
     "units" : "percentage points between retained draws of two runs at the same seed",
-    "maximum" : 2.0E-14,
-    "maxObservedError" : 1.7763568394002505E-14,
-    "cases" : 180000,
+    "maximum" : 0.0,
+    "maxObservedError" : 0.0,
+    "cases" : 90000,
     "seeds" : [ 20260908 ],
     "evidence" : "docs/validation/uncertainty.json",
     "evidenceSha256" : "a08300e32e5ba3f85adf8ec9198d81a6c5458a6a07c5850f7ae919dccd8c0d39",
-    "rationale" : "A rerun on one implementation and architecture must return every retained draw unchanged. The recorded amd64 and arm64 runs compare the same values; their maximum floating-point difference sets the cross-architecture bound."
+    "rationale" : "A rerun on one implementation and architecture must return every retained draw unchanged."
+  }, {
+    "name" : "cross_architecture_reproduction",
+    "units" : "percentage points between retained draws on two architectures",
+    "maximum" : 2.0E-14,
+    "maxObservedError" : 1.7763568394002505E-14,
+    "cases" : 90000,
+    "seeds" : [ 20260908 ],
+    "evidence" : "docs/validation/cross-architecture.json",
+    "evidenceSha256" : "16871bacb6fc573354a908aa82b87b8dca9c68fe7f227bf9e5171dc3cf9469b4",
+    "rationale" : "The recorded amd64 and arm64 runs compare the same retained draws; their maximum floating-point difference sets this separate architecture bound."
   }, {
     "name" : "interval_endpoint_precision",
     "units" : "percentage points between the extreme interval endpoints of runs differing only in seed",
@@ -35,6 +45,36 @@
     "evidence" : "docs/validation/coverage.json",
     "evidenceSha256" : "843fdd1ba7dcf4f70cf253996be366ff8793114676b5d24bc0777d518ab364e1",
     "rationale" : "The registered 7, 14 and 30 day boundary shifts remain below the frozen support bound for every modeled component."
+  }, {
+    "name" : "probability_monte_carlo_standard_error",
+    "units" : "probability at the worst-case 50% event rate",
+    "maximum" : 0.005,
+    "maxObservedError" : 0.005,
+    "cases" : 10000,
+    "seeds" : [ 20260908 ],
+    "evidence" : "docs/validation/protocol.json",
+    "evidenceSha256" : "183f78314a327e83dac04630c8392f0397c6c29e413cc95e8b339de423aea812",
+    "rationale" : "At 10,000 draws the worst-case standard error is 0.005. Inclusive comparisons are checked immediately below, at, and immediately above both 4% support and 175 seats."
+  }, {
+    "name" : "threshold_probability_precision",
+    "units" : "probability range over repeated development seeds",
+    "maximum" : 0.03,
+    "maxObservedError" : 0.016699999999999993,
+    "cases" : 80000,
+    "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
+    "evidence" : "docs/validation/uncertainty.json",
+    "evidenceSha256" : "a08300e32e5ba3f85adf8ec9198d81a6c5458a6a07c5850f7ae919dccd8c0d39",
+    "rationale" : "Largest repeated-seed range among inclusive 4% probabilities from final-day joint draws."
+  }, {
+    "name" : "majority_probability_precision",
+    "units" : "probability range over repeated development seeds",
+    "maximum" : 0.03,
+    "maxObservedError" : 0.015199999999999991,
+    "cases" : 80000,
+    "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
+    "evidence" : "docs/validation/uncertainty.json",
+    "evidenceSha256" : "a08300e32e5ba3f85adf8ec9198d81a6c5458a6a07c5850f7ae919dccd8c0d39",
+    "rationale" : "Repeated-seed range of the registered coalition's inclusive 175-seat probability after national modified Sainte-Lague allocation."
   }, {
     "name" : "snapshot_drift",
     "units" : "percentage points after an addition/deletion or fixed correction of one source row",
@@ -224,9 +264,125 @@
       "drawsSha256" : "b45689b93087b5c5a25f116a13da05649cef82ae7ab02956b7d6aa0c520c8711"
     } ]
   },
+  "probabilityPrecision" : {
+    "rules" : {
+      "seats" : 349,
+      "thresholdPercent" : 4.0,
+      "firstDivisor" : 1.2,
+      "majoritySeats" : 175,
+      "tieOrder" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "FI" ]
+    },
+    "majorityCoalition" : [ "M", "L", "KD", "SD" ],
+    "drawsPerSeed" : 10000,
+    "runs" : [ {
+      "seed" : 20260908,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4113
+      },
+      "majorityProbability" : 0.5814
+    }, {
+      "seed" : 20260909,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4273
+      },
+      "majorityProbability" : 0.5662
+    }, {
+      "seed" : 20260910,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4174
+      },
+      "majorityProbability" : 0.575
+    }, {
+      "seed" : 20260911,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4216
+      },
+      "majorityProbability" : 0.5739
+    }, {
+      "seed" : 20260912,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4185
+      },
+      "majorityProbability" : 0.5721
+    }, {
+      "seed" : 20260913,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 0.9999,
+        "L" : 0.0,
+        "MP" : 0.428
+      },
+      "majorityProbability" : 0.567
+    }, {
+      "seed" : 20260914,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4149
+      },
+      "majorityProbability" : 0.5781
+    }, {
+      "seed" : 20260915,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 0.9999,
+        "L" : 0.0,
+        "MP" : 0.4218
+      },
+      "majorityProbability" : 0.5706
+    } ]
+  },
   "resources" : {
-    "runtimeMillis" : 50255,
-    "peakHeapBytes" : 494154496,
+    "runtimeMillis" : 62727,
+    "peakHeapBytes" : 417485320,
     "targetMillis" : 10000,
     "inputPolls" : 1038,
     "estimatedDays" : 4278,

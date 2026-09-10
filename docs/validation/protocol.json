@@ -295,16 +295,51 @@
   "final_draws": 10000,
   "tolerance_status": "frozen-development",
   "resolved_tolerances": {
-    "seeded_reproduction_points": 2e-14,
+    "seeded_reproduction_points": 0,
+    "cross_architecture_reproduction_points": 2e-14,
     "historical_interval_endpoint_precision_points": 0.12,
     "coverage_boundary_stability_points": 0.5,
+    "probability_monte_carlo_standard_error": 0.005,
+    "threshold_probability_precision": 0.03,
+    "majority_probability_precision": 0.03,
     "snapshot_drift_points": 0.44
+  },
+  "resolved_diagnostic_gates": {
+    "minimum_subgroup_cases": 100,
+    "maximum_absolute_mean_standardized_residual": 0.5,
+    "minimum_root_mean_square_standardized_residual": 0.5,
+    "maximum_root_mean_square_standardized_residual": 1.5,
+    "maximum_absolute_residual_autocorrelation": 0.45,
+    "autocorrelation_explanation": "The nearly flat lag-1 through lag-3 correlations coincide with the separately reported overlapping-poll and same-institute dependence. Absolute correlation above 0.45 is treated as longer unexplained dependence and blocks."
+  },
+  "probability_precision": {
+    "seats": 349,
+    "threshold_percent": 4,
+    "first_divisor": 1.2,
+    "majority_seats": 175,
+    "majority_coalition": [
+      "M",
+      "L",
+      "KD",
+      "SD"
+    ],
+    "tie_order": [
+      "S",
+      "M",
+      "SD",
+      "V",
+      "C",
+      "KD",
+      "L",
+      "MP",
+      "FI"
+    ]
   },
   "resource_measurement": {
     "full_estimator_target_millis": 10000,
     "drift_poll_selection": "the last eligible development poll from each institute, ordered by midpoint then source row",
     "correction": "move 0.1 percentage points from OTHER to M in each selected poll; removing the row measures deletion and its reverse measures addition",
-    "runtime_scope": "one production-shaped corrected-history, joint-component uncertainty and comparable-remainder run; database setup and evidence parsing excluded",
+    "runtime_scope": "one production-shaped corrected-history, joint-component uncertainty, repeated-seed 4% threshold and Tido 175-seat probabilities, and comparable-remainder run using pre-2022 development references; database setup and evidence parsing excluded",
     "memory_scope": "sum of the JVM peak-used heap pools after their counters are reset immediately before the measured run",
     "performance_gate": "the ten-second recompute target is measured and reported but is not an unconditional release gate"
   },
