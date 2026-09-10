@@ -22,7 +22,8 @@ class PollCsvTest {
 
   @Test
   void preservesPrecisionAndMissingnessWithoutMixingUncertainIntoComposition() {
-    var poll = PollCsv.parse(csv(ROW.replace("2020-01-20", "NA"))).getFirst();
+    final se.swedishpolls.PollCsv.Poll poll =
+        PollCsv.parse(csv(ROW.replace("2020-01-20", "NA"))).getFirst();
     assertEquals(new BigDecimal("20.123"), poll.shares().get("M"));
     assertEquals(new BigDecimal("1.877"), poll.remainder());
     assertEquals("10", poll.raw().get("Uncertain"));
@@ -37,7 +38,7 @@ class PollCsvTest {
 
   @Test
   void archivesIneligibleRowsWithReasonsAndKeepsMissingSharesNull() {
-    var rows =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> rows =
         PollCsv.parse(
             csv(
                 ROW.replace(",17,1,10,", ",NA,1,10,")
@@ -57,7 +58,7 @@ class PollCsvTest {
 
   @Test
   void rejectsIncompleteDocumentsAndQuarantinesDuplicateKeysIncludingNullPublication() {
-    for (var body :
+    for (java.lang.String body :
         java.util.List.of(
             "",
             HEADER,
@@ -67,7 +68,7 @@ class PollCsvTest {
       assertThrows(
           IllegalArgumentException.class,
           () -> PollCsv.parse(body.getBytes(StandardCharsets.UTF_8)));
-    var rows =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> rows =
         PollCsv.parse(
             csv(
                 ROW.replace("2020-01-20", "NA")
@@ -78,7 +79,7 @@ class PollCsvTest {
 
   @Test
   void recordsDocumentedMethodBreakWithoutRenamingSourceIdentities() {
-    var rows =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> rows =
         PollCsv.parse(
             csv(
                 ROW.replace("Ipsos", "Demoskop").replace("2020", "2018")
@@ -93,17 +94,17 @@ class PollCsvTest {
 
   @Test
   void agreesWithPinnedDataAuditWithoutRoundingOrRescaling() throws Exception {
-    byte[] bytes;
-    try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+    final byte[] bytes;
+    try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
       bytes = input.readAllBytes();
     }
     assertEquals(
         "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
         java.util.HexFormat.of()
             .formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes)));
-    var rows = PollCsv.parse(bytes);
+    final java.util.List<se.swedishpolls.PollCsv.Poll> rows = PollCsv.parse(bytes);
     assertEquals(2650, rows.size());
-    var retained =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> retained =
         rows.stream()
             .filter(
                 p ->

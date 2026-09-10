@@ -25,27 +25,31 @@ class EstimateHistoryIT {
   @Test
   void publishesOneSmoothedSeriesPerValidatedPeriodAndDatesTheHeadlineAtTheLastFieldworkDate()
       throws Exception {
-    var schema = "history_" + UUID.randomUUID().toString().replace("-", "");
-    var dataSource = TestDatabase.dataSource(schema);
-    var flyway =
+    final java.lang.String schema = "history_" + UUID.randomUUID().toString().replace("-", "");
+    final org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+        TestDatabase.dataSource(schema);
+    final org.flywaydb.core.Flyway flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {
       flyway.migrate();
-      var db = JdbcClient.create(dataSource);
-      var periods = new Roster(db).periods();
-      var elections =
+      final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
+      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
+          new Roster(db).periods();
+      final java.util.List<java.time.LocalDate> elections =
           db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
               .query(LocalDate.class)
               .list();
-      List<PollCsv.Poll> polls;
-      try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+      final List<PollCsv.Poll> polls;
+      try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
         polls = PollCsv.parse(input.readAllBytes());
       }
-      var coverage = CoverageValidation.validation(COVERAGE);
-      var draws = JointUncertainty.rules(PROTOCOL);
-      var publication = EstimateHistory.publication(PROTOCOL);
+      final se.swedishpolls.CoverageValidation.Report coverage =
+          CoverageValidation.validation(COVERAGE);
+      final se.swedishpolls.JointUncertainty.Rules draws = JointUncertainty.rules(PROTOCOL);
+      final se.swedishpolls.EstimateHistory.Publication publication =
+          EstimateHistory.publication(PROTOCOL);
 
-      var history =
+      final se.swedishpolls.EstimateHistory.History history =
           EstimateHistory.history(periods, polls, elections, coverage, draws, publication);
 
       // Only the validated roster publishes a curve; the candidate segment stays unavailable.
@@ -58,12 +62,12 @@ class EstimateHistoryIT {
       // The largest internal gap of the eight-party period is 43 days, inside the registered 45,
       // so support never breaks and the whole window is one segment.
       assertEquals(1, history.segments().size());
-      var segment = history.segments().getFirst();
+      final se.swedishpolls.EstimateHistory.Segment segment = history.segments().getFirst();
       assertEquals(LocalDate.of(2010, 1, 4), segment.from());
       assertEquals(
           segment.days().size(),
           (int) java.time.temporal.ChronoUnit.DAYS.between(segment.from(), segment.to()) + 1);
-      for (var day : segment.days())
+      for (se.swedishpolls.EstimateHistory.Day day : segment.days())
         assertEquals(
             100, day.shares().values().stream().mapToDouble(Double::doubleValue).sum(), 1e-9);
       assertTrue(
@@ -74,21 +78,22 @@ class EstimateHistoryIT {
 
       // The published point estimate is the drawn mean, not the transform of the mean state: the
       // diagnostic runs over the same days and differs from the published series on some of them.
-      var eight =
+      final se.swedishpolls.Roster.CoveragePeriod eight =
           periods.stream().filter(p -> p.id().equals("eight_party_2010")).findFirst().orElseThrow();
-      var evidence =
+      final se.swedishpolls.CoverageValidation.Validated evidence =
           coverage.periods().stream()
               .filter(v -> v.periodId().equals("eight_party_2010"))
               .findFirst()
               .orElseThrow();
-      var diagnostic =
+      final java.util.List<se.swedishpolls.EstimateHistory.Composition> diagnostic =
           EstimateHistory.internalStateMean(
               eight, polls, elections, evidence.parameters(), coverage.rules());
       assertEquals(segment.days().size(), diagnostic.size());
       double shift = 0;
       for (int day = 0; day < diagnostic.size(); day++) {
         assertEquals(segment.days().get(day).date(), diagnostic.get(day).date());
-        for (var component : diagnostic.get(day).shares().entrySet())
+        for (java.util.Map.Entry<java.lang.String, java.lang.Double> component :
+            diagnostic.get(day).shares().entrySet())
           shift =
               Math.max(
                   shift,
@@ -100,16 +105,16 @@ class EstimateHistoryIT {
 
       // Mean, lower and upper come from one pass over a day's draws, so the point estimate lies
       // inside its own interval by construction.
-      for (var day : segment.days())
-        for (var component : day.components().values())
-          for (var interval : component.intervals())
+      for (se.swedishpolls.EstimateHistory.Day day : segment.days())
+        for (se.swedishpolls.EstimateHistory.Estimate component : day.components().values())
+          for (se.swedishpolls.JointUncertainty.Interval interval : component.intervals())
             assertTrue(
                 interval.lower() < component.mean() && component.mean() < interval.upper(),
                 component::toString);
 
       // The headline is dated at the last fieldwork date and estimated on the last midpoint; the
       // days between are not walked forward.
-      var headline = history.headline();
+      final se.swedishpolls.EstimateHistory.Headline headline = history.headline();
       assertEquals(LocalDate.of(2021, 10, 3), headline.asOf());
       assertEquals(segment.to(), headline.estimatedOn());
       assertTrue(headline.estimatedOn().isBefore(headline.asOf()));
@@ -120,7 +125,7 @@ class EstimateHistoryIT {
       assertEquals(coverage.gate().reasons(), history.gate().reasons());
 
       // A change across the election cycles that changed the centering reference is suppressed.
-      var reference =
+      final java.util.Optional<se.swedishpolls.EstimateHistory.Boundary> reference =
           history.boundaries().stream()
               .filter(b -> b.kind().equals(EstimateHistory.REFERENCE_CHANGE))
               .findFirst();

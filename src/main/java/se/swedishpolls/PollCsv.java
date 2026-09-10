@@ -77,7 +77,7 @@ public final class PollCsv {
   }
 
   public static List<Poll> parse(byte[] bytes) {
-    try (var csv =
+    try (final org.apache.commons.csv.CSVParser csv =
         CSVFormat.RFC4180
             .builder()
             .setHeader()
@@ -92,23 +92,25 @@ public final class PollCsv {
                         .toString()))) {
       if (!new HashSet<>(csv.getHeaderNames()).containsAll(REQUIRED))
         throw new IllegalArgumentException("Missing source columns");
-      var records = csv.getRecords();
+      final java.util.List<org.apache.commons.csv.CSVRecord> records = csv.getRecords();
       if (records.isEmpty()) throw new IllegalArgumentException("Empty source snapshot");
-      var keys = new HashMap<List<String>, Integer>();
-      for (var record : records) {
+      final java.util.HashMap<java.util.List<java.lang.String>, java.lang.Integer> keys =
+          new HashMap<List<String>, Integer>();
+      for (org.apache.commons.csv.CSVRecord record : records) {
         if (!record.isConsistent())
           throw new IllegalArgumentException("Incomplete CSV row " + record.getRecordNumber());
         keys.merge(key(record.toMap()), 1, Integer::sum);
       }
-      var polls = new ArrayList<Poll>();
-      for (var record : records) {
-        var raw = record.toMap();
-        var reasons = new ArrayList<String>();
+      final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls = new ArrayList<Poll>();
+      for (org.apache.commons.csv.CSVRecord record : records) {
+        final java.util.Map<java.lang.String, java.lang.String> raw = record.toMap();
+        final java.util.ArrayList<java.lang.String> reasons = new ArrayList<String>();
         if (keys.get(key(raw)) > 1) reasons.add("duplicate_natural_key");
         if (!List.of("TRUE", "FALSE").contains(raw.get("approxPeriod")))
           reasons.add("invalid_approx_period");
-        var shares = new LinkedHashMap<String, BigDecimal>();
-        for (var party : PARTIES) shares.put(party, share(raw, party, true, reasons));
+        final java.util.LinkedHashMap<java.lang.String, java.math.BigDecimal> shares =
+            new LinkedHashMap<String, BigDecimal>();
+        for (java.lang.String party : PARTIES) shares.put(party, share(raw, party, true, reasons));
         shares.put("FI", share(raw, "FI", false, reasons));
         share(raw, "Uncertain", false, reasons);
         BigDecimal remainder = null;
@@ -119,24 +121,24 @@ public final class PollCsv {
                       PARTIES.stream().map(shares::get).reduce(BigDecimal.ZERO, BigDecimal::add));
           if (remainder.signum() < 0) reasons.add("negative_remainder");
         }
-        var publication = date(raw, "PublDate", false, reasons);
-        var from = date(raw, "collectPeriodFrom", true, reasons);
-        var to = date(raw, "collectPeriodTo", true, reasons);
+        final java.time.LocalDate publication = date(raw, "PublDate", false, reasons);
+        final java.time.LocalDate from = date(raw, "collectPeriodFrom", true, reasons);
+        final java.time.LocalDate to = date(raw, "collectPeriodTo", true, reasons);
         if (from != null && to != null && from.isAfter(to))
           reasons.add("reversed_collection_dates");
         if (publication != null && to != null && publication.isBefore(to))
           reasons.add("publication_before_collection_end");
         if (from != null && from.isBefore(LocalDate.of(2010, 1, 1)))
           reasons.add("outside_supported_history");
-        var sampleSize = number(raw.get("n"), "sample_size", true, reasons);
+        final java.math.BigDecimal sampleSize = number(raw.get("n"), "sample_size", true, reasons);
         if (sampleSize != null
             && (sampleSize.signum() <= 0 || sampleSize.stripTrailingZeros().scale() > 0))
           reasons.add("invalid_sample_size");
-        var company = raw.get("Company");
-        var institute = raw.get("house");
+        final java.lang.String company = raw.get("Company");
+        final java.lang.String institute = raw.get("house");
         if (missing(company)) reasons.add("missing_company");
         if (missing(institute)) reasons.add("missing_institute");
-        boolean exit = EXIT_POLL.matcher(company + " " + institute).find();
+        final boolean exit = EXIT_POLL.matcher(company + " " + institute).find();
         if (exit) reasons.add("exit_or_election_day");
         String era = "Inizio".equals(institute) ? "inizio_continuation" : null;
         if ("Demoskop".equals(institute) && publication != null)
@@ -176,7 +178,7 @@ public final class PollCsv {
     return Arrays.asList("house", "PublDate", "collectPeriodFrom", "collectPeriodTo", "n").stream()
         .map(
             field -> {
-              String value = raw.get(field);
+              final String value = raw.get(field);
               if (missing(value)) return null;
               if (field.equals("n")) {
                 try {
@@ -192,7 +194,7 @@ public final class PollCsv {
 
   private static BigDecimal share(
       Map<String, String> raw, String field, boolean required, List<String> reasons) {
-    var value = number(raw.get(field), "share:" + field, required, reasons);
+    final java.math.BigDecimal value = number(raw.get(field), "share:" + field, required, reasons);
     if (value != null && (value.signum() < 0 || value.compareTo(new BigDecimal("100")) > 0))
       reasons.add("invalid_share:" + field);
     return value;
@@ -214,7 +216,7 @@ public final class PollCsv {
 
   private static LocalDate date(
       Map<String, String> raw, String field, boolean required, List<String> reasons) {
-    var text = raw.get(field);
+    final java.lang.String text = raw.get(field);
     if (missing(text)) {
       if (required) reasons.add("missing_" + field);
       return null;

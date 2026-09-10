@@ -23,34 +23,39 @@ class DevelopmentTuningIT {
 
   @Test
   void resolvesFiniteParametersPerFoldAndRosterAndListsEveryGridBoundary() throws Exception {
-    var schema = "tuning_" + UUID.randomUUID().toString().replace("-", "");
-    var dataSource = TestDatabase.dataSource(schema);
-    var flyway =
+    final java.lang.String schema = "tuning_" + UUID.randomUUID().toString().replace("-", "");
+    final org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+        TestDatabase.dataSource(schema);
+    final org.flywaydb.core.Flyway flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {
       flyway.migrate();
-      var db = JdbcClient.create(dataSource);
-      var periods = new Roster(db).periods();
-      var elections =
+      final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
+      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
+          new Roster(db).periods();
+      final java.util.List<java.time.LocalDate> elections =
           db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
               .query(LocalDate.class)
               .list();
-      List<PollCsv.Poll> polls;
-      try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+      final List<PollCsv.Poll> polls;
+      try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
         polls = PollCsv.parse(input.readAllBytes());
       }
-      var registered = DevelopmentTuning.protocol(PROTOCOL);
-      boolean full = Boolean.getBoolean("tuning.full");
-      var folds =
+      final se.swedishpolls.DevelopmentTuning.Protocol registered =
+          DevelopmentTuning.protocol(PROTOCOL);
+      final boolean full = Boolean.getBoolean("tuning.full");
+      final java.util.List<se.swedishpolls.DevelopmentTuning.Fold> folds =
           full
               ? registered.folds()
               : List.of(
                   registered.folds().getFirst(),
                   registered.folds().get(registered.folds().size() / 2),
                   registered.folds().getLast());
-      var protocol = new DevelopmentTuning.Protocol(registered.version(), folds, registered.grid());
+      final se.swedishpolls.DevelopmentTuning.Protocol protocol =
+          new DevelopmentTuning.Protocol(registered.version(), folds, registered.grid());
 
-      var tuning = DevelopmentTuning.tuneAll(periods, polls, elections, protocol);
+      final se.swedishpolls.DevelopmentTuning.Tuning tuning =
+          DevelopmentTuning.tuneAll(periods, polls, elections, protocol);
 
       assertEquals(
           folds.size() * periods.size(), tuning.resolved().size() + tuning.unresolved().size());
@@ -69,7 +74,7 @@ class DevelopmentTuningIT {
       assertTrue(
           tuning.gate().reasons().stream().anyMatch(reason -> reason.contains("grid boundary")),
           () -> tuning.gate().reasons().toString());
-      for (var resolved : tuning.resolved()) {
+      for (se.swedishpolls.DevelopmentTuning.Resolved resolved : tuning.resolved()) {
         assertTrue(Double.isFinite(resolved.logLikelihood()), resolved::toString);
         assertTrue(
             resolved.observations() > 0 && resolved.observations() <= resolved.trainingPolls());
@@ -91,12 +96,12 @@ class DevelopmentTuningIT {
         // Training never reaches past its own cutoff, so a later fold never trains on less data.
         assertTrue(resolved.fold().cutoff().isBefore(LocalDate.of(2022, 1, 1)));
       }
-      var eight =
+      final java.util.List<se.swedishpolls.DevelopmentTuning.Resolved> eight =
           tuning.resolved().stream().filter(r -> r.periodId().equals("eight_party_2010")).toList();
       assertEquals(folds.size(), eight.size());
       assertTrue(eight.getLast().trainingPolls() > eight.getFirst().trainingPolls());
       // Seeded reproduction of the same fold must resolve the identical point and likelihood.
-      var repeated =
+      final se.swedishpolls.DevelopmentTuning.Resolved repeated =
           DevelopmentTuning.tune(
               periods.getFirst(), polls, elections, folds.getFirst(), registered.grid());
       assertEquals(eight.getFirst(), repeated);

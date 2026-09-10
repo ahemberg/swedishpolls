@@ -200,11 +200,11 @@ public final class DevelopmentGates {
 
     public double maximumThresholdSpread() {
       double maximum = 0;
-      for (var component : runs.getFirst().thresholdProbabilities().keySet()) {
+      for (java.lang.String component : runs.getFirst().thresholdProbabilities().keySet()) {
         double minimum = 1;
         double maximumProbability = 0;
-        for (var run : runs) {
-          var probability = run.thresholdProbabilities().get(component);
+        for (se.swedishpolls.DevelopmentGates.ProbabilityRun run : runs) {
+          final java.lang.Double probability = run.thresholdProbabilities().get(component);
           if (probability == null)
             throw new IllegalArgumentException("Probability runs use different components");
           minimum = Math.min(minimum, probability);
@@ -216,9 +216,9 @@ public final class DevelopmentGates {
     }
 
     public double majoritySpread() {
-      double minimum =
+      final double minimum =
           runs.stream().mapToDouble(ProbabilityRun::majorityProbability).min().orElseThrow();
-      double maximum =
+      final double maximum =
           runs.stream().mapToDouble(ProbabilityRun::majorityProbability).max().orElseThrow();
       return maximum - minimum;
     }
@@ -291,20 +291,23 @@ public final class DevelopmentGates {
       PollCsv.Poll changed,
       EstimateHistory.Estimated baseline,
       EstimateHistory.Estimated perturbed) {
-    var before = days(baseline);
+    final java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.lang.Double>>
+        before = days(baseline);
     long compared = 0;
     double maximum = -1;
     LocalDate maximumOn = null;
     String maximumComponent = null;
-    for (var segment : perturbed.segments())
-      for (var day : segment.days()) {
-        var reference = before.get(segment.periodId() + "|" + day.date());
+    for (se.swedishpolls.EstimateHistory.Segment segment : perturbed.segments())
+      for (se.swedishpolls.EstimateHistory.Day day : segment.days()) {
+        final java.util.Map<java.lang.String, java.lang.Double> reference =
+            before.get(segment.periodId() + "|" + day.date());
         if (reference == null) continue;
-        for (var component : day.shares().entrySet()) {
-          var old = reference.get(component.getKey());
+        for (java.util.Map.Entry<java.lang.String, java.lang.Double> component :
+            day.shares().entrySet()) {
+          final java.lang.Double old = reference.get(component.getKey());
           if (old == null) continue;
           compared++;
-          double shift = Math.abs(component.getValue() - old);
+          final double shift = Math.abs(component.getValue() - old);
           if (shift > maximum) {
             maximum = shift;
             maximumOn = day.date();
@@ -324,9 +327,12 @@ public final class DevelopmentGates {
   }
 
   private static Map<String, Map<String, Double>> days(EstimateHistory.Estimated estimated) {
-    var days = new LinkedHashMap<String, Map<String, Double>>();
-    for (var segment : estimated.segments())
-      for (var day : segment.days()) days.put(segment.periodId() + "|" + day.date(), day.shares());
+    final java.util.LinkedHashMap<
+            java.lang.String, java.util.Map<java.lang.String, java.lang.Double>>
+        days = new LinkedHashMap<String, Map<String, Double>>();
+    for (se.swedishpolls.EstimateHistory.Segment segment : estimated.segments())
+      for (se.swedishpolls.EstimateHistory.Day day : segment.days())
+        days.put(segment.periodId() + "|" + day.date(), day.shares());
     return Collections.unmodifiableMap(days);
   }
 
@@ -335,16 +341,17 @@ public final class DevelopmentGates {
    */
   public static Resources measure(
       Runnable estimator, long targetMillis, int inputPolls, int estimatedDays, int finalDraws) {
-    var pools =
+    final java.util.List<java.lang.management.MemoryPoolMXBean> pools =
         ManagementFactory.getMemoryPoolMXBeans().stream()
             .filter(pool -> pool.getType() == MemoryType.HEAP)
             .toList();
-    for (var pool : pools) pool.resetPeakUsage();
-    long started = System.nanoTime();
+    for (java.lang.management.MemoryPoolMXBean pool : pools) pool.resetPeakUsage();
+    final long started = System.nanoTime();
     estimator.run();
-    long runtimeMillis = Math.max(1, (System.nanoTime() - started) / 1_000_000);
-    long peakHeapBytes = pools.stream().mapToLong(pool -> pool.getPeakUsage().getUsed()).sum();
-    var runtime = ManagementFactory.getRuntimeMXBean();
+    final long runtimeMillis = Math.max(1, (System.nanoTime() - started) / 1_000_000);
+    final long peakHeapBytes =
+        pools.stream().mapToLong(pool -> pool.getPeakUsage().getUsed()).sum();
+    final java.lang.management.RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
     return new Resources(
         runtimeMillis,
         peakHeapBytes,
@@ -372,17 +379,25 @@ public final class DevelopmentGates {
       Drift drift,
       Resources resources) {
     try {
-      var protocol = JSON.readTree(Files.readAllBytes(protocolFile));
-      var coverage = JSON.readTree(Files.readAllBytes(coverageFile));
-      var uncertainty = JSON.readTree(Files.readAllBytes(uncertaintyFile));
-      var diagnostics = JSON.readTree(Files.readAllBytes(diagnosticsFile));
-      var crossArchitecture = crossArchitecture(crossArchitectureFile);
-      var probabilityPrecision = probabilityPrecision(probabilityPrecisionFile);
+      final tools.jackson.databind.JsonNode protocol =
+          JSON.readTree(Files.readAllBytes(protocolFile));
+      final tools.jackson.databind.JsonNode coverage =
+          JSON.readTree(Files.readAllBytes(coverageFile));
+      final tools.jackson.databind.JsonNode uncertainty =
+          JSON.readTree(Files.readAllBytes(uncertaintyFile));
+      final tools.jackson.databind.JsonNode diagnostics =
+          JSON.readTree(Files.readAllBytes(diagnosticsFile));
+      final se.swedishpolls.DevelopmentGates.CrossArchitecture crossArchitecture =
+          crossArchitecture(crossArchitectureFile);
+      final se.swedishpolls.DevelopmentGates.ProbabilityPrecision probabilityPrecision =
+          probabilityPrecision(probabilityPrecisionFile);
       if (!"frozen-development".equals(required(protocol, "tolerance_status").asString()))
         throw new IllegalArgumentException("Development tolerances are not frozen");
-      var limits = required(protocol, "resolved_tolerances");
-      var probabilityRules = required(protocol, "probability_precision");
-      var uncertaintyRules = JointUncertainty.rules(protocolFile);
+      final tools.jackson.databind.JsonNode limits = required(protocol, "resolved_tolerances");
+      final tools.jackson.databind.JsonNode probabilityRules =
+          required(protocol, "probability_precision");
+      final se.swedishpolls.JointUncertainty.Rules uncertaintyRules =
+          JointUncertainty.rules(protocolFile);
       if (!probabilityPrecision.rules().equals(allocationRules(protocolFile))
           || !probabilityPrecision
               .majorityCoalition()
@@ -393,8 +408,9 @@ public final class DevelopmentGates {
               .equals(JointUncertainty.precisionSeeds(uncertaintyRules)))
         throw new IllegalArgumentException("Probability precision used unregistered rules");
       validateProbabilityEvidence(probabilityPrecision, uncertainty);
-      var tolerances = new ArrayList<Tolerance>();
-      var sameArchitecture =
+      final java.util.ArrayList<se.swedishpolls.DevelopmentGates.Tolerance> tolerances =
+          new ArrayList<Tolerance>();
+      final se.swedishpolls.DevelopmentGates.Tolerance sameArchitecture =
           proposed(
               "seeded_reproduction",
               required(limits, "seeded_reproduction_points").doubleValue(),
@@ -435,7 +451,7 @@ public final class DevelopmentGates {
               required(limits, "coverage_boundary_stability_points").doubleValue(),
               coverageFile,
               coverage));
-      int finalDraws = required(protocol, "final_draws").intValue();
+      final int finalDraws = required(protocol, "final_draws").intValue();
       tolerances.add(
           new Tolerance(
               "probability_monte_carlo_standard_error",
@@ -488,7 +504,7 @@ public final class DevelopmentGates {
                   + " eligible development poll, which also measures adding it back, or moving"
                   + " 0.1 points from OTHER to M in that poll."));
 
-      var reasons = new LinkedHashSet<String>();
+      final java.util.LinkedHashSet<java.lang.String> reasons = new LinkedHashSet<String>();
       addGateReasons(reasons, coverage, "coverage");
       addGateReasons(reasons, uncertainty, "uncertainty");
       addGateReasons(reasons, diagnostics, "diagnostics");
@@ -496,7 +512,7 @@ public final class DevelopmentGates {
       requireProtocolVersion(protocol, uncertainty, "uncertainty");
       requireProtocolVersion(protocol, diagnostics, "diagnostics");
       addDiagnosticReasons(reasons, protocol, coverage, diagnostics);
-      for (var tolerance : tolerances)
+      for (se.swedishpolls.DevelopmentGates.Tolerance tolerance : tolerances)
         if (!tolerance.passes())
           reasons.add(
               tolerance.name()
@@ -504,12 +520,12 @@ public final class DevelopmentGates {
                   + tolerance.maxObservedError()
                   + " above the frozen maximum "
                   + tolerance.maximum());
-      boolean fallback = conditionalCoverageFailed(protocol, diagnostics);
+      final boolean fallback = conditionalCoverageFailed(protocol, diagnostics);
       if (fallback)
         reasons.add(
             "conditional predictive coverage failed; rerun affected checks with the approved"
                 + " hyperparameter grid mixture");
-      long registeredTarget =
+      final long registeredTarget =
           required(required(protocol, "resource_measurement"), "full_estimator_target_millis")
               .longValue();
       if (resources.targetMillis() != registeredTarget)
@@ -529,11 +545,12 @@ public final class DevelopmentGates {
   }
 
   private static void addGateReasons(Set<String> reasons, JsonNode evidence, String source) {
-    var gate = required(evidence, "gate");
-    var upstream = required(gate, "reasons");
+    final tools.jackson.databind.JsonNode gate = required(evidence, "gate");
+    final tools.jackson.databind.JsonNode upstream = required(gate, "reasons");
     if (required(gate, "blocked").booleanValue() != !upstream.isEmpty())
       throw new IllegalArgumentException(source + " gate state does not match its reasons");
-    for (var reason : upstream) reasons.add(source + ": " + reason.asString());
+    for (tools.jackson.databind.JsonNode reason : upstream)
+      reasons.add(source + ": " + reason.asString());
   }
 
   private static void requireProtocolVersion(JsonNode protocol, JsonNode evidence, String source) {
@@ -545,35 +562,35 @@ public final class DevelopmentGates {
 
   private static void addDiagnosticReasons(
       Set<String> reasons, JsonNode protocol, JsonNode coverage, JsonNode diagnostics) {
-    var rules = required(protocol, "resolved_diagnostic_gates");
+    final tools.jackson.databind.JsonNode rules = required(protocol, "resolved_diagnostic_gates");
     if (required(rules, "autocorrelation_explanation").asString().isBlank())
       throw new IllegalArgumentException("Residual autocorrelation needs an explanation");
-    var band95 = required(protocol, "predictive_coverage95");
-    var band50 = required(protocol, "predictive_coverage50");
-    double maximumBias =
+    final tools.jackson.databind.JsonNode band95 = required(protocol, "predictive_coverage95");
+    final tools.jackson.databind.JsonNode band50 = required(protocol, "predictive_coverage50");
+    final double maximumBias =
         required(rules, "maximum_absolute_mean_standardized_residual").doubleValue();
-    double minimumScale =
+    final double minimumScale =
         required(rules, "minimum_root_mean_square_standardized_residual").doubleValue();
-    double maximumScale =
+    final double maximumScale =
         required(rules, "maximum_root_mean_square_standardized_residual").doubleValue();
-    int minimumCases = required(rules, "minimum_subgroup_cases").intValue();
-    var scopes = new LinkedHashSet<String>();
-    var periods = new LinkedHashSet<String>();
-    for (var period : required(coverage, "periods"))
+    final int minimumCases = required(rules, "minimum_subgroup_cases").intValue();
+    final java.util.LinkedHashSet<java.lang.String> scopes = new LinkedHashSet<String>();
+    final java.util.LinkedHashSet<java.lang.String> periods = new LinkedHashSet<String>();
+    for (tools.jackson.databind.JsonNode period : required(coverage, "periods"))
       if (required(period, "supported").booleanValue())
         periods.add(required(period, "periodId").asString());
-    for (var row : required(diagnostics, "misfit")) {
+    for (tools.jackson.databind.JsonNode row : required(diagnostics, "misfit")) {
       if (!"midpoint".equals(required(row, "candidate").asString())) continue;
-      var scope = required(row, "scope").asString();
-      var period = required(row, "periodId").asString();
+      final java.lang.String scope = required(row, "scope").asString();
+      final java.lang.String period = required(row, "periodId").asString();
       scopes.add(period + ":" + scope);
       if ("all".equals(scope)) continue;
-      var label = period + " " + scope + " " + required(row, "name").asString();
+      final java.lang.String label = period + " " + scope + " " + required(row, "name").asString();
       if (required(row, "cases").intValue() < minimumCases) continue;
-      double coverage95 = required(row, "coverage95").doubleValue();
-      double coverage50 = required(row, "coverage50").doubleValue();
-      double bias = Math.abs(required(row, "meanStandardizedResidual").doubleValue());
-      double scale = required(row, "rootMeanSquareStandardizedResidual").doubleValue();
+      final double coverage95 = required(row, "coverage95").doubleValue();
+      final double coverage50 = required(row, "coverage50").doubleValue();
+      final double bias = Math.abs(required(row, "meanStandardizedResidual").doubleValue());
+      final double scale = required(row, "rootMeanSquareStandardizedResidual").doubleValue();
       if (outside(coverage95, band95) || outside(coverage50, band50))
         reasons.add(
             label + " has unexplained subgroup coverage 95/50=" + coverage95 + "/" + coverage50);
@@ -582,24 +599,25 @@ public final class DevelopmentGates {
       if (scale < minimumScale || scale > maximumScale)
         reasons.add(label + " has root-mean-square standardized residual " + scale);
     }
-    for (var period : periods)
-      for (var scope : List.of("all", "party", "institute", "fieldwork_days"))
+    for (java.lang.String period : periods)
+      for (java.lang.String scope : List.of("all", "party", "institute", "fieldwork_days"))
         if (!scopes.contains(period + ":" + scope))
           throw new IllegalArgumentException("Missing " + scope + " misfit evidence for " + period);
-    var lags = new LinkedHashSet<String>();
-    double maximumAutocorrelation =
+    final java.util.LinkedHashSet<java.lang.String> lags = new LinkedHashSet<String>();
+    final double maximumAutocorrelation =
         required(rules, "maximum_absolute_residual_autocorrelation").doubleValue();
-    for (var row : required(diagnostics, "autocorrelation")) {
-      var period = required(row, "periodId").asString();
-      int lag = required(row, "lag").intValue();
+    for (tools.jackson.databind.JsonNode row : required(diagnostics, "autocorrelation")) {
+      final java.lang.String period = required(row, "periodId").asString();
+      final int lag = required(row, "lag").intValue();
       lags.add(period + ":" + lag);
-      double correlation = Math.abs(required(row, "correlation").doubleValue());
+      final double correlation = Math.abs(required(row, "correlation").doubleValue());
       if (correlation > maximumAutocorrelation)
         reasons.add(period + " residual autocorrelation at lag " + lag + " is " + correlation);
     }
-    for (var period : periods)
-      for (var lagNode : required(required(protocol, "diagnostics"), "residual_lags")) {
-        int lag = lagNode.intValue();
+    for (java.lang.String period : periods)
+      for (tools.jackson.databind.JsonNode lagNode :
+          required(required(protocol, "diagnostics"), "residual_lags")) {
+        final int lag = lagNode.intValue();
         if (!lags.contains(period + ":" + lag))
           throw new IllegalArgumentException(
               "Missing residual autocorrelation for " + period + " lag " + lag);
@@ -609,13 +627,14 @@ public final class DevelopmentGates {
   private static void validateProbabilityEvidence(
       ProbabilityPrecision precision, JsonNode uncertainty) {
     JsonNode published = null;
-    for (var period : required(uncertainty, "periods"))
+    for (tools.jackson.databind.JsonNode period : required(uncertainty, "periods"))
       if (precision.periodId().equals(required(period, "periodId").asString())) published = period;
     if (published == null)
       throw new IllegalArgumentException(
           "Probability precision period has no uncertainty evidence");
-    var reproduction = required(published, "reproduction");
-    var expectedComponents = strings(required(reproduction, "components"));
+    final tools.jackson.databind.JsonNode reproduction = required(published, "reproduction");
+    final java.util.List<java.lang.String> expectedComponents =
+        strings(required(reproduction, "components"));
     if (!precision
             .date()
             .toString()
@@ -626,16 +645,16 @@ public final class DevelopmentGates {
             .equals(required(reproduction, "implementationSha256").asString())
         || !precision.components().equals(expectedComponents))
       throw new IllegalArgumentException("Probability precision does not match its fitted run");
-    var allocated =
+    final java.util.List<java.lang.String> allocated =
         expectedComponents.stream().filter(precision.rules().tieOrder()::contains).toList();
-    for (var run : precision.runs())
+    for (se.swedishpolls.DevelopmentGates.ProbabilityRun run : precision.runs())
       if (!new ArrayList<>(run.thresholdProbabilities().keySet()).equals(allocated))
         throw new IllegalArgumentException("Probability precision uses the wrong component set");
   }
 
   private static Tolerance proposed(
       String suffix, double maximum, Path evidenceFile, JsonNode uncertainty) throws IOException {
-    for (var candidate : required(uncertainty, "proposedTolerances"))
+    for (tools.jackson.databind.JsonNode candidate : required(uncertainty, "proposedTolerances"))
       if (required(candidate, "name").asString().endsWith(":" + suffix))
         return new Tolerance(
             suffix,
@@ -654,12 +673,13 @@ public final class DevelopmentGates {
       throws IOException {
     double observed = 0;
     long cases = 0;
-    for (var period : required(coverage, "periods"))
-      for (var stability : required(period, "stability")) {
-        int days = required(stability, "comparedDays").intValue();
-        var shifts = required(stability, "maxShiftPoints");
+    for (tools.jackson.databind.JsonNode period : required(coverage, "periods"))
+      for (tools.jackson.databind.JsonNode stability : required(period, "stability")) {
+        final int days = required(stability, "comparedDays").intValue();
+        final tools.jackson.databind.JsonNode shifts = required(stability, "maxShiftPoints");
         cases += (long) days * shifts.size();
-        for (var shift : shifts) observed = Math.max(observed, shift.doubleValue());
+        for (tools.jackson.databind.JsonNode shift : shifts)
+          observed = Math.max(observed, shift.doubleValue());
       }
     return new Tolerance(
         "coverage_boundary_stability",
@@ -675,10 +695,10 @@ public final class DevelopmentGates {
   }
 
   private static boolean conditionalCoverageFailed(JsonNode protocol, JsonNode diagnostics) {
-    var band95 = required(protocol, "predictive_coverage95");
-    var band50 = required(protocol, "predictive_coverage50");
+    final tools.jackson.databind.JsonNode band95 = required(protocol, "predictive_coverage95");
+    final tools.jackson.databind.JsonNode band50 = required(protocol, "predictive_coverage50");
     int candidates = 0;
-    for (var row : required(diagnostics, "misfit"))
+    for (tools.jackson.databind.JsonNode row : required(diagnostics, "misfit"))
       if ("midpoint".equals(required(row, "candidate").asString())
           && "all".equals(required(row, "scope").asString())) {
         candidates++;
@@ -705,8 +725,8 @@ public final class DevelopmentGates {
 
   public static AllocationRules allocationRules(Path protocolFile) {
     try {
-      var root = JSON.readTree(Files.readAllBytes(protocolFile));
-      var rules = required(root, "probability_precision");
+      final tools.jackson.databind.JsonNode root = JSON.readTree(Files.readAllBytes(protocolFile));
+      final tools.jackson.databind.JsonNode rules = required(root, "probability_precision");
       return new AllocationRules(
           required(rules, "seats").intValue(),
           required(rules, "threshold_percent").doubleValue(),
@@ -727,41 +747,44 @@ public final class DevelopmentGates {
       List<String> majorityCoalition) {
     if (repeats.size() != seeds.size() || repeats.size() < 2)
       throw new IllegalArgumentException("Probability precision needs one run per seed");
-    var first = repeats.getFirst();
+    final se.swedishpolls.JointUncertainty.Draws first = repeats.getFirst();
     if (!estimated.periodId().equals(first.periodId())
         || !estimated.finalDraws().date().equals(first.date())
         || !estimated.finalDraws().components().equals(first.components()))
       throw new IllegalArgumentException("Probability precision does not match its fitted run");
-    var runs = new ArrayList<ProbabilityRun>();
+    final java.util.ArrayList<se.swedishpolls.DevelopmentGates.ProbabilityRun> runs =
+        new ArrayList<ProbabilityRun>();
     for (int repeat = 0; repeat < repeats.size(); repeat++) {
-      var draws = repeats.get(repeat);
+      final se.swedishpolls.JointUncertainty.Draws draws = repeats.get(repeat);
       if (!draws.periodId().equals(first.periodId())
           || !draws.date().equals(first.date())
           || !draws.components().equals(first.components())
           || draws.count() != first.count())
         throw new IllegalArgumentException("Probability runs estimate different final days");
-      var allocatedComponents =
+      final java.util.List<java.lang.String> allocatedComponents =
           rules.tieOrder().stream().filter(draws.components()::contains).toList();
-      var thresholdCounts = new int[allocatedComponents.size()];
+      final int[] thresholdCounts = new int[allocatedComponents.size()];
       int majorities = 0;
       for (int draw = 0; draw < draws.count(); draw++) {
-        var shares = new LinkedHashMap<String, Double>();
+        final java.util.LinkedHashMap<java.lang.String, java.lang.Double> shares =
+            new LinkedHashMap<String, Double>();
         for (int componentIndex = 0;
             componentIndex < allocatedComponents.size();
             componentIndex++) {
-          var component = allocatedComponents.get(componentIndex);
-          double share = draws.shares().get(draw, draws.components().indexOf(component));
+          final java.lang.String component = allocatedComponents.get(componentIndex);
+          final double share = draws.shares().get(draw, draws.components().indexOf(component));
           shares.put(component, share);
           if (share >= rules.thresholdPercent()) thresholdCounts[componentIndex]++;
         }
-        var seats = allocate(shares, rules);
-        int coalitionSeats =
+        final java.util.Map<java.lang.String, java.lang.Integer> seats = allocate(shares, rules);
+        final int coalitionSeats =
             majorityCoalition.stream()
                 .mapToInt(component -> seats.getOrDefault(component, 0))
                 .sum();
         if (coalitionSeats >= rules.majoritySeats()) majorities++;
       }
-      var thresholds = new LinkedHashMap<String, Double>();
+      final java.util.LinkedHashMap<java.lang.String, java.lang.Double> thresholds =
+          new LinkedHashMap<String, Double>();
       for (int component = 0; component < allocatedComponents.size(); component++)
         thresholds.put(
             allocatedComponents.get(component),
@@ -787,9 +810,10 @@ public final class DevelopmentGates {
    * allocation are one implementation rather than two that could drift apart.
    */
   static Map<String, Integer> allocate(Map<String, Double> shares, AllocationRules rules) {
-    var qualified = new LinkedHashMap<String, Double>();
-    for (var component : rules.tieOrder()) {
-      var share = shares.get(component);
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> qualified =
+        new LinkedHashMap<String, Double>();
+    for (java.lang.String component : rules.tieOrder()) {
+      final java.lang.Double share = shares.get(component);
       if (share == null) continue;
       if (!Double.isFinite(share) || share < 0)
         throw new IllegalArgumentException("Inadmissible support for " + component);
@@ -800,7 +824,8 @@ public final class DevelopmentGates {
   }
 
   private static Map<String, Double> ordered(Map<String, Double> values) {
-    var copy = new LinkedHashMap<String, Double>();
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> copy =
+        new LinkedHashMap<String, Double>();
     values.forEach(
         (key, value) -> {
           if (value == null || !Double.isFinite(value) || value < 0 || value > 1)
@@ -811,19 +836,19 @@ public final class DevelopmentGates {
   }
 
   private static List<Long> longs(JsonNode values) {
-    var result = new ArrayList<Long>();
-    for (var value : values) result.add(value.longValue());
+    final java.util.ArrayList<java.lang.Long> result = new ArrayList<Long>();
+    for (tools.jackson.databind.JsonNode value : values) result.add(value.longValue());
     return List.copyOf(result);
   }
 
   private static List<String> strings(JsonNode values) {
-    var result = new ArrayList<String>();
-    for (var value : values) result.add(value.asString());
+    final java.util.ArrayList<java.lang.String> result = new ArrayList<String>();
+    for (tools.jackson.databind.JsonNode value : values) result.add(value.asString());
     return List.copyOf(result);
   }
 
   private static JsonNode required(JsonNode node, String field) {
-    var value = node.get(field);
+    final tools.jackson.databind.JsonNode value = node.get(field);
     if (value == null || value.isNull())
       throw new IllegalArgumentException("Missing development evidence field " + field);
     return value;

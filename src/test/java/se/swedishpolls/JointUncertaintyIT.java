@@ -25,49 +25,54 @@ class JointUncertaintyIT {
   @Test
   void drawsTheFinalDayTenThousandTimesAndReproducesEveryDrawAtTheRegisteredSeed()
       throws Exception {
-    var schema = "uncertainty_" + UUID.randomUUID().toString().replace("-", "");
-    var dataSource = TestDatabase.dataSource(schema);
-    var flyway =
+    final java.lang.String schema = "uncertainty_" + UUID.randomUUID().toString().replace("-", "");
+    final org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+        TestDatabase.dataSource(schema);
+    final org.flywaydb.core.Flyway flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {
       flyway.migrate();
-      var db = JdbcClient.create(dataSource);
-      var periods = new Roster(db).periods();
-      var elections =
+      final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
+      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
+          new Roster(db).periods();
+      final java.util.List<java.time.LocalDate> elections =
           db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
               .query(LocalDate.class)
               .list();
-      List<PollCsv.Poll> polls;
-      try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+      final List<PollCsv.Poll> polls;
+      try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
         polls = PollCsv.parse(input.readAllBytes());
       }
-      var coverage = CoverageValidation.validation(COVERAGE);
-      var rules = JointUncertainty.rules(PROTOCOL);
-      boolean full = Boolean.getBoolean("uncertainty.full");
-      var seeds = full ? JointUncertainty.precisionSeeds(rules) : List.of(rules.seed());
+      final se.swedishpolls.CoverageValidation.Report coverage =
+          CoverageValidation.validation(COVERAGE);
+      final se.swedishpolls.JointUncertainty.Rules rules = JointUncertainty.rules(PROTOCOL);
+      final boolean full = Boolean.getBoolean("uncertainty.full");
+      final java.util.List<java.lang.Long> seeds =
+          full ? JointUncertainty.precisionSeeds(rules) : List.of(rules.seed());
 
-      var report = JointUncertainty.report(periods, polls, elections, coverage, rules, seeds);
+      final se.swedishpolls.JointUncertainty.Report report =
+          JointUncertainty.report(periods, polls, elections, coverage, rules, seeds);
 
       // Only the validated roster draws; the candidate segment publishes nothing here either.
       assertEquals(1, report.periods().size());
-      var published = report.periods().getFirst();
+      final se.swedishpolls.JointUncertainty.Published published = report.periods().getFirst();
       assertEquals("eight_party_2010", published.periodId());
       assertEquals(4278, published.estimatedDays());
 
       // The headline is the last estimated day of the last segment, drawn 10,000 times.
-      var headline = published.headline();
+      final se.swedishpolls.JointUncertainty.Day headline = published.headline();
       assertEquals(LocalDate.of(2021, 9, 20), headline.date());
       assertEquals(9, headline.components().size());
       assertEquals(
           100,
           headline.components().stream().mapToDouble(JointUncertainty.Component::mean).sum(),
           1e-9);
-      for (var summary : headline.components()) {
+      for (se.swedishpolls.JointUncertainty.Component summary : headline.components()) {
         assertEquals(
             List.of(0.5, 0.95),
             summary.intervals().stream().map(JointUncertainty.Interval::level).toList());
-        var half = summary.intervals().getFirst();
-        var wide = summary.intervals().getLast();
+        final se.swedishpolls.JointUncertainty.Interval half = summary.intervals().getFirst();
+        final se.swedishpolls.JointUncertainty.Interval wide = summary.intervals().getLast();
         assertTrue(wide.lower() < half.lower() && half.upper() < wide.upper(), summary::toString);
         assertTrue(
             wide.lower() < summary.mean() && summary.mean() < wide.upper(), summary::toString);
@@ -82,13 +87,13 @@ class JointUncertaintyIT {
       assertTrue(published.maxStateMeanShiftPoints() > 0);
       assertTrue(published.maxStateMeanShiftPoints() < 1, published::toString);
 
-      var reproduction = published.reproduction();
+      final se.swedishpolls.JointUncertainty.Reproduction reproduction = published.reproduction();
       assertEquals(rules.seed(), reproduction.seed());
       assertEquals(10000, reproduction.draws());
       assertEquals(1038, reproduction.inputRows());
       assertEquals(coverage.periods().getFirst().parameters(), reproduction.parameters());
       assertEquals(Runtime.version().toString(), reproduction.javaRuntimeVersion());
-      for (var digest :
+      for (java.lang.String digest :
           List.of(
               reproduction.basisSha256(),
               reproduction.inputRowsSha256(),

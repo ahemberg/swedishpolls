@@ -62,21 +62,22 @@ class EstimateHistoryTest {
 
   @Test
   void retainsEveryDayBetweenPollsAndStopsAtTheLastMidpointWithoutProjecting() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
-    var estimated = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
+    final se.swedishpolls.EstimateHistory.Estimated estimated =
+        EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
 
     assertEquals(1, estimated.segments().size());
-    var segment = estimated.segments().getFirst();
+    final se.swedishpolls.EstimateHistory.Segment segment = estimated.segments().getFirst();
     assertEquals(LocalDate.of(2015, 1, 5), segment.from());
     // The fit reaches the last observation midpoint and no day further.
     assertEquals(LocalDate.of(2015, 6, 1), segment.to());
     assertEquals(148, segment.days().size());
     for (int day = 0; day < segment.days().size(); day++) {
-      var estimate = segment.days().get(day);
+      final se.swedishpolls.EstimateHistory.Day estimate = segment.days().get(day);
       assertEquals(segment.from().plusDays(day), estimate.date());
       assertEquals(9, estimate.shares().size());
       assertEquals(
@@ -93,15 +94,16 @@ class EstimateHistoryTest {
 
   @Test
   void anOverlongGapEndsSupportInsteadOfBeingBridged() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
         new ArrayList<>(
             CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 3, 2), "1"));
     polls.addAll(
         CoverageValidationTest.weekly(LocalDate.of(2015, 6, 1), LocalDate.of(2015, 8, 3), "1"));
 
-    var estimated = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
+    final se.swedishpolls.EstimateHistory.Estimated estimated =
+        EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
 
     assertEquals(2, estimated.segments().size());
     assertEquals(LocalDate.of(2015, 3, 2), estimated.segments().getFirst().to());
@@ -115,7 +117,7 @@ class EstimateHistoryTest {
     assertEquals(
         List.of(EstimateHistory.COVERAGE_PERIOD_START, EstimateHistory.UNSUPPORTED_GAP),
         estimated.boundaries().stream().map(EstimateHistory.Boundary::kind).toList());
-    var gap = estimated.boundaries().get(1);
+    final se.swedishpolls.EstimateHistory.Boundary gap = estimated.boundaries().get(1);
     assertEquals(LocalDate.of(2015, 6, 1), gap.date());
     assertTrue(gap.note().contains("91"), gap::toString);
     // The two sides are separate fits, not one fit sliced: each restarts its own diffuse prior.
@@ -126,15 +128,15 @@ class EstimateHistoryTest {
 
   @Test
   void theHeadlineIsDatedAtTheLastFieldworkDateAndCarriesTheLastEstimatedDay() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
         new ArrayList<>(
             CoverageValidationTest.weekly(
                 LocalDate.of(2015, 1, 5), LocalDate.of(2015, 5, 25), "1"));
     polls.addAll(window(LocalDate.of(2015, 5, 26), LocalDate.of(2015, 6, 1), "Sifo"));
 
-    var history =
+    final se.swedishpolls.EstimateHistory.History history =
         history(
             List.of(period),
             polls,
@@ -143,27 +145,27 @@ class EstimateHistoryTest {
                 new CoverageValidation.Gate(true, List.of("development tuning: blocked")),
                 List.of(validated(period, polls))));
 
-    var headline = history.headline();
+    final se.swedishpolls.EstimateHistory.Headline headline = history.headline();
     assertEquals("eight", headline.periodId());
     // The estimand is voting intention on the last fieldwork date; the state is never walked there.
     assertEquals(LocalDate.of(2015, 6, 1), headline.asOf());
     assertEquals(LocalDate.of(2015, 5, 29), headline.estimatedOn());
     assertTrue(headline.estimatedOn().isBefore(headline.asOf()));
-    var last = history.segments().getLast().days().getLast();
+    final se.swedishpolls.EstimateHistory.Day last = history.segments().getLast().days().getLast();
     assertEquals(last.date(), headline.estimatedOn());
     assertEquals(last.shares(), headline.shares());
   }
 
   @Test
   void changesStayInsideOneSegmentAndAreSuppressedAcrossABoundary() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
         new ArrayList<>(
             CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 3, 2), "1"));
     polls.addAll(
         CoverageValidationTest.weekly(LocalDate.of(2015, 6, 1), LocalDate.of(2015, 8, 3), "1"));
-    var history =
+    final se.swedishpolls.EstimateHistory.History history =
         history(
             List.of(period),
             polls,
@@ -171,41 +173,46 @@ class EstimateHistoryTest {
             coverage(
                 new CoverageValidation.Gate(false, List.of()), List.of(validated(period, polls))));
 
-    var inside = EstimateHistory.change(history, "eight", LocalDate.of(2015, 2, 4), 30);
+    final se.swedishpolls.EstimateHistory.Change inside =
+        EstimateHistory.change(history, "eight", LocalDate.of(2015, 2, 4), 30);
     assertTrue(inside.available());
     assertEquals(LocalDate.of(2015, 1, 5), inside.from());
-    var from = history.segments().getFirst().days().getFirst().shares();
-    var to =
+    final java.util.Map<java.lang.String, java.lang.Double> from =
+        history.segments().getFirst().days().getFirst().shares();
+    final java.util.Map<java.lang.String, java.lang.Double> to =
         history.segments().getFirst().days().stream()
             .filter(day -> day.date().equals(LocalDate.of(2015, 2, 4)))
             .findFirst()
             .orElseThrow()
             .shares();
-    for (var party : inside.points().entrySet())
+    for (java.util.Map.Entry<java.lang.String, java.lang.Double> party : inside.points().entrySet())
       assertEquals(to.get(party.getKey()) - from.get(party.getKey()), party.getValue(), 1e-12);
 
     // 2015-02-25 is estimated, but the unsupported summer sits between the two dates.
-    var across = EstimateHistory.change(history, "eight", LocalDate.of(2015, 6, 5), 100);
+    final se.swedishpolls.EstimateHistory.Change across =
+        EstimateHistory.change(history, "eight", LocalDate.of(2015, 6, 5), 100);
     assertFalse(across.available());
     assertEquals(EstimateHistory.ACROSS_BOUNDARY, across.reason());
     assertTrue(across.points().isEmpty());
 
-    var before = EstimateHistory.change(history, "eight", LocalDate.of(2015, 1, 20), 30);
+    final se.swedishpolls.EstimateHistory.Change before =
+        EstimateHistory.change(history, "eight", LocalDate.of(2015, 1, 20), 30);
     assertFalse(before.available());
     assertEquals(EstimateHistory.COMPARISON_UNSUPPORTED, before.reason());
 
-    var unsupported = EstimateHistory.change(history, "eight", LocalDate.of(2015, 4, 15), 30);
+    final se.swedishpolls.EstimateHistory.Change unsupported =
+        EstimateHistory.change(history, "eight", LocalDate.of(2015, 4, 15), 30);
     assertFalse(unsupported.available());
     assertEquals(EstimateHistory.DATE_UNSUPPORTED, unsupported.reason());
   }
 
   @Test
   void filteredPublicationTimeStatesStayOutOfThePublishedHistory() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
-    var history =
+    final se.swedishpolls.EstimateHistory.History history =
         history(
             List.of(period),
             polls,
@@ -213,8 +220,10 @@ class EstimateHistoryTest {
             coverage(
                 new CoverageValidation.Gate(false, List.of()), List.of(validated(period, polls))));
 
-    var filtered = EstimateHistory.internalFiltered(period, polls, ELECTIONS, POINT, rules());
-    var smoothed = history.segments().getFirst().days();
+    final java.util.List<se.swedishpolls.EstimateHistory.Composition> filtered =
+        EstimateHistory.internalFiltered(period, polls, ELECTIONS, POINT, rules());
+    final java.util.List<se.swedishpolls.EstimateHistory.Day> smoothed =
+        history.segments().getFirst().days();
     assertEquals(smoothed.size(), filtered.size());
     // The two differ: the filter has not yet seen the later polls that the smoother conditions on.
     assertTrue(
@@ -232,30 +241,34 @@ class EstimateHistoryTest {
 
   @Test
   void publishesTheDrawnMeanAndKeepsTheTransformOfTheMeanStateAsADiagnostic() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
-    var estimated = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
-    var drawn =
+    final se.swedishpolls.EstimateHistory.Estimated estimated =
+        EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
+    final java.util.List<se.swedishpolls.JointUncertainty.Day> drawn =
         JointUncertainty.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS)
             .segments()
             .getFirst()
             .days();
-    var stateMean = EstimateHistory.internalStateMean(period, polls, ELECTIONS, POINT, rules());
+    final java.util.List<se.swedishpolls.EstimateHistory.Composition> stateMean =
+        EstimateHistory.internalStateMean(period, polls, ELECTIONS, POINT, rules());
 
-    var days = estimated.segments().getFirst().days();
+    final java.util.List<se.swedishpolls.EstimateHistory.Day> days =
+        estimated.segments().getFirst().days();
     assertEquals(drawn.size(), days.size());
     assertEquals(days.size(), stateMean.size());
     double shift = 0;
     for (int day = 0; day < days.size(); day++) {
-      var published = days.get(day);
-      var summary = drawn.get(day);
+      final se.swedishpolls.EstimateHistory.Day published = days.get(day);
+      final se.swedishpolls.JointUncertainty.Day summary = drawn.get(day);
       assertEquals(summary.date(), published.date());
       // The same draws behind the published mean are behind its published endpoints.
-      for (var component : summary.components()) {
-        var estimate = published.components().get(component.component());
+      for (se.swedishpolls.JointUncertainty.Component component : summary.components()) {
+        final se.swedishpolls.EstimateHistory.Estimate estimate =
+            published.components().get(component.component());
         assertEquals(component.mean(), estimate.mean());
         assertEquals(component.intervals(), estimate.intervals());
         shift =
@@ -273,7 +286,7 @@ class EstimateHistoryTest {
     assertEquals(0, shift);
     assertNotEquals(
         stateMean.getLast().shares().get("S"), days.getLast().shares().get("S"), "" + shift);
-    var report =
+    final java.lang.String report =
         EstimateHistory.report(
             history(
                 List.of(period),
@@ -287,11 +300,11 @@ class EstimateHistoryTest {
 
   @Test
   void quotesPublishedNumbersAtTheRegisteredResolution() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
-    var history =
+    final se.swedishpolls.EstimateHistory.History history =
         history(
             List.of(period),
             polls,
@@ -312,10 +325,11 @@ class EstimateHistoryTest {
     assertTrue(
         history.segments().getFirst().days().getFirst().shares().values().stream()
             .anyMatch(share -> share != PUBLICATION.quote(share)));
-    var report = EstimateHistory.report(history);
-    for (var line : report.lines().toList())
+    final java.lang.String report = EstimateHistory.report(history);
+    for (java.lang.String line : report.lines().toList())
       if (line.contains("\"mean\"") || line.contains("\"lower\"") || line.contains("\"upper\"")) {
-        var quoted = line.substring(line.indexOf(':') + 1).replace(",", "").trim();
+        final java.lang.String quoted =
+            line.substring(line.indexOf(':') + 1).replace(",", "").trim();
         assertEquals(
             quoted, "" + PUBLICATION.quote(Double.parseDouble(quoted)), "Unquoted number " + line);
       }
@@ -323,17 +337,18 @@ class EstimateHistoryTest {
 
   @Test
   void anUnvalidatedPeriodPublishesNoCurveAndItsPartyStaysUnavailableRatherThanZero() {
-    var eight = CoverageValidationTest.period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    var candidate =
+    final se.swedishpolls.Roster.CoveragePeriod eight =
+        CoverageValidationTest.period("eight", LocalDate.of(2014, 1, 1), null, false, true);
+    final se.swedishpolls.Roster.CoveragePeriod candidate =
         CoverageValidationTest.period(
             "candidate", LocalDate.of(2015, 1, 1), LocalDate.of(2016, 12, 31), true, false);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2014, 6, 2), LocalDate.of(2016, 6, 27), "1");
-    var gate =
+    final se.swedishpolls.CoverageValidation.Gate gate =
         new CoverageValidation.Gate(
             true, List.of("development tuning: 38 of 94 resolved folds sit on a grid boundary"));
 
-    var history =
+    final se.swedishpolls.EstimateHistory.History history =
         history(
             List.of(eight, candidate),
             polls,
@@ -350,32 +365,33 @@ class EstimateHistoryTest {
 
   @Test
   void aCycleWhoseInstituteEnsembleChangesIsMarkedAsAReferenceBreak() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    var polls = new ArrayList<PollCsv.Poll>();
-    for (var date = LocalDate.of(2014, 6, 2);
+    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls = new ArrayList<PollCsv.Poll>();
+    for (java.time.LocalDate date = LocalDate.of(2014, 6, 2);
         date.isBefore(LocalDate.of(2014, 9, 14));
         date = date.plusDays(7))
       polls.addAll(
           PollCsv.parse(PollCsvTest.csv(CoverageValidationTest.row(date, "Sifo", 0, "1"))));
-    for (var date = LocalDate.of(2014, 9, 15);
+    for (java.time.LocalDate date = LocalDate.of(2014, 9, 15);
         !date.isAfter(LocalDate.of(2014, 12, 22));
         date = date.plusDays(7))
       polls.addAll(
           PollCsv.parse(PollCsvTest.csv(CoverageValidationTest.row(date, "Novus", 0, "1"))));
 
-    var estimated = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
+    final se.swedishpolls.EstimateHistory.Estimated estimated =
+        EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
 
     // One continuous series: the reference changed, the days did not stop.
     assertEquals(1, estimated.segments().size());
-    var reference =
+    final java.util.List<se.swedishpolls.EstimateHistory.Boundary> reference =
         estimated.boundaries().stream()
             .filter(boundary -> boundary.kind().equals(EstimateHistory.REFERENCE_CHANGE))
             .toList();
     assertEquals(1, reference.size());
     assertEquals(LocalDate.of(2014, 9, 14), reference.getFirst().date());
     // No change may be presented across it, even though every day around it is estimated.
-    var history =
+    final se.swedishpolls.EstimateHistory.History history =
         history(
             List.of(period),
             polls,
@@ -390,11 +406,11 @@ class EstimateHistoryTest {
 
   @Test
   void theReportSummarizesEverySegmentWithoutRepeatingEveryDay() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
-    var history =
+    final se.swedishpolls.EstimateHistory.History history =
         history(
             List.of(period),
             polls,
@@ -402,7 +418,7 @@ class EstimateHistoryTest {
             coverage(
                 new CoverageValidation.Gate(false, List.of()), List.of(validated(period, polls))));
 
-    var report = EstimateHistory.report(history);
+    final java.lang.String report = EstimateHistory.report(history);
 
     assertTrue(report.contains("\"protocolVersion\" : \"v1-development-1\""));
     assertTrue(report.contains("\"days\" : 148"));
@@ -413,12 +429,12 @@ class EstimateHistoryTest {
 
   @Test
   void aPeriodWithoutTunedParametersOrRecordedSupportIsRejected() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
-    var missing =
+    final java.lang.IllegalArgumentException missing =
         assertThrows(
             IllegalArgumentException.class,
             () ->
@@ -429,7 +445,7 @@ class EstimateHistoryTest {
                     coverage(new CoverageValidation.Gate(false, List.of()), List.of())));
     assertTrue(missing.getMessage().contains("eight"), missing::getMessage);
 
-    var unsupported =
+    final se.swedishpolls.CoverageValidation.Validated unsupported =
         new CoverageValidation.Validated(
             period.id(),
             false,
@@ -437,7 +453,7 @@ class EstimateHistoryTest {
             CoverageValidation.support(period, polls, rules()),
             List.of(),
             List.of("largest internal gap of 91 days exceeds 45"));
-    var history =
+    final se.swedishpolls.EstimateHistory.History history =
         history(
             List.of(period),
             polls,

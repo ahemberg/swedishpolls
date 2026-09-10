@@ -56,7 +56,7 @@ public final class RecencyBaseline {
    * prediction rather than none.
    */
   public static Fit fit(PollObservations.Batch training, LocalDate asOf) {
-    var ordered =
+    final java.util.List<se.swedishpolls.PollObservations.Observation> ordered =
         training.observations().stream()
             .filter(observation -> !observation.midpoint().isAfter(asOf))
             .sorted(
@@ -68,26 +68,26 @@ public final class RecencyBaseline {
             .toList();
     if (ordered.isEmpty())
       throw new IllegalArgumentException("The baseline needs an eligible training poll");
-    var recent =
+    final java.util.List<se.swedishpolls.PollObservations.Observation> recent =
         ordered.stream()
             .filter(
                 observation -> ChronoUnit.DAYS.between(observation.midpoint(), asOf) <= WINDOW_DAYS)
             .toList();
-    var used =
+    final java.util.List<se.swedishpolls.PollObservations.Observation> used =
         recent.size() >= MIN_POLLS
             ? recent
             : ordered.subList(Math.max(0, ordered.size() - FALLBACK_POLLS), ordered.size());
-    int size = training.components().size();
-    var basis = training.basis().copy();
-    var weights = new double[used.size()];
-    var composition = new double[size];
+    final int size = training.components().size();
+    final org.ejml.simple.SimpleMatrix basis = training.basis().copy();
+    final double[] weights = new double[used.size()];
+    final double[] composition = new double[size];
     double totalWeight = 0;
     double totalSquaredWeight = 0;
     double meanSampleSize = 0;
     for (int i = 0; i < used.size(); i++) {
-      var observation = used.get(i);
-      double sampleSize = observation.poll().sampleSize().doubleValue();
-      double age = ChronoUnit.DAYS.between(observation.midpoint(), asOf);
+      final se.swedishpolls.PollObservations.Observation observation = used.get(i);
+      final double sampleSize = observation.poll().sampleSize().doubleValue();
+      final double age = ChronoUnit.DAYS.between(observation.midpoint(), asOf);
       weights[i] = sampleSize * Math.pow(2, -age / HALF_LIFE_DAYS);
       if (!Double.isFinite(weights[i]) || weights[i] <= 0)
         throw new IllegalArgumentException(
@@ -95,26 +95,27 @@ public final class RecencyBaseline {
       totalWeight += weights[i];
       totalSquaredWeight += weights[i] * weights[i];
       meanSampleSize += sampleSize / used.size();
-      var shares = PollObservations.shares(training, observation.ilr());
+      final java.util.Map<java.lang.String, java.lang.Double> shares =
+          PollObservations.shares(training, observation.ilr());
       for (int c = 0; c < size; c++)
         composition[c] += weights[i] * shares.get(training.components().get(c));
     }
-    var proportions = new double[size];
+    final double[] proportions = new double[size];
     for (int c = 0; c < size; c++) proportions[c] = composition[c] / (100 * totalWeight);
-    var logged = new SimpleMatrix(size, 1);
+    final org.ejml.simple.SimpleMatrix logged = new SimpleMatrix(size, 1);
     for (int c = 0; c < size; c++) logged.set(c, Math.log(proportions[c]));
-    var mean = basis.mult(logged);
+    final org.ejml.simple.SimpleMatrix mean = basis.mult(logged);
     // The average's own uncertainty: sampling variation at the effective sample size, plus the
     // spread of the polls it averaged around it.
-    double effective = totalWeight * totalWeight / totalSquaredWeight * meanSampleSize;
-    var covariance =
+    final double effective = totalWeight * totalWeight / totalSquaredWeight * meanSampleSize;
+    org.ejml.simple.SimpleMatrix covariance =
         PollObservations.deltaCovariance(basis, proportions, effective, "the recency baseline");
     for (int i = 0; i < used.size(); i++) {
-      var residual = used.get(i).ilr().minus(mean);
+      final org.ejml.simple.SimpleMatrix residual = used.get(i).ilr().minus(mean);
       covariance =
           covariance.plus(residual.mult(residual.transpose()).scale(weights[i] / totalWeight));
     }
-    var percent = new double[size];
+    final double[] percent = new double[size];
     for (int c = 0; c < size; c++) percent[c] = 100 * proportions[c];
     return new Fit(
         asOf,
@@ -133,8 +134,8 @@ public final class RecencyBaseline {
    */
   public static ModelValues predictiveCovariance(
       PollObservations.Batch training, Fit fit, PollObservations.Observation observation) {
-    int size = training.components().size();
-    var proportions = new double[size];
+    final int size = training.components().size();
+    final double[] proportions = new double[size];
     for (int c = 0; c < size; c++) proportions[c] = fit.composition().get(c) / 100;
     return ModelValues.owned(
         fit.covariance()

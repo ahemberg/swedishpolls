@@ -21,7 +21,8 @@ class CoverageValidationTest {
 
   static Roster.CoveragePeriod period(
       String id, LocalDate from, LocalDate to, boolean fi, boolean validated) {
-    var roster = new ArrayList<>(List.of("S", "M", "SD", "V", "C", "KD", "L", "MP"));
+    final java.util.ArrayList<java.lang.String> roster =
+        new ArrayList<>(List.of("S", "M", "SD", "V", "C", "KD", "L", "MP"));
     if (fi) roster.add("FI");
     return new Roster.CoveragePeriod(
         id, from, to, roster, fi, validated, "https://example.invalid/decision");
@@ -53,16 +54,16 @@ class CoverageValidationTest {
   }
 
   static List<PollCsv.Poll> weekly(LocalDate from, LocalDate to, String fi) {
-    var rows = new StringBuilder();
+    final java.lang.StringBuilder rows = new StringBuilder();
     int index = 0;
-    for (var date = from; !date.isAfter(to); date = date.plusDays(7), index++)
+    for (java.time.LocalDate date = from; !date.isAfter(to); date = date.plusDays(7), index++)
       rows.append(row(date, INSTITUTES.get(index % INSTITUTES.size()), index % 5 * 0.25, fi));
     return PollCsv.parse(PollCsvTest.csv(rows.toString()));
   }
 
   @Test
   void readsTheRegisteredRulesAndRejectsInadmissibleOnes() {
-    var rules = CoverageValidation.rules(PROTOCOL);
+    final se.swedishpolls.CoverageValidation.Rules rules = CoverageValidation.rules(PROTOCOL);
     assertEquals(THROUGH, rules.developmentThrough());
     assertEquals(30, rules.minObservations());
     assertEquals(5, rules.minInstitutes());
@@ -71,7 +72,7 @@ class CoverageValidationTest {
     assertEquals(60, rules.stabilityBurnInDays());
     assertEquals(0.5, rules.maxStabilityShiftPoints());
 
-    for (var inadmissible :
+    for (org.junit.jupiter.api.function.Executable inadmissible :
         List.<org.junit.jupiter.api.function.Executable>of(
             () -> new CoverageValidation.Rules(THROUGH, 0, 5, 45, List.of(7), 60, 0.5),
             () -> new CoverageValidation.Rules(THROUGH, 30, 5, 0, List.of(7), 60, 0.5),
@@ -84,7 +85,7 @@ class CoverageValidationTest {
             () -> new CoverageValidation.Rules(THROUGH, 30, 5, 45, List.of(7), 60, Double.NaN),
             () -> new CoverageValidation.Rules(null, 30, 5, 45, List.of(7), 60, 0.5)))
       assertThrows(IllegalArgumentException.class, inadmissible);
-    var incomplete =
+    final java.lang.IllegalArgumentException incomplete =
         assertThrows(
             IllegalArgumentException.class,
             () -> CoverageValidation.rules(Path.of("docs", "validation", "tuning.json")));
@@ -93,14 +94,16 @@ class CoverageValidationTest {
 
   @Test
   void supportReportsTheOutermostEligibleDatesTheLargestGapAndRetainedExclusions() {
-    var declared =
+    final se.swedishpolls.Roster.CoveragePeriod declared =
         period("candidate", LocalDate.of(2014, 1, 1), LocalDate.of(2018, 12, 31), true, false);
-    var polls = new ArrayList<>(weekly(LocalDate.of(2015, 3, 2), LocalDate.of(2015, 5, 4), "1"));
+    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
+        new ArrayList<>(weekly(LocalDate.of(2015, 3, 2), LocalDate.of(2015, 5, 4), "1"));
     // A summer without any FI reading, then a poll the FI roster cannot place.
     polls.addAll(weekly(LocalDate.of(2015, 8, 3), LocalDate.of(2015, 9, 7), "1"));
     polls.addAll(weekly(LocalDate.of(2015, 6, 1), LocalDate.of(2015, 6, 1), "NA"));
 
-    var support = CoverageValidation.support(declared, polls, CoverageValidation.rules(PROTOCOL));
+    final se.swedishpolls.CoverageValidation.Support support =
+        CoverageValidation.support(declared, polls, CoverageValidation.rules(PROTOCOL));
 
     assertEquals(LocalDate.of(2015, 3, 2), support.from());
     assertEquals(LocalDate.of(2015, 9, 7), support.to());
@@ -112,7 +115,8 @@ class CoverageValidationTest {
     assertEquals(LocalDate.of(2015, 8, 3), support.largestGap().to());
     assertEquals(91, support.largestGap().days());
     // The trimmed period keeps every observation the declared period placed.
-    var trimmed = CoverageValidation.supported(declared, support);
+    final se.swedishpolls.Roster.CoveragePeriod trimmed =
+        CoverageValidation.supported(declared, support);
     assertEquals(
         support.observations(), PollObservations.prepare(trimmed, polls).observations().size());
     assertEquals(declared.roster(), trimmed.roster());
@@ -120,12 +124,15 @@ class CoverageValidationTest {
 
   @Test
   void developmentEvidenceStopsAtTheRegisteredEndAndNeverReadsTheReservedWindow() {
-    var open = period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    var polls = weekly(LocalDate.of(2021, 8, 2), LocalDate.of(2021, 11, 29), "1");
-    var rules = CoverageValidation.rules(PROTOCOL);
+    final se.swedishpolls.Roster.CoveragePeriod open =
+        period("eight", LocalDate.of(2014, 1, 1), null, false, true);
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+        weekly(LocalDate.of(2021, 8, 2), LocalDate.of(2021, 11, 29), "1");
+    final se.swedishpolls.CoverageValidation.Rules rules = CoverageValidation.rules(PROTOCOL);
 
     assertEquals(10, CoverageValidation.development(polls, rules).size());
-    var support = CoverageValidation.support(open, polls, rules);
+    final se.swedishpolls.CoverageValidation.Support support =
+        CoverageValidation.support(open, polls, rules);
     assertEquals(LocalDate.of(2021, 10, 4), support.to());
     assertFalse(support.to().isAfter(rules.developmentThrough()));
     assertEquals(10, support.observations());
@@ -134,13 +141,15 @@ class CoverageValidationTest {
 
   @Test
   void thinCoverageFailsEveryBreachedRuleAndStillRetainsItsObservations() {
-    var declared =
+    final se.swedishpolls.Roster.CoveragePeriod declared =
         period("candidate", LocalDate.of(2014, 1, 1), LocalDate.of(2018, 12, 31), true, false);
-    var polls = new ArrayList<>(weekly(LocalDate.of(2015, 3, 2), LocalDate.of(2015, 4, 6), "1"));
+    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
+        new ArrayList<>(weekly(LocalDate.of(2015, 3, 2), LocalDate.of(2015, 4, 6), "1"));
     polls.addAll(weekly(LocalDate.of(2015, 9, 7), LocalDate.of(2015, 10, 12), "1"));
-    var rules = CoverageValidation.rules(PROTOCOL);
+    final se.swedishpolls.CoverageValidation.Rules rules = CoverageValidation.rules(PROTOCOL);
 
-    var validated = CoverageValidation.validate(declared, polls, ELECTIONS, POINT, rules);
+    final se.swedishpolls.CoverageValidation.Validated validated =
+        CoverageValidation.validate(declared, polls, ELECTIONS, POINT, rules);
 
     assertFalse(validated.supported());
     assertEquals(12, validated.support().observations());
@@ -157,19 +166,21 @@ class CoverageValidationTest {
 
   @Test
   void denseCoverageIsSupportedAndBoundedUnderEveryRegisteredBoundaryShift() {
-    var declared =
+    final se.swedishpolls.Roster.CoveragePeriod declared =
         period("candidate", LocalDate.of(2014, 1, 1), LocalDate.of(2018, 12, 31), true, false);
-    var polls = weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2017, 12, 25), "1");
-    var rules = CoverageValidation.rules(PROTOCOL);
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+        weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2017, 12, 25), "1");
+    final se.swedishpolls.CoverageValidation.Rules rules = CoverageValidation.rules(PROTOCOL);
 
-    var validated = CoverageValidation.validate(declared, polls, ELECTIONS, POINT, rules);
+    final se.swedishpolls.CoverageValidation.Validated validated =
+        CoverageValidation.validate(declared, polls, ELECTIONS, POINT, rules);
 
     assertTrue(validated.supported(), validated::toString);
     assertEquals(156, validated.support().observations());
     assertEquals(7, validated.support().largestGap().days());
     assertEquals(
         List.of(7, 14, 30), validated.stability().stream().map(s -> s.shiftDays()).toList());
-    for (var stability : validated.stability()) {
+    for (se.swedishpolls.CoverageValidation.Stability stability : validated.stability()) {
       assertEquals(10, stability.maxShiftPoints().size());
       assertTrue(stability.comparedDays() > 500, stability::toString);
       assertTrue(stability.worst() <= rules.maxStabilityShiftPoints(), stability::toString);
@@ -181,12 +192,15 @@ class CoverageValidationTest {
 
   @Test
   void everyModeledPartyCarriesAMeasuredStepAtTheCandidateBoundariesAndTheTuningBlockCarriesOver() {
-    var eight = period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    var candidate =
+    final se.swedishpolls.Roster.CoveragePeriod eight =
+        period("eight", LocalDate.of(2014, 1, 1), null, false, true);
+    final se.swedishpolls.Roster.CoveragePeriod candidate =
         period("candidate", LocalDate.of(2015, 1, 1), LocalDate.of(2016, 12, 31), true, false);
-    var polls = weekly(LocalDate.of(2014, 6, 2), LocalDate.of(2017, 6, 26), "1");
-    var fold = new DevelopmentTuning.Fold(LocalDate.of(2017, 1, 1), LocalDate.of(2017, 2, 5));
-    var tuning =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+        weekly(LocalDate.of(2014, 6, 2), LocalDate.of(2017, 6, 26), "1");
+    final se.swedishpolls.DevelopmentTuning.Fold fold =
+        new DevelopmentTuning.Fold(LocalDate.of(2017, 1, 1), LocalDate.of(2017, 2, 5));
+    final se.swedishpolls.DevelopmentTuning.Tuning tuning =
         new DevelopmentTuning.Tuning(
             "v1-development-1",
             new DevelopmentTuning.Grid(List.of(1e-4), List.of(0.1), List.of(1.5)),
@@ -194,7 +208,7 @@ class CoverageValidationTest {
             List.of(resolved("eight", fold), resolved("candidate", fold)),
             List.of());
 
-    var report =
+    final se.swedishpolls.CoverageValidation.Report report =
         CoverageValidation.validateAll(
             List.of(eight, candidate),
             polls,
@@ -210,7 +224,7 @@ class CoverageValidationTest {
     assertEquals(
         List.of(LocalDate.of(2015, 1, 5), LocalDate.of(2016, 12, 26)),
         report.boundaryEffects().stream().map(CoverageValidation.BoundaryEffect::date).toList());
-    for (var effect : report.boundaryEffects()) {
+    for (se.swedishpolls.CoverageValidation.BoundaryEffect effect : report.boundaryEffects()) {
       assertEquals("candidate", effect.periodId());
       assertEquals("eight", effect.againstPeriodId());
       assertEquals(9, effect.stepPoints().size());

@@ -39,14 +39,16 @@ class RosterTest {
 
   @Test
   void groupsFiIntoOtherOutsideAnFiSegmentAndSeparatesItInside() {
-    var outside = Roster.compose(EIGHT, poll(PollCsvTest.SEGMENT_ROW));
+    final se.swedishpolls.Roster.Composition outside =
+        Roster.compose(EIGHT, poll(PollCsvTest.SEGMENT_ROW));
     assertEquals(
         List.of("M", "L", "C", "KD", "S", "V", "MP", "SD", "OTHER"),
         List.copyOf(outside.components().keySet()));
     assertEquals(new BigDecimal("1.877"), outside.components().get("OTHER"));
     assertTrue(outside.complete());
 
-    var inside = Roster.compose(FI_SEGMENT, poll(PollCsvTest.SEGMENT_ROW));
+    final se.swedishpolls.Roster.Composition inside =
+        Roster.compose(FI_SEGMENT, poll(PollCsvTest.SEGMENT_ROW));
     assertEquals(
         List.of("M", "L", "C", "KD", "S", "V", "MP", "SD", "FI", "RESIDUAL"),
         List.copyOf(inside.components().keySet()));
@@ -58,19 +60,21 @@ class RosterTest {
 
   @Test
   void excludesPollsThatCannotFormThePeriodComposition() {
-    var missingFi = poll(PollCsvTest.SEGMENT_ROW.replace(",17,1,10,", ",17,NA,10,"));
+    final se.swedishpolls.PollCsv.Poll missingFi =
+        poll(PollCsvTest.SEGMENT_ROW.replace(",17,1,10,", ",17,NA,10,"));
     assertTrue(missingFi.eligible());
     assertTrue(Roster.compose(EIGHT, missingFi).complete());
     assertEquals(
         List.of("missing_share:FI"), Roster.compose(FI_SEGMENT, missingFi).exclusionReasons());
     assertTrue(Roster.compose(FI_SEGMENT, missingFi).components().isEmpty());
 
-    var largeFi = poll(PollCsvTest.SEGMENT_ROW.replace(",17,1,10,", ",17,3,10,"));
+    final se.swedishpolls.PollCsv.Poll largeFi =
+        poll(PollCsvTest.SEGMENT_ROW.replace(",17,1,10,", ",17,3,10,"));
     assertEquals(
         List.of("negative_residual"), Roster.compose(FI_SEGMENT, largeFi).exclusionReasons());
 
     // A collection window is inside a period only as a whole, so a straddling poll cannot compose.
-    var straddling =
+    final se.swedishpolls.PollCsv.Poll straddling =
         poll(
             PollCsvTest.SEGMENT_ROW
                 .replace("2016-06-01", "2014-04-08")
@@ -81,21 +85,24 @@ class RosterTest {
         Roster.compose(FI_SEGMENT, straddling).exclusionReasons());
     assertTrue(Roster.compose(EIGHT, straddling).complete());
 
-    var ineligible = poll(PollCsvTest.SEGMENT_ROW.replace("Ipsos", "Demoskop valdag"));
+    final se.swedishpolls.PollCsv.Poll ineligible =
+        poll(PollCsvTest.SEGMENT_ROW.replace("Ipsos", "Demoskop valdag"));
     assertEquals(
         List.of("exit_or_election_day"), Roster.compose(FI_SEGMENT, ineligible).exclusionReasons());
   }
 
   @Test
   void documentsCandidateFiBoundariesFromEligiblePollsInThePinnedSnapshot() throws Exception {
-    byte[] bytes;
-    try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+    final byte[] bytes;
+    try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
       bytes = input.readAllBytes();
     }
-    var polls = PollCsv.parse(bytes);
-    var eligible = polls.stream().filter(PollCsv.Poll::eligible).toList();
-    var window = eligible.stream().filter(FI_SEGMENT::covers).toList();
-    var withFi =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = PollCsv.parse(bytes);
+    final java.util.List<se.swedishpolls.PollCsv.Poll> eligible =
+        polls.stream().filter(PollCsv.Poll::eligible).toList();
+    final java.util.List<se.swedishpolls.PollCsv.Poll> window =
+        eligible.stream().filter(FI_SEGMENT::covers).toList();
+    final java.util.List<se.swedishpolls.PollCsv.Poll> withFi =
         window.stream()
             .filter(poll -> poll.shares().get("FI") != null)
             .sorted(Comparator.comparing(PollCsv.Poll::collectionFrom))
@@ -134,7 +141,8 @@ class RosterTest {
             .map(institutes -> institutes.stream().distinct().count())
             .toList());
 
-    var shares = withFi.stream().map(poll -> poll.shares().get("FI")).sorted().toList();
+    final java.util.List<java.math.BigDecimal> shares =
+        withFi.stream().map(poll -> poll.shares().get("FI")).sorted().toList();
     assertEquals(
         List.of(new BigDecimal("0.6"), new BigDecimal("4.4")),
         List.of(shares.getFirst(), shares.getLast()));
@@ -143,17 +151,18 @@ class RosterTest {
         5, shares.stream().filter(share -> share.compareTo(new BigDecimal("4")) >= 0).count());
 
     // Merging the collection windows in start order leaves one break far wider than the rest.
-    var breaks = new java.util.ArrayList<Long>();
-    var covered = FI_SEGMENT.effectiveFrom();
-    for (var poll : withFi) {
+    final java.util.ArrayList<java.lang.Long> breaks = new java.util.ArrayList<Long>();
+    java.time.LocalDate covered = FI_SEGMENT.effectiveFrom();
+    for (se.swedishpolls.PollCsv.Poll poll : withFi) {
       breaks.add(ChronoUnit.DAYS.between(covered, poll.collectionFrom()));
       if (poll.collectionTo().isAfter(covered)) covered = poll.collectionTo();
     }
-    var widest = breaks.stream().sorted(Comparator.reverseOrder()).limit(2).toList();
+    final java.util.List<java.lang.Long> widest =
+        breaks.stream().sorted(Comparator.reverseOrder()).limit(2).toList();
     assertEquals(List.of(27L, 15L), widest);
     assertEquals(LocalDate.of(2016, 8, 1), withFi.get(breaks.indexOf(27L)).collectionFrom());
 
-    var excluded =
+    final java.util.List<se.swedishpolls.Roster.Composition> excluded =
         window.stream()
             .map(poll -> Roster.compose(FI_SEGMENT, poll))
             .filter(composition -> !composition.complete())
@@ -184,7 +193,7 @@ class RosterTest {
             .collect(Collectors.groupingBy(PollCsv.Poll::institute, Collectors.counting())));
 
     // The two isolated 2022 observations stay archived and never join the candidate segment.
-    var later =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> later =
         eligible.stream()
             .filter(
                 poll ->

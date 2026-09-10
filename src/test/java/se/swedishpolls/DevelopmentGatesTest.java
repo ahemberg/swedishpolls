@@ -15,14 +15,15 @@ class DevelopmentGatesTest {
   @Test
   void failedConditionalCoverageNamesTheGridMixtureAndStopsPublication(@TempDir Path directory)
       throws Exception {
-    var protocol = write(directory, "protocol.json", protocol());
-    var coverage = write(directory, "coverage.json", coverage());
-    var uncertainty = write(directory, "uncertainty.json", uncertainty(0));
-    var diagnostics = write(directory, "diagnostics.json", diagnostics(0.89));
-    var architectures = write(directory, "cross-architecture.json", architectures());
-    var probability =
+    final java.nio.file.Path protocol = write(directory, "protocol.json", protocol());
+    final java.nio.file.Path coverage = write(directory, "coverage.json", coverage());
+    final java.nio.file.Path uncertainty = write(directory, "uncertainty.json", uncertainty(0));
+    final java.nio.file.Path diagnostics = write(directory, "diagnostics.json", diagnostics(0.89));
+    final java.nio.file.Path architectures =
+        write(directory, "cross-architecture.json", architectures());
+    final java.nio.file.Path probability =
         write(directory, "probability-precision.json", DevelopmentGates.report(precision()));
-    var report =
+    final se.swedishpolls.DevelopmentGates.Report report =
         DevelopmentGates.evaluate(
             protocol,
             coverage,
@@ -37,7 +38,7 @@ class DevelopmentGatesTest {
     assertThrows(IllegalStateException.class, () -> DevelopmentGates.requirePassed(report));
 
     Files.writeString(diagnostics, diagnostics(0.95));
-    var passed =
+    final se.swedishpolls.DevelopmentGates.Report passed =
         DevelopmentGates.evaluate(
             protocol,
             coverage,
@@ -52,7 +53,7 @@ class DevelopmentGatesTest {
     DevelopmentGates.requirePassed(passed);
 
     Files.writeString(uncertainty, uncertainty(1e-15));
-    var inexact =
+    final se.swedishpolls.DevelopmentGates.Report inexact =
         DevelopmentGates.evaluate(
             protocol,
             coverage,
@@ -76,18 +77,22 @@ class DevelopmentGatesTest {
             new double[] {Math.nextDown(4.0), 4.0, Math.nextUp(4.0)}, 4.0));
     assertEquals(2.0 / 3, DevelopmentGates.probabilityAtOrAbove(new double[] {174, 175, 176}, 175));
     assertEquals(0.005, DevelopmentGates.monteCarloStandardError(10_000));
-    var rules = new DevelopmentGates.AllocationRules(5, 4, 1.2, 3, List.of("A", "B"));
+    final se.swedishpolls.DevelopmentGates.AllocationRules rules =
+        new DevelopmentGates.AllocationRules(5, 4, 1.2, 3, List.of("A", "B"));
     assertEquals(
         Map.of("A", 3, "B", 2), DevelopmentGates.allocate(Map.of("A", 50.0, "B", 50.0), rules));
-    var firstDivisor = new DevelopmentGates.AllocationRules(2, 4, 1.2, 2, List.of("A", "B"));
+    final se.swedishpolls.DevelopmentGates.AllocationRules firstDivisor =
+        new DevelopmentGates.AllocationRules(2, 4, 1.2, 2, List.of("A", "B"));
     assertEquals(
         Map.of("A", 2, "B", 0),
         DevelopmentGates.allocate(Map.of("A", 70.0, "B", 25.0), firstDivisor));
-    var unmodified = new DevelopmentGates.AllocationRules(2, 4, 1.0, 2, List.of("A", "B"));
+    final se.swedishpolls.DevelopmentGates.AllocationRules unmodified =
+        new DevelopmentGates.AllocationRules(2, 4, 1.0, 2, List.of("A", "B"));
     assertEquals(
         Map.of("A", 1, "B", 1),
         DevelopmentGates.allocate(Map.of("A", 70.0, "B", 25.0), unmodified));
-    var threshold = new DevelopmentGates.AllocationRules(1, 4, 1.2, 1, List.of("A", "B"));
+    final se.swedishpolls.DevelopmentGates.AllocationRules threshold =
+        new DevelopmentGates.AllocationRules(1, 4, 1.2, 1, List.of("A", "B"));
     assertEquals(Map.of("B", 1), DevelopmentGates.allocate(Map.of("A", 3.9, "B", 4.0), threshold));
   }
 
@@ -235,7 +240,8 @@ class DevelopmentGatesTest {
   }
 
   private static DevelopmentGates.ProbabilityPrecision precision() {
-    var rules = new DevelopmentGates.AllocationRules(349, 4, 1.2, 175, List.of("A", "B"));
+    final se.swedishpolls.DevelopmentGates.AllocationRules rules =
+        new DevelopmentGates.AllocationRules(349, 4, 1.2, 175, List.of("A", "B"));
     return new DevelopmentGates.ProbabilityPrecision(
         "period",
         LocalDate.of(2020, 1, 1),
@@ -251,7 +257,8 @@ class DevelopmentGatesTest {
   }
 
   private static Map<String, Double> ordered(double a, double b) {
-    var result = new LinkedHashMap<String, Double>();
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> result =
+        new LinkedHashMap<String, Double>();
     result.put("A", a);
     result.put("B", b);
     return result;

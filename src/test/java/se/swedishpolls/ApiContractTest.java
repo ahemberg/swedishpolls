@@ -37,14 +37,16 @@ class ApiContractTest {
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
   static JsonNode read(String name) throws IOException {
-    try (var input = ApiContractTest.class.getResourceAsStream("/api/v1/" + name)) {
+    try (final java.io.InputStream input =
+        ApiContractTest.class.getResourceAsStream("/api/v1/" + name)) {
       assertNotNull(input, name + " is missing from the frozen contract");
       return JSON.readTree(input);
     }
   }
 
   private static String readText(String name) throws IOException {
-    try (var input = ApiContractTest.class.getResourceAsStream("/api/v1/" + name)) {
+    try (final java.io.InputStream input =
+        ApiContractTest.class.getResourceAsStream("/api/v1/" + name)) {
       assertNotNull(input, name + " is missing from the frozen contract");
       return new String(input.readAllBytes(), StandardCharsets.UTF_8);
     }
@@ -62,14 +64,14 @@ class ApiContractTest {
 
   @Test
   void freezesEveryV1SurfaceWithOneExampleAndSharedRequestRules() throws Exception {
-    var contract = read("contract.json");
+    final tools.jackson.databind.JsonNode contract = read("contract.json");
     assertEquals("v1", contract.get("version").asString());
     assertEquals("/api/v1", contract.get("basePath").asString());
 
-    var surfaces = contract.get("surfaces");
+    final tools.jackson.databind.JsonNode surfaces = contract.get("surfaces");
     assertEquals(SURFACES, field(surfaces, "id"));
-    for (var surface : surfaces) {
-      var id = surface.get("id").asString();
+    for (tools.jackson.databind.JsonNode surface : surfaces) {
+      final java.lang.String id = surface.get("id").asString();
       assertTrue(
           surface.get("path").asString().startsWith("/api/v1"),
           id + " must live under the versioned base path");
@@ -92,7 +94,7 @@ class ApiContractTest {
         field(surfaces.get(SURFACES.indexOf("polls")).get("paging"), "name"));
     assertFalse(surfaces.get(SURFACES.indexOf("polls-csv")).get("paging").asBoolean());
 
-    var rules = contract.get("rules");
+    final tools.jackson.databind.JsonNode rules = contract.get("rules");
     assertEquals(
         List.of(1, 3, 7), texts(rules.get("displaySteps")).stream().map(Integer::valueOf).toList());
     assertEquals(300, rules.get("currentMaxAgeSeconds").asInt());
@@ -106,8 +108,9 @@ class ApiContractTest {
     assertTrue(rules.get("change30d").asString().contains("coverage boundary"));
     assertTrue(rules.get("assets").asString().contains("immutable"));
 
-    var errors = new LinkedHashMap<String, Integer>();
-    for (var error : contract.get("errors"))
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Integer> errors =
+        new LinkedHashMap<String, Integer>();
+    for (tools.jackson.databind.JsonNode error : contract.get("errors"))
       errors.put(error.get("code").asString(), error.get("status").asInt());
     assertEquals(
         Map.of(
@@ -129,8 +132,8 @@ class ApiContractTest {
 
   @Test
   void identifiesThePublicationAndModelRunOnEveryDependentResponse() throws Exception {
-    var publication = read("examples/publication.json");
-    for (var name :
+    final tools.jackson.databind.JsonNode publication = read("examples/publication.json");
+    for (java.lang.String name :
         List.of(
             "publicationId",
             "publishedAt",
@@ -138,9 +141,9 @@ class ApiContractTest {
             "lastFieldworkDate",
             "stale",
             "permalink")) assertTrue(publication.has(name), name);
-    for (var name : List.of("runId", "codeVersion", "estimatorVersion", "seed"))
+    for (java.lang.String name : List.of("runId", "codeVersion", "estimatorVersion", "seed"))
       assertTrue(publication.get("modelRun").has(name), name);
-    for (var name : List.of("snapshotId", "sha256", "sourceUrl", "capturedAt"))
+    for (java.lang.String name : List.of("snapshotId", "sha256", "sourceUrl", "capturedAt"))
       assertTrue(publication.get("snapshot").has(name), name);
     // The estimate's fieldwork date, the source check and the publication time are three distinct
     // instants.
@@ -154,7 +157,7 @@ class ApiContractTest {
             .distinct()
             .count());
 
-    var identity =
+    final java.util.Map<java.lang.String, java.lang.String> identity =
         Map.of(
             "publicationId",
             publication.get("publicationId").asString(),
@@ -162,7 +165,7 @@ class ApiContractTest {
             publication.get("modelRun").get("runId").asString(),
             "snapshotId",
             publication.get("snapshot").get("snapshotId").asString());
-    for (var name :
+    for (java.lang.String name :
         List.of(
             "examples/estimates-latest.json",
             "examples/estimates-history.json",
@@ -171,7 +174,7 @@ class ApiContractTest {
             "examples/elections.json",
             "examples/seats.json",
             "examples/coalitions.json")) {
-      var dependent = read(name).get("publication");
+      final tools.jackson.databind.JsonNode dependent = read(name).get("publication");
       assertEquals(
           identity,
           dependent.properties().stream()
@@ -184,11 +187,11 @@ class ApiContractTest {
 
   @Test
   void statesCoveragePeriodsRosterAndOtherMembershipWithUnsupportedValuesNull() throws Exception {
-    var latest = read("examples/estimates-latest.json");
-    var periods = latest.get("coveragePeriods");
+    final tools.jackson.databind.JsonNode latest = read("examples/estimates-latest.json");
+    final tools.jackson.databind.JsonNode periods = latest.get("coveragePeriods");
     assertEquals(List.of("eight_party_2010", "fi_candidate_2014_2018"), field(periods, "id"));
 
-    var current = periods.get(0);
+    final tools.jackson.databind.JsonNode current = periods.get(0);
     assertEquals("2010-01-01", current.get("from").asString());
     assertTrue(current.get("to").isNull());
     assertEquals(ROSTER, texts(current.get("roster")));
@@ -196,7 +199,7 @@ class ApiContractTest {
         texts(current.get("otherMembers")).contains("FI"), "OTHER membership must be explicit");
     assertTrue(current.get("supportValidated").asBoolean());
 
-    var candidate = periods.get(1);
+    final tools.jackson.databind.JsonNode candidate = periods.get(1);
     assertEquals(
         List.of("2014-04-09", "2018-09-07"),
         List.of(candidate.get("from").asString(), candidate.get("to").asString()));
@@ -205,9 +208,9 @@ class ApiContractTest {
         candidate.get("supportValidated").asBoolean(), "No individual FI estimate is enabled yet");
     assertFalse(texts(candidate.get("otherMembers")).contains("FI"));
 
-    var components = latest.get("components");
+    final tools.jackson.databind.JsonNode components = latest.get("components");
     assertEquals(concat(ROSTER, "OTHER"), field(components, "component"));
-    for (var component : components) {
+    for (tools.jackson.databind.JsonNode component : components) {
       assertTrue(component.get("lower").asDouble() <= component.get("mean").asDouble());
       assertTrue(component.get("mean").asDouble() <= component.get("upper").asDouble());
     }
@@ -222,11 +225,11 @@ class ApiContractTest {
 
   @Test
   void usesOneColumnarHistoryWithInclusiveRangesAndBoundedDisplaySampling() throws Exception {
-    var history = read("examples/estimates-history.json");
-    var range = history.get("range");
+    final tools.jackson.databind.JsonNode history = read("examples/estimates-history.json");
+    final tools.jackson.databind.JsonNode range = history.get("range");
     assertTrue(range.get("inclusive").asBoolean());
     assertEquals(3, range.get("step").asInt());
-    var dates = texts(history.get("dates"));
+    final java.util.List<java.lang.String> dates = texts(history.get("dates"));
     assertEquals(range.get("from").asString(), dates.getFirst());
     assertEquals(
         range.get("to").asString(),
@@ -234,12 +237,12 @@ class ApiContractTest {
         "Sampling retains the last requested supported date");
     assertTrue(LocalDate.parse(dates.getFirst()).isBefore(LocalDate.parse(dates.getLast())));
 
-    for (var series : history.get("series")) {
-      for (var name : List.of("mean", "lower", "upper"))
+    for (tools.jackson.databind.JsonNode series : history.get("series")) {
+      for (java.lang.String name : List.of("mean", "lower", "upper"))
         assertEquals(
             dates.size(), series.get(name).size(), series.get("component").asString() + "." + name);
       if (series.get("component").asString().equals("FI"))
-        for (var value : series.get("mean"))
+        for (tools.jackson.databind.JsonNode value : series.get("mean"))
           assertTrue(value.isNull(), "Unsupported dates stay null");
     }
     assertEquals(dates.size(), history.get("coveragePeriodByDate").size());
@@ -252,33 +255,34 @@ class ApiContractTest {
 
   @Test
   void matchesPollJsonCsvAndTheirFiltersAgainstThePinnedSnapshot() throws Exception {
-    var polls = read("examples/polls.json");
-    var rows = new ArrayList<Map<String, String>>();
-    try (var csv =
+    final tools.jackson.databind.JsonNode polls = read("examples/polls.json");
+    final java.util.ArrayList<java.util.Map<java.lang.String, java.lang.String>> rows =
+        new ArrayList<Map<String, String>>();
+    try (final org.apache.commons.csv.CSVParser csv =
         CSVFormat.RFC4180
             .builder()
             .setHeader()
             .setSkipHeaderRecord(true)
             .get()
             .parse(new java.io.StringReader(readText("examples/polls.csv")))) {
-      for (var record : csv) rows.add(record.toMap());
+      for (org.apache.commons.csv.CSVRecord record : csv) rows.add(record.toMap());
     }
     assertEquals(polls.get("polls").size(), rows.size());
 
-    var surfaces = read("contract.json").get("surfaces");
-    var table = surfaces.get(SURFACES.indexOf("polls"));
-    var download = surfaces.get(SURFACES.indexOf("polls-csv"));
+    final tools.jackson.databind.JsonNode surfaces = read("contract.json").get("surfaces");
+    final tools.jackson.databind.JsonNode table = surfaces.get(SURFACES.indexOf("polls"));
+    final tools.jackson.databind.JsonNode download = surfaces.get(SURFACES.indexOf("polls-csv"));
     assertEquals(
         table.get("query"),
         download.get("query"),
         "The CSV download applies the poll table's filters");
     assertTrue(field(table.get("query"), "name").containsAll(polls.get("filters").propertyNames()));
 
-    byte[] bytes;
-    try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+    final byte[] bytes;
+    try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
       bytes = input.readAllBytes();
     }
-    var source =
+    final java.util.Map<java.lang.String, se.swedishpolls.PollCsv.Poll> source =
         PollCsv.parse(bytes).stream()
             .filter(PollCsv.Poll::eligible)
             .collect(
@@ -288,9 +292,10 @@ class ApiContractTest {
                     (first, second) -> first));
 
     for (int index = 0; index < rows.size(); index++) {
-      var row = rows.get(index);
-      var json = polls.get("polls").get(index);
-      var poll = source.get(row.get("institute") + "/" + row.get("publication_date"));
+      final java.util.Map<java.lang.String, java.lang.String> row = rows.get(index);
+      final tools.jackson.databind.JsonNode json = polls.get("polls").get(index);
+      final se.swedishpolls.PollCsv.Poll poll =
+          source.get(row.get("institute") + "/" + row.get("publication_date"));
       assertNotNull(poll, "The example must quote an eligible poll from the pinned snapshot");
       assertEquals(poll.collectionFrom().toString(), row.get("collection_from"));
       assertEquals(poll.collectionTo().toString(), row.get("collection_to"));
@@ -298,9 +303,9 @@ class ApiContractTest {
       assertEquals(poll.sampleSize().toPlainString(), row.get("sample_size"));
       assertEquals(poll.denominatorNote(), row.get("denominator_note"));
       assertEquals(poll.surveyType(), row.get("survey_type"));
-      for (var party : concat(ROSTER, "FI")) {
-        var share = poll.shares().get(party);
-        var reported = json.get("shares").get(party);
+      for (java.lang.String party : concat(ROSTER, "FI")) {
+        final java.math.BigDecimal share = poll.shares().get(party);
+        final tools.jackson.databind.JsonNode reported = json.get("shares").get(party);
         // Source precision survives both representations without rounding, filling or a zero for a
         // missing share.
         assertEquals(share == null ? "" : share.toPlainString(), row.get(party));
@@ -315,10 +320,10 @@ class ApiContractTest {
 
   @Test
   void separatesPointSeatsFromPosteriorMeansAndKeepsTheTenApprovedCoalitions() throws Exception {
-    var seats = read("examples/seats.json");
+    final tools.jackson.databind.JsonNode seats = read("examples/seats.json");
     assertEquals(349, seats.get("totalSeats").asInt());
-    var allocated = 0;
-    for (var party : seats.get("parties")) {
+    int allocated = 0;
+    for (tools.jackson.databind.JsonNode party : seats.get("parties")) {
       assertTrue(party.get("pointSeats").isInt());
       allocated += party.get("pointSeats").asInt();
       assertTrue(
@@ -334,12 +339,13 @@ class ApiContractTest {
     assertEquals(1.2, seats.get("allocationRule").get("firstDivisor").asDouble());
     assertEquals(4.0, seats.get("allocationRule").get("thresholdPercent").asDouble());
 
-    var coalitions = read("examples/coalitions.json");
+    final tools.jackson.databind.JsonNode coalitions = read("examples/coalitions.json");
     assertEquals(175, coalitions.get("majoritySeats").asInt());
     assertEquals(
         List.of("tido", "opposition", "left", "s_m"), texts(coalitions.get("overviewDefaults")));
-    var memberships = new LinkedHashMap<String, List<String>>();
-    for (var coalition : coalitions.get("coalitions")) {
+    final java.util.LinkedHashMap<java.lang.String, java.util.List<java.lang.String>> memberships =
+        new LinkedHashMap<String, List<String>>();
+    for (tools.jackson.databind.JsonNode coalition : coalitions.get("coalitions")) {
       memberships.put(coalition.get("id").asString(), texts(coalition.get("parties")));
       assertTrue(coalition.get("majorityProbability").asDouble() <= 1.0);
     }
@@ -360,15 +366,17 @@ class ApiContractTest {
 
   @Test
   void exposesInstituteHouseEffectsAndElectionReferencesWithTheirOwnGrouping() throws Exception {
-    for (var institute : read("examples/institutes.json").get("institutes")) {
+    for (tools.jackson.databind.JsonNode institute :
+        read("examples/institutes.json").get("institutes")) {
       assertTrue(institute.has("methodEras"));
-      for (var effect : institute.get("houseEffects"))
+      for (tools.jackson.databind.JsonNode effect : institute.get("houseEffects"))
         assertTrue(
             effect.has("electionCycle") && effect.has("component") && effect.has("mean"),
             "House effects are relative to the institute ensemble within one election cycle");
     }
 
-    var latest = read("examples/elections.json").get("elections").get(0);
+    final tools.jackson.databind.JsonNode latest =
+        read("examples/elections.json").get("elections").get(0);
     assertEquals("2022-09-11", latest.get("electionDate").asString());
     assertEquals(6477970, latest.get("validVotes").asLong());
     assertEquals(3157, latest.get("results").get("FI").get("votes").asLong());
@@ -384,8 +392,8 @@ class ApiContractTest {
 
   @Test
   void documentsEveryFrozenSurfaceInTheContractDocument() throws Exception {
-    var doc = Files.readString(Path.of("docs/api-contract.md"));
-    for (var surface : read("contract.json").get("surfaces")) {
+    final java.lang.String doc = Files.readString(Path.of("docs/api-contract.md"));
+    for (tools.jackson.databind.JsonNode surface : read("contract.json").get("surfaces")) {
       assertTrue(
           doc.contains(surface.get("path").asString()),
           surface.get("path").asString() + " is undocumented");
@@ -396,7 +404,7 @@ class ApiContractTest {
   }
 
   private static List<String> concat(List<String> values, String extra) {
-    var all = new ArrayList<>(values);
+    final java.util.ArrayList<java.lang.String> all = new ArrayList<>(values);
     all.add(extra);
     return List.copyOf(all);
   }

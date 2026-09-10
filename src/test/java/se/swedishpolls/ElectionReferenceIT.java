@@ -12,16 +12,17 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 class ElectionReferenceIT {
   @Test
   void migrationPersistsOfficialReferencesAndRulesWithoutCreatingPollObservations() {
-    var schema = "elections_" + UUID.randomUUID().toString().replace("-", "");
-    var dataSource = TestDatabase.dataSource(schema);
-    var flyway =
+    final java.lang.String schema = "elections_" + UUID.randomUUID().toString().replace("-", "");
+    final org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+        TestDatabase.dataSource(schema);
+    final org.flywaydb.core.Flyway flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {
       // Upgrade the checkpoint-1 schema, then prove restarting does not duplicate references.
       Flyway.configure().dataSource(dataSource).schemas(schema).target("2").load().migrate();
       flyway.migrate();
       assertEquals(0, flyway.migrate().migrationsExecuted);
-      var db = JdbcClient.create(dataSource);
+      final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
       assertEquals(
           List.of("2010-09-19", "2014-09-14", "2018-09-09", "2022-09-11"),
           db.sql("SELECT election_date::text FROM election_reference ORDER BY election_date")

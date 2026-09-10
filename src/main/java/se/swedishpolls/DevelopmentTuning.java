@@ -51,7 +51,8 @@ public final class DevelopmentTuning {
      * point.
      */
     public List<DailyStateSpace.Parameters> points() {
-      var points = new ArrayList<DailyStateSpace.Parameters>();
+      final java.util.ArrayList<se.swedishpolls.DailyStateSpace.Parameters> points =
+          new ArrayList<DailyStateSpace.Parameters>();
       for (double walk : walkVariances)
         for (double house : houseScales)
           for (double multiplier : covarianceMultipliers)
@@ -64,7 +65,7 @@ public final class DevelopmentTuning {
     if (values == null || values.isEmpty())
       throw new IllegalArgumentException("Empty grid axis " + name);
     for (int i = 0; i < values.size(); i++) {
-      double value = values.get(i);
+      final double value = values.get(i);
       if (!Double.isFinite(value) || value < 0 || (value == 0 && !zeroAllowed))
         throw new IllegalArgumentException("Inadmissible " + name + " grid value " + value);
       if (i > 0 && value <= values.get(i - 1))
@@ -142,14 +143,15 @@ public final class DevelopmentTuning {
 
   public static Protocol protocol(Path file) {
     try {
-      var root = JSON.readTree(Files.readAllBytes(file));
-      var folds = new ArrayList<Fold>();
-      for (var fold : required(root, "development_folds", file))
+      final tools.jackson.databind.JsonNode root = JSON.readTree(Files.readAllBytes(file));
+      final java.util.ArrayList<se.swedishpolls.DevelopmentTuning.Fold> folds =
+          new ArrayList<Fold>();
+      for (tools.jackson.databind.JsonNode fold : required(root, "development_folds", file))
         folds.add(
             new Fold(
                 LocalDate.parse(required(fold, "cutoff", file).asString()),
                 LocalDate.parse(required(fold, "score_through", file).asString())));
-      var grid = required(root, "tuning_grid", file);
+      final tools.jackson.databind.JsonNode grid = required(root, "tuning_grid", file);
       return new Protocol(
           required(root, "version", file).asString(),
           folds,
@@ -163,7 +165,7 @@ public final class DevelopmentTuning {
   }
 
   private static JsonNode required(JsonNode parent, String field, Path file) {
-    var value = parent == null ? null : parent.get(field);
+    final tools.jackson.databind.JsonNode value = parent == null ? null : parent.get(field);
     if (value == null || value.isNull())
       throw new IllegalArgumentException(
           "Incomplete validation protocol in " + file + ": missing " + field);
@@ -171,8 +173,9 @@ public final class DevelopmentTuning {
   }
 
   private static List<Double> values(JsonNode grid, String axis, Path file) {
-    var values = new ArrayList<Double>();
-    for (var value : required(grid, axis, file)) values.add(value.doubleValue());
+    final java.util.ArrayList<java.lang.Double> values = new ArrayList<Double>();
+    for (tools.jackson.databind.JsonNode value : required(grid, axis, file))
+      values.add(value.doubleValue());
     return values;
   }
 
@@ -199,8 +202,8 @@ public final class DevelopmentTuning {
       List<LocalDate> elections,
       Fold fold,
       Grid grid) {
-    var training = training(polls, fold);
-    var batch = PollObservations.prepare(period, training);
+    final java.util.List<se.swedishpolls.PollCsv.Poll> training = training(polls, fold);
+    final se.swedishpolls.PollObservations.Batch batch = PollObservations.prepare(period, training);
     if (batch.observations().isEmpty())
       throw new IllegalArgumentException("Empty fold " + fold.cutoff() + " for " + period.id());
     return resolve(period.id(), batch, elections, fold, grid, training.size());
@@ -216,12 +219,15 @@ public final class DevelopmentTuning {
       List<PollCsv.Poll> polls,
       List<LocalDate> elections,
       Protocol protocol) {
-    var resolved = new ArrayList<Resolved>();
-    var unresolved = new ArrayList<Unresolved>();
-    for (var period : periods)
-      for (var fold : protocol.folds()) {
-        var training = training(polls, fold);
-        var batch = PollObservations.prepare(period, training);
+    final java.util.ArrayList<se.swedishpolls.DevelopmentTuning.Resolved> resolved =
+        new ArrayList<Resolved>();
+    final java.util.ArrayList<se.swedishpolls.DevelopmentTuning.Unresolved> unresolved =
+        new ArrayList<Unresolved>();
+    for (se.swedishpolls.Roster.CoveragePeriod period : periods)
+      for (se.swedishpolls.DevelopmentTuning.Fold fold : protocol.folds()) {
+        final java.util.List<se.swedishpolls.PollCsv.Poll> training = training(polls, fold);
+        final se.swedishpolls.PollObservations.Batch batch =
+            PollObservations.prepare(period, training);
         if (batch.observations().isEmpty()) {
           unresolved.add(
               new Unresolved(period.id(), fold, "no eligible training observation in the period"));
@@ -243,8 +249,8 @@ public final class DevelopmentTuning {
    * resolve.
    */
   private static Gate gate(List<Resolved> resolved, List<Unresolved> unresolved) {
-    var reasons = new ArrayList<String>();
-    long boundaries = resolved.stream().filter(Resolved::onGridBoundary).count();
+    final java.util.ArrayList<java.lang.String> reasons = new ArrayList<String>();
+    final long boundaries = resolved.stream().filter(Resolved::onGridBoundary).count();
     if (boundaries > 0)
       reasons.add(
           boundaries
@@ -266,12 +272,12 @@ public final class DevelopmentTuning {
       Fold fold,
       Grid grid,
       int trainingPolls) {
-    var points = grid.points();
-    var likelihoods =
+    final java.util.List<se.swedishpolls.DailyStateSpace.Parameters> points = grid.points();
+    final double[] likelihoods =
         points.parallelStream()
             .mapToDouble(
                 point -> {
-                  double likelihood;
+                  final double likelihood;
                   try {
                     likelihood = DailyStateSpace.logLikelihood(batch, elections, point);
                   } catch (RuntimeException e) {
@@ -292,10 +298,10 @@ public final class DevelopmentTuning {
             .toArray();
     int best = 0;
     for (int i = 1; i < likelihoods.length; i++) if (likelihoods[i] > likelihoods[best]) best = i;
-    var resolved = points.get(best);
+    final se.swedishpolls.DailyStateSpace.Parameters resolved = points.get(best);
     // The likelihood path skips the daily joint factorization, so the stored point is confirmed by
     // a full fit.
-    double retained = DailyStateSpace.fit(batch, elections, resolved).logLikelihood();
+    final double retained = DailyStateSpace.fit(batch, elections, resolved).logLikelihood();
     if (Double.compare(retained, likelihoods[best]) != 0)
       throw new IllegalArgumentException(
           "Retained fit disagrees with the tuning likelihood at "
@@ -304,10 +310,11 @@ public final class DevelopmentTuning {
               + periodId
               + " fold "
               + fold.cutoff());
-    var reasons = new java.util.TreeMap<String, Integer>();
-    for (var exclusion : batch.exclusions())
-      for (var reason : exclusion.reasons()) reasons.merge(reason, 1, Integer::sum);
-    var boundaries = new ArrayList<String>();
+    final java.util.TreeMap<java.lang.String, java.lang.Integer> reasons =
+        new java.util.TreeMap<String, Integer>();
+    for (se.swedishpolls.PollObservations.Exclusion exclusion : batch.exclusions())
+      for (java.lang.String reason : exclusion.reasons()) reasons.merge(reason, 1, Integer::sum);
+    final java.util.ArrayList<java.lang.String> boundaries = new ArrayList<String>();
     boundary(
         boundaries,
         "walkVariance",
@@ -358,14 +365,16 @@ public final class DevelopmentTuning {
    * development parameters carrying the run's gate, never release values.
    */
   public static Map<String, DailyStateSpace.Parameters> latestParameters(Tuning tuning) {
-    var latest = new java.util.LinkedHashMap<String, Resolved>();
-    for (var resolved : tuning.resolved())
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.DevelopmentTuning.Resolved>
+        latest = new java.util.LinkedHashMap<String, Resolved>();
+    for (se.swedishpolls.DevelopmentTuning.Resolved resolved : tuning.resolved())
       latest.merge(
           resolved.periodId(),
           resolved,
           (kept, candidate) ->
               candidate.fold().cutoff().isAfter(kept.fold().cutoff()) ? candidate : kept);
-    var parameters = new java.util.LinkedHashMap<String, DailyStateSpace.Parameters>();
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.DailyStateSpace.Parameters>
+        parameters = new java.util.LinkedHashMap<String, DailyStateSpace.Parameters>();
     latest.forEach((periodId, resolved) -> parameters.put(periodId, resolved.parameters()));
     return Map.copyOf(parameters);
   }

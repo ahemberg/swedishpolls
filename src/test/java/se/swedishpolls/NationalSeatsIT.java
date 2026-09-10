@@ -172,7 +172,8 @@ class NationalSeatsIT {
                   .query(LocalDate.class)
                   .list();
           final List<PollCsv.Poll> polls;
-          try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+          try (final java.io.InputStream input =
+              getClass().getResourceAsStream("/polls/audit.csv")) {
             polls = PollCsv.parse(input.readAllBytes());
           }
           final CoverageValidation.Report coverage = CoverageValidation.validation(COVERAGE);

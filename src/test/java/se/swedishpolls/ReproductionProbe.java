@@ -19,9 +19,10 @@ public final class ReproductionProbe {
       compare(Path.of(args[1]), Path.of(args[2]));
       return;
     }
-    var protocol = Path.of("docs", "validation", "protocol.json");
-    var coverage = CoverageValidation.validation(Path.of("docs", "validation", "coverage.json"));
-    var period =
+    final java.nio.file.Path protocol = Path.of("docs", "validation", "protocol.json");
+    final se.swedishpolls.CoverageValidation.Report coverage =
+        CoverageValidation.validation(Path.of("docs", "validation", "coverage.json"));
+    final se.swedishpolls.Roster.CoveragePeriod period =
         new Roster.CoveragePeriod(
             "eight_party_2010",
             LocalDate.of(2010, 1, 1),
@@ -30,15 +31,15 @@ public final class ReproductionProbe {
             false,
             true,
             "https://github.com/ahemberg/swedishpolls/issues/12#issuecomment-5575789888");
-    var validated =
+    final se.swedishpolls.CoverageValidation.Validated validated =
         coverage.periods().stream()
             .filter(candidate -> candidate.periodId().equals(period.id()))
             .findFirst()
             .orElseThrow();
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         PollCsv.parse(
             Files.readAllBytes(Path.of("src", "test", "resources", "polls", "audit.csv")));
-    var fitted =
+    final se.swedishpolls.EstimateHistory.Fitted fitted =
         EstimateHistory.fitted(
             period,
             polls,
@@ -49,27 +50,27 @@ public final class ReproductionProbe {
                 LocalDate.of(2022, 9, 11)),
             validated.parameters(),
             coverage.rules());
-    var span = fitted.spans().getLast();
-    var day = span.fit().days().getLast();
-    var draws =
+    final se.swedishpolls.EstimateHistory.Span span = fitted.spans().getLast();
+    final se.swedishpolls.DailyStateSpace.Day day = span.fit().days().getLast();
+    final double[][] draws =
         JointUncertainty.transformed(
             span.batch(),
             PollObservations.transposedBasis(span.batch()),
             period.id(),
             day,
             JointUncertainty.rules(protocol));
-    var digest = MessageDigest.getInstance("SHA-256");
-    var bytes = ByteBuffer.allocate(Double.BYTES);
-    for (var draw : draws)
+    final java.security.MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    final java.nio.ByteBuffer bytes = ByteBuffer.allocate(Double.BYTES);
+    for (double[] draw : draws)
       for (double value : draw) {
         bytes.clear();
         bytes.putLong(Double.doubleToLongBits(value));
         digest.update(bytes.array());
       }
     if (args.length == 1)
-      try (var output =
+      try (final java.io.DataOutputStream output =
           new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(Path.of(args[0]))))) {
-        for (var draw : draws) for (double value : draw) output.writeDouble(value);
+        for (double[] draw : draws) for (double value : draw) output.writeDouble(value);
       }
     System.out.println(
         System.getProperty("os.arch")
@@ -82,16 +83,16 @@ public final class ReproductionProbe {
   }
 
   private static void compare(Path first, Path second) throws Exception {
-    var left = ByteBuffer.wrap(Files.readAllBytes(first));
-    var right = ByteBuffer.wrap(Files.readAllBytes(second));
+    final java.nio.ByteBuffer left = ByteBuffer.wrap(Files.readAllBytes(first));
+    final java.nio.ByteBuffer right = ByteBuffer.wrap(Files.readAllBytes(second));
     if (left.remaining() != right.remaining() || left.remaining() % Double.BYTES != 0)
       throw new IllegalArgumentException("Draw files differ in size");
     long compared = 0;
     long different = 0;
     double maximum = 0;
     while (left.hasRemaining()) {
-      double firstValue = left.getDouble();
-      double secondValue = right.getDouble();
+      final double firstValue = left.getDouble();
+      final double secondValue = right.getDouble();
       compared++;
       if (Double.doubleToLongBits(firstValue) != Double.doubleToLongBits(secondValue)) different++;
       maximum = Math.max(maximum, Math.abs(firstValue - secondValue));

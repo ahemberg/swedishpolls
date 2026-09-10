@@ -22,13 +22,14 @@ final class ImageSmokeCheck {
       throw new IllegalStateException("Java2D must run headless");
     }
 
-    var font = new Font("DejaVu Sans", Font.BOLD, 32);
+    final java.awt.Font font = new Font("DejaVu Sans", Font.BOLD, 32);
     if (!font.getFamily(Locale.ROOT).equals("DejaVu Sans") || font.canDisplayUpTo(TEXT) != -1) {
       throw new IllegalStateException("DejaVu Sans with Swedish glyphs is unavailable");
     }
 
-    var image = new BufferedImage(640, 120, BufferedImage.TYPE_INT_RGB);
-    Graphics2D graphics = image.createGraphics();
+    final java.awt.image.BufferedImage image =
+        new BufferedImage(640, 120, BufferedImage.TYPE_INT_RGB);
+    final Graphics2D graphics = image.createGraphics();
     try {
       graphics.setColor(Color.WHITE);
       graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
@@ -41,15 +42,15 @@ final class ImageSmokeCheck {
       graphics.dispose();
     }
 
-    Path output = Path.of(args.length == 0 ? "/tmp/swedishpolls-smoke.png" : args[0]);
-    Path parent = output.toAbsolutePath().getParent();
+    final Path output = Path.of(args.length == 0 ? "/tmp/swedishpolls-smoke.png" : args[0]);
+    final Path parent = output.toAbsolutePath().getParent();
     if (parent != null) {
       Files.createDirectories(parent);
     }
     if (!ImageIO.write(image, "png", output.toFile())) {
       throw new IllegalStateException("No PNG writer is available");
     }
-    var decoded = ImageIO.read(output.toFile());
+    final java.awt.image.BufferedImage decoded = ImageIO.read(output.toFile());
     if (decoded == null || decoded.getWidth() != 640 || decoded.getHeight() != 120) {
       throw new IllegalStateException("Rendered PNG could not be decoded");
     }

@@ -86,7 +86,7 @@ class DevelopmentTuningTest {
         IllegalArgumentException.class,
         () -> new DevelopmentTuning.Grid(List.of(1e-4), List.of(0.05), List.of(0.0)));
 
-    var points = GRID.points();
+    final java.util.List<se.swedishpolls.DailyStateSpace.Parameters> points = GRID.points();
     assertEquals(12, points.size());
     assertEquals(new DailyStateSpace.Parameters(1e-5, 0.05, 1.0), points.getFirst());
     assertEquals(new DailyStateSpace.Parameters(1e-5, 0.05, 2.0), points.get(1));
@@ -96,7 +96,7 @@ class DevelopmentTuningTest {
 
   @Test
   void trainingKeepsOnlyEligiblePollsPublishedByTheCutoff() {
-    var rows =
+    final java.lang.String rows =
         row("Novus", 0, 2, "20")
             + row("Sifo", 200, 202, "21") // published after the cutoff
             + row("Ipsos", 3, 5, "22", "NA") // unknown publication date
@@ -108,7 +108,8 @@ class DevelopmentTuningTest {
                 START.plusDays(200).toString()) // late publication of early fieldwork
             + row("SVT", 9, 11, "22") // exit poll, ineligible
             + row("Novus", 12, 14, "150"); // invalid share, ineligible
-    var training = DevelopmentTuning.training(polls(rows), FOLD);
+    final java.util.List<se.swedishpolls.PollCsv.Poll> training =
+        DevelopmentTuning.training(polls(rows), FOLD);
     assertEquals(List.of("Novus"), training.stream().map(PollCsv.Poll::institute).toList());
     assertEquals(List.of(1), training.stream().map(PollCsv.Poll::rowNumber).toList());
     assertTrue(
@@ -121,16 +122,18 @@ class DevelopmentTuningTest {
 
   @Test
   void tuningResolvesTheGridMaximumAndCountsItsTrainingInputsForBothRosters() {
-    var rows = new StringBuilder();
+    final java.lang.StringBuilder rows = new StringBuilder();
     for (int week = 0; week < 24; week++)
       rows.append(row("Sifo", week * 7, week * 7 + 1, week % 2 == 0 ? "24" : "20"))
           .append(row("Novus", week * 7 + 2, week * 7 + 3, "18"));
     // Eligible and published in time, but its fieldwork starts before the coverage period.
     rows.append(row("Sifo", -12, -10, "22"));
-    var polls = polls(rows.toString());
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = polls(rows.toString());
     for (boolean fi : List.of(false, true)) {
-      var resolved = DevelopmentTuning.tune(period(fi), polls, ELECTIONS, FOLD, GRID);
-      var batch = PollObservations.prepare(period(fi), DevelopmentTuning.training(polls, FOLD));
+      final se.swedishpolls.DevelopmentTuning.Resolved resolved =
+          DevelopmentTuning.tune(period(fi), polls, ELECTIONS, FOLD, GRID);
+      final se.swedishpolls.PollObservations.Batch batch =
+          PollObservations.prepare(period(fi), DevelopmentTuning.training(polls, FOLD));
       assertEquals("test", resolved.periodId());
       assertEquals(FOLD, resolved.fold());
       assertEquals(49, resolved.trainingPolls());
@@ -140,7 +143,7 @@ class DevelopmentTuningTest {
       // The resolved point is the grid maximum of the same plug-in marginal likelihood, recomputed
       // directly.
       double best = Double.NEGATIVE_INFINITY;
-      for (var point : GRID.points())
+      for (se.swedishpolls.DailyStateSpace.Parameters point : GRID.points())
         best = Math.max(best, DailyStateSpace.logLikelihood(batch, ELECTIONS, point));
       assertEquals(best, resolved.logLikelihood(), 0);
       assertEquals(best, DailyStateSpace.logLikelihood(batch, ELECTIONS, resolved.parameters()), 0);
@@ -149,13 +152,14 @@ class DevelopmentTuningTest {
 
   @Test
   void gridBoundariesAreRecordedOnEveryAxisWhoseOptimumSitsAtAnEnd() {
-    var rows = new StringBuilder();
+    final java.lang.StringBuilder rows = new StringBuilder();
     for (int week = 0; week < 20; week++)
       rows.append(row("Sifo", week * 7, week * 7 + 1, "24"))
           .append(row("Novus", week * 7 + 2, week * 7 + 3, "18"));
-    var polls = polls(rows.toString());
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = polls(rows.toString());
     // A single-valued axis is a fixed parameter, so its optimum is at both ends of that axis.
-    var fixed = new DevelopmentTuning.Grid(List.of(1e-4), List.of(0.05), List.of(1.5));
+    final se.swedishpolls.DevelopmentTuning.Grid fixed =
+        new DevelopmentTuning.Grid(List.of(1e-4), List.of(0.05), List.of(1.5));
     assertEquals(
         List.of(
             "walkVariance:lower",
@@ -168,9 +172,10 @@ class DevelopmentTuningTest {
 
     // Two steadily disagreeing institutes need a house scale above 1e-9, so that axis hits its
     // upper end.
-    var narrow =
+    final se.swedishpolls.DevelopmentTuning.Grid narrow =
         new DevelopmentTuning.Grid(List.of(1e-9, 1e-8), List.of(1e-9, 1e-8), List.of(1.0, 1e6));
-    var resolved = DevelopmentTuning.tune(period(false), polls, ELECTIONS, FOLD, narrow);
+    final se.swedishpolls.DevelopmentTuning.Resolved resolved =
+        DevelopmentTuning.tune(period(false), polls, ELECTIONS, FOLD, narrow);
     assertTrue(resolved.onGridBoundary());
     assertTrue(resolved.gridBoundaries().contains("houseScale:upper"), resolved::toString);
   }
@@ -179,7 +184,7 @@ class DevelopmentTuningTest {
   void anExactTieKeepsTheSmallestParametersInGridOrder() {
     // A single poll on the period start day never applies the daily walk, so every walk variance
     // ties exactly.
-    var resolved =
+    final se.swedishpolls.DevelopmentTuning.Resolved resolved =
         DevelopmentTuning.tune(
             period(false), polls(row("Novus", 0, 0, "20")), ELECTIONS, FOLD, GRID);
     assertEquals(1e-5, resolved.parameters().walkVariance());
@@ -188,15 +193,17 @@ class DevelopmentTuningTest {
 
   @Test
   void tuneAllListsUnresolvedFoldsAndBlocksTheGateWithoutLosingTheOtherFolds() {
-    var rows = new StringBuilder();
+    final java.lang.StringBuilder rows = new StringBuilder();
     for (int week = 0; week < 24; week++)
       rows.append(row("Sifo", week * 7, week * 7 + 1, week % 2 == 0 ? "24" : "20"))
           .append(row("Novus", week * 7 + 2, week * 7 + 3, "18"));
-    var polls = polls(rows.toString());
-    var late = new DevelopmentTuning.Fold(LocalDate.of(2013, 12, 31), LocalDate.of(2014, 2, 4));
-    var protocol = new DevelopmentTuning.Protocol("test", List.of(late, FOLD), GRID);
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = polls(rows.toString());
+    final se.swedishpolls.DevelopmentTuning.Fold late =
+        new DevelopmentTuning.Fold(LocalDate.of(2013, 12, 31), LocalDate.of(2014, 2, 4));
+    final se.swedishpolls.DevelopmentTuning.Protocol protocol =
+        new DevelopmentTuning.Protocol("test", List.of(late, FOLD), GRID);
 
-    var tuning =
+    final se.swedishpolls.DevelopmentTuning.Tuning tuning =
         DevelopmentTuning.tuneAll(List.of(period(false), period(true)), polls, ELECTIONS, protocol);
 
     // The empty fold is listed for both rosters and the two usable folds still resolve.
@@ -215,9 +222,9 @@ class DevelopmentTuningTest {
 
     // A failed fit is listed with its reason too, rather than stopping the periods and folds after
     // it.
-    var overflowing =
+    final se.swedishpolls.DevelopmentTuning.Grid overflowing =
         new DevelopmentTuning.Grid(List.of(Double.MAX_VALUE), List.of(0.05), List.of(1.0));
-    var failing =
+    final se.swedishpolls.DevelopmentTuning.Tuning failing =
         DevelopmentTuning.tuneAll(
             List.of(period(false)),
             polls,
@@ -233,9 +240,10 @@ class DevelopmentTuningTest {
 
   @Test
   void emptyFoldsAndFailedFitsStopTuningInsteadOfBeingDroppedFromTheGrid() {
-    var polls = polls(row("Novus", 30, 32, "20"));
-    var early = new DevelopmentTuning.Fold(LocalDate.of(2013, 12, 31), LocalDate.of(2014, 2, 4));
-    var empty =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = polls(row("Novus", 30, 32, "20"));
+    final se.swedishpolls.DevelopmentTuning.Fold early =
+        new DevelopmentTuning.Fold(LocalDate.of(2013, 12, 31), LocalDate.of(2014, 2, 4));
+    final java.lang.IllegalArgumentException empty =
         assertThrows(
             IllegalArgumentException.class,
             () -> DevelopmentTuning.tune(period(false), polls, ELECTIONS, early, GRID));
@@ -243,9 +251,9 @@ class DevelopmentTuningTest {
 
     // The walk overflows the opinion covariance before the poll, which the fit rejects rather than
     // clipping.
-    var overflowing =
+    final se.swedishpolls.DevelopmentTuning.Grid overflowing =
         new DevelopmentTuning.Grid(List.of(1e-4, Double.MAX_VALUE), List.of(0.05), List.of(1.0));
-    var failed =
+    final java.lang.IllegalArgumentException failed =
         assertThrows(
             IllegalArgumentException.class,
             () -> DevelopmentTuning.tune(period(false), polls, ELECTIONS, FOLD, overflowing));
@@ -254,7 +262,8 @@ class DevelopmentTuningTest {
 
   @Test
   void theRegisteredProtocolFreezesTheFoldsAndTheCandidateGrid() {
-    var protocol = DevelopmentTuning.protocol(Path.of("docs", "validation", "protocol.json"));
+    final se.swedishpolls.DevelopmentTuning.Protocol protocol =
+        DevelopmentTuning.protocol(Path.of("docs", "validation", "protocol.json"));
     assertEquals("v1-development-1", protocol.version());
     assertEquals(48, protocol.folds().size());
     assertEquals(
@@ -273,12 +282,14 @@ class DevelopmentTuningTest {
 
   @Test
   void storedEvidenceReadsBackAndCarriesEachPeriodsLastCutoffPoint() {
-    var tuning = DevelopmentTuning.tuning(Path.of("docs", "validation", "tuning.json"));
+    final se.swedishpolls.DevelopmentTuning.Tuning tuning =
+        DevelopmentTuning.tuning(Path.of("docs", "validation", "tuning.json"));
     assertEquals("v1-development-1", tuning.protocolVersion());
     assertTrue(tuning.gate().blocked());
     assertFalse(tuning.resolved().isEmpty());
 
-    var parameters = DevelopmentTuning.latestParameters(tuning);
+    final java.util.Map<java.lang.String, se.swedishpolls.DailyStateSpace.Parameters> parameters =
+        DevelopmentTuning.latestParameters(tuning);
 
     assertEquals(
         tuning.resolved().stream()
@@ -287,8 +298,9 @@ class DevelopmentTuningTest {
             .sorted()
             .toList(),
         parameters.keySet().stream().sorted().toList());
-    for (var entry : parameters.entrySet()) {
-      var latest =
+    for (java.util.Map.Entry<java.lang.String, se.swedishpolls.DailyStateSpace.Parameters> entry :
+        parameters.entrySet()) {
+      final se.swedishpolls.DevelopmentTuning.Resolved latest =
           tuning.resolved().stream()
               .filter(resolved -> resolved.periodId().equals(entry.getKey()))
               .max(java.util.Comparator.comparing(resolved -> resolved.fold().cutoff()))
@@ -300,10 +312,10 @@ class DevelopmentTuningTest {
 
   @Test
   void anIncompleteProtocolNamesTheMissingField() throws Exception {
-    var file = temp.resolve("protocol.json");
+    final java.nio.file.Path file = temp.resolve("protocol.json");
     Files.writeString(file, "{\"version\":\"test\",\"development_folds\":[],\"tuning_grid\":{}}");
 
-    var error =
+    final java.lang.IllegalArgumentException error =
         assertThrows(IllegalArgumentException.class, () -> DevelopmentTuning.protocol(file));
 
     assertTrue(error.getMessage().contains("walk_variance"), error::getMessage);

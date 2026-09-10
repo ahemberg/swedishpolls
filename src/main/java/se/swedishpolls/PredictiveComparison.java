@@ -20,8 +20,8 @@ public final class PredictiveComparison {
         || reference.length != candidate.length) {
       throw new IllegalArgumentException("At least eight paired folds are required");
     }
-    int count = candidate.length;
-    double[] differences = new double[count];
+    final int count = candidate.length;
+    final double[] differences = new double[count];
     double baselineMean = 0;
     double referenceMean = 0;
     for (int i = 0; i < count; i++) {

@@ -34,7 +34,7 @@ class WindowFilterTest {
   }
 
   private static PollObservations.Batch batch(boolean fi, int days, String rows) {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         new Roster.CoveragePeriod(
             "test",
             START,
@@ -52,7 +52,7 @@ class WindowFilterTest {
   void midpointWindowsReproduceTheFittedEstimatorLikelihoodOnBothRosters() {
     for (boolean fi : List.of(false, true)) {
       // Overlapping Novus windows, a Sifo window crossing the election, and one single-day poll.
-      var batch =
+      final se.swedishpolls.PollObservations.Batch batch =
           batch(
               fi,
               200,
@@ -71,9 +71,9 @@ class WindowFilterTest {
 
   @Test
   void fieldworkWindowsAndTheirPredictionsMatchTheDenseJointSystem() {
-    for (var convention : WindowFilter.Convention.values())
+    for (se.swedishpolls.WindowFilter.Convention convention : WindowFilter.Convention.values())
       for (boolean fi : List.of(false, true)) {
-        var training =
+        final se.swedishpolls.PollObservations.Batch training =
             batch(
                 fi,
                 200,
@@ -83,7 +83,7 @@ class WindowFilterTest {
                     + row("Sifo", 2, 2, "21"));
         // One held-out poll closes before the last training window, one after it, and one comes
         // from an institute with no effect in this cycle.
-        var heldOut =
+        final java.util.List<se.swedishpolls.PollObservations.Observation> heldOut =
             batch(
                     fi,
                     200,
@@ -91,12 +91,13 @@ class WindowFilterTest {
                         + row("Sifo", 120, 124, "17")
                         + row("Skop", 130, 133, "23"))
                 .observations();
-        var scored = WindowFilter.score(training, heldOut, ELECTIONS, PARAMETERS, convention);
-        var dense = dense(training, heldOut, convention);
+        final se.swedishpolls.WindowFilter.Scored scored =
+            WindowFilter.score(training, heldOut, ELECTIONS, PARAMETERS, convention);
+        final se.swedishpolls.WindowFilterTest.Dense dense = dense(training, heldOut, convention);
         assertEquals(dense.logLikelihood(), scored.logLikelihood(), 1e-9);
         assertEquals(heldOut.size(), scored.predictions().size());
         for (int i = 0; i < heldOut.size(); i++) {
-          var prediction = scored.predictions().get(i);
+          final se.swedishpolls.WindowFilter.Prediction prediction = scored.predictions().get(i);
           assertEquals(heldOut.get(i).poll().rowNumber(), prediction.poll().rowNumber());
           assertEquals(convention.window(heldOut.get(i)), prediction.window());
           assertMatrix(dense.means().get(i), prediction.mean(), 1e-9);
@@ -111,16 +112,19 @@ class WindowFilterTest {
 
   @Test
   void everyPredictionConditionsOnTheWholeTrainingSetWhateverOrderTheWindowsClose() {
-    var training = batch(false, 200, row("Sifo", 0, 2, "22") + row("Novus", 60, 62, "18"));
-    var early = batch(false, 200, row("Sifo", 10, 12, "20")).observations();
-    var scored =
+    final se.swedishpolls.PollObservations.Batch training =
+        batch(false, 200, row("Sifo", 0, 2, "22") + row("Novus", 60, 62, "18"));
+    final java.util.List<se.swedishpolls.PollObservations.Observation> early =
+        batch(false, 200, row("Sifo", 10, 12, "20")).observations();
+    final se.swedishpolls.WindowFilter.Scored scored =
         WindowFilter.score(
             training, early, ELECTIONS, PARAMETERS, WindowFilter.Convention.FIELDWORK);
     // The held-out window closes on day 12, long before the training window on day 62, and the
     // prediction is still resolved at the training end.
     assertEquals(START.plusDays(62), scored.predictions().getFirst().predictedOn());
-    var withoutLate = batch(false, 200, row("Sifo", 0, 2, "22"));
-    var ignoringLate =
+    final se.swedishpolls.PollObservations.Batch withoutLate =
+        batch(false, 200, row("Sifo", 0, 2, "22"));
+    final se.swedishpolls.WindowFilter.Scored ignoringLate =
         WindowFilter.score(
             withoutLate, early, ELECTIONS, PARAMETERS, WindowFilter.Convention.FIELDWORK);
     assertTrue(
@@ -140,11 +144,12 @@ class WindowFilterTest {
 
   @Test
   void aFieldworkWindowSpreadsOneObservationOverItsDaysRatherThanItsMidpoint() {
-    var training = batch(false, 300, row("Sifo", 0, 0, "30") + row("Novus", 200, 240, "18"));
-    double midpoint =
+    final se.swedishpolls.PollObservations.Batch training =
+        batch(false, 300, row("Sifo", 0, 0, "30") + row("Novus", 200, 240, "18"));
+    final double midpoint =
         WindowFilter.logLikelihood(
             training, ELECTIONS, PARAMETERS, WindowFilter.Convention.MIDPOINT);
-    double window =
+    final double window =
         WindowFilter.logLikelihood(
             training, ELECTIONS, PARAMETERS, WindowFilter.Convention.FIELDWORK);
     // A 41-day window averages away part of the walk the midpoint convention has to absorb.
@@ -154,7 +159,8 @@ class WindowFilterTest {
 
   @Test
   void rejectsInadmissibleParametersAndEmptyTraining() {
-    var training = batch(false, 100, row("Sifo", 0, 2, "22"));
+    final se.swedishpolls.PollObservations.Batch training =
+        batch(false, 100, row("Sifo", 0, 2, "22"));
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -173,7 +179,7 @@ class WindowFilterTest {
                 WindowFilter.Convention.MIDPOINT));
     // A poll whose window lies outside the period composes nothing, so the batch has no
     // observation to fit.
-    var empty = batch(false, 5, row("Sifo", 50, 52, "22"));
+    final se.swedishpolls.PollObservations.Batch empty = batch(false, 5, row("Sifo", 50, 52, "22"));
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -202,11 +208,12 @@ class WindowFilterTest {
       PollObservations.Batch training,
       List<PollObservations.Observation> heldOut,
       WindowFilter.Convention convention) {
-    int dimension = training.basis().getNumRows();
-    var trained = training.observations();
-    int size = trained.size() * dimension;
-    var joint = new SimpleMatrix(size, size);
-    var values = new SimpleMatrix(size, 1);
+    final int dimension = training.basis().getNumRows();
+    final java.util.List<se.swedishpolls.PollObservations.Observation> trained =
+        training.observations();
+    final int size = trained.size() * dimension;
+    final org.ejml.simple.SimpleMatrix joint = new SimpleMatrix(size, size);
+    final org.ejml.simple.SimpleMatrix values = new SimpleMatrix(size, 1);
     for (int i = 0; i < trained.size(); i++) {
       values.insertIntoThis(i * dimension, 0, trained.get(i).ilr().copy());
       for (int j = 0; j < trained.size(); j++)
@@ -215,15 +222,17 @@ class WindowFilterTest {
             j * dimension,
             block(trained.get(i), trained.get(j), i == j, convention, dimension));
     }
-    var inverse = joint.invert();
-    var means = new ArrayList<SimpleMatrix>();
-    var covariances = new ArrayList<SimpleMatrix>();
-    for (var observation : heldOut) {
-      var cross = new SimpleMatrix(dimension, size);
+    final org.ejml.simple.SimpleMatrix inverse = joint.invert();
+    final java.util.ArrayList<org.ejml.simple.SimpleMatrix> means = new ArrayList<SimpleMatrix>();
+    final java.util.ArrayList<org.ejml.simple.SimpleMatrix> covariances =
+        new ArrayList<SimpleMatrix>();
+    for (se.swedishpolls.PollObservations.Observation observation : heldOut) {
+      final org.ejml.simple.SimpleMatrix cross = new SimpleMatrix(dimension, size);
       for (int j = 0; j < trained.size(); j++)
         cross.insertIntoThis(
             0, j * dimension, block(observation, trained.get(j), false, convention, dimension));
-      var own = block(observation, observation, true, convention, dimension);
+      final org.ejml.simple.SimpleMatrix own =
+          block(observation, observation, true, convention, dimension);
       means.add(cross.mult(inverse).mult(values));
       covariances.add(own.minus(cross.mult(inverse).mult(cross.transpose())));
     }
@@ -243,17 +252,17 @@ class WindowFilterTest {
       boolean same,
       WindowFilter.Convention convention,
       int dimension) {
-    var left = convention.window(first);
-    var right = convention.window(second);
+    final se.swedishpolls.WindowFilter.Window left = convention.window(first);
+    final se.swedishpolls.WindowFilter.Window right = convention.window(second);
     double covariance = 0;
-    for (var t = left.from(); !t.isAfter(left.to()); t = t.plusDays(1))
-      for (var s = right.from(); !s.isAfter(right.to()); s = s.plusDays(1))
+    for (java.time.LocalDate t = left.from(); !t.isAfter(left.to()); t = t.plusDays(1))
+      for (java.time.LocalDate s = right.from(); !s.isAfter(right.to()); s = s.plusDays(1))
         covariance +=
             4
                 + PARAMETERS.walkVariance()
                     * Math.min(
                         ChronoUnit.DAYS.between(START, t), ChronoUnit.DAYS.between(START, s));
-    var block =
+    org.ejml.simple.SimpleMatrix block =
         SimpleMatrix.identity(dimension).scale(covariance / (left.days() * (double) right.days()));
     if (identity(first, convention).equals(identity(second, convention)))
       block =
@@ -266,7 +275,7 @@ class WindowFilterTest {
   /** House effects reset by cycle, so an identity is the effect name inside its own cycle. */
   private static String identity(
       PollObservations.Observation observation, WindowFilter.Convention convention) {
-    var closes = convention.window(observation).to();
+    final java.time.LocalDate closes = convention.window(observation).to();
     return (closes.isBefore(ELECTION) ? "before:" : "after:")
         + DailyStateSpace.effectIdentity(observation.poll());
   }

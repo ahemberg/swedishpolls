@@ -32,8 +32,8 @@ class DevelopmentGatesIT {
   @Test
   void freezesDevelopmentTolerancesAndStopsAtTheFailedAggregateGate() throws Exception {
     if (Boolean.getBoolean("gates.full")) rebuild();
-    var stored = DevelopmentGates.validation(RESULT);
-    var rebuilt =
+    final se.swedishpolls.DevelopmentGates.Report stored = DevelopmentGates.validation(RESULT);
+    final se.swedishpolls.DevelopmentGates.Report rebuilt =
         DevelopmentGates.evaluate(
             PROTOCOL,
             COVERAGE,
@@ -61,41 +61,47 @@ class DevelopmentGatesIT {
   }
 
   private void rebuild() throws Exception {
-    var schema = "development_gates_" + UUID.randomUUID().toString().replace("-", "");
-    var dataSource = TestDatabase.dataSource(schema);
-    var flyway =
+    final java.lang.String schema =
+        "development_gates_" + UUID.randomUUID().toString().replace("-", "");
+    final org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+        TestDatabase.dataSource(schema);
+    final org.flywaydb.core.Flyway flyway =
         Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
     try {
       flyway.migrate();
-      var db = JdbcClient.create(dataSource);
-      var periods = new Roster(db).periods();
-      var elections =
+      final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
+      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
+          new Roster(db).periods();
+      final java.util.List<java.time.LocalDate> elections =
           db.sql(
                   "SELECT election_date FROM election_reference WHERE election_date < DATE"
                       + " '2022-09-11' ORDER BY election_date")
               .query(LocalDate.class)
               .list();
-      List<PollCsv.Poll> polls;
-      try (var input = getClass().getResourceAsStream("/polls/audit.csv")) {
+      final List<PollCsv.Poll> polls;
+      try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
         polls = PollCsv.parse(input.readAllBytes());
       }
-      var coverage = CoverageValidation.validation(COVERAGE);
-      var period =
+      final se.swedishpolls.CoverageValidation.Report coverage =
+          CoverageValidation.validation(COVERAGE);
+      final se.swedishpolls.Roster.CoveragePeriod period =
           periods.stream()
               .filter(Roster.CoveragePeriod::supportValidated)
               .findFirst()
               .orElseThrow();
-      var validated =
+      final se.swedishpolls.CoverageValidation.Validated validated =
           coverage.periods().stream()
               .filter(candidate -> candidate.periodId().equals(period.id()))
               .findFirst()
               .orElseThrow();
-      var uncertaintyRules = JointUncertainty.rules(PROTOCOL);
-      var publication = EstimateHistory.publication(PROTOCOL);
-      var baseline =
+      final se.swedishpolls.JointUncertainty.Rules uncertaintyRules =
+          JointUncertainty.rules(PROTOCOL);
+      final se.swedishpolls.EstimateHistory.Publication publication =
+          EstimateHistory.publication(PROTOCOL);
+      final se.swedishpolls.EstimateHistory.Estimated baseline =
           EstimateHistory.estimate(
               period, polls, elections, validated.parameters(), coverage.rules(), uncertaintyRules);
-      var drift =
+      final se.swedishpolls.DevelopmentGates.Drift drift =
           drift(
               period,
               polls,
@@ -104,18 +110,21 @@ class DevelopmentGatesIT {
               validated.parameters(),
               uncertaintyRules,
               baseline);
-      var retained = new ArrayList<Object>();
-      var probability = new ArrayList<DevelopmentGates.ProbabilityPrecision>();
-      var precisionSeeds = JointUncertainty.precisionSeeds(uncertaintyRules);
-      var allocationRules = DevelopmentGates.allocationRules(PROTOCOL);
-      var coalition = List.of("M", "L", "KD", "SD");
-      var resources =
+      final java.util.ArrayList<java.lang.Object> retained = new ArrayList<Object>();
+      final java.util.ArrayList<se.swedishpolls.DevelopmentGates.ProbabilityPrecision> probability =
+          new ArrayList<DevelopmentGates.ProbabilityPrecision>();
+      final java.util.List<java.lang.Long> precisionSeeds =
+          JointUncertainty.precisionSeeds(uncertaintyRules);
+      final se.swedishpolls.DevelopmentGates.AllocationRules allocationRules =
+          DevelopmentGates.allocationRules(PROTOCOL);
+      final java.util.List<java.lang.String> coalition = List.of("M", "L", "KD", "SD");
+      final se.swedishpolls.DevelopmentGates.Resources resources =
           DevelopmentGates.measure(
               () -> {
                 retained.add(
                     EstimateHistory.history(
                         periods, polls, elections, coverage, uncertaintyRules, publication));
-                var joint =
+                final se.swedishpolls.JointUncertainty.Estimated joint =
                     JointUncertainty.estimate(
                         period,
                         polls,
@@ -124,9 +133,10 @@ class DevelopmentGatesIT {
                         coverage.rules(),
                         uncertaintyRules);
                 retained.add(joint);
-                var probabilityDraws = new ArrayList<JointUncertainty.Draws>();
+                final java.util.ArrayList<se.swedishpolls.JointUncertainty.Draws> probabilityDraws =
+                    new ArrayList<JointUncertainty.Draws>();
                 probabilityDraws.add(joint.finalDraws());
-                for (var seed : precisionSeeds.subList(1, precisionSeeds.size()))
+                for (java.lang.Long seed : precisionSeeds.subList(1, precisionSeeds.size()))
                   probabilityDraws.add(
                       JointUncertainty.finalDay(
                               period,
@@ -136,7 +146,7 @@ class DevelopmentGatesIT {
                               coverage.rules(),
                               uncertaintyRules.withSeed(seed))
                           .draws());
-                var measured =
+                final se.swedishpolls.DevelopmentGates.ProbabilityPrecision measured =
                     DevelopmentGates.probabilityPrecision(
                         joint, probabilityDraws, precisionSeeds, allocationRules, coalition);
                 probability.add(measured);
@@ -159,7 +169,7 @@ class DevelopmentGatesIT {
           PROBABILITY_PRECISION,
           DevelopmentGates.report(probability.getFirst()) + "\n",
           StandardCharsets.UTF_8);
-      var report =
+      final se.swedishpolls.DevelopmentGates.Report report =
           DevelopmentGates.evaluate(
               PROTOCOL,
               COVERAGE,
@@ -184,21 +194,26 @@ class DevelopmentGatesIT {
       JointUncertainty.Rules uncertaintyRules,
       EstimateHistory.Estimated baseline)
       throws Exception {
-    var latest = new LinkedHashMap<String, PollObservations.Observation>();
-    var supported = CoverageValidation.support(period, polls, rules);
-    var batch = PollObservations.prepare(CoverageValidation.supported(period, supported), polls);
-    var order =
+    final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.PollObservations.Observation>
+        latest = new LinkedHashMap<String, PollObservations.Observation>();
+    final se.swedishpolls.CoverageValidation.Support supported =
+        CoverageValidation.support(period, polls, rules);
+    final se.swedishpolls.PollObservations.Batch batch =
+        PollObservations.prepare(CoverageValidation.supported(period, supported), polls);
+    final java.util.Comparator<se.swedishpolls.PollObservations.Observation> order =
         Comparator.comparing(PollObservations.Observation::midpoint)
             .thenComparingInt(observation -> observation.poll().rowNumber());
-    for (var observation : batch.observations())
+    for (se.swedishpolls.PollObservations.Observation observation : batch.observations())
       latest.merge(
           observation.poll().institute(),
           observation,
           (first, second) -> order.compare(first, second) < 0 ? second : first);
-    var perturbations = new ArrayList<DevelopmentGates.Perturbation>();
-    for (var observation : latest.values()) {
-      var changed = observation.poll();
-      var removed = polls.stream().filter(poll -> poll.rowNumber() != changed.rowNumber()).toList();
+    final java.util.ArrayList<se.swedishpolls.DevelopmentGates.Perturbation> perturbations =
+        new ArrayList<DevelopmentGates.Perturbation>();
+    for (se.swedishpolls.PollObservations.Observation observation : latest.values()) {
+      final se.swedishpolls.PollCsv.Poll changed = observation.poll();
+      final java.util.List<se.swedishpolls.PollCsv.Poll> removed =
+          polls.stream().filter(poll -> poll.rowNumber() != changed.rowNumber()).toList();
       perturbations.add(
           DevelopmentGates.compare(
               "addition_deletion",
@@ -206,7 +221,7 @@ class DevelopmentGatesIT {
               baseline,
               EstimateHistory.estimate(
                   period, removed, elections, parameters, rules, uncertaintyRules)));
-      var corrected =
+      final java.util.List<se.swedishpolls.PollCsv.Poll> corrected =
           polls.stream()
               .map(poll -> poll.rowNumber() == changed.rowNumber() ? corrected(poll) : poll)
               .toList();
@@ -224,10 +239,11 @@ class DevelopmentGatesIT {
   }
 
   private static PollCsv.Poll corrected(PollCsv.Poll poll) {
-    var amount = new BigDecimal("0.1");
+    final java.math.BigDecimal amount = new BigDecimal("0.1");
     if (poll.remainder().compareTo(amount) < 0)
       throw new IllegalArgumentException("Correction exceeds OTHER in row " + poll.rowNumber());
-    var shares = new LinkedHashMap<>(poll.shares());
+    final java.util.LinkedHashMap<java.lang.String, java.math.BigDecimal> shares =
+        new LinkedHashMap<>(poll.shares());
     shares.put("M", shares.get("M").add(amount));
     return new PollCsv.Poll(
         poll.rowNumber(),
@@ -249,8 +265,10 @@ class DevelopmentGatesIT {
 
   private static List<ComparableRemainder.Reference> references(JdbcClient db) {
     record Share(LocalDate date, String component, double share) {}
-    var shares = new LinkedHashMap<LocalDate, LinkedHashMap<String, Double>>();
-    for (var row :
+    final java.util.LinkedHashMap<
+            java.time.LocalDate, java.util.LinkedHashMap<java.lang.String, java.lang.Double>>
+        shares = new LinkedHashMap<LocalDate, LinkedHashMap<String, Double>>();
+    for (Share row :
         db.sql(
                 """
                 SELECT election_date, component, 100.0 * votes / valid_votes AS share

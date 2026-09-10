@@ -29,9 +29,10 @@ class ComparableRemainderTest {
   /** An official result: the eight parties, then FI and the residual outside them. */
   private static ComparableRemainder.Reference reference(
       LocalDate date, double fi, double residual) {
-    var shares = new LinkedHashMap<String, Double>();
-    double eight = (100 - fi - residual) / PollCsv.PARTIES.size();
-    for (var party : PollCsv.PARTIES) shares.put(party, eight);
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> shares =
+        new LinkedHashMap<String, Double>();
+    final double eight = (100 - fi - residual) / PollCsv.PARTIES.size();
+    for (java.lang.String party : PollCsv.PARTIES) shares.put(party, eight);
     shares.put("FI", fi);
     shares.put("RESIDUAL", residual);
     return new ComparableRemainder.Reference(date, shares);
@@ -48,8 +49,9 @@ class ComparableRemainderTest {
 
   private static CoverageValidation.Report coverage(
       CoverageValidation.Gate gate, List<Roster.CoveragePeriod> periods, List<PollCsv.Poll> polls) {
-    var validated = new ArrayList<CoverageValidation.Validated>();
-    for (var period : periods)
+    final java.util.ArrayList<se.swedishpolls.CoverageValidation.Validated> validated =
+        new ArrayList<CoverageValidation.Validated>();
+    for (se.swedishpolls.Roster.CoveragePeriod period : periods)
       validated.add(
           new CoverageValidation.Validated(
               period.id(),
@@ -64,22 +66,25 @@ class ComparableRemainderTest {
 
   @Test
   void combinesFiAndTheResidualOnlyWhereFiIsSeparate() {
-    var eight = CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var separate =
+    final se.swedishpolls.Roster.CoveragePeriod eight =
+        CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
+    final se.swedishpolls.Roster.CoveragePeriod separate =
         CoverageValidationTest.period("separate", LocalDate.of(2015, 1, 1), null, true, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
-    var withoutFi = estimate(eight, polls);
-    var withFi = estimate(separate, polls);
+    final se.swedishpolls.ComparableRemainder.Estimated withoutFi = estimate(eight, polls);
+    final se.swedishpolls.ComparableRemainder.Estimated withFi = estimate(separate, polls);
 
     assertEquals(List.of("OTHER"), withoutFi.members());
     assertEquals(List.of("FI", "RESIDUAL"), withFi.members());
     // Where OTHER already holds FI the remainder is OTHER itself, drawn from the same rows.
-    var uncertainty = JointUncertainty.estimate(eight, polls, dates(), POINT, coverage(), RULES);
+    final se.swedishpolls.JointUncertainty.Estimated uncertainty =
+        JointUncertainty.estimate(eight, polls, dates(), POINT, coverage(), RULES);
     for (int day = 0; day < withoutFi.segments().getFirst().days().size(); day++) {
-      var remainder = withoutFi.segments().getFirst().days().get(day);
-      var other =
+      final se.swedishpolls.ComparableRemainder.Day remainder =
+          withoutFi.segments().getFirst().days().get(day);
+      final se.swedishpolls.JointUncertainty.Component other =
           uncertainty.segments().getFirst().days().get(day).components().stream()
               .filter(component -> component.component().equals("OTHER"))
               .findFirst()
@@ -92,26 +97,27 @@ class ComparableRemainderTest {
 
     // Where FI is separate the two are summed inside each draw, so the interval is not their sum.
     assertTrue(withFi.maxEndpointSumErrorPoints() > 0, withFi::toString);
-    var separated =
+    final java.util.List<se.swedishpolls.JointUncertainty.Component> separated =
         JointUncertainty.estimate(separate, polls, dates(), POINT, coverage(), RULES)
             .segments()
             .getFirst()
             .days()
             .getLast()
             .components();
-    var fi = summary(separated, "FI");
-    var residual = summary(separated, "RESIDUAL");
-    var last = withFi.segments().getFirst().days().getLast();
+    final se.swedishpolls.JointUncertainty.Component fi = summary(separated, "FI");
+    final se.swedishpolls.JointUncertainty.Component residual = summary(separated, "RESIDUAL");
+    final se.swedishpolls.ComparableRemainder.Day last =
+        withFi.segments().getFirst().days().getLast();
     assertEquals(fi.mean() + residual.mean(), last.mean(), 1e-12);
     for (int level = 0; level < last.intervals().size(); level++) {
-      var interval = last.intervals().get(level);
+      final se.swedishpolls.JointUncertainty.Interval interval = last.intervals().get(level);
       assertNotEquals(
           fi.intervals().get(level).upper() + residual.intervals().get(level).upper(),
           interval.upper());
       assertTrue(interval.lower() < last.mean() && last.mean() < interval.upper());
     }
     // The summed draws are narrower than the summed endpoints: the two components covary.
-    var wide = last.intervals().getLast();
+    final se.swedishpolls.JointUncertainty.Interval wide = last.intervals().getLast();
     assertTrue(
         wide.upper() - wide.lower()
             < (fi.intervals().getLast().upper() - fi.intervals().getLast().lower())
@@ -133,21 +139,22 @@ class ComparableRemainderTest {
 
   @Test
   void nestsTheLevelsAndClosesTheRemainderWithTheEightParties() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("separate", LocalDate.of(2015, 1, 1), null, true, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
-    var estimated = estimate(period, polls);
+    final se.swedishpolls.ComparableRemainder.Estimated estimated = estimate(period, polls);
 
-    var days = estimated.segments().getFirst().days();
+    final java.util.List<se.swedishpolls.ComparableRemainder.Day> days =
+        estimated.segments().getFirst().days();
     assertEquals(148, days.size());
-    for (var day : days) {
+    for (se.swedishpolls.ComparableRemainder.Day day : days) {
       assertEquals(
           List.of(0.5, 0.95),
           day.intervals().stream().map(JointUncertainty.Interval::level).toList());
-      var half = day.intervals().getFirst();
-      var wide = day.intervals().getLast();
+      final se.swedishpolls.JointUncertainty.Interval half = day.intervals().getFirst();
+      final se.swedishpolls.JointUncertainty.Interval wide = day.intervals().getLast();
       assertTrue(wide.lower() < half.lower() && half.upper() < wide.upper(), day::toString);
       assertTrue(0 < wide.lower() && wide.upper() < 100, day::toString);
     }
@@ -155,18 +162,19 @@ class ComparableRemainderTest {
 
   @Test
   void preservesFitBoundariesAndSuppressesChangesAcrossThem() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var polls =
+    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
         new ArrayList<>(
             CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 3, 2), "1"));
     polls.addAll(
         CoverageValidationTest.weekly(LocalDate.of(2015, 6, 1), LocalDate.of(2015, 8, 3), "1"));
 
-    var estimated = estimate(period, polls);
+    final se.swedishpolls.ComparableRemainder.Estimated estimated = estimate(period, polls);
 
     // The remainder is cut exactly where the daily history is cut, from the same fitted runs.
-    var history = EstimateHistory.estimate(period, polls, dates(), POINT, coverage(), RULES);
+    final se.swedishpolls.EstimateHistory.Estimated history =
+        EstimateHistory.estimate(period, polls, dates(), POINT, coverage(), RULES);
     assertEquals(
         history.segments().stream().map(EstimateHistory.Segment::from).toList(),
         estimated.segments().stream().map(ComparableRemainder.Segment::from).toList());
@@ -175,17 +183,20 @@ class ComparableRemainderTest {
         estimated.segments().stream().map(ComparableRemainder.Segment::to).toList());
     assertEquals(history.boundaries(), estimated.boundaries());
 
-    var inside = ComparableRemainder.change(estimated, LocalDate.of(2015, 2, 4), 30);
+    final se.swedishpolls.ComparableRemainder.Change inside =
+        ComparableRemainder.change(estimated, LocalDate.of(2015, 2, 4), 30);
     assertTrue(inside.available());
-    var from = estimated.segments().getFirst().days().getFirst();
-    var to =
+    final se.swedishpolls.ComparableRemainder.Day from =
+        estimated.segments().getFirst().days().getFirst();
+    final se.swedishpolls.ComparableRemainder.Day to =
         estimated.segments().getFirst().days().stream()
             .filter(day -> day.date().equals(LocalDate.of(2015, 2, 4)))
             .findFirst()
             .orElseThrow();
     assertEquals(to.mean() - from.mean(), inside.points(), 1e-12);
 
-    var across = ComparableRemainder.change(estimated, LocalDate.of(2015, 6, 5), 100);
+    final se.swedishpolls.ComparableRemainder.Change across =
+        ComparableRemainder.change(estimated, LocalDate.of(2015, 6, 5), 100);
     assertFalse(across.available());
     assertEquals(EstimateHistory.ACROSS_BOUNDARY, across.reason());
     assertEquals(0, across.points());
@@ -201,9 +212,10 @@ class ComparableRemainderTest {
         () -> ComparableRemainder.change(estimated, LocalDate.of(2015, 2, 4), 0));
 
     // Every published run stays inside one segment; every boundary suppresses its own change.
-    var changes = ComparableRemainder.changes(estimated);
+    final java.util.List<se.swedishpolls.ComparableRemainder.Change> changes =
+        ComparableRemainder.changes(estimated);
     assertEquals(2, changes.stream().filter(ComparableRemainder.Change::available).count());
-    var suppressed =
+    final java.util.List<java.lang.String> suppressed =
         changes.stream()
             .filter(change -> !change.available())
             .map(ComparableRemainder.Change::reason)
@@ -213,21 +225,21 @@ class ComparableRemainderTest {
 
   @Test
   void suppressesAChangeAcrossACenteringReferenceChangeInsideOneSegment() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    var polls = new ArrayList<PollCsv.Poll>();
-    for (var date = LocalDate.of(2014, 6, 2);
+    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls = new ArrayList<PollCsv.Poll>();
+    for (java.time.LocalDate date = LocalDate.of(2014, 6, 2);
         date.isBefore(LocalDate.of(2014, 9, 14));
         date = date.plusDays(7))
       polls.addAll(
           PollCsv.parse(PollCsvTest.csv(CoverageValidationTest.row(date, "Sifo", 0, "1"))));
-    for (var date = LocalDate.of(2014, 9, 15);
+    for (java.time.LocalDate date = LocalDate.of(2014, 9, 15);
         !date.isAfter(LocalDate.of(2014, 12, 22));
         date = date.plusDays(7))
       polls.addAll(
           PollCsv.parse(PollCsvTest.csv(CoverageValidationTest.row(date, "Novus", 0, "1"))));
 
-    var estimated = estimate(period, polls);
+    final se.swedishpolls.ComparableRemainder.Estimated estimated = estimate(period, polls);
 
     assertEquals(1, estimated.segments().size());
     assertEquals(
@@ -241,13 +253,16 @@ class ComparableRemainderTest {
 
   @Test
   void groupsOneElectionReferenceConsistentlyAcrossRosters() {
-    var eight = CoverageValidationTest.period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    var separate =
+    final se.swedishpolls.Roster.CoveragePeriod eight =
+        CoverageValidationTest.period("eight", LocalDate.of(2014, 1, 1), null, false, true);
+    final se.swedishpolls.Roster.CoveragePeriod separate =
         CoverageValidationTest.period("separate", LocalDate.of(2014, 1, 1), null, true, true);
-    var election = ELECTIONS.getFirst();
+    final se.swedishpolls.ComparableRemainder.Reference election = ELECTIONS.getFirst();
 
-    var grouped = ComparableRemainder.group(eight, election, List.of());
-    var split = ComparableRemainder.group(separate, election, List.of());
+    final se.swedishpolls.ComparableRemainder.Grouped grouped =
+        ComparableRemainder.group(eight, election, List.of());
+    final se.swedishpolls.ComparableRemainder.Grouped split =
+        ComparableRemainder.group(separate, election, List.of());
 
     // The keys follow the period's own roster, so a display reads them in one order per period.
     assertEquals(concat(eight.roster(), "OTHER"), List.copyOf(grouped.shares().keySet()));
@@ -259,9 +274,10 @@ class ComparableRemainderTest {
         grouped.shares().get("OTHER"),
         split.shares().get("FI") + split.shares().get("RESIDUAL"),
         1e-12);
-    for (var party : PollCsv.PARTIES)
+    for (java.lang.String party : PollCsv.PARTIES)
       assertEquals(grouped.shares().get(party), split.shares().get(party));
-    for (var shares : List.of(grouped.shares(), split.shares()))
+    for (java.util.Map<java.lang.String, java.lang.Double> shares :
+        List.of(grouped.shares(), split.shares()))
       assertEquals(100, shares.values().stream().mapToDouble(Double::doubleValue).sum(), 1e-9);
 
     for (Map<String, Double> inadmissible :
@@ -275,28 +291,29 @@ class ComparableRemainderTest {
   }
 
   private static Map<String, Double> complete(Map<String, Double> overrides) {
-    var shares = new LinkedHashMap<>(ELECTIONS.getFirst().shares());
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> shares =
+        new LinkedHashMap<>(ELECTIONS.getFirst().shares());
     shares.putAll(overrides);
     return shares;
   }
 
   private static List<String> concat(List<String> head, String... tail) {
-    var all = new ArrayList<>(head);
+    final java.util.ArrayList<java.lang.String> all = new ArrayList<>(head);
     all.addAll(List.of(tail));
     return List.copyOf(all);
   }
 
   @Test
   void marksAnElectionOutsideTheEstimatedHistoryWithoutMakingItAnObservation() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2014, 6, 2), LocalDate.of(2014, 12, 22), "1");
 
-    var estimated = estimate(period, polls);
+    final se.swedishpolls.ComparableRemainder.Estimated estimated = estimate(period, polls);
 
     assertEquals(2, estimated.elections().size());
-    var held = estimated.elections().getFirst();
+    final se.swedishpolls.ComparableRemainder.Grouped held = estimated.elections().getFirst();
     assertEquals(LocalDate.of(2014, 9, 14), held.date());
     assertTrue(held.insideSupportedHistory());
     assertFalse(estimated.elections().getLast().insideSupportedHistory());
@@ -310,16 +327,17 @@ class ComparableRemainderTest {
 
   @Test
   void publishesOnlyValidatedPeriodsAndCarriesTheCoverageGateInWhole() {
-    var period =
+    final se.swedishpolls.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    var candidate =
+    final se.swedishpolls.Roster.CoveragePeriod candidate =
         CoverageValidationTest.period(
             "candidate", LocalDate.of(2015, 1, 1), LocalDate.of(2016, 12, 31), true, false);
-    var polls =
+    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
-    var gate = new CoverageValidation.Gate(true, List.of("development tuning: blocked"));
+    final se.swedishpolls.CoverageValidation.Gate gate =
+        new CoverageValidation.Gate(true, List.of("development tuning: blocked"));
 
-    var report =
+    final se.swedishpolls.ComparableRemainder.Report report =
         ComparableRemainder.report(
             List.of(period, candidate),
             polls,
@@ -328,7 +346,7 @@ class ComparableRemainderTest {
             RULES);
 
     assertEquals(1, report.periods().size());
-    var published = report.periods().getFirst();
+    final se.swedishpolls.ComparableRemainder.Published published = report.periods().getFirst();
     assertEquals("eight", published.periodId());
     assertEquals(148, published.estimatedDays());
     assertEquals(2, published.segmentEdges().size());
@@ -336,13 +354,13 @@ class ComparableRemainderTest {
     assertEquals(gate, report.gate());
     assertTrue(report.gate().blocked());
 
-    var text = ComparableRemainder.report(report);
+    final java.lang.String text = ComparableRemainder.report(report);
     assertTrue(text.contains("\"protocolVersion\" : \"v1-development-1\""));
     assertTrue(text.contains("\"comparableRemainder\""));
     // A summary, not a dump: two edges per segment rather than 148 daily remainders.
     assertFalse(text.contains("2015-03-17"));
 
-    var missing =
+    final java.lang.IllegalArgumentException missing =
         assertThrows(
             IllegalArgumentException.class,
             () ->
