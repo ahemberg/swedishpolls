@@ -2,7 +2,7 @@
   "periodId" : "eight_party_2010",
   "date" : "2021-09-20",
   "inputRowsSha256" : "8c3b3db1648d6a61a0f078e2155a9b139be94920a1a7e2c8b8fd8a0d99df04d5",
-  "implementationSha256" : "2da958caa7035a0f04d83f80633ea213d30c63ea92ca9960205be07aef70e562",
+  "implementationSha256" : "42ba752723f3237bdb271c7badf02bc05971ecad370d32ff55a1f7a260755048",
   "components" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER" ],
   "rules" : {
     "seats" : 349,

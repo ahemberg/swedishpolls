@@ -13,7 +13,7 @@
     "cases" : 90000,
     "seeds" : [ 20260908 ],
     "evidence" : "docs/validation/uncertainty.json",
-    "evidenceSha256" : "d18545eadd4ba9d095c7cf357e2dee9ba87c8f6a406c3dcc48fca3789e414c9c",
+    "evidenceSha256" : "5ce9709d63ccb72050466d15d36a156248223b7e9a22f96a8fc6eb72a1054807",
     "rationale" : "A rerun on one implementation and architecture must return every retained draw unchanged."
   }, {
     "name" : "cross_architecture_reproduction",
@@ -23,17 +23,17 @@
     "cases" : 90000,
     "seeds" : [ 20260908 ],
     "evidence" : "docs/validation/cross-architecture.json",
-    "evidenceSha256" : "16871bacb6fc573354a908aa82b87b8dca9c68fe7f227bf9e5171dc3cf9469b4",
+    "evidenceSha256" : "c2032d87417581dfb7a8ab289b86feb7728bc6810e132e708d7c03b1ca693f52",
     "rationale" : "The recorded amd64 and arm64 runs compare the same retained draws; their maximum floating-point difference sets this separate architecture bound."
   }, {
     "name" : "interval_endpoint_precision",
     "units" : "percentage points between the extreme interval endpoints of runs differing only in seed",
     "maximum" : 0.12,
-    "maxObservedError" : 0.11533204035549716,
+    "maxObservedError" : 0.11533204035550426,
     "cases" : 77004,
     "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
     "evidence" : "docs/validation/uncertainty.json",
-    "evidenceSha256" : "d18545eadd4ba9d095c7cf357e2dee9ba87c8f6a406c3dcc48fca3789e414c9c",
+    "evidenceSha256" : "5ce9709d63ccb72050466d15d36a156248223b7e9a22f96a8fc6eb72a1054807",
     "rationale" : "The Monte Carlo error of a published interval endpoint at 10000 draws per day. It bounds how much of a reported interval is sampling noise rather than estimated uncertainty, and it is measured, never enlarged afterwards."
   }, {
     "name" : "coverage_boundary_stability",
@@ -63,7 +63,7 @@
     "cases" : 80000,
     "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
     "evidence" : "docs/validation/probability-precision.json",
-    "evidenceSha256" : "8bb32e01021192866ba2c80cde69770066dcb43649db795899a36182dedbd353",
+    "evidenceSha256" : "68d40296509f5119d6c59c11d1002ec35ca220d337705179f7b638ba6ddbf801",
     "rationale" : "Largest repeated-seed range among inclusive 4% probabilities from final-day joint draws."
   }, {
     "name" : "majority_probability_precision",
@@ -73,7 +73,7 @@
     "cases" : 80000,
     "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
     "evidence" : "docs/validation/probability-precision.json",
-    "evidenceSha256" : "8bb32e01021192866ba2c80cde69770066dcb43649db795899a36182dedbd353",
+    "evidenceSha256" : "68d40296509f5119d6c59c11d1002ec35ca220d337705179f7b638ba6ddbf801",
     "rationale" : "Repeated-seed range of the registered coalition's inclusive 175-seat probability after national modified Sainte-Lague allocation."
   }, {
     "name" : "snapshot_drift",
@@ -93,7 +93,7 @@
       "rowNumber" : 407,
       "institute" : "Novus",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.16159165851688329,
+      "maxShiftPoints" : 0.16159165851687973,
       "maxShiftOn" : "2021-09-16",
       "component" : "M"
     }, {
@@ -101,7 +101,7 @@
       "rowNumber" : 407,
       "institute" : "Novus",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.03581157785167832,
+      "maxShiftPoints" : 0.035811577851681875,
       "maxShiftOn" : "2021-09-16",
       "component" : "M"
     }, {
@@ -109,7 +109,7 @@
       "rowNumber" : 408,
       "institute" : "Ipsos",
       "comparedValues" : 38466,
-      "maxShiftPoints" : 0.12364901205185674,
+      "maxShiftPoints" : 0.1236490120518603,
       "maxShiftOn" : "2021-09-16",
       "component" : "SD"
     }, {
@@ -117,7 +117,7 @@
       "rowNumber" : 408,
       "institute" : "Ipsos",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.01724261641949454,
+      "maxShiftPoints" : 0.017242616419490986,
       "maxShiftOn" : "2021-09-20",
       "component" : "M"
     }, {
@@ -125,7 +125,7 @@
       "rowNumber" : 409,
       "institute" : "Sifo",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.20168102427771117,
+      "maxShiftPoints" : 0.20168102427771473,
       "maxShiftOn" : "2021-09-11",
       "component" : "SD"
     }, {
@@ -133,7 +133,7 @@
       "rowNumber" : 409,
       "institute" : "Sifo",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.03993391157478854,
+      "maxShiftPoints" : 0.039933911574784986,
       "maxShiftOn" : "2021-09-11",
       "component" : "M"
     }, {
@@ -141,7 +141,7 @@
       "rowNumber" : 410,
       "institute" : "Skop",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.07201097074759844,
+      "maxShiftPoints" : 0.07201097074759666,
       "maxShiftOn" : "2021-09-07",
       "component" : "V"
     }, {
@@ -149,7 +149,7 @@
       "rowNumber" : 410,
       "institute" : "Skop",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.00792474356751427,
+      "maxShiftPoints" : 0.007924743567517822,
       "maxShiftOn" : "2021-09-07",
       "component" : "M"
     }, {
@@ -165,7 +165,7 @@
       "rowNumber" : 411,
       "institute" : "Demoskop",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.01645762089311731,
+      "maxShiftPoints" : 0.016457620893110203,
       "maxShiftOn" : "2021-09-04",
       "component" : "M"
     }, {
@@ -173,7 +173,7 @@
       "rowNumber" : 428,
       "institute" : "SCB",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.18904438786082878,
+      "maxShiftPoints" : 0.18904438786081812,
       "maxShiftOn" : "2021-05-12",
       "component" : "SD"
     }, {
@@ -181,7 +181,7 @@
       "rowNumber" : 428,
       "institute" : "SCB",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.018913413395360124,
+      "maxShiftPoints" : 0.018913413395363676,
       "maxShiftOn" : "2021-05-12",
       "component" : "M"
     }, {
@@ -197,7 +197,7 @@
       "rowNumber" : 429,
       "institute" : "Sentio",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.005849049518165117,
+      "maxShiftPoints" : 0.00584904951816867,
       "maxShiftOn" : "2021-05-22",
       "component" : "M"
     }, {
@@ -205,7 +205,7 @@
       "rowNumber" : 534,
       "institute" : "Inizio",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.08124074410874371,
+      "maxShiftPoints" : 0.08124074410875082,
       "maxShiftOn" : "2019-10-11",
       "component" : "S"
     }, {
@@ -221,7 +221,7 @@
       "rowNumber" : 625,
       "institute" : "YouGov",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.09315055594963084,
+      "maxShiftPoints" : 0.09315055594962729,
       "maxShiftOn" : "2018-08-31",
       "component" : "S"
     }, {
@@ -229,7 +229,7 @@
       "rowNumber" : 625,
       "institute" : "YouGov",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.004044110739808815,
+      "maxShiftPoints" : 0.004044110739823026,
       "maxShiftOn" : "2018-08-31",
       "component" : "M"
     }, {
@@ -245,30 +245,30 @@
       "rowNumber" : 1005,
       "institute" : "United Minds",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.005600463257177779,
+      "maxShiftPoints" : 0.005600463257181332,
       "maxShiftOn" : "2014-09-09",
       "component" : "M"
     } ]
   },
   "crossArchitecture" : {
     "comparedValues" : 90000,
-    "differingValues" : 34142,
+    "differingValues" : 42697,
     "maxAbsoluteDifferencePoints" : 1.7763568394002505E-14,
     "runs" : [ {
       "architecture" : "amd64",
       "javaRuntime" : "25.0.4+7-1-24.04-Ubuntu",
-      "drawsSha256" : "c31fa2ded51156e28980b1bc836d5ca25a456e0b02774abcbd3f37aec542d8ea"
+      "drawsSha256" : "b95daa3879f01b1d3cbb23962a7ebe2fe2620adc14b29e11282a0a33d0b60626"
     }, {
       "architecture" : "arm64",
       "javaRuntime" : "25.0.4+7-LTS",
-      "drawsSha256" : "b45689b93087b5c5a25f116a13da05649cef82ae7ab02956b7d6aa0c520c8711"
+      "drawsSha256" : "ea7b95bd8bc0f2787174d72cf9824671ce7ff82b9bab122180723e336885c907"
     } ]
   },
   "probabilityPrecision" : {
     "periodId" : "eight_party_2010",
     "date" : "2021-09-20",
     "inputRowsSha256" : "8c3b3db1648d6a61a0f078e2155a9b139be94920a1a7e2c8b8fd8a0d99df04d5",
-    "implementationSha256" : "2da958caa7035a0f04d83f80633ea213d30c63ea92ca9960205be07aef70e562",
+    "implementationSha256" : "42ba752723f3237bdb271c7badf02bc05971ecad370d32ff55a1f7a260755048",
     "components" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER" ],
     "rules" : {
       "seats" : 349,
@@ -386,8 +386,8 @@
     } ]
   },
   "resources" : {
-    "runtimeMillis" : 99094,
-    "peakHeapBytes" : 484835576,
+    "runtimeMillis" : 109593,
+    "peakHeapBytes" : 511612832,
     "targetMillis" : 10000,
     "inputPolls" : 1038,
     "estimatedDays" : 4278,

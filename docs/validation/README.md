@@ -670,14 +670,14 @@ the roster and a digest of the orthonormal basis, a digest of the ordered archiv
 it read with their count, the fitted parameters, a SHA-256 over the compiled bytecode of
 the eight estimator classes, the Java runtime and VM versions, the OS name and
 architecture, and the linear-algebra version. The archived run reads 1,038 rows under
-implementation digest `72bf0cb…` on Java 25.0.4 and EJML 0.46.1.
+implementation digest `42ba752…` on Java 25.0.4 and EJML 0.46.1.
 
 #### Results, in [uncertainty.json](uncertainty.json)
 
 - **Seeded reproduction is exact.** A rerun at the registered seed returned all 90,000
   retained values with a maximum absolute difference of 0. That is the proposed bound:
-  zero, on this implementation and this runtime. A cross-architecture rerun is still
-  owed before it becomes a resolved tolerance.
+  zero, on this implementation and this runtime. The cross-architecture evidence is
+  recorded separately below.
 - **Interval precision at 10,000 draws per day.** Across the registered seed and its
   seven successors, over all 4,278 estimated days, the largest movement of any 95%
   endpoint is **0.115 percentage points**, on S; of any 50% endpoint 0.058; of any mean
@@ -952,7 +952,7 @@ The development-derived bounds are now frozen in [protocol.json](protocol.json):
 | --- | ---: | ---: | --- |
 | Same-runtime seeded reproduction | 0 points | 0 points | 90,000 retained values at seed 20260908 |
 | Cross-architecture reproduction | 0.00000000000002 points | 0.000000000000017763568394002505 points | 90,000 retained values at seed 20260908 |
-| Historical interval endpoint precision | 0.12 points | 0.11533204035549716 points | 77,004 component, level and day comparisons over eight seeds |
+| Historical interval endpoint precision | 0.12 points | 0.11533204035550426 points | 77,004 component, level and day comparisons over eight seeds |
 | Coverage-boundary stability | 0.5 points | 0.4252180277614137 points | 155,469 component-day comparisons over the registered 7, 14 and 30 day shifts |
 | Probability Monte Carlo standard error | 0.005 | 0.005 | Worst case at 10,000 draws |
 | 4% threshold probability precision | 0.03 | 0.0167 | 80,000 final-day draws over eight seeds |
@@ -961,7 +961,7 @@ The development-derived bounds are now frozen in [protocol.json](protocol.json):
 
 The same-seed rerun on amd64 remains bit-for-bit exact. The matching arm64 run used
 the same compiled classes, archived input, parameters and seed. Floating-point paths
-differed in 34,142 of 90,000 retained final-day values, with a maximum difference of
+differed in 42,697 of 90,000 retained final-day values, with a maximum difference of
 `1.7763568394002505e-14` percentage points. [cross-architecture.json](cross-architecture.json)
 records both Java 25.0.4 runtimes and draw digests. The frozen `2e-14` bound therefore
 describes numerical reproduction across the two architectures. The same-runtime gate
@@ -992,9 +992,9 @@ retain SHA-256 `27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608
 The production-shaped resource run computes corrected history, joint component
 uncertainty, repeated-seed threshold and majority probabilities and the comparable
 remainder once, using only pre-2022 election references and excluding database setup
-and evidence parsing. On amd64 with Java 25.0.4 it took 99,094 ms for 1,038 observations,
+and evidence parsing. On amd64 with Java 25.0.4 it took 109,593 ms for 1,038 observations,
 4,278 days and 10,000 final draws per seed. The sum of peak-used JVM heap pools was
-484,835,576 bytes. This misses the registered ten-second optimization target; that
+511,612,832 bytes. This misses the registered ten-second optimization target; that
 target is not an unconditional release gate.
 
 [development-gates.json](development-gates.json) contains the complete result and
