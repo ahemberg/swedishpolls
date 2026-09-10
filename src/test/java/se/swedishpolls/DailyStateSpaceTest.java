@@ -84,7 +84,7 @@ class DailyStateSpaceTest {
       assertMatrix(SimpleMatrix.identity(dimension).scale(1.5), day.filteredCovariance(), 1e-14);
       assertMatrix(day.filteredMean(), day.smoothedMean(), 0);
       assertMatrix(day.filteredCovariance(), day.smoothedCovariance(), 0);
-      assertEquals(-2.2086593040445905 * dimension, fit.logLikelihood(), 1e-12);
+      assertEquals(-2.2086593040445903 * dimension, fit.logLikelihood(), 1e-12);
       // A single active institute carries the whole ensemble weight, so its centered effect is
       // exactly zero.
       var cycle = fit.cycles().getFirst();
@@ -231,7 +231,7 @@ class DailyStateSpaceTest {
             "https://example.invalid");
     var rows = new StringBuilder();
     for (int week = 0; week < 6; week++) {
-      rows.append(era("Demoskop", start.plusDays(week * 7), "18"));
+      rows.append(era("Demoskop", start.plusDays(week * 7L), "18"));
       rows.append(era("Demoskop", start.plusDays(200 + week * 7), "24"));
       rows.append(era("Inizio", start.plusDays(210 + week * 7), "24"));
       rows.append(era("Novus", start.plusDays(week * 7 + 3), "21"));

@@ -43,3 +43,9 @@ A permitted single suppression uses `@SuppressFBWarnings` at the narrowest possi
 scope and includes a written justification. Disabling a rule outright is a recorded
 decision: give it its own pull request and note it in
 [ADR 0005](docs/adr/0005-static-analysis-gating.md).
+
+Error Prone runs at compile time on main and test sources with `-Werror`, so any Error Prone
+finding or javac warning fails the build. It needs the committed `.mvn/jvm.config`: eight
+`--add-exports` and two `--add-opens` flags into `jdk.compiler` that apply to every Maven
+invocation in this repository. If a JDK upgrade breaks compilation with `IllegalAccessError`,
+that file is the first place to look. See [ADR 0005](docs/adr/0005-static-analysis-gating.md).
