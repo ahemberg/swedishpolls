@@ -17,8 +17,9 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.TreeMap;
+import java.util.random.RandomGenerator;
+import java.util.random.RandomGeneratorFactory;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -35,6 +36,10 @@ public final class DevelopmentDiagnostics {
   private DevelopmentDiagnostics() {}
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
+
+  /** The same legacy generator the joint draws use, so a rerun reproduces every interval. */
+  private static final RandomGeneratorFactory<RandomGenerator> RANDOM_FACTORY =
+      RandomGeneratorFactory.of("Random");
 
   /** The candidates a fold scores, in the order the gate compares them. */
   public static final String CANDIDATE = "midpoint";
@@ -381,7 +386,7 @@ public final class DevelopmentDiagnostics {
     var basis = PollObservations.transposedBasis(batch);
     int components = batch.components().size();
     var draws = new double[components][rules.scoreDraws()];
-    var random = new Random(streamSeed(stream, rules.seed()));
+    var random = RANDOM_FACTORY.create(streamSeed(stream, rules.seed()));
     var normal = new double[dimension];
     var state = new double[dimension];
     var shares = new double[components];
@@ -918,7 +923,8 @@ public final class DevelopmentDiagnostics {
       for (var observation : span.batch().observations())
         counts.merge(observation.poll().institute(), 1, Integer::sum);
     var left = new ArrayList<LeftOut>();
-    for (var institute : counts.keySet()) {
+    for (var counted : counts.entrySet()) {
+      var institute = counted.getKey();
       var kept = polls.stream().filter(poll -> !institute.equals(poll.institute())).toList();
       var dropped = EstimateHistory.fitted(period, kept, elections, parameters, rules);
       var date = lastDay(dropped).isBefore(lastDay(whole)) ? lastDay(dropped) : lastDay(whole);
@@ -931,7 +937,7 @@ public final class DevelopmentDiagnostics {
           new LeftOut(
               period.id(),
               institute,
-              counts.get(institute),
+              counted.getValue(),
               date,
               shifts,
               worst,
