@@ -35,6 +35,14 @@ Run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per checkout s
 `git blame` skips the whole-tree reformat and attributes lines to the commit that
 wrote them. GitHub applies the file automatically.
 
+### Java local variables
+
+Use explicit types for Java local variables; never use `var`. Declare every local that is
+not reassigned as `final`. The rule applies to main and test sources, but not to parameters,
+catch variables, lambda parameters or enhanced-`for` variables. Fix violations in the Java
+source, then run `./mvnw pmd:check`. See
+[ADR 0006](docs/adr/0006-explicit-types-and-final-locals.md).
+
 ### Static analysis
 
 `./mvnw verify` fails on any SpotBugs finding. Never suppress a finding. If a finding

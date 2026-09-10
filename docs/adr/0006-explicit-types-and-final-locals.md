@@ -47,5 +47,5 @@ new evidence changes that decision narrowly. No unrelated PMD rules are enabled.
 `./mvnw verify` now fails when `var` remains or when a local can be declared `final`. PMD has no
 safe automatic fix for inferred types, so violations are fixed in source and checked with
 `./mvnw pmd:check`. Reassigned locals remain mutable without annotations or suppression. A future
-decision to cover parameters or enhanced-`for` variables can change the PMD rule properties
-without replacing the gate.
+decision to cover parameters or enhanced-`for` variables can change the PMD rule properties or
+selected rules without replacing the gate.

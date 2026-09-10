@@ -3,3 +3,6 @@
 
 # Renormalize mvnw.cmd to LF to match its eol=crlf attribute (#92)
 021af83dc2bf4ae0de5b1e85a960822eb75ee974
+
+# Convert Java locals to explicit final types (#107)
+34675db37a1bbb71a99b1812fcffdbe0370c2586
