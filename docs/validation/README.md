@@ -1009,6 +1009,48 @@ stop and evidence checks. `-Dgates.full=true` repeats the drift and resource stu
 rewrites the report. `ReproductionProbe` emits the retained-draw digest or binary values
 for the same native and emulated architecture comparison recorded above.
 
+### National seats and preset coalitions, issue #19
+
+`NationalSeats` allocates 349 seats from the final-day joint draws under the era rule
+stored in `national_allocation_rule`, `Coalitions` groups the ten approved presets from
+the same draws, and `SeatOutcomes` records the evidence. The full explanation of the
+approximation, its omitted constituency rules and the deterministic tie order is in
+[seats and coalitions](../seats-and-coalitions.md).
+
+[seats.json](seats.json) records the development-day result for `eight_party_2010` on
+2021-09-20, over 10,000 draws at seed 20260908. Point seats allocate the posterior mean
+support once; mean seats average the 10,000 drawn allocations. The two are visibly
+different quantities: MP averages 3.96% support, so it holds no point seats, while
+reaching 4% in 41% of the draws and averaging 6.2 seats.
+
+| Quantity | Largest spread over eight seeds | Frozen maximum |
+| --- | ---: | ---: |
+| 4% threshold probability (MP) | 0.0167 | 0.03 |
+| 175-seat probability (tido) | 0.0152 | 0.03 |
+
+Those are the same two spreads [probability-precision.json](probability-precision.json)
+recorded for the development gates, reproduced here by the published allocator rather
+than by a second implementation of it.
+
+Sensitivity reruns the headline probabilities under poll-count centering and under each
+institute left out of the fit, and reports the differences in percentage points. Three
+leave-one-out cases move a headline probability more than ten points and carry an adjacent
+disclosure: `majority:opposition` moves 16.8 points without Sifo, `threshold:MP` moves
+13.7 without Skop and `majority:tido` moves 12.9 without Demoskop. The poll-count
+centering rerun moves at most 7.3 points and needs none. A disclosure is not a block.
+
+Each stored official result is allocated under its own era rule beside its official seats.
+2018 and 2022 reproduce the official allocation exactly; 2010 differs by at most three
+seats and 2014 by at most two, which is the constituency machinery the national
+approximation omits. That comparison reads a published outcome and no poll, fit or model
+output, so it does not consume the reserved once-only 2022 statistical audit.
+
+Run `./mvnw -Dtest=NationalSeatsTest,CoalitionsTest,SeatOutcomesTest test` for the
+allocation, catalogue and evidence checks, and the `NationalSeatsIT` commands in
+[seats and coalitions](../seats-and-coalitions.md) for the stored rules and the recorded
+result. `-Dseats.full=true` recomputes every draw, seed and sensitivity rerun and rewrites
+the report.
+
 ### Conventions for the estimator
 
 Midpoint is `start + floor(days_between(start,end)/2)`. A half-day rounds toward
