@@ -203,7 +203,7 @@ class RosterTest {
             .allMatch(Roster.Composition::complete));
   }
 
-  private static <T> TreeMap<Integer, List<T>> byCollectionYear(
+  private static <T> Map<Integer, List<T>> byCollectionYear(
       List<PollCsv.Poll> polls, java.util.function.Function<PollCsv.Poll, T> field) {
     return polls.stream()
         .collect(

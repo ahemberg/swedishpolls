@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import tools.jackson.databind.JsonNode;
@@ -411,7 +412,7 @@ public final class CoverageValidation {
   }
 
   /** The smoothed composition of every retained day, in percent. */
-  private static TreeMap<LocalDate, Map<String, Double>> daily(
+  private static NavigableMap<LocalDate, Map<String, Double>> daily(
       PollObservations.Batch batch, DailyStateSpace.Fit fit) {
     var daily = new TreeMap<LocalDate, Map<String, Double>>();
     for (var day : fit.days())
@@ -419,9 +420,9 @@ public final class CoverageValidation {
     return daily;
   }
 
-  private static TreeMap<LocalDate, Map<String, Double>> compare(
-      TreeMap<LocalDate, Map<String, Double>> baseline,
-      TreeMap<LocalDate, Map<String, Double>> shifted,
+  private static NavigableMap<LocalDate, Map<String, Double>> compare(
+      Map<LocalDate, Map<String, Double>> baseline,
+      NavigableMap<LocalDate, Map<String, Double>> shifted,
       LocalDate from,
       LocalDate to) {
     var compared = new TreeMap<LocalDate, Map<String, Double>>();
@@ -431,8 +432,8 @@ public final class CoverageValidation {
   }
 
   private static Map<String, Double> deviations(
-      TreeMap<LocalDate, Map<String, Double>> baseline,
-      TreeMap<LocalDate, Map<String, Double>> shifted,
+      Map<LocalDate, Map<String, Double>> baseline,
+      Map<LocalDate, Map<String, Double>> shifted,
       java.util.NavigableSet<LocalDate> days) {
     var deviations = new LinkedHashMap<String, Double>();
     for (var date : days) {

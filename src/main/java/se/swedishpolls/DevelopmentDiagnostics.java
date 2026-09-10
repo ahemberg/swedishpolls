@@ -346,10 +346,10 @@ public final class DevelopmentDiagnostics {
       PollCsv.Poll poll,
       WindowFilter.Window window,
       double logScore,
-      double[] whitened,
-      double[] standardized,
-      boolean[] covered95,
-      boolean[] covered50) {}
+      List<Double> whitened,
+      List<Double> standardized,
+      List<Boolean> covered95,
+      List<Boolean> covered50) {}
 
   /**
    * The predictive log density of the poll's own transformed composition, its whitened residual and
@@ -375,11 +375,11 @@ public final class DevelopmentDiagnostics {
     double logScore =
         -0.5
             * (dimension * Math.log(2 * Math.PI) + WindowFilter.logDeterminant(factor) + quadratic);
-    var whitened = new double[dimension];
+    var whitened = new ArrayList<Double>(dimension);
     for (int r = 0; r < dimension; r++) {
       double value = innovation[r];
-      for (int c = 0; c < r; c++) value -= factor[r][c] * whitened[c];
-      whitened[r] = value / factor[r][r];
+      for (int c = 0; c < r; c++) value -= factor[r][c] * whitened.get(c);
+      whitened.add(value / factor[r][r]);
     }
     // Coverage is read off joint draws of the predictive distribution, transformed one draw at a
     // time, because a marginal share is not a coordinate of the Gaussian.
@@ -402,9 +402,9 @@ public final class DevelopmentDiagnostics {
         draws[component][draw] = shares[component];
     }
     var observed = PollObservations.shares(batch, observation.ilr());
-    var covered95 = new boolean[components];
-    var covered50 = new boolean[components];
-    var standardized = new double[components];
+    var covered95 = new ArrayList<Boolean>(components);
+    var covered50 = new ArrayList<Boolean>(components);
+    var standardized = new ArrayList<Double>(components);
     for (int component = 0; component < components; component++) {
       var column = draws[component];
       double total = 0;
@@ -415,9 +415,9 @@ public final class DevelopmentDiagnostics {
       variance /= column.length - 1;
       Arrays.sort(column);
       double share = observed.get(batch.components().get(component));
-      standardized[component] = variance > 0 ? (share - drawnMean) / Math.sqrt(variance) : 0;
-      covered95[component] = inside(column, share, 0.95);
-      covered50[component] = inside(column, share, 0.5);
+      standardized.add(variance > 0 ? (share - drawnMean) / Math.sqrt(variance) : 0);
+      covered95.add(inside(column, share, 0.95));
+      covered50.add(inside(column, share, 0.5));
     }
     // The window here is the poll's own fieldwork, whatever convention predicted it: the
     // length bands and the overlap between polls are properties of the source, not of a candidate.
@@ -425,10 +425,10 @@ public final class DevelopmentDiagnostics {
         observation.poll(),
         WindowFilter.Convention.FIELDWORK.window(observation),
         logScore,
-        whitened,
-        standardized,
-        covered95,
-        covered50);
+        List.copyOf(whitened),
+        List.copyOf(standardized),
+        List.copyOf(covered95),
+        List.copyOf(covered50));
   }
 
   private static boolean inside(double[] sorted, double value, double level) {
@@ -708,10 +708,10 @@ public final class DevelopmentDiagnostics {
 
     private void add(Scored scored, int component) {
       cases++;
-      if (scored.covered95()[component]) covered95++;
-      if (scored.covered50()[component]) covered50++;
-      residual += scored.standardized()[component];
-      squared += scored.standardized()[component] * scored.standardized()[component];
+      if (scored.covered95().get(component)) covered95++;
+      if (scored.covered50().get(component)) covered50++;
+      residual += scored.standardized().get(component);
+      squared += scored.standardized().get(component) * scored.standardized().get(component);
     }
 
     private Misfit misfit(String periodId, String candidate, String scope, String name) {
@@ -817,8 +817,8 @@ public final class DevelopmentDiagnostics {
             values++;
           }
         for (int i = lag; i < ordered.size(); i++) {
-          for (int c = 0; c < ordered.get(i).whitened().length; c++)
-            product += ordered.get(i).whitened()[c] * ordered.get(i - lag).whitened()[c];
+          for (int c = 0; c < ordered.get(i).whitened().size(); c++)
+            product += ordered.get(i).whitened().get(c) * ordered.get(i - lag).whitened().get(c);
           pairs++;
         }
       }
@@ -830,7 +830,7 @@ public final class DevelopmentDiagnostics {
               pairs == 0
                   ? 0
                   : product
-                      / (pairs * (double) byFold.getFirst().getFirst().whitened().length)
+                      / (pairs * (double) byFold.getFirst().getFirst().whitened().size())
                       / (squared / values)));
     }
     return List.copyOf(autocorrelation);
@@ -854,8 +854,9 @@ public final class DevelopmentDiagnostics {
           double correlation = 0;
           var left = fold.get(i);
           var right = fold.get(j);
-          for (int c = 0; c < left.whitened().length; c++)
-            correlation += left.whitened()[c] * right.whitened()[c] / left.whitened().length;
+          for (int c = 0; c < left.whitened().size(); c++)
+            correlation +=
+                left.whitened().get(c) * right.whitened().get(c) / left.whitened().size();
           if (left.window().overlaps(right.window())) {
             overlapping += correlation;
             overlappingPairs++;

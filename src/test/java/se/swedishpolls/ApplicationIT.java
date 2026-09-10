@@ -63,8 +63,8 @@ class ApplicationIT {
       assertTrue(script.body().contains("hydrateRoot"));
 
       var db = JdbcClient.create(dataSource);
-      assertEquals(
-          "18.4", db.sql("SHOW server_version").query(String.class).single().split(" ")[0]);
+      var serverVersion = db.sql("SHOW server_version").query(String.class).single();
+      assertEquals("18.4", serverVersion.substring(0, serverVersion.indexOf(' ')));
       assertEquals(
           1,
           db.sql("SELECT count(*) FROM flyway_schema_history WHERE version = '1' AND success")
