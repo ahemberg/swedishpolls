@@ -44,3 +44,17 @@ and Compose logs before publishing either image. Publishing has
 therefore blocks image publication as well as the merge check, without regenerating
 or absorbing a baseline. Hosted image publication and arm64 Compose evidence require
 the first successful `main` run of this workflow.
+
+Hosted verification on 2026-09-10 closes the loop: main run
+34462525493 for commit `c97794c` passed `Build and integration`, `Fallow` and
+`Build, verify and publish images`. The image job rebuilt both commit-tagged
+images from that run's `verified-classes` artifact, passed the Java2D and
+full Compose checks on both architectures, and pushed
+`ghcr.io/ahemberg/swedishpolls:c97794c…-amd64`
+(digest `sha256:4ed6f4c5b9e12536e5c79077a7b95d78abe934eb87aed2a89e96041c92cb23a6`)
+and `…-arm64` (digest
+`sha256:d65388cb3e0c4cbe4e0a35d3a33822194ac0dcd9ef79a69adec50d26867ba6d7`).
+The job log records Docker Compose database readiness, UID 10001 publication
+writes and restart persistence on both architectures; the `image-smoke` artifact
+holds the PNGs and Compose logs. The run followed the 2026-09-09 failure of the
+main image job in run 34406149606, fixed by #90's 120-second readiness loop.
