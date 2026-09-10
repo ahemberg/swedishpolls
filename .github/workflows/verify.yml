@@ -28,6 +28,14 @@ jobs:
             target/surefire-reports/
             target/failsafe-reports/
           if-no-files-found: warn
+      - name: Upload verified application classes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: verified-classes
+          path: target/classes/
+          if-no-files-found: error
+          retention-days: 1
   fallow:
     name: Fallow
     runs-on: ubuntu-24.04
@@ -85,8 +93,18 @@ jobs:
         with:
           image: docker.io/tonistiigi/binfmt@sha256:8f58e6214f4cc9dc83ce8f5acad1ece508eb6b20e696a8c1e9f274481982c541
           platforms: arm64
-      - name: Build exact architecture images
-        run: ./mvnw --batch-mode --no-transfer-progress -Pdocker -Dimage.version=${GITHUB_SHA} verify
+      - name: Download verified application classes
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: verified-classes
+          path: target/classes
+          run-id: ${{ github.run_id }}
+      - name: Build exact architecture images from the verified classes
+        run: >-
+          ./mvnw --batch-mode --no-transfer-progress -Pdocker
+          -Dimage.version=${GITHUB_SHA}
+          io.github.git-commit-id:git-commit-id-maven-plugin:revision
+          jib:dockerBuild@amd64 jib:dockerBuild@arm64
       - name: Verify headless Java2D and Swedish fonts
         run: |
           mkdir -p target/image-smoke
