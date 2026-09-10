@@ -28,6 +28,24 @@ only compilation, and it is the part of this setup most likely to break on a fut
 that encapsulates the internals differently surfaces as `IllegalAccessError` at compiler
 start-up, and the flags need updating in step.
 
+## ArchUnit evaluation
+
+The decision is to decline ArchUnit while all 19 production Java files remain in one package.
+None of the proposed rules justifies another test dependency and custom rule code today:
+
+| Candidate | Current evidence |
+| --- | --- |
+| Require constructor injection | Production code has no injected fields and only three Spring components. ADR 0004 already requires constructor injection. |
+| Forbid `java.util.Date` and `Calendar` | Production code has no references to either type and already uses `java.time`. |
+| Keep web types away from `JdbcClient` and `JdbcTemplate` | There are no inbound controller types, so the rule would pass without checking a class. |
+| Forbid `System.out` and `System.err` | `ImageSmokeCheck` intentionally reports its result to standard output as a command-line program, so a blanket rule would reject valid code. |
+| Forbid `printStackTrace` | Production code has no calls to it. |
+
+Reconsider ArchUnit when the code has package or module boundaries with dependency rules worth
+enforcing, when an inbound web layer makes the JDBC rule non-vacuous, or when repeated review
+findings show that a documented prohibition needs an automated check. Until then, Error Prone
+and SpotBugs remain the build's static-analysis gates.
+
 ## Error Prone opt-in review
 
 Error Prone 2.50.0 was run over main and test sources with each check below forced to
