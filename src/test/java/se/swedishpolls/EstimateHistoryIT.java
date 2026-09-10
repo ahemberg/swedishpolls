@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
  * docs/validation/history.json.
  */
 class EstimateHistoryIT {
+  private static final Path PROTOCOL = Path.of("docs", "validation", "protocol.json");
   private static final Path COVERAGE = Path.of("docs", "validation", "coverage.json");
   private static final Path RESULT = Path.of("docs", "validation", "history.json");
 
@@ -41,8 +42,11 @@ class EstimateHistoryIT {
         polls = PollCsv.parse(input.readAllBytes());
       }
       var coverage = CoverageValidation.validation(COVERAGE);
+      var draws = JointUncertainty.rules(PROTOCOL);
+      var publication = EstimateHistory.publication(PROTOCOL);
 
-      var history = EstimateHistory.history(periods, polls, elections, coverage);
+      var history =
+          EstimateHistory.history(periods, polls, elections, coverage, draws, publication);
 
       // Only the validated roster publishes a curve; the candidate segment stays unavailable.
       assertTrue(
@@ -67,6 +71,41 @@ class EstimateHistoryIT {
               .noneMatch(b -> b.kind().equals(EstimateHistory.UNSUPPORTED_GAP)),
           history.boundaries()::toString);
       assertEquals(EstimateHistory.COVERAGE_PERIOD_START, history.boundaries().getFirst().kind());
+
+      // The published point estimate is the drawn mean, not the transform of the mean state: the
+      // diagnostic runs over the same days and differs from the published series on some of them.
+      var eight =
+          periods.stream().filter(p -> p.id().equals("eight_party_2010")).findFirst().orElseThrow();
+      var evidence =
+          coverage.periods().stream()
+              .filter(v -> v.periodId().equals("eight_party_2010"))
+              .findFirst()
+              .orElseThrow();
+      var diagnostic =
+          EstimateHistory.internalStateMean(
+              eight, polls, elections, evidence.parameters(), coverage.rules());
+      assertEquals(segment.days().size(), diagnostic.size());
+      double shift = 0;
+      for (int day = 0; day < diagnostic.size(); day++) {
+        assertEquals(segment.days().get(day).date(), diagnostic.get(day).date());
+        for (var component : diagnostic.get(day).shares().entrySet())
+          shift =
+              Math.max(
+                  shift,
+                  Math.abs(
+                      component.getValue()
+                          - segment.days().get(day).shares().get(component.getKey())));
+      }
+      assertTrue(shift > 0.01, "The drawn mean and the state mean differ by " + shift);
+
+      // Mean, lower and upper come from one pass over a day's draws, so the point estimate lies
+      // inside its own interval by construction.
+      for (var day : segment.days())
+        for (var component : day.components().values())
+          for (var interval : component.intervals())
+            assertTrue(
+                interval.lower() < component.mean() && component.mean() < interval.upper(),
+                component::toString);
 
       // The headline is dated at the last fieldwork date and estimated on the last midpoint; the
       // days between are not walked forward.

@@ -409,8 +409,12 @@ public final class JointUncertainty {
     return draws;
   }
 
-  /** The mean and marginal intervals of one day, all read off its transformed draws. */
-  private static Day summarize(
+  /**
+   * The mean and marginal intervals of one day, all read off its transformed draws. The daily
+   * history publishes this same summary, so a day's mean, lower and upper come from one pass over
+   * one set of draws rather than from two runs of it.
+   */
+  static Day summarize(
       PollObservations.Batch batch,
       double[][] basis,
       String periodId,

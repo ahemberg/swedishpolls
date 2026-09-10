@@ -469,9 +469,9 @@ publication reads. It registers no new constant: the gap rule it cuts on is the
 `max_internal_gap_days` of [protocol.json](protocol.json) that checkpoint 5 already
 froze, read from the [coverage report](coverage.json) it is handed.
 
-`estimate(period, polls, elections, parameters, rules)` applies the same development
-window and supported-date trim as checkpoint 5, fits once and reports the smoothed
-composition of every retained day in percent. The series runs from the period's first
+`estimate(period, polls, elections, parameters, rules, draws)` applies the same
+development window and supported-date trim as checkpoint 5, fits once and reports the
+drawn composition of every retained day in percent. The series runs from the period's first
 eligible collection date through the last observation midpoint and stops there. Days
 between polls carry an estimate, which is the point of a daily state space; days after
 the last midpoint do not exist, because walking the state forward would be a
@@ -485,7 +485,7 @@ leave the daily walk propagating through the unsupported run, so the later level
 still borrow strength from the earlier polls: presentable, but bridged underneath. The
 days inside the run appear in no segment, and unsupported is absent rather than zero.
 
-`history(periods, polls, elections, coverage)` assembles the published record from the
+`history(periods, polls, elections, coverage, draws, publication)` assembles the published record from the
 periods whose roster is `support_validated` and whose recorded coverage evidence
 passed. A period that is validated but whose evidence failed publishes nothing and
 adds its own reason to the gate; a validated period with no recorded evidence at all
@@ -518,6 +518,60 @@ a change against the wrong series or suppress it on a foreign boundary. Criterio
 owns change suppression proper; this is the enforcement of the boundaries checkpoint 5
 handed here, and checkpoint 8 may take it over.
 
+#### The published point estimate is the drawn mean, issue #76
+
+The daily point estimate of a component is the arithmetic mean of its transformed joint
+draws. The transform of the mean state, which is what this checkpoint first published,
+is a different number and is now an internal diagnostic.
+
+Two numbers cannot both be the point estimate, and the manifest had already chosen:
+`uncertainty_rules.transform` in [protocol.json](protocol.json) registers that the
+reported mean is the arithmetic mean of transformed draws and never the transform of the
+mean state. This aligns a completed checkpoint with the manifest rather than overturning
+it. The drawn mean is also the only additive option: the seat approximation, the preset
+coalitions and the custom coalitions all read the draw rows, and the sum of drawn means
+is the drawn mean of the sum. The state mean has no such property, so a coalition figure
+would not match the parts displayed beside it. Finally the drawn mean is the posterior
+mean of the published quantity and lies inside the published interval by construction,
+since both come from the same draws.
+
+The two series differ by at most **0.028 percentage points** over the 4,278 archived
+development days and nine components, which
+[uncertainty.json](uncertainty.json) records as `maxStateMeanShiftPoints`.
+
+`internalStateMean` returns the transform of the mean smoothed state of the same days.
+It is deterministic and costs no draws, which is worth keeping as a diagnostic, and it
+is shaped like `internalFiltered`: a `Composition` per day with no interval. `Day` has
+no state-mean field, so the published record cannot carry it by accident.
+
+A published day is read once. `EstimateHistory` asks `JointUncertainty` for the day's
+summary, so a day's mean, lower and upper come from one pass over one set of draws
+rather than from two runs of the estimator, and the mean the history publishes is the
+same number the uncertainty report publishes.
+
+#### Publication resolution: one decimal
+
+`publication.decimals` in [protocol.json](protocol.json) is **1**, and `report` quotes
+every published mean and interval endpoint at that resolution. The series itself keeps
+every digit it drew, because `change` differences two days and must not difference two
+rounded numbers.
+
+The evidence is the repeated-seed study in [uncertainty.json](uncertainty.json), over
+the registered seed and its seven successors at 10,000 draws per day. The largest
+movement of a mean across seeds is **0.041 percentage points** and of an interval
+endpoint **0.115**, both maxima over 4,278 days and nine components. Both exceed the
+0.01 the reports used to quote, so a second decimal is draw noise presented as an
+estimate. At one decimal the point estimate this ticket publishes is stable: 0.041 sits
+inside half a 0.1 tick.
+
+The alternative was to raise the draw count instead. Monte Carlo error falls with the
+square root of the draws, so holding a 95% endpoint inside half a tick would need
+`(0.115 / 0.05)² ≈ 5.3` times as many, about 53,000 per day, and 5.3 times the runtime
+below. `final_draws` was frozen for #16 and this ticket changes no registered constant,
+so the raise is not taken here. The residual is recorded rather than hidden: at one
+decimal a 95% endpoint can still move by one tick across seeds, which is the
+`interval_endpoint_precision` proposed tolerance that checkpoint 10 owns.
+
 #### The headline and the internal filtered states
 
 The headline is the last estimated day, reported as of the last fieldwork date of its
@@ -534,12 +588,13 @@ record cannot carry them by accident.
 
 #### The archived run
 
-[history.json](history.json) stores the run of 2026-09-09 as a summary: each segment's
+[history.json](history.json) stores the run of 2026-09-10 as a summary: each segment's
 edges and day counts rather than every daily composition, with every composition in
-roster order. The eight-party period is one
+roster order and each component carrying the mean and the intervals read off the same
+draws. The eight-party period is one
 unbroken segment of 4,278 days from 2010-01-04 to 2021-09-20, since its largest internal
-gap of 43 days sits inside the registered 45. It opens at S 35.09, M 26.57 and closes at
-S 25.55, M 22.07, SD 20.05. `fi_candidate_2014_2018` publishes nothing and FI is
+gap of 43 days sits inside the registered 45. It opens at S 35.1, M 26.6 and closes at
+S 25.6, M 22.1, SD 20.0. `fi_candidate_2014_2018` publishes nothing and FI is
 `no_validated_coverage_period`.
 
 `EstimateHistoryTest` checks the retained days between polls and the stop at the last
@@ -547,13 +602,23 @@ midpoint, an over-long gap cut into two separately fitted segments with nothing
 published between them and a discontinuous level across the cut,
 the headline's two dates, changes inside one segment and suppressed across a gap and
 across a reference change, filtered states differing from smoothed and absent from the
-report, an unvalidated period leaving its party unavailable rather than zero, the
-summary shape, and the rejected period with no recorded evidence.
+report, the published day matching the drawn summary component for component while the
+state-mean diagnostic matches the transform of the mean state, the report quoting every
+number at the registered resolution while the series keeps its digits, an unvalidated
+period leaving its party unavailable rather than zero, the summary shape, and the
+rejected period with no recorded evidence.
 `EstimateHistoryIT` builds the history of the archived development rows from the
-committed coverage evidence.
+committed coverage evidence, checks that the drawn mean and the state mean are two
+different series over those days, and that every published mean lies inside its own
+published intervals.
 
 Run `./mvnw -Dtest=EstimateHistoryTest test` for the rules and `./mvnw clean verify`
-against PostgreSQL 18 for the suite, where the integration test costs about 10 seconds.
+against PostgreSQL 18 for the suite. The daily series stopped being nearly free when it
+started drawing: the integration test costs about **26 seconds** inside a full
+`./mvnw clean verify` on the development machine and about **43 seconds** run on its own
+from a cold JVM, against the about 10 seconds recorded before it drew. Two thirds of the
+added time is the 10,000 draws on each of the 4,278 days; the rest is the state-mean
+diagnostic the test now compares against, which refits without drawing.
 `./mvnw clean verify -Dhistory.full=true` rewrites `history.json`. These are development
 observations for checkpoint 10 to measure properly, not frozen bounds.
 
@@ -575,8 +640,8 @@ mean state, which is exactly the checkpoint 6 series, and the two are kept side 
 so the difference is visible rather than implied: on the archived rows the largest gap
 between them is **0.028 percentage points**, over 4,278 days and nine components. The
 transform is nonlinear, so these are two different numbers and only the first is
-supported by the draws. Which one a publication prints is #21's to settle; this
-checkpoint states that the draw mean is the one the draws justify.
+supported by the draws. #76 settled which one the daily history publishes: the drawn
+mean, with the state mean kept as an internal diagnostic.
 
 Intervals are marginal quantiles of one component's own draws, at the registered 50%
 and 95%, read by linear interpolation between the order statistics at `h = (n-1)p`. No

@@ -1,5 +1,11 @@
 package se.swedishpolls;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -9,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -35,9 +42,79 @@ public final class EstimateHistory {
   public static final String ACROSS_BOUNDARY = "comparison_date_across_boundary";
   public static final String NO_VALIDATED_PERIOD = "no_validated_coverage_period";
 
-  /** One day's smoothed composition, in percent and component order. */
-  public record Day(LocalDate date, Map<String, Double> shares) {
+  /**
+   * The resolution a published number is quoted at. It is registered rather than chosen by a
+   * reader, because a quoted digit that moves with the draw seed is noise presented as an estimate.
+   */
+  public record Publication(int decimals) {
+    public Publication {
+      if (decimals < 0 || decimals > 6)
+        throw new IllegalArgumentException("A publication resolution quotes 0 to 6 decimals");
+    }
+
+    /** The value as it is published. The series itself keeps every digit it was drawn with. */
+    public double quote(double value) {
+      return BigDecimal.valueOf(value).setScale(decimals, RoundingMode.HALF_UP).doubleValue();
+    }
+  }
+
+  /** The registered publication resolution. */
+  public static Publication publication(Path file) {
+    try {
+      var root = JSON.readTree(Files.readAllBytes(file));
+      var publication = root.get("publication");
+      var decimals = publication == null ? null : publication.get("decimals");
+      if (decimals == null || decimals.isNull())
+        throw new IllegalArgumentException(
+            "Incomplete publication rules in " + file + ": missing decimals");
+      return new Publication(decimals.intValue());
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  /**
+   * One component's published estimate on one day: the arithmetic mean of the transformed joint
+   * draws, with the marginal intervals read off those same draws. The transform of the mean state
+   * is a different number and stays out of here; {@link #internalStateMean} keeps it.
+   */
+  public record Estimate(double mean, List<JointUncertainty.Interval> intervals) {
+    public Estimate {
+      intervals = List.copyOf(intervals);
+    }
+
+    @Override
+    public List<JointUncertainty.Interval> intervals() {
+      return List.copyOf(intervals);
+    }
+  }
+
+  /** One day's published composition, in percent and component order. */
+  public record Day(LocalDate date, Map<String, Estimate> components) {
     public Day {
+      components = Collections.unmodifiableMap(new LinkedHashMap<>(components));
+    }
+
+    @Override
+    public Map<String, Estimate> components() {
+      return Collections.unmodifiableMap(new LinkedHashMap<>(components));
+    }
+
+    /** The point estimate of every component: the drawn mean, without its intervals. */
+    public Map<String, Double> shares() {
+      var shares = new LinkedHashMap<String, Double>();
+      for (var component : components.entrySet())
+        shares.put(component.getKey(), component.getValue().mean());
+      return ordered(shares);
+    }
+  }
+
+  /**
+   * One day's composition in percent and component order, with no interval. The internal diagnostic
+   * series are shaped like this; a published day carries its draws with it.
+   */
+  public record Composition(LocalDate date, Map<String, Double> shares) {
+    public Composition {
       shares = ordered(shares);
     }
 
@@ -98,6 +175,7 @@ public final class EstimateHistory {
    */
   public record History(
       String protocolVersion,
+      Publication publication,
       CoverageValidation.Gate gate,
       List<Segment> segments,
       List<Boundary> boundaries,
@@ -124,6 +202,10 @@ public final class EstimateHistory {
   }
 
   private static Map<String, Double> ordered(Map<String, Double> values) {
+    return Collections.unmodifiableMap(new LinkedHashMap<>(values));
+  }
+
+  private static Map<String, Estimate> orderedEstimates(Map<String, Estimate> values) {
     return Collections.unmodifiableMap(new LinkedHashMap<>(values));
   }
 
@@ -216,23 +298,44 @@ public final class EstimateHistory {
   /**
    * The smoothed daily estimates of one period, one segment per separately fitted run of support.
    * Each series ends at its own last observation midpoint: no day is projected past the evidence.
+   *
+   * <p>Every day is drawn once and summarized once, over the same runs, seed and draw count the
+   * joint uncertainty uses, so the published mean and the published interval endpoints of a day
+   * describe one sample rather than two.
    */
   public static Estimated estimate(
       Roster.CoveragePeriod period,
       List<PollCsv.Poll> polls,
       List<LocalDate> elections,
       DailyStateSpace.Parameters parameters,
-      CoverageValidation.Rules rules) {
+      CoverageValidation.Rules rules,
+      JointUncertainty.Rules draws) {
     var fitted = fitted(period, polls, elections, parameters, rules);
     var segments = new ArrayList<Segment>();
     for (var span : fitted.spans()) {
-      var days = new ArrayList<Day>();
-      for (var day : span.fit().days())
-        days.add(new Day(day.date(), PollObservations.shares(span.batch(), day.smoothedMean())));
+      var basis = PollObservations.transposedBasis(span.batch());
+      var days =
+          span.fit().days().parallelStream()
+              .map(
+                  day ->
+                      published(
+                          JointUncertainty.summarize(span.batch(), basis, period.id(), day, draws)))
+              .toList();
       segments.add(new Segment(period.id(), days.getFirst().date(), days.getLast().date(), days));
     }
     return new Estimated(
         period.id(), fitted.support(), segments, boundaries(period, fitted, rules));
+  }
+
+  /**
+   * The published half of a drawn day. The drawn mean and its intervals carry over; the transform
+   * of the mean state beside them does not, because two numbers cannot both be the point estimate.
+   */
+  private static Day published(JointUncertainty.Day day) {
+    var components = new LinkedHashMap<String, Estimate>();
+    for (var component : day.components())
+      components.put(component.component(), new Estimate(component.mean(), component.intervals()));
+    return new Day(day.date(), components);
   }
 
   /**
@@ -289,18 +392,42 @@ public final class EstimateHistory {
    * The filtered states of the same days, which condition only on the polls seen up to each day.
    * These are the internal publication-time estimates; the published history is smoothed.
    */
-  public static List<Day> internalFiltered(
+  public static List<Composition> internalFiltered(
       Roster.CoveragePeriod period,
       List<PollCsv.Poll> polls,
       List<LocalDate> elections,
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules rules) {
-    var filtered = new ArrayList<Day>();
+    return states(period, polls, elections, parameters, rules, DailyStateSpace.Day::filteredMean);
+  }
+
+  /**
+   * The transform of the mean smoothed state of the same days. It is deterministic and costs no
+   * draws, which is worth keeping as a diagnostic; it is not the published point estimate, because
+   * the transform is nonlinear and the drawn mean is what the draws support.
+   */
+  public static List<Composition> internalStateMean(
+      Roster.CoveragePeriod period,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      DailyStateSpace.Parameters parameters,
+      CoverageValidation.Rules rules) {
+    return states(period, polls, elections, parameters, rules, DailyStateSpace.Day::smoothedMean);
+  }
+
+  private static List<Composition> states(
+      Roster.CoveragePeriod period,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      DailyStateSpace.Parameters parameters,
+      CoverageValidation.Rules rules,
+      Function<DailyStateSpace.Day, ModelValues> state) {
+    var compositions = new ArrayList<Composition>();
     for (var span : fitted(period, polls, elections, parameters, rules).spans())
       for (var day : span.fit().days())
-        filtered.add(
-            new Day(day.date(), PollObservations.shares(span.batch(), day.filteredMean())));
-    return List.copyOf(filtered);
+        compositions.add(
+            new Composition(day.date(), PollObservations.shares(span.batch(), state.apply(day))));
+    return List.copyOf(compositions);
   }
 
   /**
@@ -312,7 +439,9 @@ public final class EstimateHistory {
       List<Roster.CoveragePeriod> periods,
       List<PollCsv.Poll> polls,
       List<LocalDate> elections,
-      CoverageValidation.Report coverage) {
+      CoverageValidation.Report coverage,
+      JointUncertainty.Rules draws,
+      Publication publication) {
     var evidence = new LinkedHashMap<String, CoverageValidation.Validated>();
     for (var validated : coverage.periods()) evidence.put(validated.periodId(), validated);
     var reasons = new ArrayList<>(coverage.gate().reasons());
@@ -329,7 +458,8 @@ public final class EstimateHistory {
         reasons.add(period.id() + ": coverage evidence failed, so no history is published");
         continue;
       }
-      var result = estimate(period, polls, elections, validated.parameters(), coverage.rules());
+      var result =
+          estimate(period, polls, elections, validated.parameters(), coverage.rules(), draws);
       // The published curve and the recorded evidence must describe the same supported window.
       if (!result.support().from().equals(validated.support().from())
           || !result.support().to().equals(validated.support().to()))
@@ -349,6 +479,7 @@ public final class EstimateHistory {
           unavailable.add(new Unavailable(component, NO_VALIDATED_PERIOD));
     return new History(
         coverage.protocolVersion(),
+        publication,
         new CoverageValidation.Gate(!reasons.isEmpty(), reasons),
         segments,
         boundaries,
@@ -412,26 +543,27 @@ public final class EstimateHistory {
       LocalDate from,
       LocalDate to,
       int days,
-      Map<String, Double> firstShares,
-      Map<String, Double> lastShares) {
+      Map<String, Estimate> first,
+      Map<String, Estimate> last) {
     public SegmentSummary {
-      firstShares = ordered(firstShares);
-      lastShares = ordered(lastShares);
+      first = orderedEstimates(first);
+      last = orderedEstimates(last);
     }
 
     @Override
-    public Map<String, Double> firstShares() {
-      return ordered(firstShares);
+    public Map<String, Estimate> first() {
+      return orderedEstimates(first);
     }
 
     @Override
-    public Map<String, Double> lastShares() {
-      return ordered(lastShares);
+    public Map<String, Estimate> last() {
+      return orderedEstimates(last);
     }
   }
 
   public record Summary(
       String protocolVersion,
+      Publication publication,
       CoverageValidation.Gate gate,
       List<SegmentSummary> segments,
       List<Boundary> boundaries,
@@ -444,7 +576,9 @@ public final class EstimateHistory {
     }
   }
 
+  /** The report quotes every number at the registered resolution; the series keeps its digits. */
   public static String report(History history) {
+    var publication = history.publication();
     var segments = new ArrayList<SegmentSummary>();
     for (var segment : history.segments())
       segments.add(
@@ -453,16 +587,50 @@ public final class EstimateHistory {
               segment.from(),
               segment.to(),
               segment.days().size(),
-              segment.days().getFirst().shares(),
-              segment.days().getLast().shares()));
+              quote(segment.days().getFirst().components(), publication),
+              quote(segment.days().getLast().components(), publication)));
+    var headline = history.headline();
     return JSON.writerWithDefaultPrettyPrinter()
         .writeValueAsString(
             new Summary(
                 history.protocolVersion(),
+                publication,
                 history.gate(),
                 segments,
                 history.boundaries(),
-                history.headline(),
+                headline == null
+                    ? null
+                    : new Headline(
+                        headline.periodId(),
+                        headline.asOf(),
+                        headline.estimatedOn(),
+                        quoteShares(headline.shares(), publication)),
                 history.unavailable()));
+  }
+
+  private static Map<String, Estimate> quote(
+      Map<String, Estimate> components, Publication publication) {
+    var quoted = new LinkedHashMap<String, Estimate>();
+    for (var component : components.entrySet()) {
+      var intervals = new ArrayList<JointUncertainty.Interval>();
+      for (var interval : component.getValue().intervals())
+        intervals.add(
+            new JointUncertainty.Interval(
+                interval.level(),
+                publication.quote(interval.lower()),
+                publication.quote(interval.upper())));
+      quoted.put(
+          component.getKey(),
+          new Estimate(publication.quote(component.getValue().mean()), intervals));
+    }
+    return quoted;
+  }
+
+  private static Map<String, Double> quoteShares(
+      Map<String, Double> shares, Publication publication) {
+    var quoted = new LinkedHashMap<String, Double>();
+    for (var share : shares.entrySet())
+      quoted.put(share.getKey(), publication.quote(share.getValue()));
+    return quoted;
   }
 }

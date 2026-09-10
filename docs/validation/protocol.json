@@ -238,6 +238,14 @@
     "precision": "repeat the whole run with the registered seed and its successors and report the largest movement of any mean or interval endpoint; the manifest resolves no tolerance for it, so the spread is recorded evidence rather than a gate",
     "reproduction": "a rerun at the same seed must reproduce every retained draw exactly; the run records the seed, roster, basis, input rows, parameters, implementation digest and runtime versions needed to repeat it"
   },
+  "publication": {
+    "decimals": 1
+  },
+  "publication_rules": {
+    "point_estimate": "the daily point estimate of a component is the arithmetic mean of its transformed joint draws, the same number uncertainty_rules.transform registers; the transform of the mean state is an internal diagnostic and is never published",
+    "one_pass": "a published day's mean, lower and upper are read from one pass over that day's draws, so the point estimate and the interval around it describe one sample rather than two runs",
+    "resolution": "published shares and interval endpoints are quoted to publication.decimals decimal places, chosen so a quoted digit does not move with the draw seed; the estimator keeps every digit it drew and the resolution applies where a number is published"
+  },
   "remainder_rules": {
     "membership": "support outside the fixed eight parties S, M, SD, V, C, KD, L and MP; FI and the residual are combined only where the roster keeps FI separate, since OTHER already contains FI everywhere else",
     "summary": "the remainder is summed inside each joint draw and only then averaged and cut into quantiles, so an interval endpoint is never the sum of two marginal endpoints",
