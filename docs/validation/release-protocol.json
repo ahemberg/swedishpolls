@@ -1,0 +1,50 @@
+{
+  "version" : "v1-release-1",
+  "registered_on" : "2026-09-10",
+  "status" : "frozen-release",
+  "issue" : "https://github.com/ahemberg/swedishpolls/issues/20",
+  "development_protocol" : {
+    "version" : "v1-development-1",
+    "path" : "docs/validation/protocol.json",
+    "sha256" : "6f774b8517078c88b82c1af3332a3478ec8e9f7156de529c7e20f4cfbcb4d667",
+    "note" : "The development protocol is frozen as registered for #16 and #18. This release registration names it and never edits it, so the evidence recorded against v1-development-1 keeps its inputs."
+  },
+  "frozen_evidence" : [ {
+    "name" : "coverage",
+    "path" : "docs/validation/coverage.json",
+    "sha256" : "843fdd1ba7dcf4f70cf253996be366ff8793114676b5d24bc0777d518ab364e1"
+  }, {
+    "name" : "uncertainty",
+    "path" : "docs/validation/uncertainty.json",
+    "sha256" : "75e565e9a0b1cf2c0c9e85eae9140cfbbb73af207b4cfa75026b8db68303aa00"
+  }, {
+    "name" : "diagnostics",
+    "path" : "docs/validation/diagnostics.json",
+    "sha256" : "d374e62a7a4e482b314f6066ff36f0c83f34ad9ca0d2fe397af9a725beb201ed"
+  }, {
+    "name" : "development_gates",
+    "path" : "docs/validation/development-gates.json",
+    "sha256" : "38f8f6498463f53838be92eeb113c45e9f386177d75e564fec0d23dab707f8f9"
+  } ],
+  "release_tolerances" : {
+    "composition_sum_points" : 1.0E-9,
+    "seat_total" : 349,
+    "minimum_scored_folds" : 8,
+    "sensitivity_disclosure_points" : 10.0
+  },
+  "reported_not_blocking" : [ "resource_runtime_target" ],
+  "audit_rules" : {
+    "freeze" : "The model implementation digest, resolved parameters, coverage behaviour, numeric tolerances and executable environment are recorded before the reserved fit runs. A freeze whose development protocol digest has moved is refused rather than reconciled.",
+    "fit" : "One fit of the supported eight-party period over the pinned candidate rows of election_audit2022, at the parameters coverage.json resolved for that period and the registered draw seed. Nothing is retuned for the audit.",
+    "outcome" : "The eight official two-decimal percentages of the exposed fixture, with OTHER exactly 100 minus their sum in decimal arithmetic. Errors are reported in percentage points against the drawn mean, and marginal interval inclusion at the registered 50% and 95% levels.",
+    "seats" : "The national modified Sainte-Lague approximation of the drawn mean composition, reported beside the official constituency allocation and never merged with it.",
+    "once_only" : "The audit runs once. A rerun at the frozen seed must reproduce the archived numbers; reproducing them is not a second audit, and no tolerance, parameter or grid moves after the run.",
+    "interpretation" : "The reserved 2022 comparison is one retrospective pre-election diagnostic computed from today's corrected snapshot. Its polling inputs and its public outcome were already exposed to method selection, so it is neither blinded validation nor election-forecast calibration. Any fit ending 2022-08-31 is pre-election evidence on the same terms. The estimand stays voting intention on the last fieldwork date, and the prospective 2026 registration remains the forward evaluation."
+  },
+  "fi_fallback" : {
+    "id" : "individual_fi_estimate_unavailable",
+    "approval" : "https://github.com/ahemberg/swedishpolls/issues/12#issuecomment-5575789888",
+    "note" : "Where the individual FI roster does not meet the frozen gates, its estimates stay unavailable while its source observations are retained and served. The fallback waives no other gate and changes no estimator."
+  },
+  "waivers" : []
+}

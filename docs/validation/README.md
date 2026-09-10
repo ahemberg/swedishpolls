@@ -4,7 +4,11 @@ Registered 2026-09-08 for [issue #16](https://github.com/ahemberg/swedishpolls/i
 The [final handoff](https://github.com/ahemberg/swedishpolls/issues/9#issuecomment-5575883916)
 supersedes earlier experiments and ADR wording about an untouched 2022 holdout.
 [protocol.json](protocol.json) freezes dates, input identities and gate constants.
-This registers procedures, not passing results. No final audit has been run here.
+This registers procedures, not passing results.
+
+The [final audit](#release-audit-issue-20) has now been run once, under the separate
+release freeze [release-protocol.json](release-protocol.json). Its verdict is blocked:
+the model is not releasable at `v1-development-1`.
 
 ## Publication-time development
 
@@ -1129,6 +1133,148 @@ comparison according to the experiment report; neither its polling inputs nor it
 public election outcome are blinded. Do not call all 2022 data untouched or present
 this single retrospective comparison as calibration evidence. An August 31 comparison
 is a pre-election diagnostic only. Archive the once-only result and every failure.
+
+## Release audit, issue #20
+
+[release-protocol.json](release-protocol.json) is the release freeze, registered
+`v1-release-1` on 2026-09-10. It names the development protocol and the four evidence
+files by SHA-256 rather than editing them, so `v1-development-1` and everything measured
+against it keep the inputs they were measured with. It also freezes what this ticket
+added: the composition sum bound of `1e-9` points, the 349-seat allocation total, the
+minimum of eight scored folds per roster, the ten-point sensitivity disclosure line, the
+runtime target as reported rather than blocking, and the approved unavailable-estimate
+fallback for the individual FI roster. `ReleaseAudit.frozen` refuses a registration whose
+development protocol or evidence has moved since the freeze, so the audit cannot run
+against inputs the freeze never saw.
+
+`ReleaseAudit` then reads that freeze, the once-only reserved comparison and
+[development-gates.json](development-gates.json) into one verdict, and `requireReleasable`
+throws while that verdict is blocked. Nothing here retunes, relaxes or substitutes an
+estimator: a failed gate is carried with its reason.
+
+### The reserved 2022 comparison
+
+`select` applies the pinned candidate rule to the source bytes and reproduces the
+manifest's 1,192 rows and their `b539aef8…` identity digest before anything is fitted.
+Row identities are read off the physical CSV lines, not the parsed fields, so the check
+verifies the file rather than this parser's view of it. Of those candidates the
+eligibility rules retain 1,168 observations, which the eight-party period fits as one
+run, with an innovation log likelihood of 6,809.31.
+
+The series ends at the last observation midpoint, **2022-09-07**, because no day is
+projected past the evidence. The election was 2022-09-11, so the four days between them
+are movement the estimator never saw, and they are part of every error below.
+
+| Component | Estimate | Official | Error (points) | In 50% | In 95% |
+| --- | ---: | ---: | ---: | :---: | :---: |
+| S | 28.40 | 30.33 | -1.93 | no | no |
+| M | 17.34 | 19.10 | -1.76 | no | no |
+| SD | 20.92 | 20.54 | +0.38 | no | yes |
+| V | 7.64 | 6.75 | +0.89 | no | no |
+| C | 7.13 | 6.71 | +0.42 | no | no |
+| KD | 6.08 | 5.34 | +0.74 | no | no |
+| L | 5.30 | 4.61 | +0.69 | no | no |
+| MP | 5.69 | 5.08 | +0.61 | no | no |
+| OTHER | 1.52 | 1.54 | -0.02 | yes | yes |
+
+The mean absolute error is 0.83 points and the largest is 1.93 on S. One of nine official
+shares falls inside its marginal 50% interval and two of nine inside the 95% interval.
+The pattern is one-directional: both large parties are estimated low and all seven
+smaller components except OTHER high. Nine compositional errors sum to zero by
+construction, so they are not nine independent misses, and this single comparison does
+not separate estimator bias from the four days of movement it never saw. Official shares
+are the published
+two-decimal percentages, so each carries 0.01 percentage-point resolution and OTHER,
+defined as exactly 100 minus the other eight, accumulates their rounding.
+
+The national approximation allocates all 349 seats from the drawn mean composition under
+the 2022 rule, beside the official constituency allocation and never merged with it:
+
+| Component | Approximate | Official | Difference |
+| --- | ---: | ---: | ---: |
+| S | 101 | 107 | -6 |
+| M | 61 | 68 | -7 |
+| SD | 74 | 73 | +1 |
+| V | 27 | 24 | +3 |
+| C | 25 | 24 | +1 |
+| KD | 22 | 19 | +3 |
+| L | 19 | 16 | +3 |
+| MP | 20 | 18 | +2 |
+
+**None of this is a gate.** The registration records no pass or fail for the reserved
+comparison, and adding one after seeing it would be tuning on the outcome. These are
+reference numbers from one retrospective pre-election diagnostic computed on today's
+corrected snapshot, whose polling inputs and public outcome were both already exposed to
+method selection. Any fit ending 2022-08-31 is pre-election evidence on the same terms.
+Neither is election-forecast calibration; the estimand stays voting intention on the last
+fieldwork date, and the prospective 2026 registration below remains the forward
+evaluation.
+
+The audit ran once. Rerunning it at the frozen seed reproduced all 90,000 retained
+final-day draws exactly, which is the archived-input seeded reproduction gate and not a
+second audit.
+
+### The verdict, in [release-audit.json](release-audit.json)
+
+The report records 37 gates, six of them blocking. Five of the six pass: the frozen
+evidence digests, the frozen parameters and seed the reserved fit ran at, the composition
+summing to 100 within 1e-13 points from a finite fit, the 349-seat total, and the exact
+seeded reproduction. The sixth, `development_gates`, fails and carries all 49 reasons
+[#18](https://github.com/ahemberg/swedishpolls/issues/18) left standing, so the verdict is
+**blocked** on 50 reasons and `requireReleasable` throws.
+
+The remaining 31 gates are reported: they restate, per gate, what the aggregate flattens
+into a list of strings.
+
+- **Predictive comparison.** The midpoint candidate beats the recency baseline on both
+  rosters, by +1.160 and +0.764 per poll. Against the ilr-window reference it passes on
+  the FI roster (+0.018 against an SE of 0.014) and fails on the eight-party roster
+  (-0.024 against an SE of 0.012), which the protocol asks to be no worse than `-SE`.
+- **Coverage.** Pooled predictive coverage is inside both registered bands on both
+  rosters: 92.7% and 51.8% on the eight-party roster, 91.3% and 48.3% on the FI roster.
+  The grid-mixture fallback is therefore not invoked.
+- **Folds.** Both rosters clear the eight-fold minimum with 48 and 27 scored folds, and
+  the FI roster carries 21 unscored folds rather than dropping them.
+- **Systematic misfit by party, institute and fieldwork length.** Itemized per subgroup
+  against the frozen limits. On the
+  eight-party roster S, KD and OTHER fail by party and Sifo and Skop by institute, while
+  all three fieldwork-length bands pass. On the FI roster S, KD, FI and RESIDUAL fail by
+  party, Inizio, Sifo and Skop by institute, and the 1-7 day band fails. The misfit is
+  concentrated in the small components and the short windows, which is what
+  [checkpoint 9](#development-diagnostics-and-sensitivity-issue-18-checkpoint-9)
+  measured; the frozen limits reject it rather than explain it away.
+- **Residual autocorrelation and overlap dependence.** Reported per roster with the pair
+  measurements that say how much of it is structural. All three registered lags are inside
+  the frozen 0.45 limit on both rosters, at 0.409 to 0.432 on the eight-party roster and
+  0.393 to 0.415 on the FI roster. Beside them, overlapping-fieldwork pairs average 1.09
+  and 1.15 against 0.84 and 0.83 for disjoint pairs, and same-institute pairs 2.55 and
+  2.59. Overlap adds dependence beyond the shared training state and institute clustering
+  dominates both, which is the registered explanation the gate carries rather than one this
+  code infers.
+- **Tolerances.** All eight frozen tolerances pass, each with its own evidence file and
+  digest.
+- **Sensitivity.** Poll-count centering moves the headline by at most 0.28 points and
+  leaving out an institute by at most 0.44, against a ten-point disclosure line. Neither
+  rerun needs adjacent disclosure, and neither blocks release on its own.
+- **Resources.** The production-shaped run took 124,234 ms against the ten-second target.
+  The gate is built blocking and the registration's `reported_not_blocking` list
+  downgrades it, matching the protocol's own wording that the recompute target is not an
+  unconditional release gate. Removing it from that list blocks the release.
+- **Individual FI.** Its support dates, 2014-04-09 to 2018-09-07, match the registered
+  roster boundaries exactly and it fits as one separate run over 388 observations, so the
+  separate-fit behaviour is confirmed. Thirty-four frozen gate reasons name the roster,
+  so it does not meet the gates and the approved `individual_fi_estimate_unavailable`
+  fallback applies: FI estimates stay unavailable while its source observations are
+  retained and served. The fallback waives no other gate.
+
+There is no waiver. `frozen.waivers` is empty, an unregistered gate name in it is refused,
+and only an explicit owner waiver of a named gate can clear a blocking failure. Nothing
+in this run cleared one, so v1 is not releasable at `v1-development-1`.
+
+Run `./mvnw -Dtest=ReleaseAuditTest test` for the manifest, waiver and verdict rules and
+`./mvnw -Dit.test=ReleaseAuditIT verify` for the archived audit. `-Daudit.full=true`
+refits the reserved comparison and rewrites the report; it must reproduce the archived
+numbers, and it is a reproduction rather than a new audit.
 
 ## Prospective 2026 registration
 
