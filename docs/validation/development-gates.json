@@ -13,7 +13,7 @@
     "cases" : 90000,
     "seeds" : [ 20260908 ],
     "evidence" : "docs/validation/uncertainty.json",
-    "evidenceSha256" : "5ce9709d63ccb72050466d15d36a156248223b7e9a22f96a8fc6eb72a1054807",
+    "evidenceSha256" : "75e565e9a0b1cf2c0c9e85eae9140cfbbb73af207b4cfa75026b8db68303aa00",
     "rationale" : "A rerun on one implementation and architecture must return every retained draw unchanged."
   }, {
     "name" : "cross_architecture_reproduction",
@@ -33,7 +33,7 @@
     "cases" : 77004,
     "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
     "evidence" : "docs/validation/uncertainty.json",
-    "evidenceSha256" : "5ce9709d63ccb72050466d15d36a156248223b7e9a22f96a8fc6eb72a1054807",
+    "evidenceSha256" : "75e565e9a0b1cf2c0c9e85eae9140cfbbb73af207b4cfa75026b8db68303aa00",
     "rationale" : "The Monte Carlo error of a published interval endpoint at 10000 draws per day. It bounds how much of a reported interval is sampling noise rather than estimated uncertainty, and it is measured, never enlarged afterwards."
   }, {
     "name" : "coverage_boundary_stability",
@@ -53,7 +53,7 @@
     "cases" : 10000,
     "seeds" : [ 20260908 ],
     "evidence" : "docs/validation/protocol.json",
-    "evidenceSha256" : "183f78314a327e83dac04630c8392f0397c6c29e413cc95e8b339de423aea812",
+    "evidenceSha256" : "6f774b8517078c88b82c1af3332a3478ec8e9f7156de529c7e20f4cfbcb4d667",
     "rationale" : "At 10,000 draws the worst-case standard error is 0.005. Inclusive comparisons are checked immediately below, at, and immediately above both 4% support and 175 seats."
   }, {
     "name" : "threshold_probability_precision",
@@ -63,7 +63,7 @@
     "cases" : 80000,
     "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
     "evidence" : "docs/validation/probability-precision.json",
-    "evidenceSha256" : "68d40296509f5119d6c59c11d1002ec35ca220d337705179f7b638ba6ddbf801",
+    "evidenceSha256" : "311e4df0ec4112cb3b68e8ffb2f13a17bda685f69153deac2bd5618edd116a2a",
     "rationale" : "Largest repeated-seed range among inclusive 4% probabilities from final-day joint draws."
   }, {
     "name" : "majority_probability_precision",
@@ -73,13 +73,13 @@
     "cases" : 80000,
     "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
     "evidence" : "docs/validation/probability-precision.json",
-    "evidenceSha256" : "68d40296509f5119d6c59c11d1002ec35ca220d337705179f7b638ba6ddbf801",
+    "evidenceSha256" : "311e4df0ec4112cb3b68e8ffb2f13a17bda685f69153deac2bd5618edd116a2a",
     "rationale" : "Repeated-seed range of the registered coalition's inclusive 175-seat probability after national modified Sainte-Lague allocation."
   }, {
     "name" : "snapshot_drift",
     "units" : "percentage points after an addition/deletion or fixed correction of one source row",
     "maximum" : 0.44,
-    "maxObservedError" : 0.43734777067339436,
+    "maxObservedError" : 0.43730250968707196,
     "cases" : 770004,
     "seeds" : [ ],
     "evidence" : "src/test/resources/polls/audit.csv",
@@ -93,7 +93,7 @@
       "rowNumber" : 407,
       "institute" : "Novus",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.16159165851687973,
+      "maxShiftPoints" : 0.16192752324731785,
       "maxShiftOn" : "2021-09-16",
       "component" : "M"
     }, {
@@ -101,7 +101,7 @@
       "rowNumber" : 407,
       "institute" : "Novus",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.035811577851681875,
+      "maxShiftPoints" : 0.035795961487306016,
       "maxShiftOn" : "2021-09-16",
       "component" : "M"
     }, {
@@ -109,7 +109,7 @@
       "rowNumber" : 408,
       "institute" : "Ipsos",
       "comparedValues" : 38466,
-      "maxShiftPoints" : 0.1236490120518603,
+      "maxShiftPoints" : 0.12399466548841431,
       "maxShiftOn" : "2021-09-16",
       "component" : "SD"
     }, {
@@ -117,7 +117,7 @@
       "rowNumber" : 408,
       "institute" : "Ipsos",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.017242616419490986,
+      "maxShiftPoints" : 0.017235163084340144,
       "maxShiftOn" : "2021-09-20",
       "component" : "M"
     }, {
@@ -125,7 +125,7 @@
       "rowNumber" : 409,
       "institute" : "Sifo",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.20168102427771473,
+      "maxShiftPoints" : 0.20368282279792993,
       "maxShiftOn" : "2021-09-11",
       "component" : "SD"
     }, {
@@ -133,7 +133,7 @@
       "rowNumber" : 409,
       "institute" : "Sifo",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.039933911574784986,
+      "maxShiftPoints" : 0.039917520089023384,
       "maxShiftOn" : "2021-09-11",
       "component" : "M"
     }, {
@@ -141,7 +141,7 @@
       "rowNumber" : 410,
       "institute" : "Skop",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.07201097074759666,
+      "maxShiftPoints" : 0.07196294816433557,
       "maxShiftOn" : "2021-09-07",
       "component" : "V"
     }, {
@@ -149,7 +149,7 @@
       "rowNumber" : 410,
       "institute" : "Skop",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.007924743567517822,
+      "maxShiftPoints" : 0.007921767138547864,
       "maxShiftOn" : "2021-09-07",
       "component" : "M"
     }, {
@@ -157,7 +157,7 @@
       "rowNumber" : 411,
       "institute" : "Demoskop",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.43734777067339436,
+      "maxShiftPoints" : 0.43730250968707196,
       "maxShiftOn" : "2021-09-04",
       "component" : "S"
     }, {
@@ -165,7 +165,7 @@
       "rowNumber" : 411,
       "institute" : "Demoskop",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.016457620893110203,
+      "maxShiftPoints" : 0.016447876243766757,
       "maxShiftOn" : "2021-09-04",
       "component" : "M"
     }, {
@@ -173,7 +173,7 @@
       "rowNumber" : 428,
       "institute" : "SCB",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.18904438786081812,
+      "maxShiftPoints" : 0.18989844006702228,
       "maxShiftOn" : "2021-05-12",
       "component" : "SD"
     }, {
@@ -181,7 +181,7 @@
       "rowNumber" : 428,
       "institute" : "SCB",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.018913413395363676,
+      "maxShiftPoints" : 0.018907687006063156,
       "maxShiftOn" : "2021-05-12",
       "component" : "M"
     }, {
@@ -189,7 +189,7 @@
       "rowNumber" : 429,
       "institute" : "Sentio",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.1335029924072053,
+      "maxShiftPoints" : 0.13341543539806722,
       "maxShiftOn" : "2021-05-22",
       "component" : "M"
     }, {
@@ -197,7 +197,7 @@
       "rowNumber" : 429,
       "institute" : "Sentio",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.00584904951816867,
+      "maxShiftPoints" : 0.005847686058505275,
       "maxShiftOn" : "2021-05-22",
       "component" : "M"
     }, {
@@ -205,7 +205,7 @@
       "rowNumber" : 534,
       "institute" : "Inizio",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.08124074410875082,
+      "maxShiftPoints" : 0.08130994797720703,
       "maxShiftOn" : "2019-10-11",
       "component" : "S"
     }, {
@@ -213,7 +213,7 @@
       "rowNumber" : 534,
       "institute" : "Inizio",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.010355201842674688,
+      "maxShiftPoints" : 0.010351665574567903,
       "maxShiftOn" : "2019-10-11",
       "component" : "M"
     }, {
@@ -221,7 +221,7 @@
       "rowNumber" : 625,
       "institute" : "YouGov",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.09315055594962729,
+      "maxShiftPoints" : 0.09311211335777969,
       "maxShiftOn" : "2018-08-31",
       "component" : "S"
     }, {
@@ -229,7 +229,7 @@
       "rowNumber" : 625,
       "institute" : "YouGov",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.004044110739823026,
+      "maxShiftPoints" : 0.004043273170939443,
       "maxShiftOn" : "2018-08-31",
       "component" : "M"
     }, {
@@ -237,7 +237,7 @@
       "rowNumber" : 1005,
       "institute" : "United Minds",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.09526433074178442,
+      "maxShiftPoints" : 0.09543663376101819,
       "maxShiftOn" : "2014-09-09",
       "component" : "M"
     }, {
@@ -245,7 +245,7 @@
       "rowNumber" : 1005,
       "institute" : "United Minds",
       "comparedValues" : 38502,
-      "maxShiftPoints" : 0.005600463257181332,
+      "maxShiftPoints" : 0.005599046630234028,
       "maxShiftOn" : "2014-09-09",
       "component" : "M"
     } ]
@@ -268,7 +268,7 @@
     "periodId" : "eight_party_2010",
     "date" : "2021-09-20",
     "inputRowsSha256" : "8c3b3db1648d6a61a0f078e2155a9b139be94920a1a7e2c8b8fd8a0d99df04d5",
-    "implementationSha256" : "42ba752723f3237bdb271c7badf02bc05971ecad370d32ff55a1f7a260755048",
+    "implementationSha256" : "3139c010a07a0caf68a94e8a45ff9c358c0cc7ff834d93090f4c33d445f02a05",
     "components" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER" ],
     "rules" : {
       "seats" : 349,
@@ -386,8 +386,8 @@
     } ]
   },
   "resources" : {
-    "runtimeMillis" : 109593,
-    "peakHeapBytes" : 511612832,
+    "runtimeMillis" : 124234,
+    "peakHeapBytes" : 593599976,
     "targetMillis" : 10000,
     "inputPolls" : 1038,
     "estimatedDays" : 4278,

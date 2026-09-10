@@ -670,7 +670,7 @@ the roster and a digest of the orthonormal basis, a digest of the ordered archiv
 it read with their count, the fitted parameters, a SHA-256 over the compiled bytecode of
 the eight estimator classes, the Java runtime and VM versions, the OS name and
 architecture, and the linear-algebra version. The archived run reads 1,038 rows under
-implementation digest `42ba752…` on Java 25.0.4 and EJML 0.46.1.
+implementation digest `3139c01…` on Java 25.0.4 and EJML 0.46.1.
 
 #### Results, in [uncertainty.json](uncertainty.json)
 
@@ -957,7 +957,7 @@ The development-derived bounds are now frozen in [protocol.json](protocol.json):
 | Probability Monte Carlo standard error | 0.005 | 0.005 | Worst case at 10,000 draws |
 | 4% threshold probability precision | 0.03 | 0.0167 | 80,000 final-day draws over eight seeds |
 | Tido 175-seat probability precision | 0.03 | 0.0152 | 80,000 national allocations over eight seeds |
-| Changed-snapshot drift | 0.44 points | 0.43734777067339436 points | 770,004 component-day comparisons over 20 source perturbations |
+| Changed-snapshot drift | 0.44 points | 0.43730250968707196 points | 770,004 component-day comparisons over 20 source perturbations |
 
 The same-seed rerun on amd64 remains bit-for-bit exact. The matching arm64 run used
 the same compiled classes, archived input, parameters and seed. Floating-point paths
@@ -985,16 +985,16 @@ The drift study selects the last eligible development poll from each of the ten
 institutes. Removing a row measures a deletion and, in reverse, a newly added row. A
 second case moves 0.1 percentage points from OTHER to M in that row. Every case refits
 the corrected history and compares every component on every retained common day. The
-largest revision is the addition or deletion of Demoskop row 411, 0.43735 points on S
-on 2021-09-04. The largest fixed correction moves M by 0.03993 points. The source bytes
+largest revision is the addition or deletion of Demoskop row 411, 0.43730 points on S
+on 2021-09-04. The largest fixed correction moves M by 0.03992 points. The source bytes
 retain SHA-256 `27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608`.
 
 The production-shaped resource run computes corrected history, joint component
 uncertainty, repeated-seed threshold and majority probabilities and the comparable
 remainder once, using only pre-2022 election references and excluding database setup
-and evidence parsing. On amd64 with Java 25.0.4 it took 109,593 ms for 1,038 observations,
+and evidence parsing. On amd64 with Java 25.0.4 it took 124,234 ms for 1,038 observations,
 4,278 days and 10,000 final draws per seed. The sum of peak-used JVM heap pools was
-511,612,832 bytes. This misses the registered ten-second optimization target; that
+593,599,976 bytes. This misses the registered ten-second optimization target; that
 target is not an unconditional release gate.
 
 [development-gates.json](development-gates.json) contains the complete result and

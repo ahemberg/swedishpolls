@@ -90,13 +90,21 @@ class DevelopmentGatesIT {
               .filter(candidate -> candidate.periodId().equals(period.id()))
               .findFirst()
               .orElseThrow();
+      var uncertaintyRules = JointUncertainty.rules(PROTOCOL);
+      var publication = EstimateHistory.publication(PROTOCOL);
       var baseline =
           EstimateHistory.estimate(
-              period, polls, elections, validated.parameters(), coverage.rules());
+              period, polls, elections, validated.parameters(), coverage.rules(), uncertaintyRules);
       var drift =
-          drift(period, polls, elections, coverage.rules(), validated.parameters(), baseline);
+          drift(
+              period,
+              polls,
+              elections,
+              coverage.rules(),
+              validated.parameters(),
+              uncertaintyRules,
+              baseline);
       var retained = new ArrayList<Object>();
-      var uncertaintyRules = JointUncertainty.rules(PROTOCOL);
       var probability = new ArrayList<DevelopmentGates.ProbabilityPrecision>();
       var precisionSeeds = JointUncertainty.precisionSeeds(uncertaintyRules);
       var allocationRules = DevelopmentGates.allocationRules(PROTOCOL);
@@ -104,7 +112,9 @@ class DevelopmentGatesIT {
       var resources =
           DevelopmentGates.measure(
               () -> {
-                retained.add(EstimateHistory.history(periods, polls, elections, coverage));
+                retained.add(
+                    EstimateHistory.history(
+                        periods, polls, elections, coverage, uncertaintyRules, publication));
                 var joint =
                     JointUncertainty.estimate(
                         period,
@@ -171,6 +181,7 @@ class DevelopmentGatesIT {
       List<LocalDate> elections,
       CoverageValidation.Rules rules,
       DailyStateSpace.Parameters parameters,
+      JointUncertainty.Rules uncertaintyRules,
       EstimateHistory.Estimated baseline)
       throws Exception {
     var latest = new LinkedHashMap<String, PollObservations.Observation>();
@@ -193,7 +204,8 @@ class DevelopmentGatesIT {
               "addition_deletion",
               changed,
               baseline,
-              EstimateHistory.estimate(period, removed, elections, parameters, rules)));
+              EstimateHistory.estimate(
+                  period, removed, elections, parameters, rules, uncertaintyRules)));
       var corrected =
           polls.stream()
               .map(poll -> poll.rowNumber() == changed.rowNumber() ? corrected(poll) : poll)
@@ -203,7 +215,8 @@ class DevelopmentGatesIT {
               "correction",
               changed,
               baseline,
-              EstimateHistory.estimate(period, corrected, elections, parameters, rules)));
+              EstimateHistory.estimate(
+                  period, corrected, elections, parameters, rules, uncertaintyRules)));
     }
     return new DevelopmentGates.Drift(
         DevelopmentGates.sha256(Path.of("src", "test", "resources", "polls", "audit.csv")),
