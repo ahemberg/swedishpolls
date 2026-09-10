@@ -28,8 +28,44 @@ only compilation, and it is the part of this setup most likely to break on a fut
 that encapsulates the internals differently surfaces as `IllegalAccessError` at compiler
 start-up, and the flags need updating in step.
 
+## Error Prone opt-in review
+
+Error Prone 2.50.0 was run over main and test sources with each check below forced to
+`WARNING`. The current tree has no findings. Checks already enabled as warnings still fail the
+build because javac runs with `-Werror`; repeating them as explicit `ERROR` configuration would
+not tighten the gate.
+
+| Area | Check | Default | Findings | Decision |
+| --- | --- | --- | ---: | --- |
+| Optional | `OptionalEquality` | Error | 0 | Keep the default error. |
+| Optional | `OptionalMapUnusedValue` | Error | 0 | Keep the default error. |
+| Optional | `OptionalOfRedundantMethod` | Error | 0 | Keep the default error. |
+| Optional | `NullOptional` | Warning | 0 | Keep the build-failing default warning. |
+| Optional | `NullableOptional` | Warning | 0 | Keep the build-failing default warning. |
+| Optional | `OptionalMapToOptional` | Warning | 0 | Keep the build-failing default warning. |
+| Optional | `OptionalNotPresent` | Warning | 0 | Keep the build-failing default warning. |
+| Optional | `UnnecessaryOptionalGet` | Off | 0 | Leave off; it requests a stylistic simplification. |
+| Immutability | `Immutable` | Error | 0 | Keep the annotation-driven default error. |
+| Immutability | `ImmutableRefactoring` | Off | 0 | Leave off; it only migrates JSR 305 annotations, which this project does not use. |
+| Unused code | `UnusedVariable` | Warning | 0 | Keep the build-failing default warning. |
+| Floating point | `BigDecimalLiteralDouble` | Warning | 0 | Keep the build-failing default warning. |
+| Floating point | `FloatCast` | Warning | 0 | Keep the build-failing default warning. |
+| Floating point | `FloatingPointAssertionWithinEpsilon` | Warning | 0 | Keep the build-failing default warning. |
+| Floating point | `FloatingPointLiteralPrecision` | Warning | 0 | Keep the build-failing default warning. |
+| Floating point | `IntFloatConversion` | Warning | 0 | Keep the build-failing default warning. |
+| Floating point | `LongDoubleConversion` | Warning | 0 | Keep the build-failing default warning. |
+| Floating point | `LongFloatConversion` | Warning | 0 | Keep the build-failing default warning. |
+| Floating point | `LossyPrimitiveCompare` | Error | 0 | Keep the default error. |
+
+No off-by-default check is promoted. The relevant correctness checks already belong to Error
+Prone's defaults, while the two disabled checks are migration or style checks that add no safety
+here.
+
 ## Considered options
 
+- Promoting default warnings to explicit errors: rejected because `-Werror` already makes them
+  build failures. Duplicating Error Prone's defaults in `pom.xml` would add configuration without
+  changing enforcement.
 - PMD: rejected because its source rules overlap Error Prone without adding compiler type
   information or Find Security Bugs' security checks.
 - Checkstyle: rejected because Spotless already gates Java formatting, while Error Prone covers
