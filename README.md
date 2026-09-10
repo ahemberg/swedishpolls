@@ -94,6 +94,20 @@ architecture-specific images into the local Docker daemon:
 ./mvnw -Pdocker -Dimage.version=local verify
 ```
 
+That runs the whole verification lifecycle and then Jib. CI instead reuses the classes
+the `Build and integration` job already verified, so the image job runs only the two Jib
+executions:
+
+```sh
+./mvnw -Pdocker -Dimage.version=<commit> \
+  io.github.git-commit-id:git-commit-id-maven-plugin:revision \
+  jib:dockerBuild@amd64 jib:dockerBuild@arm64
+```
+
+Both paths produce the same image: Jib packages `target/classes` plus the resolved
+runtime dependencies, and the explicit `revision` goal supplies the commit labels that
+the `initialize` phase would otherwise set.
+
 ## Production Compose
 
 CI publishes `ghcr.io/ahemberg/swedishpolls:<commit>-amd64` and
@@ -124,7 +138,10 @@ project conventions; GitHub does not enforce them. Fallow
 uses full Git history, the PR base SHA and a separately pinned action and CLI.
 Tool/configuration errors and audit regressions fail the job; reports upload even
 on failure. The image job uses `needs: [build, fallow]`, so either failed check blocks
-image building and publication for that commit.
+image building and publication for that commit. On `main`, `Build and integration`
+uploads `target/classes` as the `verified-classes` artifact and the image job downloads
+it from the same run, so the images contain exactly the bytes the required checks passed
+on and no verification runs twice. PR checks are unchanged.
 
 Owner decision, 2026-09-08: keep the repository private on its current free plan
 and accept the absence of enforced merge checks and code-owner approval. This
