@@ -76,8 +76,10 @@ the official tie rule is a lottery.
 The official process has 310 fixed seats, 39 adjustment seats and a 12%
 constituency exception. The national approximation omits constituency rules,
 including the return of excess fixed seats introduced in 2018. Stored official
-seats are actual outcomes, not outputs of this approximation. Allocation logic
-and public endpoints belong to later implementation tickets.
+seats are actual outcomes, not outputs of this approximation. [Seats and
+coalitions](seats-and-coalitions.md) implements the allocation against these rules
+and compares it with the stored official seats; public endpoints belong to later
+implementation tickets.
 
 ## Verification
 

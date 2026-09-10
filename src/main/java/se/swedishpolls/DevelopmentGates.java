@@ -700,15 +700,7 @@ public final class DevelopmentGates {
 
   /** Counts an inclusive threshold or majority event from retained joint-draw summaries. */
   public static double probabilityAtOrAbove(double[] values, double boundary) {
-    if (values.length == 0 || !Double.isFinite(boundary))
-      throw new IllegalArgumentException("A probability needs finite draws and a boundary");
-    long count = 0;
-    for (double value : values) {
-      if (!Double.isFinite(value))
-        throw new IllegalArgumentException("A probability draw is not finite");
-      if (value >= boundary) count++;
-    }
-    return (double) count / values.length;
+    return NationalSeats.probabilityAtOrAbove(values, boundary);
   }
 
   public static AllocationRules allocationRules(Path protocolFile) {
@@ -789,34 +781,22 @@ public final class DevelopmentGates {
         runs);
   }
 
-  /** National modified Sainte-Lague approximation with the registered deterministic tie order. */
+  /**
+   * National modified Sainte-Lague approximation with the registered deterministic tie order. The
+   * distribution itself is {@link NationalSeats}, so the development evidence and the published
+   * allocation are one implementation rather than two that could drift apart.
+   */
   static Map<String, Integer> allocate(Map<String, Double> shares, AllocationRules rules) {
-    var seats = new LinkedHashMap<String, Integer>();
+    var qualified = new LinkedHashMap<String, Double>();
     for (var component : rules.tieOrder()) {
       var share = shares.get(component);
       if (share == null) continue;
       if (!Double.isFinite(share) || share < 0)
         throw new IllegalArgumentException("Inadmissible support for " + component);
-      if (share >= rules.thresholdPercent()) seats.put(component, 0);
+      if (share >= rules.thresholdPercent()) qualified.put(component, share);
     }
-    if (seats.isEmpty()) throw new IllegalArgumentException("No party clears the threshold");
-    // ponytail: O(parties * seats) is bounded by 9 * 349; use a heap only if the rule grows.
-    for (int allocated = 0; allocated < rules.seats(); allocated++) {
-      String winner = null;
-      double best = -1;
-      for (var entry : seats.entrySet()) {
-        var component = entry.getKey();
-        int current = entry.getValue();
-        double divisor = current == 0 ? rules.firstDivisor() : 2.0 * current + 1;
-        double quotient = shares.get(component) / divisor;
-        if (quotient > best) {
-          best = quotient;
-          winner = component;
-        }
-      }
-      seats.put(winner, seats.get(winner) + 1);
-    }
-    return Collections.unmodifiableMap(seats);
+    return Collections.unmodifiableMap(
+        NationalSeats.distribute(qualified, rules.seats(), rules.firstDivisor()).seats());
   }
 
   private static Map<String, Double> ordered(Map<String, Double> values) {

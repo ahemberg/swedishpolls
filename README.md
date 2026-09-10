@@ -151,5 +151,7 @@ quality dependencies for future image publication. No paid upgrade or visibility
 change is planned.
 
 The [validation protocol](docs/validation/README.md) records development folds,
-paired score gates, 2022 exposure and the prospective 2026 evaluation. Resolved
+paired score gates, 2022 exposure and the prospective 2026 evaluation. [Seats and
+coalitions](docs/seats-and-coalitions.md) records the national seat approximation and
+the ten preset coalitions built on those estimates. Resolved
 numeric tolerances require development evidence before audit or publication.

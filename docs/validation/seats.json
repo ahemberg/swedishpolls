@@ -1,0 +1,1167 @@
+{
+  "protocolVersion" : "v1-development-1",
+  "gate" : {
+    "blocked" : true,
+    "reasons" : [ "development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol" ]
+  },
+  "rules" : {
+    "seed" : 20260908,
+    "draws" : 10000,
+    "intervalLevels" : [ 0.5, 0.95 ],
+    "precisionRepeats" : 8
+  },
+  "periods" : [ {
+    "periodId" : "eight_party_2010",
+    "seats" : {
+      "periodId" : "eight_party_2010",
+      "date" : "2021-09-20",
+      "rules" : {
+        "electionYear" : 2022,
+        "seats" : 349,
+        "thresholdPercent" : 4.0,
+        "thresholdInclusive" : true,
+        "firstDivisor" : 1.2,
+        "subsequentDivisorFormula" : "2 * seats_already_allocated + 1",
+        "tieOrder" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "FI" ],
+        "otherReceivesSeats" : false,
+        "constituencyExceptionsIncluded" : false,
+        "officialTieRule" : "lottery",
+        "sourceUrl" : "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      },
+      "intervalLevel" : 0.95,
+      "draws" : 10000,
+      "daySeed" : 5416840566589286126,
+      "parties" : [ {
+        "component" : "S",
+        "meanSupport" : 25.556263572946772,
+        "pointSeats" : 98,
+        "meanSeats" : 95.4839,
+        "lowerSeats" : 90,
+        "upperSeats" : 101,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "M",
+        "meanSupport" : 22.065201224007463,
+        "pointSeats" : 84,
+        "meanSeats" : 82.439,
+        "lowerSeats" : 77,
+        "upperSeats" : 88,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "SD",
+        "meanSupport" : 20.046394458253438,
+        "pointSeats" : 76,
+        "meanSeats" : 74.9006,
+        "lowerSeats" : 70,
+        "upperSeats" : 80,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "V",
+        "meanSupport" : 10.593046744967692,
+        "pointSeats" : 40,
+        "meanSeats" : 39.5826,
+        "lowerSeats" : 37,
+        "upperSeats" : 43,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "C",
+        "meanSupport" : 8.665475498742165,
+        "pointSeats" : 33,
+        "meanSeats" : 32.373,
+        "lowerSeats" : 30,
+        "upperSeats" : 35,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "KD",
+        "meanSupport" : 4.811457935795639,
+        "pointSeats" : 18,
+        "meanSeats" : 17.9761,
+        "lowerSeats" : 16,
+        "upperSeats" : 20,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "L",
+        "meanSupport" : 2.7307731164189075,
+        "pointSeats" : 0,
+        "meanSeats" : 0.0,
+        "lowerSeats" : 0,
+        "upperSeats" : 0,
+        "thresholdProbability" : 0.0
+      }, {
+        "component" : "MP",
+        "meanSupport" : 3.96374266514349,
+        "pointSeats" : 0,
+        "meanSeats" : 6.2448,
+        "lowerSeats" : 0,
+        "upperSeats" : 16,
+        "thresholdProbability" : 0.4113
+      } ],
+      "excludedFromAllocation" : [ "OTHER" ],
+      "unavailable" : [ {
+        "component" : "FI",
+        "reason" : "no_validated_coverage_period"
+      } ],
+      "tieBrokenPointSeats" : 0,
+      "note" : "A national seat approximation from national shares. It omits constituency rules, including the 12% constituency exception, the split into 310 fixed and 39 adjustment seats and the return of excess fixed seats, and it is not an official allocation.",
+      "tieNote" : "An exact quotient tie is resolved by the fixed party order recorded with the rule, which makes a run reproducible. The official rule draws lots, so this is an approximation of that rule and not the legal tie procedure."
+    },
+    "coalitions" : {
+      "periodId" : "eight_party_2010",
+      "date" : "2021-09-20",
+      "majoritySeats" : 175,
+      "intervalLevel" : 0.95,
+      "draws" : 10000,
+      "daySeed" : 5416840566589286126,
+      "overviewDefaults" : [ "tido", "opposition", "left", "s_m" ],
+      "coalitions" : [ {
+        "id" : "left",
+        "parties" : [ "S", "V", "MP" ],
+        "pointSeats" : 138,
+        "meanSeats" : 141.3113,
+        "lowerSeats" : 134,
+        "upperSeats" : 150,
+        "majorityProbability" : 0.0
+      }, {
+        "id" : "right",
+        "parties" : [ "M", "L", "C", "KD" ],
+        "pointSeats" : 135,
+        "meanSeats" : 132.7881,
+        "lowerSeats" : 126,
+        "upperSeats" : 139,
+        "majorityProbability" : 0.0
+      }, {
+        "id" : "tido",
+        "parties" : [ "M", "L", "KD", "SD" ],
+        "pointSeats" : 178,
+        "meanSeats" : 175.3157,
+        "lowerSeats" : 167,
+        "upperSeats" : 183,
+        "majorityProbability" : 0.5814
+      }, {
+        "id" : "opposition",
+        "parties" : [ "S", "C", "V", "MP" ],
+        "pointSeats" : 171,
+        "meanSeats" : 173.6843,
+        "lowerSeats" : 166,
+        "upperSeats" : 182,
+        "majorityProbability" : 0.4186
+      }, {
+        "id" : "s_c_mp",
+        "parties" : [ "S", "C", "MP" ],
+        "pointSeats" : 131,
+        "meanSeats" : 134.1017,
+        "lowerSeats" : 126,
+        "upperSeats" : 143,
+        "majorityProbability" : 0.0
+      }, {
+        "id" : "s_m",
+        "parties" : [ "S", "M" ],
+        "pointSeats" : 182,
+        "meanSeats" : 177.9229,
+        "lowerSeats" : 170,
+        "upperSeats" : 185,
+        "majorityProbability" : 0.7019
+      }, {
+        "id" : "c_l_mp_s",
+        "parties" : [ "C", "L", "MP", "S" ],
+        "pointSeats" : 131,
+        "meanSeats" : 134.1017,
+        "lowerSeats" : 126,
+        "upperSeats" : 143,
+        "majorityProbability" : 0.0
+      }, {
+        "id" : "m_kd_sd",
+        "parties" : [ "M", "KD", "SD" ],
+        "pointSeats" : 178,
+        "meanSeats" : 175.3157,
+        "lowerSeats" : 167,
+        "upperSeats" : 183,
+        "majorityProbability" : 0.5814
+      }, {
+        "id" : "s_sd",
+        "parties" : [ "S", "SD" ],
+        "pointSeats" : 174,
+        "meanSeats" : 170.3845,
+        "lowerSeats" : 162,
+        "upperSeats" : 178,
+        "majorityProbability" : 0.2027
+      }, {
+        "id" : "m_sd",
+        "parties" : [ "M", "SD" ],
+        "pointSeats" : 160,
+        "meanSeats" : 157.3396,
+        "lowerSeats" : 150,
+        "upperSeats" : 164,
+        "majorityProbability" : 0.0
+      } ],
+      "comparison" : [ {
+        "left" : "left",
+        "right" : "right",
+        "leftLeads" : 0.8062,
+        "rightLeads" : 0.1465,
+        "tied" : 0.0473
+      }, {
+        "left" : "left",
+        "right" : "tido",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "left",
+        "right" : "opposition",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "left",
+        "right" : "s_c_mp",
+        "leftLeads" : 0.9997,
+        "rightLeads" : 1.0E-4,
+        "tied" : 2.0E-4
+      }, {
+        "left" : "left",
+        "right" : "s_m",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "left",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 0.9997,
+        "rightLeads" : 1.0E-4,
+        "tied" : 2.0E-4
+      }, {
+        "left" : "left",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "left",
+        "right" : "s_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "left",
+        "right" : "m_sd",
+        "leftLeads" : 0.0242,
+        "rightLeads" : 0.9648,
+        "tied" : 0.011
+      }, {
+        "left" : "right",
+        "right" : "tido",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "right",
+        "right" : "opposition",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "right",
+        "right" : "s_c_mp",
+        "leftLeads" : 0.5183,
+        "rightLeads" : 0.4541,
+        "tied" : 0.0276
+      }, {
+        "left" : "right",
+        "right" : "s_m",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "right",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 0.5183,
+        "rightLeads" : 0.4541,
+        "tied" : 0.0276
+      }, {
+        "left" : "right",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "right",
+        "right" : "s_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "right",
+        "right" : "m_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "tido",
+        "right" : "opposition",
+        "leftLeads" : 0.5814,
+        "rightLeads" : 0.4186,
+        "tied" : 0.0
+      }, {
+        "left" : "tido",
+        "right" : "s_c_mp",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "tido",
+        "right" : "s_m",
+        "leftLeads" : 0.1961,
+        "rightLeads" : 0.7249,
+        "tied" : 0.079
+      }, {
+        "left" : "tido",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "tido",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 0.0,
+        "tied" : 1.0
+      }, {
+        "left" : "tido",
+        "right" : "s_sd",
+        "leftLeads" : 0.882,
+        "rightLeads" : 0.0725,
+        "tied" : 0.0455
+      }, {
+        "left" : "tido",
+        "right" : "m_sd",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "opposition",
+        "right" : "s_c_mp",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "opposition",
+        "right" : "s_m",
+        "leftLeads" : 0.3865,
+        "rightLeads" : 0.6006,
+        "tied" : 0.0129
+      }, {
+        "left" : "opposition",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "opposition",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.4186,
+        "rightLeads" : 0.5814,
+        "tied" : 0.0
+      }, {
+        "left" : "opposition",
+        "right" : "s_sd",
+        "leftLeads" : 0.4816,
+        "rightLeads" : 0.4731,
+        "tied" : 0.0453
+      }, {
+        "left" : "opposition",
+        "right" : "m_sd",
+        "leftLeads" : 0.9888,
+        "rightLeads" : 0.0072,
+        "tied" : 0.004
+      }, {
+        "left" : "s_c_mp",
+        "right" : "s_m",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "s_c_mp",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 0.0,
+        "rightLeads" : 0.0,
+        "tied" : 1.0
+      }, {
+        "left" : "s_c_mp",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "s_c_mp",
+        "right" : "s_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "s_c_mp",
+        "right" : "m_sd",
+        "leftLeads" : 3.0E-4,
+        "rightLeads" : 0.9994,
+        "tied" : 3.0E-4
+      }, {
+        "left" : "s_m",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "s_m",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.7249,
+        "rightLeads" : 0.1961,
+        "tied" : 0.079
+      }, {
+        "left" : "s_m",
+        "right" : "s_sd",
+        "leftLeads" : 0.9842,
+        "rightLeads" : 0.0084,
+        "tied" : 0.0074
+      }, {
+        "left" : "s_m",
+        "right" : "m_sd",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "c_l_mp_s",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "c_l_mp_s",
+        "right" : "s_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "c_l_mp_s",
+        "right" : "m_sd",
+        "leftLeads" : 3.0E-4,
+        "rightLeads" : 0.9994,
+        "tied" : 3.0E-4
+      }, {
+        "left" : "m_kd_sd",
+        "right" : "s_sd",
+        "leftLeads" : 0.882,
+        "rightLeads" : 0.0725,
+        "tied" : 0.0455
+      }, {
+        "left" : "m_kd_sd",
+        "right" : "m_sd",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "s_sd",
+        "right" : "m_sd",
+        "leftLeads" : 0.9998,
+        "rightLeads" : 1.0E-4,
+        "tied" : 1.0E-4
+      } ],
+      "note" : "A label states which parties are counted together and implies no agreement to govern together. Probabilities come from the same joint draws as the seat allocation.",
+      "tie" : "neither_side_wins"
+    },
+    "precision" : [ {
+      "quantity" : "threshold:S",
+      "minimum" : 1.0,
+      "maximum" : 1.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:M",
+      "minimum" : 1.0,
+      "maximum" : 1.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:SD",
+      "minimum" : 1.0,
+      "maximum" : 1.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:V",
+      "minimum" : 1.0,
+      "maximum" : 1.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:C",
+      "minimum" : 1.0,
+      "maximum" : 1.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:KD",
+      "minimum" : 0.9999,
+      "maximum" : 1.0,
+      "spread" : 9.999999999998899E-5,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:L",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:MP",
+      "minimum" : 0.4113,
+      "maximum" : 0.428,
+      "spread" : 0.016699999999999993,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:left",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:right",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:tido",
+      "minimum" : 0.5662,
+      "maximum" : 0.5814,
+      "spread" : 0.015199999999999991,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:opposition",
+      "minimum" : 0.4186,
+      "maximum" : 0.4338,
+      "spread" : 0.015199999999999991,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:s_c_mp",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:s_m",
+      "minimum" : 0.6919,
+      "maximum" : 0.7019,
+      "spread" : 0.010000000000000009,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:c_l_mp_s",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:m_kd_sd",
+      "minimum" : 0.5662,
+      "maximum" : 0.5814,
+      "spread" : 0.015199999999999991,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:s_sd",
+      "minimum" : 0.1932,
+      "maximum" : 0.2049,
+      "spread" : 0.011699999999999988,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:m_sd",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    } ],
+    "sensitivity" : [ {
+      "kind" : "centering",
+      "label" : "poll_count_centering",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : 0.0,
+        "L" : 0.0,
+        "MP" : 2.7500000000000027
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 0.19000000000000128,
+        "opposition" : -0.19000000000000128,
+        "s_c_mp" : 0.0,
+        "s_m" : -7.26,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 0.19000000000000128,
+        "s_sd" : 2.4800000000000018,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 7.26,
+      "largestMovement" : "majority:s_m",
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Demoskop",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : -0.029999999999996696,
+        "L" : 0.0,
+        "MP" : 9.760000000000002
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : -12.860000000000005,
+        "opposition" : 12.86,
+        "s_c_mp" : 0.0,
+        "s_m" : -7.689999999999997,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : -12.860000000000005,
+        "s_sd" : -3.1699999999999977,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 12.860000000000005,
+      "largestMovement" : "majority:tido",
+      "needsDisclosure" : true
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Indikator",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : 0.0,
+        "L" : 0.0,
+        "MP" : 0.0
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 0.0,
+        "opposition" : 0.0,
+        "s_c_mp" : 0.0,
+        "s_m" : 0.0,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 0.0,
+        "s_sd" : 0.0,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 0.0,
+      "largestMovement" : null,
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Infostat",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : 0.0,
+        "L" : 0.0,
+        "MP" : 0.0
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 0.0,
+        "opposition" : 0.0,
+        "s_c_mp" : 0.0,
+        "s_m" : 0.0,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 0.0,
+        "s_sd" : 0.0,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 0.0,
+      "largestMovement" : null,
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Inizio",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : 0.0,
+        "L" : 0.0,
+        "MP" : 7.8100000000000005
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : -8.800000000000002,
+        "opposition" : 8.800000000000002,
+        "s_c_mp" : 0.0,
+        "s_m" : -3.9200000000000013,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : -8.800000000000002,
+        "s_sd" : 1.5300000000000007,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 8.800000000000002,
+      "largestMovement" : "majority:tido",
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Ipsos",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : 0.0,
+        "L" : 0.0,
+        "MP" : -6.190000000000001
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 3.599999999999992,
+        "opposition" : -3.600000000000003,
+        "s_c_mp" : 0.0,
+        "s_m" : 5.410000000000004,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 3.599999999999992,
+        "s_sd" : -4.469999999999999,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 6.190000000000001,
+      "largestMovement" : "threshold:MP",
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Novus",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : -0.009999999999998899,
+        "L" : 0.0,
+        "MP" : 2.2500000000000018
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : -1.0700000000000043,
+        "opposition" : 1.0699999999999987,
+        "s_c_mp" : 0.0,
+        "s_m" : -5.049999999999999,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : -1.0700000000000043,
+        "s_sd" : 4.450000000000001,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 5.049999999999999,
+      "largestMovement" : "majority:s_m",
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_SCB",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : 0.0,
+        "L" : 0.0,
+        "MP" : -8.05
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 8.909999999999997,
+        "opposition" : -8.910000000000002,
+        "s_c_mp" : 0.0,
+        "s_m" : 0.31999999999999806,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 8.909999999999997,
+        "s_sd" : -0.7199999999999984,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 8.910000000000002,
+      "largestMovement" : "majority:opposition",
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Sentio",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : 0.0,
+        "L" : 0.0,
+        "MP" : -3.049999999999997
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : -3.9100000000000024,
+        "opposition" : 3.9099999999999966,
+        "s_c_mp" : 0.0,
+        "s_m" : 8.540000000000003,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : -3.9100000000000024,
+        "s_sd" : -7.829999999999999,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 8.540000000000003,
+      "largestMovement" : "majority:s_m",
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Sifo",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : 0.0,
+        "L" : 0.0,
+        "MP" : -15.54
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 16.799999999999994,
+        "opposition" : -16.800000000000004,
+        "s_c_mp" : 0.0,
+        "s_m" : 11.720000000000008,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 16.799999999999994,
+        "s_sd" : 9.889999999999999,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 16.800000000000004,
+      "largestMovement" : "majority:opposition",
+      "needsDisclosure" : true
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Skop",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : 0.0,
+        "L" : 0.0,
+        "MP" : 13.670000000000005
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : -8.000000000000007,
+        "opposition" : 7.9999999999999964,
+        "s_c_mp" : 0.0,
+        "s_m" : -9.160000000000002,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : -8.000000000000007,
+        "s_sd" : 3.1,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 13.670000000000005,
+      "largestMovement" : "threshold:MP",
+      "needsDisclosure" : true
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_United Minds",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : 0.0,
+        "L" : 0.0,
+        "MP" : 0.019999999999997797
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : -0.019999999999997797,
+        "opposition" : 0.019999999999997797,
+        "s_c_mp" : 0.0,
+        "s_m" : -0.019999999999997797,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : -0.019999999999997797,
+        "s_sd" : -0.02999999999999947,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 0.02999999999999947,
+      "largestMovement" : "majority:s_sd",
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_YouGov",
+      "thresholdDifferencePoints" : {
+        "S" : 0.0,
+        "M" : 0.0,
+        "SD" : 0.0,
+        "V" : 0.0,
+        "C" : 0.0,
+        "KD" : 0.0,
+        "L" : 0.0,
+        "MP" : 0.11999999999999789
+      },
+      "majorityDifferencePoints" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : -0.17000000000000348,
+        "opposition" : 0.16999999999999793,
+        "s_c_mp" : 0.0,
+        "s_m" : -0.08000000000000229,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : -0.17000000000000348,
+        "s_sd" : -0.10999999999999899,
+        "m_sd" : 0.0
+      },
+      "maxAbsoluteDifferencePoints" : 0.17000000000000348,
+      "largestMovement" : "majority:tido",
+      "needsDisclosure" : false
+    } ],
+    "disclosures" : [ "majority:tido moves 13 percentage points under without_Demoskop, which is disclosed beside the number.", "majority:opposition moves 17 percentage points under without_Sifo, which is disclosed beside the number.", "threshold:MP moves 14 percentage points under without_Skop, which is disclosed beside the number." ]
+  } ],
+  "officialComparisons" : [ {
+    "electionYear" : 2010,
+    "electionDate" : "2010-09-19",
+    "firstDivisor" : 1.4,
+    "shares" : {
+      "C" : 6.556665248419236,
+      "FI" : 0.4049890544405685,
+      "KD" : 5.598542918538462,
+      "L" : 7.0552888325765615,
+      "M" : 30.061130043446692,
+      "MP" : 7.339011020722071,
+      "S" : 30.660602428558583,
+      "SD" : 5.6977643141207786,
+      "V" : 5.60453244140334
+    },
+    "approximatedSeats" : {
+      "S" : 109,
+      "M" : 106,
+      "SD" : 20,
+      "V" : 20,
+      "C" : 23,
+      "KD" : 20,
+      "L" : 25,
+      "MP" : 26
+    },
+    "officialSeats" : {
+      "C" : 23,
+      "FI" : 0,
+      "KD" : 19,
+      "L" : 24,
+      "M" : 107,
+      "MP" : 25,
+      "S" : 112,
+      "SD" : 20,
+      "V" : 19
+    },
+    "differenceSeats" : {
+      "S" : -3,
+      "M" : -1,
+      "SD" : 0,
+      "V" : 1,
+      "C" : 0,
+      "KD" : 1,
+      "L" : 1,
+      "MP" : 1
+    },
+    "totalApproximated" : 349,
+    "totalOfficial" : 349,
+    "maxAbsoluteDifference" : 3,
+    "note" : "A national seat approximation from national shares. It omits constituency rules, including the 12% constituency exception, the split into 310 fixed and 39 adjustment seats and the return of excess fixed seats, and it is not an official allocation."
+  }, {
+    "electionYear" : 2014,
+    "electionDate" : "2014-09-14",
+    "firstDivisor" : 1.4,
+    "shares" : {
+      "C" : 6.113015124752611,
+      "FI" : 3.1247166646366815,
+      "KD" : 4.570370915978999,
+      "L" : 5.420348923137063,
+      "M" : 23.32504168690634,
+      "MP" : 6.888710121826383,
+      "S" : 31.01481760704721,
+      "SD" : 12.85675382443566,
+      "V" : 5.718154950603965
+    },
+    "approximatedSeats" : {
+      "S" : 112,
+      "M" : 85,
+      "SD" : 47,
+      "V" : 21,
+      "C" : 22,
+      "KD" : 17,
+      "L" : 20,
+      "MP" : 25
+    },
+    "officialSeats" : {
+      "C" : 22,
+      "FI" : 0,
+      "KD" : 16,
+      "L" : 19,
+      "M" : 84,
+      "MP" : 25,
+      "S" : 113,
+      "SD" : 49,
+      "V" : 21
+    },
+    "differenceSeats" : {
+      "S" : -1,
+      "M" : 1,
+      "SD" : -2,
+      "V" : 0,
+      "C" : 0,
+      "KD" : 1,
+      "L" : 1,
+      "MP" : 0
+    },
+    "totalApproximated" : 349,
+    "totalOfficial" : 349,
+    "maxAbsoluteDifference" : 2,
+    "note" : "A national seat approximation from national shares. It omits constituency rules, including the 12% constituency exception, the split into 310 fixed and 39 adjustment seats and the return of excess fixed seats, and it is not an official allocation."
+  }, {
+    "electionYear" : 2018,
+    "electionDate" : "2018-09-09",
+    "firstDivisor" : 1.2,
+    "shares" : {
+      "C" : 8.607745426893993,
+      "FI" : 0.45802469612342656,
+      "KD" : 6.3223002366165,
+      "L" : 5.489595435964936,
+      "M" : 19.835611362223965,
+      "MP" : 4.4142525736386835,
+      "S" : 28.260980665382583,
+      "SD" : 17.533969714632008,
+      "V" : 8.004879009067082
+    },
+    "approximatedSeats" : {
+      "S" : 100,
+      "M" : 70,
+      "SD" : 62,
+      "V" : 28,
+      "C" : 31,
+      "KD" : 22,
+      "L" : 20,
+      "MP" : 16
+    },
+    "officialSeats" : {
+      "C" : 31,
+      "FI" : 0,
+      "KD" : 22,
+      "L" : 20,
+      "M" : 70,
+      "MP" : 16,
+      "S" : 100,
+      "SD" : 62,
+      "V" : 28
+    },
+    "differenceSeats" : {
+      "S" : 0,
+      "M" : 0,
+      "SD" : 0,
+      "V" : 0,
+      "C" : 0,
+      "KD" : 0,
+      "L" : 0,
+      "MP" : 0
+    },
+    "totalApproximated" : 349,
+    "totalOfficial" : 349,
+    "maxAbsoluteDifference" : 0,
+    "note" : "A national seat approximation from national shares. It omits constituency rules, including the 12% constituency exception, the split into 310 fixed and 39 adjustment seats and the return of excess fixed seats, and it is not an official allocation."
+  }, {
+    "electionYear" : 2022,
+    "electionDate" : "2022-09-11",
+    "firstDivisor" : 1.2,
+    "shares" : {
+      "C" : 6.714217571245313,
+      "FI" : 0.04873440290708354,
+      "KD" : 5.336733575487383,
+      "L" : 4.608573364804098,
+      "M" : 19.102095255149376,
+      "MP" : 5.082487260669623,
+      "S" : 30.325456894675337,
+      "SD" : 20.536140179716796,
+      "V" : 6.7467123188282745
+    },
+    "approximatedSeats" : {
+      "S" : 107,
+      "M" : 68,
+      "SD" : 73,
+      "V" : 24,
+      "C" : 24,
+      "KD" : 19,
+      "L" : 16,
+      "MP" : 18
+    },
+    "officialSeats" : {
+      "C" : 24,
+      "FI" : 0,
+      "KD" : 19,
+      "L" : 16,
+      "M" : 68,
+      "MP" : 18,
+      "S" : 107,
+      "SD" : 73,
+      "V" : 24
+    },
+    "differenceSeats" : {
+      "S" : 0,
+      "M" : 0,
+      "SD" : 0,
+      "V" : 0,
+      "C" : 0,
+      "KD" : 0,
+      "L" : 0,
+      "MP" : 0
+    },
+    "totalApproximated" : 349,
+    "totalOfficial" : 349,
+    "maxAbsoluteDifference" : 0,
+    "note" : "A national seat approximation from national shares. It omits constituency rules, including the 12% constituency exception, the split into 310 fixed and 39 adjustment seats and the return of excess fixed seats, and it is not an official allocation."
+  } ],
+  "reservedAuditNote" : "The official comparison allocates a published election result and reads no poll, no fit and no model output. It is an allocation fixture, not the reserved once-only 2022 statistical audit, and it neither consumes nor relabels it."
+}
