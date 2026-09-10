@@ -245,6 +245,35 @@
     "boundaries": "the remainder is cut at the same separate fits, unsupported gaps and centering-reference changes as the daily history, and a change spanning any of them is suppressed rather than presented as movement",
     "elections": "an official result is grouped into the period's own components before it is displayed against that period, and its comparable remainder combines FI and the residual in every period so the aggregate means the same thing across a roster change; election results are references, never observations"
   },
+  "diagnostics": {
+    "score_draws": 4000,
+    "paired_standard_error_lags": [
+      1,
+      3,
+      6
+    ],
+    "residual_lags": [
+      1,
+      2,
+      3
+    ],
+    "fieldwork_bands": [
+      1,
+      8,
+      15
+    ]
+  },
+  "diagnostics_rules": {
+    "held_out": "every eligible poll with a known publication date after the fold cutoff and within score_horizon_days of it, composed in the period's own roster; a poll the roster cannot compose is excluded with its reason and counted, never scored as zero",
+    "candidates": "the midpoint candidate at the parameters the tuning run resolved for that fold, the recency baseline of the same training set and roster, and the ilr-window reference tuned independently on the same training data and the same frozen grid",
+    "prediction": "one joint predictive density per poll, from the training fit alone: no held-out poll updates the fit, and a held-out window that closes before the last training observation still conditions on it",
+    "score": "the multivariate Gaussian log density of the poll's own transformed composition, including state, house-effect and sampling uncertainty and their cross-covariance, through a Cholesky solve and a log determinant",
+    "coverage": "marginal composition intervals from score_draws joint draws of that same predictive distribution, transformed one draw at a time; counted per party and poll, and including the observed poll noise",
+    "draws": "each scored poll draws from its own stream, seeded by the leading eight bytes of SHA-256 of '<periodId>|<cutoff>|<candidate>|<row>|<seed>' read big-endian",
+    "misfit": "standardized composition residuals and mean log scores pooled and by party, institute and fieldwork-length band; whitened ilr residuals carry the autocorrelation and the pair dependence, since the model makes them independent standard normals",
+    "sensitivity": "the poll-count centering rerun and one rerun per institute left out of the fit, both compared against the published equal-institute run on the days both estimate; a movement over 10 percentage points is disclosed beside the number and does not itself block release",
+    "gate": "at least eight scored folds per roster, a strictly positive mean paired log score against the recency baseline, a reference difference no worse than one paired standard error at the frozen lag of three, and pooled coverage inside predictive_coverage95 and predictive_coverage50; an unscored fold blocks the aggregate rather than being dropped"
+  },
   "paired_hac_lag_folds": 3,
   "reference_max_paired_se_loss": 1,
   "predictive_coverage95": [

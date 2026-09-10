@@ -717,6 +717,162 @@ Run `./mvnw -Dtest=ComparableRemainderTest test` for the unit checks and
 `./mvnw clean verify` for the suite. These are development observations for checkpoint
 10 to measure properly, not frozen bounds.
 
+### Development diagnostics and sensitivity, issue #18 checkpoint 9
+
+`DevelopmentDiagnostics` scores the frozen publication-time folds of
+[protocol.json](protocol.json) and reports what the scores are worth: predictive
+coverage with the observed poll noise, residual autocorrelation, misfit by party,
+institute and fieldwork length, overlapping-poll dependence, and the two registered
+sensitivity reruns. It registers the `diagnostics` block and its `diagnostics_rules`
+prose, and reuses the `seed`, `score_horizon_days`, `predictive_coverage95` and
+`predictive_coverage50` that #16 froze.
+
+A fold trains on the eligible polls published on or before its cutoff, which is the
+same rule checkpoint 4 tuned on, and scores every eligible poll published in the next
+35 days. The candidate reads the parameters [tuning.json](tuning.json) resolved for
+that fold and roster, so the scored model is the tuned one rather than a fresh fit.
+Three candidates predict the same polls:
+
+- the **midpoint candidate**, the registered estimator, where a poll observes the
+  latent state of its own fieldwork midpoint;
+- the **recency baseline**, a weighted arithmetic average of the eligible polls of the
+  preceding 120 days at a 30-day half-life, with no house effect and no trend, whose
+  predictive covariance is its own sampling variance at `n_eff`, the weighted spread of
+  the polls it averaged, and the held-out poll's own sampling variance at multiplier
+  one;
+- the **ilr-window reference**, which observes the arithmetic average of the daily
+  latent states over the whole fieldwork span, tuned independently on the same training
+  data and the same frozen grid.
+
+#### One filter, two conventions
+
+`WindowFilter` carries a window exactly, by holding the running sum of the days it
+covers in the joint state beside the opinion and the house effects. A poll's
+observation is that sum divided by its own length, so the reference is an average of
+daily ilr states and never an average of inverse-transformed daily shares. The midpoint
+candidate is the same filter with every window collapsed to one day, which is what
+makes the comparison a comparison of conventions rather than of implementations.
+
+That claim is checked rather than asserted. `WindowFilterTest` runs the collapsed
+filter against `DailyStateSpace.logLikelihood` on both rosters, with overlapping
+windows and a cycle boundary, and agrees to 1e-9; and it runs both conventions against
+an independent dense Gaussian system, built from the random walk's own `min(s,t)`
+covariance and inverted whole, for the training likelihood and for every held-out
+predictive mean and covariance.
+
+#### What a prediction conditions on
+
+A held-out poll is never filtered. Its running sum stays in the state until the last
+training observation has been, so a poll whose fieldwork closed before the cutoff is
+still predicted from the whole training set rather than from the part of it that
+happens to precede the poll. The dense reference covers that case directly.
+
+House effects reset at an election, but a poll measured before one can be published
+after it. A cycle's effects therefore stay in the state until every poll measured in
+that cycle has resolved, so such a poll reads its own house rather than a fresh prior.
+The first dense comparison failed on exactly this before the effects were kept alive.
+
+Coverage is read off joint draws of each poll's predictive distribution, transformed
+one draw at a time, because a party's share is not a coordinate of the Gaussian. Each
+scored poll draws 4,000 times from its own stream, seeded by the leading eight bytes of
+`SHA-256("<periodId>|<cutoff>|<candidate>|<row>|<seed>")`, so a poll's interval does not
+depend on how many polls the fold scored before it.
+
+#### Results, in [diagnostics.json](diagnostics.json)
+
+The full run scored 75 folds, 48 on the eight-party roster and 27 on the candidate FI
+roster, over 370 and 200 held-out polls. It listed 21 unscored folds rather than
+dropping them: 2 the tuning run never resolved, and 19 where the FI candidate period,
+which ends 2018-09-07, can compose no held-out poll at all.
+
+**The midpoint candidate beats the recency baseline comfortably and loses narrowly to
+the window reference.** On the eight-party roster the mean paired log score against the
+baseline is **+1.160** per poll, and against the reference **-0.024**, with a paired
+standard error of **0.012** at the frozen lag of three. That is about two standard
+errors the wrong way, so the registered comparison fails: the protocol asks for a
+reference difference no worse than `-SE`. The same statistic at lags 1 and 6 is 0.013
+and 0.013, so the failure is not an artifact of the truncation lag, and no lag produces
+a pass. On the FI roster the candidate is ahead of the reference by +0.018 against an
+SE of 0.014 and passes. Averaging over the fieldwork window is therefore a real, small
+improvement on the eight-party data, and it is checkpoint 10 and the owner's to decide
+whether the estimand changes with it: the two conventions do not estimate the same
+quantity on a poll that ran for three weeks.
+
+**Predictive coverage is inside both registered bands.** Pooled over every party and
+poll, the candidate covers **92.7%** at the 95% level and **51.8%** at the 50% level on
+the eight-party roster, and 91.3% and 48.2% on the FI roster; the registered bands are
+[0.90, 0.98] and [0.40, 0.60]. The recency baseline is closer to nominal (93.9% and
+49.8%) while scoring a full nat per poll worse, which is what a wide, badly located
+predictive distribution looks like.
+
+**The misfit is concentrated in the small components and the short windows.** By party,
+KD covers 86.5% at the 95% level with a standardized residual root mean square of 1.84,
+and OTHER covers 84.9% at 1.47, while S covers 98.4% at 0.77. The model is too narrow
+where the composition is smallest and too wide on the largest party. By fieldwork
+length, coverage is 91.9% for 1-7 day windows, 92.3% for 8-14 and 94.8% for 15+, with
+residual root mean squares of 1.29, 1.15 and 1.01: the shortest windows are the worst
+calibrated. Their mean log score is also the lowest, but that number confounds the
+window with the sample size, whose median rises from 1,424 to 1,844 to 2,000 across the
+same three bands, so the coverage and the residual spread are the calibration evidence
+and the score is not. By institute, Skop is the outlier at 82.8% coverage, a residual
+root mean square of 1.69 and a mean log score of -0.24 against Novus's 7.78.
+
+**Residuals of one fold are strongly dependent, and most of that is structural.** The
+whitened residual autocorrelation is 0.41, 0.41 and 0.43 at lags 1 to 3 on the
+eight-party roster and 0.39 to 0.41 on the FI roster. Every poll of a fold is predicted
+from one training state, and every poll of an institute from one house effect, so their
+residuals share those errors by construction; a per-poll predictive distribution is
+correctly calibrated marginally, as the coverage above shows, and still gives dependent
+residuals. The pair measurements separate what that explains from what it does not:
+pairs with overlapping fieldwork average 1.09 against 0.84 for disjoint pairs, and
+same-institute pairs average 2.55. Overlap adds dependence beyond the shared state, and
+institute clustering dominates both. This is why the gate averages within a fold before
+weighting folds equally, and why its standard error is the Bartlett one; a per-poll
+standard error over 370 dependent polls would be far too small. What no registered
+constant yet says is how much of this blocks sign-off, which is checkpoint 10's to
+freeze.
+
+**Both sensitivity reruns move the headline by under half a point and the history by up
+to one.** Poll-count centering moves the 2021-09-20 headline by at most **0.28 points**,
+on SD, and no day of the 4,278 by more than 0.33. Leaving one institute out moves the
+headline by at most **0.44 points**, on SD when Sentio's 119 polls are dropped. The
+headline is one day, though, and an institute that stopped publishing years ago cannot
+move it: United Minds, whose last poll is 2014-09-11, and YouGov, whose last is
+2018-09-01, both move it by under 0.001 points. The largest movement on any day both
+runs estimate is reported beside it, and it is where the evidence is: dropping Ipsos
+moves the composition by **1.02 points** on 2010-11-16, dropping YouGov by 0.96 on
+2016-01-16, and every institute lands between 0.53 and 1.02. Nothing approaches the
+10-point movement that would need a disclosure beside the number, and neither rerun
+blocks release on its own. Dropping Ipsos or Demoskop also shortens the supported
+window, to 4,274 and 4,231 compared days, which is itself part of what leaving an
+institute out costs.
+
+#### The gate
+
+`report` blocks on 26 reasons. The coverage gate carries in whole, so the tuning
+boundary decision is still the first of them. The new ones are the failed eight-party
+reference comparison, the ilr-window reference resolving on a grid boundary in 18 and
+17 folds of the two rosters, which needs the same documented expansion as the
+candidate's, and every unscored fold. Nothing here is a release value, and no number
+was measured on the reserved comparison: the last scoring horizon ends 2021-11-09, and
+`report` refuses a protocol whose horizon reaches 2022 at all.
+
+`DevelopmentDiagnosticsTest` checks the registered rules and the inadmissible ones, the
+held-out filter against a late publication, an unknown publication date and an
+ineligible row, the paired standard error against `PredictiveComparison`'s own at the
+frozen lag, the baseline's window, half-life, fallback and widened prediction, a fold
+scoring all three candidates on one held-out set with its recorded identities, the
+coverage and misfit grouping by party, institute and fieldwork band, and that
+poll-count centering moves the reference without moving the fit.
+`DevelopmentDiagnosticsIT` scores the first eight folds of the archived development
+rows in about 110 seconds; `-Ddiagnostics.full=true` scores all 48 and rewrites
+`diagnostics.json` in about 6 minutes, most of it tuning the reference over 80 grid
+points per fold.
+
+Run `./mvnw -Dtest=DevelopmentDiagnosticsTest test` for the rules and `./mvnw clean
+verify` for the suite. These are development observations for checkpoint 10 to measure
+properly, not frozen bounds.
+
 ### Conventions for the estimator
 
 Midpoint is `start + floor(days_between(start,end)/2)`. A half-day rounds toward

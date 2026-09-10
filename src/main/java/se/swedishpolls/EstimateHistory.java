@@ -147,6 +147,20 @@ public final class EstimateHistory {
       List<LocalDate> elections,
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules rules) {
+    return fitted(
+        period, polls, elections, parameters, rules, DailyStateSpace.Centering.EQUAL_INSTITUTE);
+  }
+
+  /**
+   * The same runs, centered on the given ensemble. Centering changes the reference, not the fit.
+   */
+  static Fitted fitted(
+      Roster.CoveragePeriod period,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      DailyStateSpace.Parameters parameters,
+      CoverageValidation.Rules rules,
+      DailyStateSpace.Centering centering) {
     var development = CoverageValidation.development(polls, rules);
     var support = CoverageValidation.support(period, development, rules);
     var whole =
@@ -166,7 +180,8 @@ public final class EstimateHistory {
                   ChronoUnit.DAYS.between(
                       observations.get(i - 1).midpoint(), observations.get(i).midpoint());
       if (i < observations.size() && gap <= rules.maxInternalGapDays()) continue;
-      spans.add(span(period, observations.subList(start, i), elections, parameters, opening));
+      spans.add(
+          span(period, observations.subList(start, i), elections, parameters, opening, centering));
       opening = gap;
       start = i;
     }
@@ -179,7 +194,8 @@ public final class EstimateHistory {
       List<PollObservations.Observation> observations,
       List<LocalDate> elections,
       DailyStateSpace.Parameters parameters,
-      int gapDays) {
+      int gapDays,
+      DailyStateSpace.Centering centering) {
     var polls = observations.stream().map(PollObservations.Observation::poll).toList();
     var window =
         new Roster.CoveragePeriod(
@@ -194,7 +210,7 @@ public final class EstimateHistory {
             period.supportValidated(),
             period.decisionUrl());
     var batch = PollObservations.prepare(window, polls);
-    return new Span(batch, DailyStateSpace.fit(batch, elections, parameters), gapDays);
+    return new Span(batch, DailyStateSpace.fit(batch, elections, parameters, centering), gapDays);
   }
 
   /**

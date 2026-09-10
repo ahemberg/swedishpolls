@@ -1,0 +1,3073 @@
+{
+  "protocolVersion" : "v1-development-1",
+  "gate" : {
+    "blocked" : true,
+    "reasons" : [ "coverage validation: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "coverage validation: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol", "eight_party_2010: the midpoint candidate loses to the ilr-window reference by 0.023579124341236275, beyond the paired standard error of 0.011921334731399268", "eight_party_2010: the ilr-window reference resolved on a grid boundary in 18 folds, which needs the same documented expansion as the candidate's", "fi_candidate_2014_2018: the ilr-window reference resolved on a grid boundary in 17 folds, which needs the same documented expansion as the candidate's", "fi_candidate_2014_2018 fold 2014-01-15 scored nothing: the tuning run resolved no parameters for this fold", "fi_candidate_2014_2018 fold 2014-03-16 scored nothing: the tuning run resolved no parameters for this fold", "fi_candidate_2014_2018 fold 2018-10-21 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2018-12-20 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-02-18 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-04-19 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-06-18 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-08-17 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-10-16 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2019-12-15 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-02-13 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-04-13 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-06-12 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-08-11 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-10-10 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2020-12-09 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-02-07 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-04-08 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-06-07 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-08-06 scored nothing: no held-out observation the period can compose", "fi_candidate_2014_2018 fold 2021-10-05 scored nothing: no held-out observation the period can compose" ]
+  },
+  "rules" : {
+    "seed" : 20260908,
+    "scoreHorizonDays" : 35,
+    "scoreDraws" : 4000,
+    "pairedStandardErrorLags" : [ 1, 3, 6 ],
+    "residualLags" : [ 1, 2, 3 ],
+    "fieldworkBands" : [ 1, 8, 15 ],
+    "coverage95" : [ 0.9, 0.98 ],
+    "coverage50" : [ 0.4, 0.6 ]
+  },
+  "folds" : [ {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2014-01-15",
+    "scoreThrough" : "2014-02-19",
+    "trainingPolls" : 369,
+    "trainingObservations" : 369,
+    "scoredPolls" : 9,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "67cd49ff2ec5bf52f8e86ac3a5983ad187778a00d05cdadaa8f11b1969f1a4ac",
+    "scoredRowsSha256" : "a510296bd147e3f02abac2ab5cb8ae771cbad26529e71d1a27589135d29c1dd4",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 4.968370186448871,
+      "ilr_window" : 4.9668796726097355,
+      "recency" : 4.009340508037003
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2014-03-16",
+    "scoreThrough" : "2014-04-20",
+    "trainingPolls" : 385,
+    "trainingObservations" : 385,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "62c85c1ea3d44cfa834a4d881e92808f68e6219e2a489273139a4041ac0cd66d",
+    "scoredRowsSha256" : "b2d3b6c376771e2b7e79c404f30cd20e094bd10654936c9289fcf8be46487384",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 6.585246094097643,
+      "ilr_window" : 6.618790206675267,
+      "recency" : 5.609856446125882
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2014-05-15",
+    "scoreThrough" : "2014-06-19",
+    "trainingPolls" : 400,
+    "trainingObservations" : 400,
+    "scoredPolls" : 9,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "2a2ac6a63a2b7377d682684ccf15bcfce3315eaf2dfa411955be92860a65110a",
+    "scoredRowsSha256" : "e6c63ee2c8309a96283e8872490dbb256589756c11ab6a5d08b037a28bb7ec75",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : -1.8501766156606787,
+      "ilr_window" : -2.0080422083943046,
+      "recency" : 1.73731390882925
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2014-07-14",
+    "scoreThrough" : "2014-08-18",
+    "trainingPolls" : 414,
+    "trainingObservations" : 414,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "1973f0281b1fbfa6c23b53f9e60f3afc66b2fd5532af81c4dd84106de9bb52e5",
+    "scoredRowsSha256" : "13cba9fb94a39fe3999eb8ff9d33f31b1fc469f96686a5e7e2fcee254ed3d94d",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 4.617784383100374,
+      "ilr_window" : 4.633739631633103,
+      "recency" : 3.305545496611159
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2014-09-12",
+    "scoreThrough" : "2014-10-17",
+    "trainingPolls" : 448,
+    "trainingObservations" : 448,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "a35fda2ea205c8e5d3286d528acd9080af75c23ab08022a62e8bc011200f15b6",
+    "scoredRowsSha256" : "4d952cd2dfc60adfe2c727edeb010d98e14b5859c4c58972ad75c58fa12aaf42",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 2.213959500414585,
+      "ilr_window" : 2.163670522050755,
+      "recency" : 1.2095204204030916
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2014-11-11",
+    "scoreThrough" : "2014-12-16",
+    "trainingPolls" : 460,
+    "trainingObservations" : 460,
+    "scoredPolls" : 12,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "33556744490e88402d099cbd5fa1936550dddf51ee7195344163f24bd5daed33",
+    "scoredRowsSha256" : "0a7778df22ed9a2faabad3c8963d8bc8b1c16748cf0070d89c8193a4fdbd5cb3",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 3.764519987823045,
+      "ilr_window" : 3.8132965262751024,
+      "recency" : 3.188521612625862
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2015-01-10",
+    "scoreThrough" : "2015-02-14",
+    "trainingPolls" : 477,
+    "trainingObservations" : 477,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "e8f9fc6e38fa48ecbecde13b29e62cd3a4c187c6ce492cdbfbee4b88e4087d6f",
+    "scoredRowsSha256" : "216001f420052bf0cf3d0e05703f39d2c21f8ec4dcf4a8729782834b5d2f6362",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 5.743361182269696,
+      "ilr_window" : 5.940774262283175,
+      "recency" : 5.368641291773107
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2015-03-11",
+    "scoreThrough" : "2015-04-15",
+    "trainingPolls" : 491,
+    "trainingObservations" : 491,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "00b2a90e134a8f09a53ff374eef50bba21e20fd6c23b8e702e14159116af83e5",
+    "scoredRowsSha256" : "575a8ed65c82618541aa8795f33017d8815fb5153e8f257d9cfda0fb00a4329d",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 6.638574536303492,
+      "ilr_window" : 6.62243396626682,
+      "recency" : 6.026745833331999
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2015-05-10",
+    "scoreThrough" : "2015-06-14",
+    "trainingPolls" : 507,
+    "trainingObservations" : 507,
+    "scoredPolls" : 9,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "5cc5cef7f9b61959b2111f8be3433075629df6813aee13924d82fbcd02a355ef",
+    "scoredRowsSha256" : "aa07541aff9db7bb8abf9232c9aaa3ed18e5f5102cbac3861cc433226c9b4fcf",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 6.597806097770918,
+      "ilr_window" : 6.182497519766005,
+      "recency" : 5.231290136456052
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2015-07-09",
+    "scoreThrough" : "2015-08-13",
+    "trainingPolls" : 523,
+    "trainingObservations" : 523,
+    "scoredPolls" : 1,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "5fee2fdbf47f0b257fb05a28d17badc9095275e248cb80ba29eba50e8ecb4ebc",
+    "scoredRowsSha256" : "62ae64be7ee59d3816bf83903663ec668ddc33571146e0dc388b47a86bd3cb59",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 6.207387913630965,
+      "ilr_window" : 6.432831870667613,
+      "recency" : 3.645241883403222
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2015-09-07",
+    "scoreThrough" : "2015-10-12",
+    "trainingPolls" : 531,
+    "trainingObservations" : 531,
+    "scoredPolls" : 9,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "87f7586f9c6ff8705c85d0c581ae7f3903d07df417450dac817f0653ef1c5dcf",
+    "scoredRowsSha256" : "c50cd307bae474b6f2cfc5c1bef78dd544fe91fd5a711cdf4f692956a186024f",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 5.827009193503826,
+      "ilr_window" : 5.805766146040423,
+      "recency" : 3.664613872556503
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2015-11-06",
+    "scoreThrough" : "2015-12-11",
+    "trainingPolls" : 546,
+    "trainingObservations" : 546,
+    "scoredPolls" : 9,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "7596889cdd80bfce3c88a871ebc606a3ed215b0a4ab07537734a6088a04f03b4",
+    "scoredRowsSha256" : "4660af7b9033e6e6f940d3f814f9d2eeed0b3644f0f2dad394aab9be4acf815d",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 6.665333465756365,
+      "ilr_window" : 6.584318602060329,
+      "recency" : 4.981215835911367
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2016-01-05",
+    "scoreThrough" : "2016-02-09",
+    "trainingPolls" : 562,
+    "trainingObservations" : 562,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "44b06b509e6e83bc6be2c45956b2ee605b1491f05fd06a59f359e441ef1c0de8",
+    "scoredRowsSha256" : "664b3958fecbf017b8a7889e0a31c11aa19bcd94725b499668b886b776e14ad0",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 5.719446767324509,
+      "ilr_window" : 5.724814347461207,
+      "recency" : 3.9080857295820417
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2016-03-05",
+    "scoreThrough" : "2016-04-09",
+    "trainingPolls" : 577,
+    "trainingObservations" : 577,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "d3b3170f46c0da13869fd30249280417361f2373b3f219061dcf0d67a5f26bb1",
+    "scoredRowsSha256" : "3d36630683497aca0a90b63f5f9df776b276e144fe1383ec06b9be3bd34cdc30",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 5.3004916452149695,
+      "ilr_window" : 5.331908310685456,
+      "recency" : 2.81743577711784
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2016-05-04",
+    "scoreThrough" : "2016-06-08",
+    "trainingPolls" : 591,
+    "trainingObservations" : 591,
+    "scoredPolls" : 10,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "d386a919369f20120560903af55274b81bc4e70af4d8a3e217f1b573a12819c1",
+    "scoredRowsSha256" : "5fb55e030b352a9ade2708d1a46ebe26b4af46c067a291dde202c0def24a9d42",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 4.612294986464074,
+      "ilr_window" : 4.613439679144615,
+      "recency" : 3.274283943700243
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2016-07-03",
+    "scoreThrough" : "2016-08-07",
+    "trainingPolls" : 608,
+    "trainingObservations" : 608,
+    "scoredPolls" : 1,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "e223a757a23d34d5d3db1c917d6c08f8ac29522430b26e752ca2f81c059a55e9",
+    "scoredRowsSha256" : "400a4a19469e1d835a19db3b1bbae63b1d31ca31884fd3d32d04837f1b7126d6",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 8.323277019181544,
+      "ilr_window" : 8.310083016194314,
+      "recency" : 6.096216590159871
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2016-09-01",
+    "scoreThrough" : "2016-10-06",
+    "trainingPolls" : 615,
+    "trainingObservations" : 615,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "d7d9240516bf0947c2cbe651d6937f17828e5cad8efb0df43bce376fc76323b7",
+    "scoredRowsSha256" : "2f69216f2dc9f7917759e9288ca131729370792e208bab02a03dc38fbddd1784",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 7.794913931511205,
+      "ilr_window" : 7.78908312007334,
+      "recency" : 5.740976033423593
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2016-10-31",
+    "scoreThrough" : "2016-12-05",
+    "trainingPolls" : 629,
+    "trainingObservations" : 629,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "03c3dcc070a3d853641c7a7117151e0ae4481fbc1cfa50ad9d3aaf2731878d3a",
+    "scoredRowsSha256" : "fe501fe3e3e8e053f3e84e00c66bd77a6ced35e0234bb2978eddfbccaa3f23a4",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 6.943537374947487,
+      "ilr_window" : 7.008368054633318,
+      "recency" : 4.749242142928518
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2016-12-30",
+    "scoreThrough" : "2017-02-03",
+    "trainingPolls" : 644,
+    "trainingObservations" : 644,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "7eba8e8b37bafaec8ee35208414cb3d64c69a56d7e43e32003aea0d65b929835",
+    "scoredRowsSha256" : "38d9e7a0073898edf302621a2c46e3121e7ff82254df69fbb0a5a93c0fd59ddb",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 6.493507786178407,
+      "ilr_window" : 6.547846414973988,
+      "recency" : 4.433105342667079
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2017-02-28",
+    "scoreThrough" : "2017-04-04",
+    "trainingPolls" : 660,
+    "trainingObservations" : 660,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "db55bbfbed6404fe659e7333231d42368cf51ff2af7d1829bc89fae344122463",
+    "scoredRowsSha256" : "19b369f6aa2eee2b3647379f737dbd97902a27d3909446a73b7a9f9cb13f932e",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 4.199078028157543,
+      "ilr_window" : 4.2677632596147825,
+      "recency" : 3.0798832932057953
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2017-04-29",
+    "scoreThrough" : "2017-06-03",
+    "trainingPolls" : 675,
+    "trainingObservations" : 675,
+    "scoredPolls" : 9,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "c4ac0b7ef3b6dca14ed38de755dc8ed68e6c3b17fd8895b1b8431c3e30a9d29c",
+    "scoredRowsSha256" : "b094079b0578dde891e5cb3ec9c3f7f30d6fddebb907b62052ff3548c63e9761",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 6.835094447835614,
+      "ilr_window" : 6.844826804002326,
+      "recency" : 4.39953907417187
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2017-06-28",
+    "scoreThrough" : "2017-08-02",
+    "trainingPolls" : 691,
+    "trainingObservations" : 691,
+    "scoredPolls" : 5,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "7f6e1c0b2efeaa5a5759ed129cb110133993600c49f338a1b829c7baf3857e8c",
+    "scoredRowsSha256" : "fea1083504340fd11e7ea9390dcaaac8f3404e9ef83dbc824390aefbb3481e54",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 6.07433878539084,
+      "ilr_window" : 6.29915885592767,
+      "recency" : 5.3192264955300255
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2017-08-27",
+    "scoreThrough" : "2017-10-01",
+    "trainingPolls" : 703,
+    "trainingObservations" : 703,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "f454ca56eb571a0346b34035405ab05e0232a254fdac01e5dd7249dba8d4ebf8",
+    "scoredRowsSha256" : "8e4608b7e5ad22c8bb73f64f5eeebb78a862be0b1ba634b8bb4192c87d5c378f",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 7.114477946137034,
+      "ilr_window" : 7.008163351248524,
+      "recency" : 5.46771224972022
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2017-10-26",
+    "scoreThrough" : "2017-11-30",
+    "trainingPolls" : 717,
+    "trainingObservations" : 717,
+    "scoredPolls" : 9,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "2ff3509996c009cf70db02dce299f23639d7bac86b7d4175a4880af5c32515d5",
+    "scoredRowsSha256" : "02db3980c1cc0e6be20283710a32d7490ed87c1d125169a76a5c52c0d06ea6fb",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 5.080914581888034,
+      "ilr_window" : 5.181621888454986,
+      "recency" : 3.730106603076647
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2017-12-25",
+    "scoreThrough" : "2018-01-29",
+    "trainingPolls" : 733,
+    "trainingObservations" : 733,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "6017a0a20eefe6967db8d1b1c4aa535bbbac69141e0bb93ee45577ca2eda399e",
+    "scoredRowsSha256" : "10c68e6a4cb3cd896d160ed2eac08bd6ada7da31c7a6ead70f9693280776b5ef",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 7.627152279411812,
+      "ilr_window" : 7.688984183686653,
+      "recency" : 5.976241875888036
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2018-02-23",
+    "scoreThrough" : "2018-03-30",
+    "trainingPolls" : 749,
+    "trainingObservations" : 749,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "146a6c2ac5f0923b5fb91aedddf82ac747f4a772f3f5b61856fe67d570ffb46d",
+    "scoredRowsSha256" : "0f84f835556b4ebe2d66931adb6c828187ba1b5f03195dd2883049b56ba35c28",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 3.708996667519507,
+      "ilr_window" : 3.6962496118221964,
+      "recency" : 3.634523776984925
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2018-04-24",
+    "scoreThrough" : "2018-05-29",
+    "trainingPolls" : 763,
+    "trainingObservations" : 763,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "db9427f08ff50995d95aa08937a3576022543127f79fa2330a8a8f7d6a0b1942",
+    "scoredRowsSha256" : "20512bddc07004f02bcb6d13e74f0c8d8f9e6f892c8d86a314ee7dfd708b70e9",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 4.712225359227136,
+      "ilr_window" : 4.648086193759047,
+      "recency" : 4.8404081871091424
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2018-06-23",
+    "scoreThrough" : "2018-07-28",
+    "trainingPolls" : 779,
+    "trainingObservations" : 779,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "c191a43a252580da5f5aa9c27b4ce3a67667233e9c9518ca7146463b31e1630f",
+    "scoredRowsSha256" : "c3e13bedce6cd89c520234ff8d432bff80961f867a441b3899b9cc1a6c8e1823",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 5.8250788175217405,
+      "ilr_window" : 5.811656537173342,
+      "recency" : 4.426039195952315
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2018-08-22",
+    "scoreThrough" : "2018-09-26",
+    "trainingPolls" : 798,
+    "trainingObservations" : 798,
+    "scoredPolls" : 36,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "5a2ba8366b30558e9b800d5747cf5cad469a77f3fd75988fd952b787f0ea7936",
+    "scoredRowsSha256" : "4e8e4ef713ef6cbd5037781aa57384607ea9a6d96b364f9ae7e32fe8a8eff848",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : -2.49018881543134,
+      "ilr_window" : -2.548708895586577,
+      "recency" : 1.0582390506591994
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2018-10-21",
+    "scoreThrough" : "2018-11-25",
+    "trainingPolls" : 838,
+    "trainingObservations" : 838,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "86bd8b9e84c50026463fd57dd456ae4693b2cde5de9ae2fbe6204719cfd2280c",
+    "scoredRowsSha256" : "37db3b54761ebf8cd1d562bc73f61964e62aa16b34dc41435575bbb399b30852",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 5.449471448423343,
+      "ilr_window" : 5.46034471340973,
+      "recency" : 5.700763773488377
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2018-12-20",
+    "scoreThrough" : "2019-01-24",
+    "trainingPolls" : 852,
+    "trainingObservations" : 852,
+    "scoredPolls" : 6,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "6ce5c9351dcc76071876cf99e99d9fc39f3782307922c6190560dbc1847fabff",
+    "scoredRowsSha256" : "162482b924026f1d44b19d572af556ccb2811717e044d39586354bfd49afe7c0",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 5.623119971852312,
+      "ilr_window" : 5.703947308099038,
+      "recency" : 4.978623860275143
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2019-02-18",
+    "scoreThrough" : "2019-03-25",
+    "trainingPolls" : 863,
+    "trainingObservations" : 863,
+    "scoredPolls" : 6,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "50f007b6963076cd8a46ac744fa1a41a615b63b21bb474138c5b42ffff79f031",
+    "scoredRowsSha256" : "5f312677dfbfd47f39e461eb439da78a5bac9eede49f620a25a405408b842da7",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 6.067596224164009,
+      "ilr_window" : 6.1331791211762825,
+      "recency" : 5.460828548198234
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2019-04-19",
+    "scoreThrough" : "2019-05-24",
+    "trainingPolls" : 877,
+    "trainingObservations" : 877,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "e5bcfedaa0c266a29797940e009814c1d4cbbee581f01573e7fa5f2ea32a845a",
+    "scoredRowsSha256" : "e2ec2599067703fed20cc7fc0bc56a4214ec37f96321b480698144311b27021e",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 7.7129497125691415,
+      "ilr_window" : 7.765168994565646,
+      "recency" : 6.855708628068464
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2019-06-18",
+    "scoreThrough" : "2019-07-23",
+    "trainingPolls" : 890,
+    "trainingObservations" : 890,
+    "scoredPolls" : 6,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "7ef1246c6e3d5a0ce2a7717d0aa1c6c90940817c579c6be47c72e6c4a165f74c",
+    "scoredRowsSha256" : "1579dc51e38f304f06d7658eb111d2105113ca26043533a43301c37dc40e7f70",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 4.993437404620773,
+      "ilr_window" : 4.940367204693555,
+      "recency" : 4.221068116104238
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2019-08-17",
+    "scoreThrough" : "2019-09-21",
+    "trainingPolls" : 898,
+    "trainingObservations" : 898,
+    "scoredPolls" : 6,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "8cf4956b657d1f90e29b8623b293ba03022e4ce413858891b1a1b47f94fec2cb",
+    "scoredRowsSha256" : "b492e886114e208b7a4d8405a6dde5d297418046d3edfb0d5dc0944eeac7de76",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 6.369850690012586,
+      "ilr_window" : 6.384937222848772,
+      "recency" : 3.67024868478715
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2019-10-16",
+    "scoreThrough" : "2019-11-20",
+    "trainingPolls" : 909,
+    "trainingObservations" : 909,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "793bfcbb51adc39e81cd0a479291280d6654cf12576815c55d2daead87dcf9c6",
+    "scoredRowsSha256" : "33b285b7493b8a3e413d891421d52d136cc16a4008c502ef4f7075492ef9b422",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 7.214801506768153,
+      "ilr_window" : 7.251836601343395,
+      "recency" : 4.432028490191833
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2019-12-15",
+    "scoreThrough" : "2020-01-19",
+    "trainingPolls" : 922,
+    "trainingObservations" : 922,
+    "scoredPolls" : 5,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "e52b9d24c935d93f607a9a4a152c0f0fef2ce198fb12cdc7348bb3ecd1b225be",
+    "scoredRowsSha256" : "cdafbcaf104c09c2ed150745397d13439249e269a0f25e2452df87fd229e932c",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 8.551917130389947,
+      "ilr_window" : 8.623897551994476,
+      "recency" : 7.003467609864518
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2020-02-13",
+    "scoreThrough" : "2020-03-19",
+    "trainingPolls" : 932,
+    "trainingObservations" : 932,
+    "scoredPolls" : 6,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "2809b1c273a060e622216921a2fbb115fc1c3f4a6a8c6cb28cb1fb8d4e4b1992",
+    "scoredRowsSha256" : "cdf76e0ec0daba6dfb4eea803a07b6165930497fa00ba253d20be9af9b192521",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 6.208900780867039,
+      "ilr_window" : 6.274046063612329,
+      "recency" : 5.592095140809616
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2020-04-13",
+    "scoreThrough" : "2020-05-18",
+    "trainingPolls" : 943,
+    "trainingObservations" : 943,
+    "scoredPolls" : 6,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "d222fe69346aeb752fc25e320bc06cbb1aa9b3913db2674477db358207e8f749",
+    "scoredRowsSha256" : "5146f28797e21027a112836e3c93a6f4b583266bb92067920ab757c91dd43415",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 6.164466689602975,
+      "ilr_window" : 6.316820108869103,
+      "recency" : 4.455832648824981
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2020-06-12",
+    "scoreThrough" : "2020-07-17",
+    "trainingPolls" : 956,
+    "trainingObservations" : 956,
+    "scoredPolls" : 5,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "d88dfe61586016ca7cca4973b7af48fc46f45395b970b02cc63c1128a08dae11",
+    "scoredRowsSha256" : "81d0a16cda2957d62b2f548e1e0033efbba420db039348956db8289cf51c055e",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 5.976421332858545,
+      "ilr_window" : 6.010111130394371,
+      "recency" : 3.45691141952929
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2020-08-11",
+    "scoreThrough" : "2020-09-15",
+    "trainingPolls" : 963,
+    "trainingObservations" : 963,
+    "scoredPolls" : 5,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "64582c84577f09824490968325bb75e8649c25e1ee84b5ad8a41f3bdfe8b36de",
+    "scoredRowsSha256" : "cd6b441fd33dc34de3e54bd8854171bcdf7eb69dca185f9277845348cf6d8997",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 7.30709802893837,
+      "ilr_window" : 7.385277401151289,
+      "recency" : 4.785841389728089
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2020-10-10",
+    "scoreThrough" : "2020-11-14",
+    "trainingPolls" : 973,
+    "trainingObservations" : 973,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "257885cc947955af5d10c77b7d11a840577cde0a82487edc5cf47d5fff0356aa",
+    "scoredRowsSha256" : "3cf7d5bc781f3f39d46655568f4e9487a2bc57fb091628be9f076c6eaf1a781e",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 7.130569706179484,
+      "ilr_window" : 7.18247556439012,
+      "recency" : 5.490462277020025
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2020-12-09",
+    "scoreThrough" : "2021-01-13",
+    "trainingPolls" : 984,
+    "trainingObservations" : 984,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "dc7cfe34509cf77bae861f175aa9cf3b8766db2d2d93bb8e55f352ee9d26dadb",
+    "scoredRowsSha256" : "30ed79b7f3704b8de827a3207cdbd3f2d7b43fa61b1aef646dc11c03bb12a256",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 7.446696639993732,
+      "ilr_window" : 7.564808036583333,
+      "recency" : 5.903898669030609
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2021-02-07",
+    "scoreThrough" : "2021-03-14",
+    "trainingPolls" : 997,
+    "trainingObservations" : 997,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "d7017a57f1075ccdf2c43b556666ce11fdda8407220f7fa33e825b221611424a",
+    "scoredRowsSha256" : "84a5091f50e30b8a0ed4b95ab31aaea4eef10032dbeddcce9b49d6eff073a45c",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 6.619331664822959,
+      "ilr_window" : 6.6709782528497135,
+      "recency" : 6.413313141376583
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2021-04-08",
+    "scoreThrough" : "2021-05-13",
+    "trainingPolls" : 1006,
+    "trainingObservations" : 1006,
+    "scoredPolls" : 5,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "5f1a6fc62977ebfd676a2ad5002b5c570733667c57fa2005aa13dd0add36d338",
+    "scoredRowsSha256" : "36d91780344e7bed1f085d57d610fc4f264c05b8cdd93876f6075373e4dc2748",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 7.051499940908282,
+      "ilr_window" : 7.131140260763146,
+      "recency" : 4.294762342880066
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2021-06-07",
+    "scoreThrough" : "2021-07-12",
+    "trainingPolls" : 1016,
+    "trainingObservations" : 1016,
+    "scoredPolls" : 6,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "fce7b4c06e9071c8bea5ee214f03afa6ab8f191f3a4fb5d6e5b273af7714ee15",
+    "scoredRowsSha256" : "6d6b7d410a909ada7be5f47b32c965b5da3c9c84f2b74412b741094211dcaad3",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 3.8591420420039615,
+      "ilr_window" : 3.884939687138712,
+      "recency" : 3.0661294519172295
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2021-08-06",
+    "scoreThrough" : "2021-09-10",
+    "trainingPolls" : 1023,
+    "trainingObservations" : 1023,
+    "scoredPolls" : 5,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "f6f13e25b8e21f2273eeb969643cd378afbf354177bd22aa6a11dc9d40de6cec",
+    "scoredRowsSha256" : "88c799675a1221ab30881aeacd92c6928c1944435194cf6d6b255a9f399668c7",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 4.974118657515336,
+      "ilr_window" : 4.972515808853197,
+      "recency" : 6.410811882521439
+    }
+  }, {
+    "periodId" : "eight_party_2010",
+    "cutoff" : "2021-10-05",
+    "scoreThrough" : "2021-11-09",
+    "trainingPolls" : 1031,
+    "trainingObservations" : 1031,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "47a854501e3a2700a954a85a299dfaab0d270adeff6ddeb76880776211ce6475",
+    "scoredRowsSha256" : "041cae7cdbd0bb46162d873c74d4505f62c3cf527029938721d577f695d4e72e",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 6.930950017236223,
+      "ilr_window" : 7.000858608106311,
+      "recency" : 4.706224308000839
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2014-05-15",
+    "scoreThrough" : "2014-06-19",
+    "trainingPolls" : 400,
+    "trainingObservations" : 2,
+    "scoredPolls" : 9,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "2a2ac6a63a2b7377d682684ccf15bcfce3315eaf2dfa411955be92860a65110a",
+    "scoredRowsSha256" : "e6c63ee2c8309a96283e8872490dbb256589756c11ab6a5d08b037a28bb7ec75",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-5,
+      "houseScale" : 0.02,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-5,
+      "houseScale" : 0.02,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ "walkVariance:lower", "houseScale:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 1.5593345521002357,
+      "ilr_window" : 1.5479100314159087,
+      "recency" : 1.1837542557130663
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2014-07-14",
+    "scoreThrough" : "2014-08-18",
+    "trainingPolls" : 414,
+    "trainingObservations" : 15,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 1,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 1
+    },
+    "trainingRowsSha256" : "1973f0281b1fbfa6c23b53f9e60f3afc66b2fd5532af81c4dd84106de9bb52e5",
+    "scoredRowsSha256" : "3dcc14c8cd2d31dc23f670a45a02cfb598ce35476928a230196aca90b55c37aa",
+    "candidateParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 2.997492589438562,
+      "ilr_window" : 3.0757020798645653,
+      "recency" : 2.356018687522564
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2014-09-12",
+    "scoreThrough" : "2014-10-17",
+    "trainingPolls" : 448,
+    "trainingObservations" : 48,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "a35fda2ea205c8e5d3286d528acd9080af75c23ab08022a62e8bc011200f15b6",
+    "scoredRowsSha256" : "4d952cd2dfc60adfe2c727edeb010d98e14b5859c4c58972ad75c58fa12aaf42",
+    "candidateParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 0.90770932332,
+      "ilr_window" : 0.7655647370294713,
+      "recency" : 0.6610945072459378
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2014-11-11",
+    "scoreThrough" : "2014-12-16",
+    "trainingPolls" : 460,
+    "trainingObservations" : 60,
+    "scoredPolls" : 9,
+    "excludedHeldOutPolls" : 3,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 3
+    },
+    "trainingRowsSha256" : "33556744490e88402d099cbd5fa1936550dddf51ee7195344163f24bd5daed33",
+    "scoredRowsSha256" : "7ba2b72f759de6ee1c7f09a4ba33d93abee4b12bbae4a6a54c442b4933e6a952",
+    "candidateParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 3.785322232214396,
+      "ilr_window" : 3.811139129755233,
+      "recency" : 2.509605001662399
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2015-01-10",
+    "scoreThrough" : "2015-02-14",
+    "trainingPolls" : 477,
+    "trainingObservations" : 74,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "e8f9fc6e38fa48ecbecde13b29e62cd3a4c187c6ce492cdbfbee4b88e4087d6f",
+    "scoredRowsSha256" : "216001f420052bf0cf3d0e05703f39d2c21f8ec4dcf4a8729782834b5d2f6362",
+    "candidateParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 4.948325947986314,
+      "ilr_window" : 4.67654748430213,
+      "recency" : 4.407943145379764
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2015-03-11",
+    "scoreThrough" : "2015-04-15",
+    "trainingPolls" : 491,
+    "trainingObservations" : 87,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 1,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 1
+    },
+    "trainingRowsSha256" : "00b2a90e134a8f09a53ff374eef50bba21e20fd6c23b8e702e14159116af83e5",
+    "scoredRowsSha256" : "48f5c2974645e500867cb15f2d71df8f379e565e93eaf18dd11b354ce5e75643",
+    "candidateParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.05,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 6.2498827925808085,
+      "ilr_window" : 6.305919863465569,
+      "recency" : 5.556370540325378
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2015-05-10",
+    "scoreThrough" : "2015-06-14",
+    "trainingPolls" : 507,
+    "trainingObservations" : 102,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 2,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 2
+    },
+    "trainingRowsSha256" : "5cc5cef7f9b61959b2111f8be3433075629df6813aee13924d82fbcd02a355ef",
+    "scoredRowsSha256" : "da48a94f093ee1f0751d41a5e65f0a47d981fdc9b7dae27176b11c3cf56588a2",
+    "candidateParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 3.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 7.1639372433164725,
+      "ilr_window" : 7.281815614594002,
+      "recency" : 5.899972394901546
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2015-07-09",
+    "scoreThrough" : "2015-08-13",
+    "trainingPolls" : 523,
+    "trainingObservations" : 116,
+    "scoredPolls" : 1,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "5fee2fdbf47f0b257fb05a28d17badc9095275e248cb80ba29eba50e8ecb4ebc",
+    "scoredRowsSha256" : "62ae64be7ee59d3816bf83903663ec668ddc33571146e0dc388b47a86bd3cb59",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 4.177530238429277,
+      "ilr_window" : 4.1944219252084265,
+      "recency" : 2.669634571566477
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2015-09-07",
+    "scoreThrough" : "2015-10-12",
+    "trainingPolls" : 531,
+    "trainingObservations" : 124,
+    "scoredPolls" : 9,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "87f7586f9c6ff8705c85d0c581ae7f3903d07df417450dac817f0653ef1c5dcf",
+    "scoredRowsSha256" : "c50cd307bae474b6f2cfc5c1bef78dd544fe91fd5a711cdf4f692956a186024f",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 5.204579933611885,
+      "ilr_window" : 5.1848795229426,
+      "recency" : 2.50633037439488
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2015-11-06",
+    "scoreThrough" : "2015-12-11",
+    "trainingPolls" : 546,
+    "trainingObservations" : 139,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 1,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 1
+    },
+    "trainingRowsSha256" : "7596889cdd80bfce3c88a871ebc606a3ed215b0a4ab07537734a6088a04f03b4",
+    "scoredRowsSha256" : "fd6e7c2752184e8aeed690ea7c0cd2d73dd07a9233c6f37295891ce0b48eba84",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 6.633006514103461,
+      "ilr_window" : 6.618499217190076,
+      "recency" : 4.87117121232987
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2016-01-05",
+    "scoreThrough" : "2016-02-09",
+    "trainingPolls" : 562,
+    "trainingObservations" : 154,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "44b06b509e6e83bc6be2c45956b2ee605b1491f05fd06a59f359e441ef1c0de8",
+    "scoredRowsSha256" : "664b3958fecbf017b8a7889e0a31c11aa19bcd94725b499668b886b776e14ad0",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 4.8469617415269965,
+      "ilr_window" : 4.851879743279584,
+      "recency" : 2.754572436151337
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2016-03-05",
+    "scoreThrough" : "2016-04-09",
+    "trainingPolls" : 577,
+    "trainingObservations" : 169,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "d3b3170f46c0da13869fd30249280417361f2373b3f219061dcf0d67a5f26bb1",
+    "scoredRowsSha256" : "3d36630683497aca0a90b63f5f9df776b276e144fe1383ec06b9be3bd34cdc30",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 4.999878323424948,
+      "ilr_window" : 5.036342807120464,
+      "recency" : 2.2874928957472873
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2016-05-04",
+    "scoreThrough" : "2016-06-08",
+    "trainingPolls" : 591,
+    "trainingObservations" : 183,
+    "scoredPolls" : 9,
+    "excludedHeldOutPolls" : 1,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 1
+    },
+    "trainingRowsSha256" : "d386a919369f20120560903af55274b81bc4e70af4d8a3e217f1b573a12819c1",
+    "scoredRowsSha256" : "63e609f7539905ec692c05005fa604ac3e44dc0baac6a6521d51c4b59d3b7d6b",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 3.259869985036084,
+      "ilr_window" : 3.23187144834887,
+      "recency" : 2.800247166298732
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2016-07-03",
+    "scoreThrough" : "2016-08-07",
+    "trainingPolls" : 608,
+    "trainingObservations" : 199,
+    "scoredPolls" : 1,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "e223a757a23d34d5d3db1c917d6c08f8ac29522430b26e752ca2f81c059a55e9",
+    "scoredRowsSha256" : "400a4a19469e1d835a19db3b1bbae63b1d31ca31884fd3d32d04837f1b7126d6",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 8.51914235858845,
+      "ilr_window" : 8.51048425343407,
+      "recency" : 6.028454170961494
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2016-09-01",
+    "scoreThrough" : "2016-10-06",
+    "trainingPolls" : 615,
+    "trainingObservations" : 206,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "d7d9240516bf0947c2cbe651d6937f17828e5cad8efb0df43bce376fc76323b7",
+    "scoredRowsSha256" : "2f69216f2dc9f7917759e9288ca131729370792e208bab02a03dc38fbddd1784",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 7.864510771596606,
+      "ilr_window" : 7.863245978170252,
+      "recency" : 5.520140932599943
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2016-10-31",
+    "scoreThrough" : "2016-12-05",
+    "trainingPolls" : 629,
+    "trainingObservations" : 220,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 1,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 1
+    },
+    "trainingRowsSha256" : "03c3dcc070a3d853641c7a7117151e0ae4481fbc1cfa50ad9d3aaf2731878d3a",
+    "scoredRowsSha256" : "e6396afa81095d8f970b18b4101cd4e56419927f374fe8aed5d40be9e3f38fc6",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 6.359169631291597,
+      "ilr_window" : 6.400722873681005,
+      "recency" : 4.6878760918574915
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2016-12-30",
+    "scoreThrough" : "2017-02-03",
+    "trainingPolls" : 644,
+    "trainingObservations" : 234,
+    "scoredPolls" : 8,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "7eba8e8b37bafaec8ee35208414cb3d64c69a56d7e43e32003aea0d65b929835",
+    "scoredRowsSha256" : "38d9e7a0073898edf302621a2c46e3121e7ff82254df69fbb0a5a93c0fd59ddb",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 5.512908968871821,
+      "ilr_window" : 5.561065643235973,
+      "recency" : 3.9609853741375822
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2017-02-28",
+    "scoreThrough" : "2017-04-04",
+    "trainingPolls" : 660,
+    "trainingObservations" : 250,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "db55bbfbed6404fe659e7333231d42368cf51ff2af7d1829bc89fae344122463",
+    "scoredRowsSha256" : "19b369f6aa2eee2b3647379f737dbd97902a27d3909446a73b7a9f9cb13f932e",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 2.8075909040031357,
+      "ilr_window" : 2.8618131666835778,
+      "recency" : 2.48732336181228
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2017-04-29",
+    "scoreThrough" : "2017-06-03",
+    "trainingPolls" : 675,
+    "trainingObservations" : 263,
+    "scoredPolls" : 6,
+    "excludedHeldOutPolls" : 3,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 3
+    },
+    "trainingRowsSha256" : "c4ac0b7ef3b6dca14ed38de755dc8ed68e6c3b17fd8895b1b8431c3e30a9d29c",
+    "scoredRowsSha256" : "f79ee60184a48043563cad4f4b33a2c5ea056344c608f8555fba236cf93dffcc",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 5.196580861503777,
+      "ilr_window" : 5.219200747664847,
+      "recency" : 3.3857680422738343
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2017-06-28",
+    "scoreThrough" : "2017-08-02",
+    "trainingPolls" : 691,
+    "trainingObservations" : 275,
+    "scoredPolls" : 5,
+    "excludedHeldOutPolls" : 0,
+    "heldOutExclusionReasons" : { },
+    "trainingRowsSha256" : "7f6e1c0b2efeaa5a5759ed129cb110133993600c49f338a1b829c7baf3857e8c",
+    "scoredRowsSha256" : "fea1083504340fd11e7ea9390dcaaac8f3404e9ef83dbc824390aefbb3481e54",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.0
+    },
+    "referenceGridBoundaries" : [ "covarianceMultiplier:lower" ],
+    "meanLogScore" : {
+      "midpoint" : 1.7039440007842483,
+      "ilr_window" : 1.5520459927383448,
+      "recency" : 3.0986747378882926
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2017-08-27",
+    "scoreThrough" : "2017-10-01",
+    "trainingPolls" : 703,
+    "trainingObservations" : 287,
+    "scoredPolls" : 6,
+    "excludedHeldOutPolls" : 1,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 1
+    },
+    "trainingRowsSha256" : "f454ca56eb571a0346b34035405ab05e0232a254fdac01e5dd7249dba8d4ebf8",
+    "scoredRowsSha256" : "1dc318bda9a33ee29cf786480b442566659662648f8cb963103162931b5f3c80",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 4.537742091269166,
+      "ilr_window" : 4.543688528929824,
+      "recency" : 4.1458394166520245
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2017-10-26",
+    "scoreThrough" : "2017-11-30",
+    "trainingPolls" : 717,
+    "trainingObservations" : 299,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 2,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 2
+    },
+    "trainingRowsSha256" : "2ff3509996c009cf70db02dce299f23639d7bac86b7d4175a4880af5c32515d5",
+    "scoredRowsSha256" : "970d83d23aebce1f5b7c8340bffa7440fc3614ad85b12402934adcec9d5bc70c",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 3.6031557082415473,
+      "ilr_window" : 3.5341459592246545,
+      "recency" : 2.3729794492669027
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2017-12-25",
+    "scoreThrough" : "2018-01-29",
+    "trainingPolls" : 733,
+    "trainingObservations" : 312,
+    "scoredPolls" : 5,
+    "excludedHeldOutPolls" : 3,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 3
+    },
+    "trainingRowsSha256" : "6017a0a20eefe6967db8d1b1c4aa535bbbac69141e0bb93ee45577ca2eda399e",
+    "scoredRowsSha256" : "a04381d229fb329a882d2095248b9e5c667db0821abc88ce00e1aae9f436917a",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 6.897577838967701,
+      "ilr_window" : 6.928567843982225,
+      "recency" : 5.5976538156368605
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2018-02-23",
+    "scoreThrough" : "2018-03-30",
+    "trainingPolls" : 749,
+    "trainingObservations" : 324,
+    "scoredPolls" : 5,
+    "excludedHeldOutPolls" : 2,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 2
+    },
+    "trainingRowsSha256" : "146a6c2ac5f0923b5fb91aedddf82ac747f4a772f3f5b61856fe67d570ffb46d",
+    "scoredRowsSha256" : "9bb760149f06d07a8f1679319b938f753bbc4df7df9b84cc97676de3cbed89a1",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 1.1362753210525376,
+      "ilr_window" : 1.0754277401743209,
+      "recency" : 2.0968683858599593
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2018-04-24",
+    "scoreThrough" : "2018-05-29",
+    "trainingPolls" : 763,
+    "trainingObservations" : 335,
+    "scoredPolls" : 7,
+    "excludedHeldOutPolls" : 1,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 1
+    },
+    "trainingRowsSha256" : "db9427f08ff50995d95aa08937a3576022543127f79fa2330a8a8f7d6a0b1942",
+    "scoredRowsSha256" : "00aa2b3ed8ec5fb4866b5fe5290b84dc69ed3c89b454d38e5e399ef90451440b",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 2.964817559449963,
+      "ilr_window" : 2.8133263257747836,
+      "recency" : 4.010046071359492
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2018-06-23",
+    "scoreThrough" : "2018-07-28",
+    "trainingPolls" : 779,
+    "trainingObservations" : 348,
+    "scoredPolls" : 6,
+    "excludedHeldOutPolls" : 2,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 2
+    },
+    "trainingRowsSha256" : "c191a43a252580da5f5aa9c27b4ce3a67667233e9c9518ca7146463b31e1630f",
+    "scoredRowsSha256" : "f6ea345c8e5947a1e7af973175f6edc3e612ba5c2ac63a14d6256c9ae951d05a",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : 3.715458958129354,
+      "ilr_window" : 3.747654701327175,
+      "recency" : 4.102448787904881
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2018-08-22",
+    "scoreThrough" : "2018-09-26",
+    "trainingPolls" : 798,
+    "trainingObservations" : 362,
+    "scoredPolls" : 25,
+    "excludedHeldOutPolls" : 11,
+    "heldOutExclusionReasons" : {
+      "missing_share:FI" : 11
+    },
+    "trainingRowsSha256" : "5a2ba8366b30558e9b800d5747cf5cad469a77f3fd75988fd952b787f0ea7936",
+    "scoredRowsSha256" : "9ebbd9fa40d836ff9a8a30b1e5f92de462c14a3f791f305a425b59ffa9b02a65",
+    "candidateParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceParameters" : {
+      "walkVariance" : 1.0E-4,
+      "houseScale" : 0.1,
+      "covarianceMultiplier" : 1.5
+    },
+    "referenceGridBoundaries" : [ ],
+    "meanLogScore" : {
+      "midpoint" : -4.483165454791296,
+      "ilr_window" : -4.597751399393381,
+      "recency" : 0.4735185573530851
+    }
+  } ],
+  "unscored" : [ {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2014-01-15",
+    "reason" : "the tuning run resolved no parameters for this fold"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2014-03-16",
+    "reason" : "the tuning run resolved no parameters for this fold"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2018-10-21",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2018-12-20",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2019-02-18",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2019-04-19",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2019-06-18",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2019-08-17",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2019-10-16",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2019-12-15",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2020-02-13",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2020-04-13",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2020-06-12",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2020-08-11",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2020-10-10",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2020-12-09",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2021-02-07",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2021-04-08",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2021-06-07",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2021-08-06",
+    "reason" : "no held-out observation the period can compose"
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "cutoff" : "2021-10-05",
+    "reason" : "no held-out observation the period can compose"
+  } ],
+  "paired" : [ {
+    "periodId" : "eight_party_2010",
+    "folds" : 48,
+    "baselineDifference" : 1.159958752773079,
+    "referenceDifference" : -0.023579124341236275,
+    "pairedStandardError" : 0.011921334731399268,
+    "standardErrorByLag" : {
+      "1" : 0.01277504845935254,
+      "3" : 0.011921334731399268,
+      "6" : 0.012591667398069838
+    },
+    "passes" : false
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "folds" : 27,
+    "baselineDifference" : 0.7643243167127661,
+    "referenceDifference" : 0.0175336657742029,
+    "pairedStandardError" : 0.013639649066245553,
+    "standardErrorByLag" : {
+      "1" : 0.014401233103994084,
+      "3" : 0.013639649066245553,
+      "6" : 0.013088128422665594
+    },
+    "passes" : true
+  } ],
+  "misfit" : [ {
+    "periodId" : "eight_party_2010",
+    "candidate" : "ilr_window",
+    "scope" : "all",
+    "name" : "all",
+    "polls" : 370,
+    "cases" : 3330,
+    "coverage95" : 0.9255255255255255,
+    "coverage50" : 0.5219219219219219,
+    "meanLogScore" : 4.929073277733361,
+    "meanStandardizedResidual" : 0.061380203526765126,
+    "rootMeanSquareStandardizedResidual" : 1.1678442982092492
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "recency",
+    "scope" : "all",
+    "name" : "all",
+    "polls" : 370,
+    "cases" : 3330,
+    "coverage95" : 0.9390390390390391,
+    "coverage50" : 0.4984984984984985,
+    "meanLogScore" : 4.181648498196053,
+    "meanStandardizedResidual" : 0.014162509818003923,
+    "rootMeanSquareStandardizedResidual" : 1.0339292458575897
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "all",
+    "name" : "all",
+    "polls" : 370,
+    "cases" : 3330,
+    "coverage95" : 0.927027027027027,
+    "coverage50" : 0.5183183183183183,
+    "meanLogScore" : 4.920328865309745,
+    "meanStandardizedResidual" : 0.0599064932830052,
+    "rootMeanSquareStandardizedResidual" : 1.1663830061916336
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "S",
+    "polls" : 370,
+    "cases" : 370,
+    "coverage95" : 0.9837837837837838,
+    "coverage50" : 0.6405405405405405,
+    "meanLogScore" : 4.920328865309745,
+    "meanStandardizedResidual" : -0.0783586888787151,
+    "rootMeanSquareStandardizedResidual" : 0.7689698395958103
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "M",
+    "polls" : 370,
+    "cases" : 370,
+    "coverage95" : 0.9324324324324325,
+    "coverage50" : 0.5459459459459459,
+    "meanLogScore" : 4.920328865309745,
+    "meanStandardizedResidual" : -0.04943272235422671,
+    "rootMeanSquareStandardizedResidual" : 1.0063176035345769
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "SD",
+    "polls" : 370,
+    "cases" : 370,
+    "coverage95" : 0.9243243243243243,
+    "coverage50" : 0.5324324324324324,
+    "meanLogScore" : 4.920328865309745,
+    "meanStandardizedResidual" : 0.23382868731777207,
+    "rootMeanSquareStandardizedResidual" : 1.068693614474663
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "V",
+    "polls" : 370,
+    "cases" : 370,
+    "coverage95" : 0.9594594594594594,
+    "coverage50" : 0.5675675675675675,
+    "meanLogScore" : 4.920328865309745,
+    "meanStandardizedResidual" : 0.1741117147725276,
+    "rootMeanSquareStandardizedResidual" : 0.9190218110535837
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "C",
+    "polls" : 370,
+    "cases" : 370,
+    "coverage95" : 0.9351351351351351,
+    "coverage50" : 0.5594594594594594,
+    "meanLogScore" : 4.920328865309745,
+    "meanStandardizedResidual" : -0.09510412970115267,
+    "rootMeanSquareStandardizedResidual" : 1.0196160450748908
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "KD",
+    "polls" : 370,
+    "cases" : 370,
+    "coverage95" : 0.8648648648648649,
+    "coverage50" : 0.4189189189189189,
+    "meanLogScore" : 4.920328865309745,
+    "meanStandardizedResidual" : 0.3920285903607115,
+    "rootMeanSquareStandardizedResidual" : 1.8415414088541135
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "L",
+    "polls" : 370,
+    "cases" : 370,
+    "coverage95" : 0.9432432432432433,
+    "coverage50" : 0.47297297297297297,
+    "meanLogScore" : 4.920328865309745,
+    "meanStandardizedResidual" : 0.01415274108882427,
+    "rootMeanSquareStandardizedResidual" : 1.0207783524301843
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "MP",
+    "polls" : 370,
+    "cases" : 370,
+    "coverage95" : 0.9513513513513514,
+    "coverage50" : 0.5351351351351351,
+    "meanLogScore" : 4.920328865309745,
+    "meanStandardizedResidual" : -0.10090285798030633,
+    "rootMeanSquareStandardizedResidual" : 1.005255044964542
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "OTHER",
+    "polls" : 370,
+    "cases" : 370,
+    "coverage95" : 0.8486486486486486,
+    "coverage50" : 0.3918918918918919,
+    "meanLogScore" : 4.920328865309745,
+    "meanStandardizedResidual" : 0.04883510492161168,
+    "rootMeanSquareStandardizedResidual" : 1.4730679549415546
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Demoskop",
+    "polls" : 54,
+    "cases" : 486,
+    "coverage95" : 0.9506172839506173,
+    "coverage50" : 0.5205761316872428,
+    "meanLogScore" : 5.406820787036965,
+    "meanStandardizedResidual" : 0.03776464083568141,
+    "rootMeanSquareStandardizedResidual" : 1.010687087702638
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Inizio",
+    "polls" : 35,
+    "cases" : 315,
+    "coverage95" : 0.9079365079365079,
+    "coverage50" : 0.49523809523809526,
+    "meanLogScore" : 5.038498755146141,
+    "meanStandardizedResidual" : 0.06465404594333177,
+    "rootMeanSquareStandardizedResidual" : 1.1854288961395816
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Ipsos",
+    "polls" : 48,
+    "cases" : 432,
+    "coverage95" : 0.9467592592592593,
+    "coverage50" : 0.5115740740740741,
+    "meanLogScore" : 4.637501742945248,
+    "meanStandardizedResidual" : 0.08954569943355101,
+    "rootMeanSquareStandardizedResidual" : 1.1326640650550939
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Novus",
+    "polls" : 56,
+    "cases" : 504,
+    "coverage95" : 0.9543650793650794,
+    "coverage50" : 0.5734126984126984,
+    "meanLogScore" : 7.78445682806204,
+    "meanStandardizedResidual" : -0.0030597541847840297,
+    "rootMeanSquareStandardizedResidual" : 0.9541049060656089
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "SCB",
+    "polls" : 7,
+    "cases" : 63,
+    "coverage95" : 0.9206349206349206,
+    "coverage50" : 0.5396825396825397,
+    "meanLogScore" : 7.5183160336716695,
+    "meanStandardizedResidual" : -0.11332136418134528,
+    "rootMeanSquareStandardizedResidual" : 1.046291926360102
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Sentio",
+    "polls" : 48,
+    "cases" : 432,
+    "coverage95" : 0.9629629629629629,
+    "coverage50" : 0.5787037037037037,
+    "meanLogScore" : 4.139786502733482,
+    "meanStandardizedResidual" : 0.03949838155943399,
+    "rootMeanSquareStandardizedResidual" : 0.9568873588885052
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Sifo",
+    "polls" : 63,
+    "cases" : 567,
+    "coverage95" : 0.8977072310405644,
+    "coverage50" : 0.5114638447971781,
+    "meanLogScore" : 5.123606928815158,
+    "meanStandardizedResidual" : 0.05352577703584968,
+    "rootMeanSquareStandardizedResidual" : 1.3297616281950035
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Skop",
+    "polls" : 29,
+    "cases" : 261,
+    "coverage95" : 0.8275862068965517,
+    "coverage50" : 0.42528735632183906,
+    "meanLogScore" : -0.23832320351377048,
+    "meanStandardizedResidual" : 0.20646188071026172,
+    "rootMeanSquareStandardizedResidual" : 1.6927416450632502
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "United Minds",
+    "polls" : 5,
+    "cases" : 45,
+    "coverage95" : 0.9777777777777777,
+    "coverage50" : 0.4666666666666667,
+    "meanLogScore" : 5.661160974124513,
+    "meanStandardizedResidual" : 0.17042646436647865,
+    "rootMeanSquareStandardizedResidual" : 0.9049860252042384
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "YouGov",
+    "polls" : 25,
+    "cases" : 225,
+    "coverage95" : 0.9155555555555556,
+    "coverage50" : 0.4488888888888889,
+    "meanLogScore" : 3.9262640940263767,
+    "meanStandardizedResidual" : 0.09688197527336087,
+    "rootMeanSquareStandardizedResidual" : 1.2043101009025314
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "fieldwork_days",
+    "name" : "1-7",
+    "polls" : 119,
+    "cases" : 1071,
+    "coverage95" : 0.9187675070028011,
+    "coverage50" : 0.484593837535014,
+    "meanLogScore" : 3.1541964023224254,
+    "meanStandardizedResidual" : 0.101907495837551,
+    "rootMeanSquareStandardizedResidual" : 1.2877052934573319
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "fieldwork_days",
+    "name" : "8-14",
+    "polls" : 168,
+    "cases" : 1512,
+    "coverage95" : 0.9226190476190477,
+    "coverage50" : 0.5277777777777778,
+    "meanLogScore" : 5.151565183209557,
+    "meanStandardizedResidual" : 0.048092265152470955,
+    "rootMeanSquareStandardizedResidual" : 1.1464143240939138
+  }, {
+    "periodId" : "eight_party_2010",
+    "candidate" : "midpoint",
+    "scope" : "fieldwork_days",
+    "name" : "15+",
+    "polls" : 83,
+    "cases" : 747,
+    "coverage95" : 0.9477911646586346,
+    "coverage50" : 0.5475234270414994,
+    "meanLogScore" : 6.984450090470222,
+    "meanStandardizedResidual" : 0.023601324872629153,
+    "rootMeanSquareStandardizedResidual" : 1.0134373495901323
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "ilr_window",
+    "scope" : "all",
+    "name" : "all",
+    "polls" : 200,
+    "cases" : 2000,
+    "coverage95" : 0.9115,
+    "coverage50" : 0.481,
+    "meanLogScore" : 3.2581141711272346,
+    "meanStandardizedResidual" : 0.06365293134407603,
+    "rootMeanSquareStandardizedResidual" : 1.2906769083592828
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "recency",
+    "scope" : "all",
+    "name" : "all",
+    "polls" : 200,
+    "cases" : 2000,
+    "coverage95" : 0.9305,
+    "coverage50" : 0.4975,
+    "meanLogScore" : 3.0354348765617027,
+    "meanStandardizedResidual" : 0.0017299020501146717,
+    "rootMeanSquareStandardizedResidual" : 1.02776259090477
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "all",
+    "name" : "all",
+    "polls" : 200,
+    "cases" : 2000,
+    "coverage95" : 0.913,
+    "coverage50" : 0.4825,
+    "meanLogScore" : 3.285757003883174,
+    "meanStandardizedResidual" : 0.06165617525955016,
+    "rootMeanSquareStandardizedResidual" : 1.2817364932189548
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "S",
+    "polls" : 200,
+    "cases" : 200,
+    "coverage95" : 0.985,
+    "coverage50" : 0.63,
+    "meanLogScore" : 3.285757003883174,
+    "meanStandardizedResidual" : -0.04244218498383384,
+    "rootMeanSquareStandardizedResidual" : 0.8089736888176399
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "M",
+    "polls" : 200,
+    "cases" : 200,
+    "coverage95" : 0.91,
+    "coverage50" : 0.445,
+    "meanLogScore" : 3.285757003883174,
+    "meanStandardizedResidual" : -0.07645933616386291,
+    "rootMeanSquareStandardizedResidual" : 1.150645998757941
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "SD",
+    "polls" : 200,
+    "cases" : 200,
+    "coverage95" : 0.935,
+    "coverage50" : 0.495,
+    "meanLogScore" : 3.285757003883174,
+    "meanStandardizedResidual" : 0.2973717409713517,
+    "rootMeanSquareStandardizedResidual" : 1.1550948584299434
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "V",
+    "polls" : 200,
+    "cases" : 200,
+    "coverage95" : 0.955,
+    "coverage50" : 0.575,
+    "meanLogScore" : 3.285757003883174,
+    "meanStandardizedResidual" : 0.12424391036029181,
+    "rootMeanSquareStandardizedResidual" : 0.9033048895476298
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "C",
+    "polls" : 200,
+    "cases" : 200,
+    "coverage95" : 0.91,
+    "coverage50" : 0.47,
+    "meanLogScore" : 3.285757003883174,
+    "meanStandardizedResidual" : -0.13887441043473708,
+    "rootMeanSquareStandardizedResidual" : 1.0892372114887499
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "KD",
+    "polls" : 200,
+    "cases" : 200,
+    "coverage95" : 0.855,
+    "coverage50" : 0.41,
+    "meanLogScore" : 3.285757003883174,
+    "meanStandardizedResidual" : 0.5153675945957608,
+    "rootMeanSquareStandardizedResidual" : 2.04693378853195
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "L",
+    "polls" : 200,
+    "cases" : 200,
+    "coverage95" : 0.93,
+    "coverage50" : 0.495,
+    "meanLogScore" : 3.285757003883174,
+    "meanStandardizedResidual" : 0.07749265681229489,
+    "rootMeanSquareStandardizedResidual" : 1.0034003168273222
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "MP",
+    "polls" : 200,
+    "cases" : 200,
+    "coverage95" : 0.93,
+    "coverage50" : 0.48,
+    "meanLogScore" : 3.285757003883174,
+    "meanStandardizedResidual" : -0.08757027635259101,
+    "rootMeanSquareStandardizedResidual" : 1.100665260250039
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "FI",
+    "polls" : 200,
+    "cases" : 200,
+    "coverage95" : 0.895,
+    "coverage50" : 0.48,
+    "meanLogScore" : 3.285757003883174,
+    "meanStandardizedResidual" : -0.2534015309688037,
+    "rootMeanSquareStandardizedResidual" : 1.1090063774002483
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "party",
+    "name" : "RESIDUAL",
+    "polls" : 200,
+    "cases" : 200,
+    "coverage95" : 0.825,
+    "coverage50" : 0.345,
+    "meanLogScore" : 3.285757003883174,
+    "meanStandardizedResidual" : 0.2008335887596309,
+    "rootMeanSquareStandardizedResidual" : 1.8642180365539271
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Demoskop",
+    "polls" : 28,
+    "cases" : 280,
+    "coverage95" : 0.9607142857142857,
+    "coverage50" : 0.5428571428571428,
+    "meanLogScore" : 5.253161501133306,
+    "meanStandardizedResidual" : -0.008815624655549543,
+    "rootMeanSquareStandardizedResidual" : 0.9332652238210418
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Inizio",
+    "polls" : 21,
+    "cases" : 210,
+    "coverage95" : 0.8952380952380953,
+    "coverage50" : 0.4857142857142857,
+    "meanLogScore" : 3.537597308093688,
+    "meanStandardizedResidual" : 0.046387056319188255,
+    "rootMeanSquareStandardizedResidual" : 1.3444645669399224
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Ipsos",
+    "polls" : 21,
+    "cases" : 210,
+    "coverage95" : 0.9333333333333333,
+    "coverage50" : 0.5285714285714286,
+    "meanLogScore" : 4.016250885477227,
+    "meanStandardizedResidual" : 0.07169343893546555,
+    "rootMeanSquareStandardizedResidual" : 1.186487934295258
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Novus",
+    "polls" : 21,
+    "cases" : 210,
+    "coverage95" : 0.9428571428571428,
+    "coverage50" : 0.5238095238095238,
+    "meanLogScore" : 6.557966896948787,
+    "meanStandardizedResidual" : -0.040081106367522,
+    "rootMeanSquareStandardizedResidual" : 1.051998840859236
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "SCB",
+    "polls" : 1,
+    "cases" : 10,
+    "coverage95" : 1.0,
+    "coverage50" : 0.5,
+    "meanLogScore" : 6.410309961555228,
+    "meanStandardizedResidual" : -0.153002161438694,
+    "rootMeanSquareStandardizedResidual" : 1.0042382244336072
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Sentio",
+    "polls" : 23,
+    "cases" : 230,
+    "coverage95" : 0.9608695652173913,
+    "coverage50" : 0.4956521739130435,
+    "meanLogScore" : 3.4686831878842894,
+    "meanStandardizedResidual" : 0.09272585442965425,
+    "rootMeanSquareStandardizedResidual" : 1.081006788597741
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Sifo",
+    "polls" : 37,
+    "cases" : 370,
+    "coverage95" : 0.8837837837837837,
+    "coverage50" : 0.46756756756756757,
+    "meanLogScore" : 2.9793529064911493,
+    "meanStandardizedResidual" : 0.024783480558750234,
+    "rootMeanSquareStandardizedResidual" : 1.3869737206618316
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "Skop",
+    "polls" : 22,
+    "cases" : 220,
+    "coverage95" : 0.8181818181818182,
+    "coverage50" : 0.34545454545454546,
+    "meanLogScore" : -2.3672779783159323,
+    "meanStandardizedResidual" : 0.22853018401696432,
+    "rootMeanSquareStandardizedResidual" : 1.837189673272659
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "United Minds",
+    "polls" : 3,
+    "cases" : 30,
+    "coverage95" : 0.9333333333333333,
+    "coverage50" : 0.4666666666666667,
+    "meanLogScore" : 2.5977504829571885,
+    "meanStandardizedResidual" : 0.16169505814897658,
+    "rootMeanSquareStandardizedResidual" : 0.9892076775514926
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "institute",
+    "name" : "YouGov",
+    "polls" : 23,
+    "cases" : 230,
+    "coverage95" : 0.908695652173913,
+    "coverage50" : 0.46956521739130436,
+    "meanLogScore" : 2.6771976128260997,
+    "meanStandardizedResidual" : 0.11002847311732145,
+    "rootMeanSquareStandardizedResidual" : 1.2711746897348684
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "fieldwork_days",
+    "name" : "1-7",
+    "polls" : 71,
+    "cases" : 710,
+    "coverage95" : 0.8985915492957747,
+    "coverage50" : 0.44647887323943664,
+    "meanLogScore" : 1.9270321991172976,
+    "meanStandardizedResidual" : 0.1349217642378633,
+    "rootMeanSquareStandardizedResidual" : 1.3949013422310645
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "fieldwork_days",
+    "name" : "8-14",
+    "polls" : 93,
+    "cases" : 930,
+    "coverage95" : 0.9075268817204301,
+    "coverage50" : 0.5021505376344086,
+    "meanLogScore" : 3.395746721916591,
+    "meanStandardizedResidual" : 0.03477273206980038,
+    "rootMeanSquareStandardizedResidual" : 1.2849728394718936
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "candidate" : "midpoint",
+    "scope" : "fieldwork_days",
+    "name" : "15+",
+    "polls" : 36,
+    "cases" : 360,
+    "coverage95" : 0.9555555555555556,
+    "coverage50" : 0.5027777777777778,
+    "meanLogScore" : 5.68132415280731,
+    "meanStandardizedResidual" : -0.013390952540824933,
+    "rootMeanSquareStandardizedResidual" : 1.011929147792059
+  } ],
+  "autocorrelation" : [ {
+    "periodId" : "eight_party_2010",
+    "lag" : 1,
+    "pairs" : 322,
+    "correlation" : 0.4086173267262027
+  }, {
+    "periodId" : "eight_party_2010",
+    "lag" : 2,
+    "pairs" : 276,
+    "correlation" : 0.4115582801023931
+  }, {
+    "periodId" : "eight_party_2010",
+    "lag" : 3,
+    "pairs" : 230,
+    "correlation" : 0.43159998064331717
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "lag" : 1,
+    "pairs" : 173,
+    "correlation" : 0.3928026617350798
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "lag" : 2,
+    "pairs" : 148,
+    "correlation" : 0.40742197515397033
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "lag" : 3,
+    "pairs" : 123,
+    "correlation" : 0.414537704428947
+  } ],
+  "dependence" : [ {
+    "periodId" : "eight_party_2010",
+    "overlappingPairs" : 942,
+    "overlappingCorrelation" : 1.0903661526072022,
+    "disjointPairs" : 797,
+    "disjointCorrelation" : 0.8376407549097132,
+    "sameInstitutePairs" : 174,
+    "sameInstituteCorrelation" : 2.5545721864755557
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "overlappingPairs" : 481,
+    "overlappingCorrelation" : 1.153865121606523,
+    "disjointPairs" : 374,
+    "disjointCorrelation" : 0.8293320724144748,
+    "sameInstitutePairs" : 128,
+    "sameInstituteCorrelation" : 2.592223364331735
+  } ],
+  "centering" : [ {
+    "periodId" : "eight_party_2010",
+    "headlineDate" : "2021-09-20",
+    "comparedDays" : 4278,
+    "headlineShiftPoints" : {
+      "S" : -0.189608871147108,
+      "M" : -0.07228232590557582,
+      "SD" : 0.2777903621577771,
+      "V" : 0.010510415742800205,
+      "C" : -0.004989039828315001,
+      "KD" : -0.038407134698803524,
+      "L" : -0.017006182499459843,
+      "MP" : 0.014099092102018762,
+      "OTHER" : 0.019893684076672802
+    },
+    "maxHeadlineShiftPoints" : 0.2777903621577771,
+    "maxDailyShiftPoints" : 0.33151865209165976
+  } ],
+  "leaveOneInstituteOut" : [ {
+    "periodId" : "eight_party_2010",
+    "institute" : "Demoskop",
+    "droppedPolls" : 143,
+    "comparedOn" : "2021-09-20",
+    "shiftPoints" : {
+      "S" : 0.013060581600615961,
+      "M" : -0.10193724491308842,
+      "SD" : -0.06784186615313814,
+      "V" : 0.2882563896478949,
+      "C" : -0.10049211102708,
+      "KD" : -0.11712942542131977,
+      "L" : -0.05465671325780841,
+      "MP" : 0.04951036030491629,
+      "OTHER" : 0.09123002921899492
+    },
+    "maxShiftPoints" : 0.2882563896478949,
+    "comparedDays" : 4231,
+    "maxDailyShiftPoints" : 0.9891755914148739,
+    "maxDailyShiftOn" : "2021-01-04",
+    "needsDisclosure" : false
+  }, {
+    "periodId" : "eight_party_2010",
+    "institute" : "Inizio",
+    "droppedPolls" : 68,
+    "comparedOn" : "2021-09-20",
+    "shiftPoints" : {
+      "S" : 0.11396427186188163,
+      "M" : -0.08405036968748192,
+      "SD" : -9.888055954618835E-4,
+      "V" : 0.14722357395212526,
+      "C" : -0.17569121847487246,
+      "KD" : -0.0401820210036572,
+      "L" : 0.004454156468580273,
+      "MP" : 0.038426058880761005,
+      "OTHER" : -0.0031556464018662744
+    },
+    "maxShiftPoints" : 0.17569121847487246,
+    "comparedDays" : 4278,
+    "maxDailyShiftPoints" : 0.6176310432726382,
+    "maxDailyShiftOn" : "2015-08-15",
+    "needsDisclosure" : false
+  }, {
+    "periodId" : "eight_party_2010",
+    "institute" : "Ipsos",
+    "droppedPolls" : 138,
+    "comparedOn" : "2021-09-16",
+    "shiftPoints" : {
+      "S" : 0.09575170385978282,
+      "M" : 0.03411152038896503,
+      "SD" : -0.11349596487313818,
+      "V" : -0.036054201991751356,
+      "C" : 0.09585934334615409,
+      "KD" : 0.09693390541569435,
+      "L" : -0.02986932119372243,
+      "MP" : -0.03466428991395398,
+      "OTHER" : -0.10857269503801614
+    },
+    "maxShiftPoints" : 0.11349596487313818,
+    "comparedDays" : 4274,
+    "maxDailyShiftPoints" : 1.019599229584479,
+    "maxDailyShiftOn" : "2010-11-16",
+    "needsDisclosure" : false
+  }, {
+    "periodId" : "eight_party_2010",
+    "institute" : "Novus",
+    "droppedPolls" : 151,
+    "comparedOn" : "2021-09-20",
+    "shiftPoints" : {
+      "S" : -0.090922968180287,
+      "M" : -0.18194968145639479,
+      "SD" : 0.1470236435549488,
+      "V" : -0.0425621453586178,
+      "C" : -0.014451273934598774,
+      "KD" : 0.03827772555941955,
+      "L" : 0.07435142394462968,
+      "MP" : 0.008107672841091595,
+      "OTHER" : 0.06212560302980208
+    },
+    "maxShiftPoints" : 0.18194968145639479,
+    "comparedDays" : 4278,
+    "maxDailyShiftPoints" : 0.855536036103544,
+    "maxDailyShiftOn" : "2016-05-19",
+    "needsDisclosure" : false
+  }, {
+    "periodId" : "eight_party_2010",
+    "institute" : "SCB",
+    "droppedPolls" : 23,
+    "comparedOn" : "2021-09-20",
+    "shiftPoints" : {
+      "S" : -0.26774515360640194,
+      "M" : -0.06872360396124577,
+      "SD" : 0.1748120562853437,
+      "V" : 0.06362671028854727,
+      "C" : 0.10476532319946763,
+      "KD" : -0.0010144762624788584,
+      "L" : 0.0026753464024458218,
+      "MP" : -0.042358049969323464,
+      "OTHER" : 0.03396184762366006
+    },
+    "maxShiftPoints" : 0.26774515360640194,
+    "comparedDays" : 4278,
+    "maxDailyShiftPoints" : 0.7467855191880197,
+    "maxDailyShiftOn" : "2014-05-13",
+    "needsDisclosure" : false
+  }, {
+    "periodId" : "eight_party_2010",
+    "institute" : "Sentio",
+    "droppedPolls" : 119,
+    "comparedOn" : "2021-09-20",
+    "shiftPoints" : {
+      "S" : 0.1969328564732784,
+      "M" : 0.10774659688016541,
+      "SD" : -0.4353194751635243,
+      "V" : -0.06987648654827439,
+      "C" : 0.2695007557503004,
+      "KD" : 0.005844671987617289,
+      "L" : 0.02518241341831029,
+      "MP" : -0.015095920407073748,
+      "OTHER" : -0.08491541239080092
+    },
+    "maxShiftPoints" : 0.4353194751635243,
+    "comparedDays" : 4278,
+    "maxDailyShiftPoints" : 0.8660870469406703,
+    "maxDailyShiftOn" : "2017-07-16",
+    "needsDisclosure" : false
+  }, {
+    "periodId" : "eight_party_2010",
+    "institute" : "Sifo",
+    "droppedPolls" : 155,
+    "comparedOn" : "2021-09-20",
+    "shiftPoints" : {
+      "S" : 0.028744354443816178,
+      "M" : 0.07296767930508707,
+      "SD" : 0.13779327870924263,
+      "V" : -0.07024624136913182,
+      "C" : -0.10622038959044566,
+      "KD" : 0.08558281218653718,
+      "L" : -0.05744268780911943,
+      "MP" : -0.10089476489711036,
+      "OTHER" : 0.009715959021142195
+    },
+    "maxShiftPoints" : 0.13779327870924263,
+    "comparedDays" : 4278,
+    "maxDailyShiftPoints" : 0.8574312636044432,
+    "maxDailyShiftOn" : "2020-04-03",
+    "needsDisclosure" : false
+  }, {
+    "periodId" : "eight_party_2010",
+    "institute" : "Skop",
+    "droppedPolls" : 81,
+    "comparedOn" : "2021-09-20",
+    "shiftPoints" : {
+      "S" : -0.03432795639413655,
+      "M" : 0.006708031395746161,
+      "SD" : 0.25540091857084235,
+      "V" : -0.16979830743245117,
+      "C" : -0.10657008373481247,
+      "KD" : -0.03170900238200414,
+      "L" : -0.013635707821471943,
+      "MP" : 0.06590032285270375,
+      "OTHER" : 0.028031784945587557
+    },
+    "maxShiftPoints" : 0.25540091857084235,
+    "comparedDays" : 4278,
+    "maxDailyShiftPoints" : 0.524799033451032,
+    "maxDailyShiftOn" : "2018-09-01",
+    "needsDisclosure" : false
+  }, {
+    "periodId" : "eight_party_2010",
+    "institute" : "United Minds",
+    "droppedPolls" : 74,
+    "comparedOn" : "2021-09-20",
+    "shiftPoints" : {
+      "S" : -1.4739960480625314E-5,
+      "M" : 6.914077799891061E-5,
+      "SD" : -2.293279696274908E-5,
+      "V" : 4.3728807327170216E-5,
+      "C" : 3.485053655438719E-5,
+      "KD" : -7.528107817034169E-5,
+      "L" : -4.462957887563235E-5,
+      "MP" : 3.652543482068893E-5,
+      "OTHER" : -2.666214219426699E-5
+    },
+    "maxShiftPoints" : 7.528107817034169E-5,
+    "comparedDays" : 4278,
+    "maxDailyShiftPoints" : 0.5641596992599425,
+    "maxDailyShiftOn" : "2010-09-15",
+    "needsDisclosure" : false
+  }, {
+    "periodId" : "eight_party_2010",
+    "institute" : "YouGov",
+    "droppedPolls" : 86,
+    "comparedOn" : "2021-09-20",
+    "shiftPoints" : {
+      "S" : 5.050166529834144E-4,
+      "M" : 4.2266288812342623E-4,
+      "SD" : -0.001417234403778167,
+      "V" : 9.336833375783726E-6,
+      "C" : 6.554224945851672E-4,
+      "KD" : 3.0832768254462906E-4,
+      "L" : 1.8252858626821578E-4,
+      "MP" : 7.611069870789855E-4,
+      "OTHER" : -0.0014271677211716849
+    },
+    "maxShiftPoints" : 0.0014271677211716849,
+    "comparedDays" : 4278,
+    "maxDailyShiftPoints" : 0.9629470299128009,
+    "maxDailyShiftOn" : "2016-01-16",
+    "needsDisclosure" : false
+  } ]
+}

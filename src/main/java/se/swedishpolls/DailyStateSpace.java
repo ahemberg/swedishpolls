@@ -23,6 +23,17 @@ public final class DailyStateSpace {
 
   public record Parameters(double walkVariance, double houseScale, double covarianceMultiplier) {}
 
+  /**
+   * The ensemble a cycle's level is centered on. {@link #EQUAL_INSTITUTE} is the registered
+   * convention; {@link #POLL_COUNT} is the sensitivity rerun, where an institute carries the share
+   * of the cycle's polls it published. Centering is a change of reference, not of fit: the
+   * likelihood, the filtered states and the predictive densities are the same either way.
+   */
+  public enum Centering {
+    EQUAL_INSTITUTE,
+    POLL_COUNT
+  }
+
   /** Opinion state of one day, centered over the institutes active in its cycle. */
   public record Day(
       LocalDate date,
@@ -62,6 +73,18 @@ public final class DailyStateSpace {
     }
   }
 
+  /** Rejects a parameter point no fit may run at, before any observation is read. */
+  static void checkParameters(Parameters parameters) {
+    if (!Double.isFinite(parameters.walkVariance())
+        || parameters.walkVariance() < 0
+        || !Double.isFinite(parameters.houseScale())
+        || parameters.houseScale() <= 0
+        || !Double.isFinite(parameters.covarianceMultiplier())
+        || parameters.covarianceMultiplier() <= 0)
+      throw new IllegalArgumentException(
+          "Walk variance must be finite and nonnegative; house scale and covariance multiplier finite and positive");
+  }
+
   /** The house-effect identity of a poll: its documented method era, otherwise its institute. */
   public static String effectIdentity(PollCsv.Poll poll) {
     return poll.methodEra() == null ? poll.institute() : poll.methodEra();
@@ -70,7 +93,16 @@ public final class DailyStateSpace {
   /** Returns internal daily states from the period start through the last observation midpoint. */
   public static Fit fit(
       PollObservations.Batch batch, List<LocalDate> elections, Parameters parameters) {
-    var prepared = prepare(batch, elections, parameters);
+    return fit(batch, elections, parameters, Centering.EQUAL_INSTITUTE);
+  }
+
+  /** The same fit, centered on the given ensemble. */
+  public static Fit fit(
+      PollObservations.Batch batch,
+      List<LocalDate> elections,
+      Parameters parameters,
+      Centering centering) {
+    var prepared = prepare(batch, elections, parameters, centering);
     var forward = forward(prepared, parameters, true);
     var smoothed = smooth(prepared, forward, parameters);
     return new Fit(batch, parameters, smoothed.days(), smoothed.cycles(), forward.logLikelihood());
@@ -83,7 +115,9 @@ public final class DailyStateSpace {
    */
   public static double logLikelihood(
       PollObservations.Batch batch, List<LocalDate> elections, Parameters parameters) {
-    return forward(prepare(batch, elections, parameters), parameters, false).logLikelihood();
+    return forward(
+            prepare(batch, elections, parameters, Centering.EQUAL_INSTITUTE), parameters, false)
+        .logLikelihood();
   }
 
   private record Prepared(
@@ -95,15 +129,11 @@ public final class DailyStateSpace {
       List<SimpleMatrix> centers) {}
 
   private static Prepared prepare(
-      PollObservations.Batch batch, List<LocalDate> elections, Parameters parameters) {
-    if (!Double.isFinite(parameters.walkVariance())
-        || parameters.walkVariance() < 0
-        || !Double.isFinite(parameters.houseScale())
-        || parameters.houseScale() <= 0
-        || !Double.isFinite(parameters.covarianceMultiplier())
-        || parameters.covarianceMultiplier() <= 0)
-      throw new IllegalArgumentException(
-          "Walk variance must be finite and nonnegative; house scale and covariance multiplier finite and positive");
+      PollObservations.Batch batch,
+      List<LocalDate> elections,
+      Parameters parameters,
+      Centering centering) {
+    checkParameters(parameters);
     if (batch.observations().isEmpty())
       throw new IllegalArgumentException("No observations to fit");
     int dimension = batch.components().size() - 1;
@@ -128,7 +158,7 @@ public final class DailyStateSpace {
             .toList();
     var start = batch.period().effectiveFrom();
     var last = observations.getLast().midpoint();
-    var layouts = layouts(observations, elections, start, last, dimension);
+    var layouts = layouts(observations, elections, start, last, dimension, centering);
     var centers = layouts.stream().map(DailyStateSpace::center).toList();
     return new Prepared(
         start,
@@ -239,7 +269,8 @@ public final class DailyStateSpace {
       List<LocalDate> elections,
       LocalDate start,
       LocalDate last,
-      int dimension) {
+      int dimension,
+      Centering centering) {
     var starts = new ArrayList<>(List.of(start));
     LocalDate previous = null;
     for (var election : elections) {
@@ -253,17 +284,27 @@ public final class DailyStateSpace {
       var from = starts.get(cycle);
       var to = cycle + 1 < starts.size() ? starts.get(cycle + 1).minusDays(1) : last;
       var eras = new TreeMap<String, TreeSet<String>>();
+      var polls = new TreeMap<String, Integer>();
+      int cyclePolls = 0;
       for (var observation : observations)
-        if (!observation.midpoint().isBefore(from) && !observation.midpoint().isAfter(to))
+        if (!observation.midpoint().isBefore(from) && !observation.midpoint().isAfter(to)) {
           eras.computeIfAbsent(observation.poll().institute(), institute -> new TreeSet<>())
               .add(effectIdentity(observation.poll()));
+          polls.merge(effectIdentity(observation.poll()), 1, Integer::sum);
+          cyclePolls++;
+        }
       var effects = eras.values().stream().flatMap(TreeSet::stream).distinct().sorted().toList();
       var weights = new double[effects.size()];
-      // Every active institute carries 1/H, split equally over the method eras it used in this
-      // cycle.
-      for (var institute : eras.values())
-        for (var era : institute)
-          weights[effects.indexOf(era)] += 1.0 / (eras.size() * institute.size());
+      if (centering == Centering.POLL_COUNT)
+        // Each era carries its own share of the cycle's polls, so a frequent institute weighs more.
+        for (int e = 0; e < effects.size(); e++)
+          weights[e] = polls.get(effects.get(e)) / (double) cyclePolls;
+      else
+        // Every active institute carries 1/H, split equally over the method eras it used in this
+        // cycle.
+        for (var institute : eras.values())
+          for (var era : institute)
+            weights[effects.indexOf(era)] += 1.0 / (eras.size() * institute.size());
       layouts.add(
           new Layout(from, to, dimension, effects, Arrays.stream(weights).boxed().toList()));
     }
