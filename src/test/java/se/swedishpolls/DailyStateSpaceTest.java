@@ -513,6 +513,188 @@ class DailyStateSpaceTest {
     assertMatrix(covariance, batch.observations().getFirst().covariance(), 0);
   }
 
+  /**
+   * One pinned numerical baseline of the sequential filter. The other fixtures compare against the
+   * dense reference at 1e-11, which is loose enough to absorb a reordered covariance update; these
+   * values pin the sequential path against itself so a change of floating-point evaluation order is
+   * measured instead.
+   */
+  private record Scenario(
+      String name,
+      PollObservations.Batch batch,
+      List<LocalDate> elections,
+      DailyStateSpace.Parameters parameters,
+      Pinned pinned) {}
+
+  /** The five pinned values of one scenario, in the order the assertions read them. */
+  private record Pinned(
+      double logLikelihood,
+      double firstFiltered,
+      double lastFiltered,
+      double middleSmoothed,
+      double lastCycle) {}
+
+  private static final String CROSSING_ELECTION =
+      row("Sifo", 99, 101, "22")
+          + row("Novus", 1, 3, "20")
+          + row("Novus", 0, 4, "19")
+          + row("Sifo", 2, 2, "21")
+          + row("Novus", 100, 100, "18");
+
+  private static List<Scenario> scenarios() {
+    var ensemble = new StringBuilder();
+    for (int week = 0; week < 12; week++)
+      ensemble
+          .append(row("Sifo", week * 7, week * 7 + 1, "20"))
+          .append(row("Skop", week * 7 + 4, week * 7 + 5, "20"));
+    var eras = new StringBuilder();
+    var eraStart = LocalDate.of(2019, 6, 1);
+    for (int week = 0; week < 6; week++)
+      eras.append(era("Demoskop", eraStart.plusDays(week * 7L), "18"))
+          .append(era("Demoskop", eraStart.plusDays(200 + week * 7), "24"))
+          .append(era("Inizio", eraStart.plusDays(210 + week * 7), "24"))
+          .append(era("Novus", eraStart.plusDays(week * 7 + 3), "21"));
+    var eraPeriod =
+        new Roster.CoveragePeriod(
+            "era",
+            eraStart,
+            eraStart.plusDays(400),
+            PollCsv.PARTIES,
+            false,
+            false,
+            "https://example.invalid");
+    return List.of(
+        new Scenario(
+            "diffuse first update, eight-party roster",
+            batch(false, 30, row("Novus", 0, 0, "20")),
+            ELECTIONS,
+            PARAMETERS,
+            new Pinned(
+                -13.495594686696005,
+                0.0571244835430542,
+                0.0571244835430542,
+                0.0571244835430542,
+                0)),
+        new Scenario(
+            "diffuse first update, FI roster",
+            batch(true, 30, row("Novus", 0, 0, "20")),
+            ELECTIONS,
+            PARAMETERS,
+            new Pinned(
+                -15.661188190278397,
+                0.14451563471988774,
+                0.14451563471988774,
+                0.14451563471988774,
+                0)),
+        new Scenario(
+            "election reset, eight-party roster",
+            batch(false, 200, CROSSING_ELECTION),
+            ELECTIONS,
+            PARAMETERS,
+            new Pinned(
+                -22.07554850718283,
+                11.667261889578034,
+                0.02813020899770803,
+                0.31128483931287243,
+                0.052338759670152474)),
+        new Scenario(
+            "election reset, FI roster",
+            batch(true, 200, CROSSING_ELECTION),
+            ELECTIONS,
+            PARAMETERS,
+            new Pinned(
+                -26.834201412804582,
+                12.375,
+                0.06750374844349089,
+                0.3401910295958315,
+                0.10291234119299039)),
+        new Scenario(
+            "method eras",
+            PollObservations.prepare(eraPeriod, PollCsv.parse(PollCsvTest.csv(eras.toString()))),
+            List.of(),
+            PARAMETERS,
+            new Pinned(
+                87.47023718284787,
+                0.7644770020257263,
+                0.18381071596173915,
+                0.35769173941581844,
+                0.45469751828977)),
+        new Scenario(
+            "sparse institute",
+            batch(false, 100, ensemble + row("Novus", 2, 3, "26")),
+            ELECTIONS,
+            new DailyStateSpace.Parameters(0.003, 0.05, 1.5),
+            new Pinned(
+                115.35330006075307,
+                0.061368748604460954,
+                0.029663551547129706,
+                0.021158780728992875,
+                0.006802736130037807)),
+        new Scenario(
+            "zero walk variance, FI roster",
+            batch(true, 30, row("Novus", 0, 0, "20") + row("Sifo", 2, 4, "18")),
+            ELECTIONS,
+            new DailyStateSpace.Parameters(0, 0.5, 2),
+            new Pinned(
+                -21.378744846267544,
+                0.4997910406107155,
+                0.09712580249798314,
+                0.09712580249798317,
+                0.12538144798117037)));
+  }
+
+  @Test
+  void theCovarianceUpdateHoldsItsPinnedNumericsOnEveryRegressionScenario() {
+    for (var scenario : scenarios()) {
+      var batch = scenario.batch();
+      var fit = DailyStateSpace.fit(batch, scenario.elections(), scenario.parameters());
+      var pinned = scenario.pinned();
+      // The tuning gate compares the two paths with Double.compare, so they must agree bit for bit.
+      assertEquals(
+          fit.logLikelihood(),
+          DailyStateSpace.logLikelihood(batch, scenario.elections(), scenario.parameters()),
+          0,
+          scenario::name);
+      assertPinned(scenario, "logLikelihood", pinned.logLikelihood(), fit.logLikelihood());
+      assertPinned(
+          scenario,
+          "first filtered covariance",
+          pinned.firstFiltered(),
+          fit.days().getFirst().filteredCovariance().normF());
+      assertPinned(
+          scenario,
+          "last filtered covariance",
+          pinned.lastFiltered(),
+          fit.days().getLast().filteredCovariance().normF());
+      assertPinned(
+          scenario,
+          "middle smoothed covariance",
+          pinned.middleSmoothed(),
+          fit.days().get(fit.days().size() / 2).smoothedCovariance().normF());
+      assertPinned(
+          scenario,
+          "last cycle smoothed covariance",
+          pinned.lastCycle(),
+          fit.cycles().getLast().smoothedCovariance().normF());
+      // Every retained covariance is factorized inside the fit, so reaching here already proves it
+      // finite and positive definite. Symmetry is exact rather than merely within tolerance.
+      assertEquals(0, fit.days().getLast().filteredCovariance().symmetryError(), scenario::name);
+    }
+  }
+
+  /**
+   * Pinned values are recorded to full precision, so the tolerance only admits a reordered
+   * floating-point evaluation, not a changed result.
+   */
+  private static void assertPinned(
+      Scenario scenario, String value, double expected, double actual) {
+    assertEquals(
+        expected,
+        actual,
+        Math.abs(expected) * 1e-12,
+        () -> scenario.name() + " " + value + " was " + actual);
+  }
+
   private static PollObservations.Batch replace(
       PollObservations.Batch batch, PollObservations.Observation observation) {
     return new PollObservations.Batch(
