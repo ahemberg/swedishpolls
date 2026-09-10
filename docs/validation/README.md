@@ -978,6 +978,8 @@ line. Each draw allocates all 349 national seats with the registered modified
 Sainte-Laguë rule, first divisor 1.2 and deterministic tie order. The MP threshold
 probability ranges from 0.4113 to 0.4280; the Tido coalition's majority probability
 ranges from 0.5662 to 0.5814. Both ranges pass the frozen 0.03 precision bound.
+[probability-precision.json](probability-precision.json) records the fitted period,
+date, components, input and implementation digests, allocation rule and every seed.
 
 The drift study selects the last eligible development poll from each of the ten
 institutes. Removing a row measures a deletion and, in reverse, a newly added row. A
@@ -990,11 +992,10 @@ retain SHA-256 `27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608
 The production-shaped resource run computes corrected history, joint component
 uncertainty, repeated-seed threshold and majority probabilities and the comparable
 remainder once, using only pre-2022 election references and excluding database setup
-and evidence parsing. On amd64 with Java 25.0.4 it took 62,727 ms for 1,038 observations,
+and evidence parsing. On amd64 with Java 25.0.4 it took 99,094 ms for 1,038 observations,
 4,278 days and 10,000 final draws per seed. The sum of peak-used JVM heap pools was
-417,485,320 bytes. This
-misses the registered ten-second optimization target; that target is not an
-unconditional release gate.
+484,835,576 bytes. This misses the registered ten-second optimization target; that
+target is not an unconditional release gate.
 
 [development-gates.json](development-gates.json) contains the complete result and
 evidence hashes. Conditional predictive coverage is inside both registered bands, so

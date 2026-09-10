@@ -13,7 +13,7 @@
     "cases" : 90000,
     "seeds" : [ 20260908 ],
     "evidence" : "docs/validation/uncertainty.json",
-    "evidenceSha256" : "a08300e32e5ba3f85adf8ec9198d81a6c5458a6a07c5850f7ae919dccd8c0d39",
+    "evidenceSha256" : "d18545eadd4ba9d095c7cf357e2dee9ba87c8f6a406c3dcc48fca3789e414c9c",
     "rationale" : "A rerun on one implementation and architecture must return every retained draw unchanged."
   }, {
     "name" : "cross_architecture_reproduction",
@@ -33,7 +33,7 @@
     "cases" : 77004,
     "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
     "evidence" : "docs/validation/uncertainty.json",
-    "evidenceSha256" : "a08300e32e5ba3f85adf8ec9198d81a6c5458a6a07c5850f7ae919dccd8c0d39",
+    "evidenceSha256" : "d18545eadd4ba9d095c7cf357e2dee9ba87c8f6a406c3dcc48fca3789e414c9c",
     "rationale" : "The Monte Carlo error of a published interval endpoint at 10000 draws per day. It bounds how much of a reported interval is sampling noise rather than estimated uncertainty, and it is measured, never enlarged afterwards."
   }, {
     "name" : "coverage_boundary_stability",
@@ -62,8 +62,8 @@
     "maxObservedError" : 0.016699999999999993,
     "cases" : 80000,
     "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
-    "evidence" : "docs/validation/uncertainty.json",
-    "evidenceSha256" : "a08300e32e5ba3f85adf8ec9198d81a6c5458a6a07c5850f7ae919dccd8c0d39",
+    "evidence" : "docs/validation/probability-precision.json",
+    "evidenceSha256" : "8bb32e01021192866ba2c80cde69770066dcb43649db795899a36182dedbd353",
     "rationale" : "Largest repeated-seed range among inclusive 4% probabilities from final-day joint draws."
   }, {
     "name" : "majority_probability_precision",
@@ -72,8 +72,8 @@
     "maxObservedError" : 0.015199999999999991,
     "cases" : 80000,
     "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
-    "evidence" : "docs/validation/uncertainty.json",
-    "evidenceSha256" : "a08300e32e5ba3f85adf8ec9198d81a6c5458a6a07c5850f7ae919dccd8c0d39",
+    "evidence" : "docs/validation/probability-precision.json",
+    "evidenceSha256" : "8bb32e01021192866ba2c80cde69770066dcb43649db795899a36182dedbd353",
     "rationale" : "Repeated-seed range of the registered coalition's inclusive 175-seat probability after national modified Sainte-Lague allocation."
   }, {
     "name" : "snapshot_drift",
@@ -265,6 +265,11 @@
     } ]
   },
   "probabilityPrecision" : {
+    "periodId" : "eight_party_2010",
+    "date" : "2021-09-20",
+    "inputRowsSha256" : "8c3b3db1648d6a61a0f078e2155a9b139be94920a1a7e2c8b8fd8a0d99df04d5",
+    "implementationSha256" : "2da958caa7035a0f04d83f80633ea213d30c63ea92ca9960205be07aef70e562",
+    "components" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER" ],
     "rules" : {
       "seats" : 349,
       "thresholdPercent" : 4.0,
@@ -381,8 +386,8 @@
     } ]
   },
   "resources" : {
-    "runtimeMillis" : 62727,
-    "peakHeapBytes" : 417485320,
+    "runtimeMillis" : 99094,
+    "peakHeapBytes" : 484835576,
     "targetMillis" : 10000,
     "inputPolls" : 1038,
     "estimatedDays" : 4278,

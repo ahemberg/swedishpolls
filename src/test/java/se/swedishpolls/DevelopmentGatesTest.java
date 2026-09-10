@@ -20,6 +20,8 @@ class DevelopmentGatesTest {
     var uncertainty = write(directory, "uncertainty.json", uncertainty(0));
     var diagnostics = write(directory, "diagnostics.json", diagnostics(0.89));
     var architectures = write(directory, "cross-architecture.json", architectures());
+    var probability =
+        write(directory, "probability-precision.json", DevelopmentGates.report(precision()));
     var report =
         DevelopmentGates.evaluate(
             protocol,
@@ -27,8 +29,8 @@ class DevelopmentGatesTest {
             uncertainty,
             diagnostics,
             architectures,
+            probability,
             drift(),
-            precision(),
             resources());
     assertEquals(DevelopmentGates.FALLBACK_REQUIRED, report.uncertaintyFallback());
     assertTrue(report.gate().blocked());
@@ -42,8 +44,8 @@ class DevelopmentGatesTest {
             uncertainty,
             diagnostics,
             architectures,
+            probability,
             drift(),
-            precision(),
             resources());
     assertEquals(DevelopmentGates.FALLBACK_NOT_REQUIRED, passed.uncertaintyFallback());
     assertFalse(passed.gate().blocked());
@@ -57,8 +59,8 @@ class DevelopmentGatesTest {
             uncertainty,
             diagnostics,
             architectures,
+            probability,
             drift(),
-            precision(),
             resources());
     assertTrue(inexact.gate().blocked());
     assertTrue(
@@ -67,17 +69,26 @@ class DevelopmentGatesTest {
   }
 
   @Test
-  void probabilityBoundariesAreInclusiveAndSeatAllocationCloses() {
+  void probabilityBoundariesAreInclusiveAndAllocationUsesEveryRegisteredDivisor() {
     assertEquals(
         2.0 / 3,
         DevelopmentGates.probabilityAtOrAbove(
             new double[] {Math.nextDown(4.0), 4.0, Math.nextUp(4.0)}, 4.0));
     assertEquals(2.0 / 3, DevelopmentGates.probabilityAtOrAbove(new double[] {174, 175, 176}, 175));
     assertEquals(0.005, DevelopmentGates.monteCarloStandardError(10_000));
-    var rules = new DevelopmentGates.AllocationRules(349, 4, 1.2, 175, List.of("A", "B", "C"));
-    var seats = DevelopmentGates.allocate(Map.of("A", 50.0, "B", 46.0, "C", 4.0), rules);
-    assertEquals(349, seats.values().stream().mapToInt(Integer::intValue).sum());
-    assertTrue(seats.containsKey("C"));
+    var rules = new DevelopmentGates.AllocationRules(5, 4, 1.2, 3, List.of("A", "B"));
+    assertEquals(
+        Map.of("A", 3, "B", 2), DevelopmentGates.allocate(Map.of("A", 50.0, "B", 50.0), rules));
+    var firstDivisor = new DevelopmentGates.AllocationRules(2, 4, 1.2, 2, List.of("A", "B"));
+    assertEquals(
+        Map.of("A", 2, "B", 0),
+        DevelopmentGates.allocate(Map.of("A", 70.0, "B", 25.0), firstDivisor));
+    var unmodified = new DevelopmentGates.AllocationRules(2, 4, 1.0, 2, List.of("A", "B"));
+    assertEquals(
+        Map.of("A", 1, "B", 1),
+        DevelopmentGates.allocate(Map.of("A", 70.0, "B", 25.0), unmodified));
+    var threshold = new DevelopmentGates.AllocationRules(1, 4, 1.2, 1, List.of("A", "B"));
+    assertEquals(Map.of("B", 1), DevelopmentGates.allocate(Map.of("A", 3.9, "B", 4.0), threshold));
   }
 
   private static Path write(Path directory, String name, String content) throws Exception {
@@ -119,6 +130,7 @@ class DevelopmentGatesTest {
             "tie_order": ["A", "B"]
           },
           "resource_measurement": {"full_estimator_target_millis": 10},
+          "diagnostics": {"residual_lags": [1, 2, 3]},
           "predictive_coverage95": [0.9, 0.98],
           "predictive_coverage50": [0.4, 0.6]
         }
@@ -131,6 +143,8 @@ class DevelopmentGatesTest {
           "protocolVersion": "test",
           "gate": {"blocked": false, "reasons": []},
           "periods": [{
+            "periodId": "period",
+            "supported": true,
             "stability": [{
               "comparedDays": 1,
               "maxShiftPoints": {"S": 0.1}
@@ -145,6 +159,15 @@ class DevelopmentGatesTest {
         {
           "protocolVersion": "test",
           "gate": {"blocked": false, "reasons": []},
+          "periods": [{
+            "periodId": "period",
+            "headline": {"date": "2020-01-01"},
+            "reproduction": {
+              "components": ["A", "B"],
+              "inputRowsSha256": "input",
+              "implementationSha256": "implementation"
+            }
+          }],
           "proposedTolerances": [
             {
               "name": "test:seeded_reproduction",
@@ -214,6 +237,11 @@ class DevelopmentGatesTest {
   private static DevelopmentGates.ProbabilityPrecision precision() {
     var rules = new DevelopmentGates.AllocationRules(349, 4, 1.2, 175, List.of("A", "B"));
     return new DevelopmentGates.ProbabilityPrecision(
+        "period",
+        LocalDate.of(2020, 1, 1),
+        "input",
+        "implementation",
+        List.of("A", "B"),
         rules,
         List.of("A"),
         10_000,

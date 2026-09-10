@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -169,14 +170,27 @@ public final class DevelopmentGates {
   }
 
   public record ProbabilityPrecision(
+      String periodId,
+      LocalDate date,
+      String inputRowsSha256,
+      String implementationSha256,
+      List<String> components,
       AllocationRules rules,
       List<String> majorityCoalition,
       int drawsPerSeed,
       List<ProbabilityRun> runs) {
     public ProbabilityPrecision {
+      components = List.copyOf(components);
       majorityCoalition = List.copyOf(majorityCoalition);
       runs = List.copyOf(runs);
-      if (drawsPerSeed < 1 || runs.size() < 2 || majorityCoalition.isEmpty())
+      if (periodId == null
+          || date == null
+          || inputRowsSha256 == null
+          || implementationSha256 == null
+          || components.isEmpty()
+          || drawsPerSeed < 1
+          || runs.size() < 2
+          || majorityCoalition.isEmpty())
         throw new IllegalArgumentException("Probability precision needs repeated joint draws");
     }
 
@@ -207,6 +221,11 @@ public final class DevelopmentGates {
       double maximum =
           runs.stream().mapToDouble(ProbabilityRun::majorityProbability).max().orElseThrow();
       return maximum - minimum;
+    }
+
+    @Override
+    public List<String> components() {
+      return List.copyOf(components);
     }
 
     @Override
@@ -349,8 +368,8 @@ public final class DevelopmentGates {
       Path uncertaintyFile,
       Path diagnosticsFile,
       Path crossArchitectureFile,
+      Path probabilityPrecisionFile,
       Drift drift,
-      ProbabilityPrecision probabilityPrecision,
       Resources resources) {
     try {
       var protocol = JSON.readTree(Files.readAllBytes(protocolFile));
@@ -358,6 +377,7 @@ public final class DevelopmentGates {
       var uncertainty = JSON.readTree(Files.readAllBytes(uncertaintyFile));
       var diagnostics = JSON.readTree(Files.readAllBytes(diagnosticsFile));
       var crossArchitecture = crossArchitecture(crossArchitectureFile);
+      var probabilityPrecision = probabilityPrecision(probabilityPrecisionFile);
       if (!"frozen-development".equals(required(protocol, "tolerance_status").asString()))
         throw new IllegalArgumentException("Development tolerances are not frozen");
       var limits = required(protocol, "resolved_tolerances");
@@ -372,6 +392,7 @@ public final class DevelopmentGates {
               .seeds()
               .equals(JointUncertainty.precisionSeeds(uncertaintyRules)))
         throw new IllegalArgumentException("Probability precision used unregistered rules");
+      validateProbabilityEvidence(probabilityPrecision, uncertainty);
       var tolerances = new ArrayList<Tolerance>();
       var sameArchitecture =
           proposed(
@@ -436,8 +457,8 @@ public final class DevelopmentGates {
               probabilityPrecision.maximumThresholdSpread(),
               (long) probabilityPrecision.drawsPerSeed() * probabilityPrecision.runs().size(),
               probabilityPrecision.seeds(),
-              uncertaintyFile.toString(),
-              sha256(uncertaintyFile),
+              probabilityPrecisionFile.toString(),
+              sha256(probabilityPrecisionFile),
               "Largest repeated-seed range among inclusive 4% probabilities from final-day joint"
                   + " draws."));
       tolerances.add(
@@ -448,8 +469,8 @@ public final class DevelopmentGates {
               probabilityPrecision.majoritySpread(),
               (long) probabilityPrecision.drawsPerSeed() * probabilityPrecision.runs().size(),
               probabilityPrecision.seeds(),
-              uncertaintyFile.toString(),
-              sha256(uncertaintyFile),
+              probabilityPrecisionFile.toString(),
+              sha256(probabilityPrecisionFile),
               "Repeated-seed range of the registered coalition's inclusive 175-seat probability"
                   + " after national modified Sainte-Lague allocation."));
       tolerances.add(
@@ -474,7 +495,7 @@ public final class DevelopmentGates {
       requireProtocolVersion(protocol, coverage, "coverage");
       requireProtocolVersion(protocol, uncertainty, "uncertainty");
       requireProtocolVersion(protocol, diagnostics, "diagnostics");
-      addDiagnosticReasons(reasons, protocol, diagnostics);
+      addDiagnosticReasons(reasons, protocol, coverage, diagnostics);
       for (var tolerance : tolerances)
         if (!tolerance.passes())
           reasons.add(
@@ -507,8 +528,7 @@ public final class DevelopmentGates {
     }
   }
 
-  private static void addGateReasons(
-      LinkedHashSet<String> reasons, JsonNode evidence, String source) {
+  private static void addGateReasons(Set<String> reasons, JsonNode evidence, String source) {
     var gate = required(evidence, "gate");
     var upstream = required(gate, "reasons");
     if (required(gate, "blocked").booleanValue() != !upstream.isEmpty())
@@ -524,7 +544,7 @@ public final class DevelopmentGates {
   }
 
   private static void addDiagnosticReasons(
-      LinkedHashSet<String> reasons, JsonNode protocol, JsonNode diagnostics) {
+      Set<String> reasons, JsonNode protocol, JsonNode coverage, JsonNode diagnostics) {
     var rules = required(protocol, "resolved_diagnostic_gates");
     if (required(rules, "autocorrelation_explanation").asString().isBlank())
       throw new IllegalArgumentException("Residual autocorrelation needs an explanation");
@@ -539,11 +559,13 @@ public final class DevelopmentGates {
     int minimumCases = required(rules, "minimum_subgroup_cases").intValue();
     var scopes = new LinkedHashSet<String>();
     var periods = new LinkedHashSet<String>();
+    for (var period : required(coverage, "periods"))
+      if (required(period, "supported").booleanValue())
+        periods.add(required(period, "periodId").asString());
     for (var row : required(diagnostics, "misfit")) {
       if (!"midpoint".equals(required(row, "candidate").asString())) continue;
       var scope = required(row, "scope").asString();
       var period = required(row, "periodId").asString();
-      periods.add(period);
       scopes.add(period + ":" + scope);
       if ("all".equals(scope)) continue;
       var label = period + " " + scope + " " + required(row, "name").asString();
@@ -576,10 +598,39 @@ public final class DevelopmentGates {
         reasons.add(period + " residual autocorrelation at lag " + lag + " is " + correlation);
     }
     for (var period : periods)
-      for (int lag : List.of(1, 2, 3))
+      for (var lagNode : required(required(protocol, "diagnostics"), "residual_lags")) {
+        int lag = lagNode.intValue();
         if (!lags.contains(period + ":" + lag))
           throw new IllegalArgumentException(
               "Missing residual autocorrelation for " + period + " lag " + lag);
+      }
+  }
+
+  private static void validateProbabilityEvidence(
+      ProbabilityPrecision precision, JsonNode uncertainty) {
+    JsonNode published = null;
+    for (var period : required(uncertainty, "periods"))
+      if (precision.periodId().equals(required(period, "periodId").asString())) published = period;
+    if (published == null)
+      throw new IllegalArgumentException(
+          "Probability precision period has no uncertainty evidence");
+    var reproduction = required(published, "reproduction");
+    var expectedComponents = strings(required(reproduction, "components"));
+    if (!precision
+            .date()
+            .toString()
+            .equals(required(required(published, "headline"), "date").asString())
+        || !precision.inputRowsSha256().equals(required(reproduction, "inputRowsSha256").asString())
+        || !precision
+            .implementationSha256()
+            .equals(required(reproduction, "implementationSha256").asString())
+        || !precision.components().equals(expectedComponents))
+      throw new IllegalArgumentException("Probability precision does not match its fitted run");
+    var allocated =
+        expectedComponents.stream().filter(precision.rules().tieOrder()::contains).toList();
+    for (var run : precision.runs())
+      if (!new ArrayList<>(run.thresholdProbabilities().keySet()).equals(allocated))
+        throw new IllegalArgumentException("Probability precision uses the wrong component set");
   }
 
   private static Tolerance proposed(
@@ -677,6 +728,7 @@ public final class DevelopmentGates {
 
   /** Measures threshold and majority probabilities from repeated final-day joint draws. */
   public static ProbabilityPrecision probabilityPrecision(
+      JointUncertainty.Estimated estimated,
       List<JointUncertainty.Draws> repeats,
       List<Long> seeds,
       AllocationRules rules,
@@ -684,6 +736,10 @@ public final class DevelopmentGates {
     if (repeats.size() != seeds.size() || repeats.size() < 2)
       throw new IllegalArgumentException("Probability precision needs one run per seed");
     var first = repeats.getFirst();
+    if (!estimated.periodId().equals(first.periodId())
+        || !estimated.finalDraws().date().equals(first.date())
+        || !estimated.finalDraws().components().equals(first.components()))
+      throw new IllegalArgumentException("Probability precision does not match its fitted run");
     var runs = new ArrayList<ProbabilityRun>();
     for (int repeat = 0; repeat < repeats.size(); repeat++) {
       var draws = repeats.get(repeat);
@@ -692,17 +748,19 @@ public final class DevelopmentGates {
           || !draws.components().equals(first.components())
           || draws.count() != first.count())
         throw new IllegalArgumentException("Probability runs estimate different final days");
-      var thresholdCounts = new LinkedHashMap<String, Integer>();
-      for (var component : rules.tieOrder())
-        if (draws.components().contains(component)) thresholdCounts.put(component, 0);
+      var allocatedComponents =
+          rules.tieOrder().stream().filter(draws.components()::contains).toList();
+      var thresholdCounts = new int[allocatedComponents.size()];
       int majorities = 0;
       for (int draw = 0; draw < draws.count(); draw++) {
         var shares = new LinkedHashMap<String, Double>();
-        for (var component : thresholdCounts.keySet()) {
+        for (int componentIndex = 0;
+            componentIndex < allocatedComponents.size();
+            componentIndex++) {
+          var component = allocatedComponents.get(componentIndex);
           double share = draws.shares().get(draw, draws.components().indexOf(component));
           shares.put(component, share);
-          if (share >= rules.thresholdPercent())
-            thresholdCounts.put(component, thresholdCounts.get(component) + 1);
+          if (share >= rules.thresholdPercent()) thresholdCounts[componentIndex]++;
         }
         var seats = allocate(shares, rules);
         int coalitionSeats =
@@ -712,12 +770,23 @@ public final class DevelopmentGates {
         if (coalitionSeats >= rules.majoritySeats()) majorities++;
       }
       var thresholds = new LinkedHashMap<String, Double>();
-      thresholdCounts.forEach(
-          (component, count) -> thresholds.put(component, (double) count / draws.count()));
+      for (int component = 0; component < allocatedComponents.size(); component++)
+        thresholds.put(
+            allocatedComponents.get(component),
+            (double) thresholdCounts[component] / draws.count());
       runs.add(
           new ProbabilityRun(seeds.get(repeat), thresholds, (double) majorities / draws.count()));
     }
-    return new ProbabilityPrecision(rules, majorityCoalition, first.count(), runs);
+    return new ProbabilityPrecision(
+        estimated.periodId(),
+        first.date(),
+        estimated.reproduction().inputRowsSha256(),
+        estimated.reproduction().implementationSha256(),
+        first.components(),
+        rules,
+        majorityCoalition,
+        first.count(),
+        runs);
   }
 
   /** National modified Sainte-Lague approximation with the registered deterministic tie order. */
@@ -735,8 +804,9 @@ public final class DevelopmentGates {
     for (int allocated = 0; allocated < rules.seats(); allocated++) {
       String winner = null;
       double best = -1;
-      for (var component : seats.keySet()) {
-        int current = seats.get(component);
+      for (var entry : seats.entrySet()) {
+        var component = entry.getKey();
+        int current = entry.getValue();
         double divisor = current == 0 ? rules.firstDivisor() : 2.0 * current + 1;
         double quotient = shares.get(component) / divisor;
         if (quotient > best) {
@@ -795,8 +865,20 @@ public final class DevelopmentGates {
     }
   }
 
+  public static ProbabilityPrecision probabilityPrecision(Path file) {
+    try {
+      return JSON.readValue(Files.readAllBytes(file), ProbabilityPrecision.class);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
   public static String report(Report report) {
     return JSON.writerWithDefaultPrettyPrinter().writeValueAsString(report);
+  }
+
+  public static String report(ProbabilityPrecision precision) {
+    return JSON.writerWithDefaultPrettyPrinter().writeValueAsString(precision);
   }
 
   /** The publication boundary calls this before exposing any estimate. */

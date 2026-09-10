@@ -337,34 +337,6 @@ public final class JointUncertainty {
         reproduction(period, fitted, parameters, rules));
   }
 
-  /** Refits once and retains the final-day joint draws for each requested precision seed. */
-  public static List<Draws> finalDraws(
-      Roster.CoveragePeriod period,
-      List<PollCsv.Poll> polls,
-      List<LocalDate> elections,
-      DailyStateSpace.Parameters parameters,
-      CoverageValidation.Rules coverage,
-      Rules rules,
-      List<Long> seeds) {
-    if (seeds.isEmpty()) throw new IllegalArgumentException("Final draws need at least one seed");
-    var fitted = EstimateHistory.fitted(period, polls, elections, parameters, coverage);
-    var last = fitted.spans().getLast();
-    var day = last.fit().days().getLast();
-    var basis = PollObservations.transposedBasis(last.batch());
-    return seeds.stream()
-        .map(
-            seed -> {
-              var seeded = rules.withSeed(seed);
-              return retained(
-                  last.batch(),
-                  period.id(),
-                  day,
-                  transformed(last.batch(), basis, period.id(), day, seeded),
-                  seeded);
-            })
-        .toList();
-  }
-
   /**
    * The same fit and the same draw streams {@link #estimate} runs, summarized only on the last day
    * of the last separately fitted run. A final-day comparison reads nothing else, so the historical

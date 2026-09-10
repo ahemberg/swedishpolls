@@ -24,6 +24,8 @@ class DevelopmentGatesIT {
   private static final Path DIAGNOSTICS = Path.of("docs", "validation", "diagnostics.json");
   private static final Path CROSS_ARCHITECTURE =
       Path.of("docs", "validation", "cross-architecture.json");
+  private static final Path PROBABILITY_PRECISION =
+      Path.of("docs", "validation", "probability-precision.json");
   private static final Path RESULT = Path.of("docs", "validation", "development-gates.json");
   private static final int TARGET_MILLIS = 10_000;
 
@@ -38,8 +40,8 @@ class DevelopmentGatesIT {
             UNCERTAINTY,
             DIAGNOSTICS,
             CROSS_ARCHITECTURE,
+            PROBABILITY_PRECISION,
             stored.drift(),
-            stored.probabilityPrecision(),
             stored.resources());
     assertEquals(DevelopmentGates.report(stored), DevelopmentGates.report(rebuilt));
     assertEquals(DevelopmentGates.FALLBACK_NOT_REQUIRED, stored.uncertaintyFallback());
@@ -112,19 +114,21 @@ class DevelopmentGatesIT {
                         coverage.rules(),
                         uncertaintyRules);
                 retained.add(joint);
+                var probabilityDraws = new ArrayList<JointUncertainty.Draws>();
+                probabilityDraws.add(joint.finalDraws());
+                for (var seed : precisionSeeds.subList(1, precisionSeeds.size()))
+                  probabilityDraws.add(
+                      JointUncertainty.finalDay(
+                              period,
+                              polls,
+                              elections,
+                              validated.parameters(),
+                              coverage.rules(),
+                              uncertaintyRules.withSeed(seed))
+                          .draws());
                 var measured =
                     DevelopmentGates.probabilityPrecision(
-                        JointUncertainty.finalDraws(
-                            period,
-                            polls,
-                            elections,
-                            validated.parameters(),
-                            coverage.rules(),
-                            uncertaintyRules,
-                            precisionSeeds),
-                        precisionSeeds,
-                        allocationRules,
-                        coalition);
+                        joint, probabilityDraws, precisionSeeds, allocationRules, coalition);
                 probability.add(measured);
                 retained.add(measured);
                 retained.add(
@@ -141,6 +145,10 @@ class DevelopmentGatesIT {
               baseline.segments().stream().mapToInt(segment -> segment.days().size()).sum(),
               uncertaintyRules.draws());
       assertEquals(4, retained.size());
+      Files.writeString(
+          PROBABILITY_PRECISION,
+          DevelopmentGates.report(probability.getFirst()) + "\n",
+          StandardCharsets.UTF_8);
       var report =
           DevelopmentGates.evaluate(
               PROTOCOL,
@@ -148,8 +156,8 @@ class DevelopmentGatesIT {
               UNCERTAINTY,
               DIAGNOSTICS,
               CROSS_ARCHITECTURE,
+              PROBABILITY_PRECISION,
               drift,
-              probability.getFirst(),
               resources);
       Files.writeString(RESULT, DevelopmentGates.report(report) + "\n", StandardCharsets.UTF_8);
     } finally {
@@ -170,7 +178,7 @@ class DevelopmentGatesIT {
     var batch = PollObservations.prepare(CoverageValidation.supported(period, supported), polls);
     var order =
         Comparator.comparing(PollObservations.Observation::midpoint)
-            .thenComparing(observation -> observation.poll().rowNumber());
+            .thenComparingInt(observation -> observation.poll().rowNumber());
     for (var observation : batch.observations())
       latest.merge(
           observation.poll().institute(),
