@@ -175,6 +175,13 @@ public final class JointUncertainty {
     }
   }
 
+  /**
+   * One period's final estimated day: the summary and retained draws of the last day of the last
+   * separately fitted run, with the metadata a rerun needs. It carries no history, so it is what a
+   * final-day comparison asks for and nothing more.
+   */
+  public record FinalDay(String periodId, Day day, Draws draws, Reproduction reproduction) {}
+
   /** A rerun at the same seed, which must return every retained draw unchanged. */
   public record Reproduced(long daySeed, int comparedValues, double maxAbsoluteDifference) {
     public boolean exact() {
@@ -317,27 +324,60 @@ public final class JointUncertainty {
     }
     var last = fitted.spans().getLast();
     var lastDay = last.fit().days().getLast();
-    var draws =
-        transformed(
-            last.batch(),
-            PollObservations.transposedBasis(last.batch()),
-            period.id(),
-            lastDay,
-            rules);
-    var retained = new SimpleMatrix(draws.length, last.batch().components().size());
-    for (int draw = 0; draw < draws.length; draw++)
-      for (int component = 0; component < draws[draw].length; component++)
-        retained.set(draw, component, draws[draw][component]);
+    var basis = PollObservations.transposedBasis(last.batch());
     return new Estimated(
         period.id(),
         segments,
-        new Draws(
+        retained(
+            last.batch(),
             period.id(),
-            lastDay.date(),
-            last.batch().components(),
-            daySeed(period.id(), lastDay.date(), rules.seed()),
-            ModelValues.owned(retained)),
+            lastDay,
+            transformed(last.batch(), basis, period.id(), lastDay, rules),
+            rules),
         reproduction(period, fitted, parameters, rules));
+  }
+
+  /**
+   * The same fit and the same draw streams {@link #estimate} runs, summarized only on the last day
+   * of the last separately fitted run. A final-day comparison reads nothing else, so the historical
+   * summaries it would throw away are never drawn.
+   */
+  public static FinalDay finalDay(
+      Roster.CoveragePeriod period,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      DailyStateSpace.Parameters parameters,
+      CoverageValidation.Rules coverage,
+      Rules rules) {
+    var fitted = EstimateHistory.fitted(period, polls, elections, parameters, coverage);
+    var last = fitted.spans().getLast();
+    var lastDay = last.fit().days().getLast();
+    var basis = PollObservations.transposedBasis(last.batch());
+    var draws = transformed(last.batch(), basis, period.id(), lastDay, rules);
+    return new FinalDay(
+        period.id(),
+        summarize(last.batch(), basis, period.id(), lastDay, draws, rules),
+        retained(last.batch(), period.id(), lastDay, draws, rules),
+        reproduction(period, fitted, parameters, rules));
+  }
+
+  /** The day's transformed draws as the retained matrix, one row per draw. */
+  private static Draws retained(
+      PollObservations.Batch batch,
+      String periodId,
+      DailyStateSpace.Day day,
+      double[][] draws,
+      Rules rules) {
+    var shares = new SimpleMatrix(draws.length, batch.components().size());
+    for (int draw = 0; draw < draws.length; draw++)
+      for (int component = 0; component < draws[draw].length; component++)
+        shares.set(draw, component, draws[draw][component]);
+    return new Draws(
+        periodId,
+        day.date(),
+        batch.components(),
+        daySeed(periodId, day.date(), rules.seed()),
+        ModelValues.owned(shares));
   }
 
   /**
@@ -376,7 +416,18 @@ public final class JointUncertainty {
       String periodId,
       DailyStateSpace.Day day,
       Rules rules) {
-    var draws = transformed(batch, basis, periodId, day, rules);
+    return summarize(
+        batch, basis, periodId, day, transformed(batch, basis, periodId, day, rules), rules);
+  }
+
+  /** The same summary over draws already taken, so a caller reading one day draws it once. */
+  private static Day summarize(
+      PollObservations.Batch batch,
+      double[][] basis,
+      String periodId,
+      DailyStateSpace.Day day,
+      double[][] draws,
+      Rules rules) {
     var state = new double[batch.components().size()];
     var mean = day.smoothedMean().toArray();
     PollObservations.close(basis, mean, state, periodId);
@@ -664,8 +715,8 @@ public final class JointUncertainty {
                 rules.withSeed(seed)));
       var run = repeats.getFirst();
       var rerun =
-          estimate(period, polls, elections, validated.parameters(), coverage.rules(), rules);
-      var reproduced = reproduced(run.finalDraws(), rerun.finalDraws());
+          finalDay(period, polls, elections, validated.parameters(), coverage.rules(), rules);
+      var reproduced = reproduced(run.finalDraws(), rerun.draws());
       if (!reproduced.exact())
         reasons.add(
             period.id()

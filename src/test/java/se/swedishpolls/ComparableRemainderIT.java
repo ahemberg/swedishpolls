@@ -62,7 +62,8 @@ class ComparableRemainderIT {
       assertTrue(wide.lower() < half.lower() && half.upper() < wide.upper(), headline::toString);
       assertTrue(wide.lower() < headline.mean() && headline.mean() < wide.upper());
 
-      // The remainder is the same draws the component summaries read, not a second run.
+      // The remainder is the same draws the component summaries read, not a second run. Only the
+      // final day is compared, so only the final day is summarized.
       var period =
           periods.stream()
               .filter(candidate -> candidate.id().equals(published.periodId()))
@@ -70,7 +71,7 @@ class ComparableRemainderIT {
               .orElseThrow();
       var validated = coverage.periods().getFirst();
       var uncertainty =
-          JointUncertainty.estimate(
+          JointUncertainty.finalDay(
               period,
               polls,
               elections.stream().map(ComparableRemainder.Reference::date).toList(),
@@ -78,7 +79,7 @@ class ComparableRemainderIT {
               coverage.rules(),
               rules);
       var other =
-          uncertainty.segments().getLast().days().getLast().components().stream()
+          uncertainty.day().components().stream()
               .filter(component -> component.component().equals("OTHER"))
               .findFirst()
               .orElseThrow();
