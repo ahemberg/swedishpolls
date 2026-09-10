@@ -224,13 +224,16 @@ public final class DailyStateSpace {
                     + system.logDeterminant()
                     + innovation.dot(system.solve(innovation)));
         mean = mean.plus(gain.mult(innovation));
-        var remaining = SimpleMatrix.identity(covariance.getNumRows()).minus(gain.mult(design));
         // Joseph form avoids subtracting two nearly equal covariances at the diffuse first update.
+        // Both its factors stay; only the multiplication order changes. P is symmetric, so H P is
+        // the transpose of the cross covariance above, and evaluating (I - KH) P (I - KH)' as
+        // (P - K(HP)) - ((P - K(HP)) H')K' runs every product through the observation dimension
+        // instead of multiplying two dense state-by-state matrices.
+        var reduced = covariance.minus(gain.mult(cross.transpose()));
         covariance =
             symmetric(
-                remaining
-                    .mult(covariance)
-                    .mult(remaining.transpose())
+                reduced
+                    .minus(reduced.mult(design.transpose()).mult(gain.transpose()))
                     .plus(gain.mult(noise).mult(gain.transpose())));
         anchored = true;
       }

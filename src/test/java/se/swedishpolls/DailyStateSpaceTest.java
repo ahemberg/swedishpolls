@@ -691,7 +691,7 @@ class DailyStateSpaceTest {
     assertEquals(
         expected,
         actual,
-        Math.abs(expected) * 1e-11,
+        Math.abs(expected) * 1e-12,
         () -> scenario.name() + " " + value + " was " + actual);
   }
 
