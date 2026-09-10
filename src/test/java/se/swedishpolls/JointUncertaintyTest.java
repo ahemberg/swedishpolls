@@ -85,13 +85,19 @@ class JointUncertaintyTest {
     assertTrue(
         headline.components().stream().anyMatch(summary -> summary.mean() != summary.stateMean()),
         headline::toString);
-    // The state mean is exactly the day the daily history publishes, so the two agree on what the
-    // fitted state is and differ only in how support is averaged.
-    var history = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, coverage());
+    // The daily history publishes the drawn mean over these same runs and draws, and keeps the
+    // state mean as the internal diagnostic. The two agree on the fitted state and differ only in
+    // how support is averaged.
+    var history = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, coverage(), RULES);
     var published = history.segments().getFirst().days().getLast();
     assertEquals(headline.date(), published.date());
-    for (var summary : headline.components())
-      assertEquals(published.shares().get(summary.component()), summary.stateMean());
+    var diagnostic =
+        EstimateHistory.internalStateMean(period, polls, ELECTIONS, POINT, coverage()).getLast();
+    assertEquals(headline.date(), diagnostic.date());
+    for (var summary : headline.components()) {
+      assertEquals(summary.mean(), published.shares().get(summary.component()));
+      assertEquals(summary.stateMean(), diagnostic.shares().get(summary.component()));
+    }
   }
 
   @Test

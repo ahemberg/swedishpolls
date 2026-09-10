@@ -15,8 +15,24 @@ class EstimateHistoryTest {
   private static final DailyStateSpace.Parameters POINT =
       new DailyStateSpace.Parameters(1e-4, 0.1, 1.5);
 
+  /**
+   * Few enough draws to keep the unit checks quick; the registered count is an integration cost.
+   */
+  private static final JointUncertainty.Rules DRAWS =
+      new JointUncertainty.Rules(20260908, 400, List.of(0.5, 0.95), 4);
+
+  private static final EstimateHistory.Publication PUBLICATION = new EstimateHistory.Publication(1);
+
   private static CoverageValidation.Rules rules() {
     return CoverageValidation.rules(PROTOCOL);
+  }
+
+  private static EstimateHistory.History history(
+      List<Roster.CoveragePeriod> periods,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      CoverageValidation.Report coverage) {
+    return EstimateHistory.history(periods, polls, elections, coverage, DRAWS, PUBLICATION);
   }
 
   /** One poll whose fieldwork spans a week, so its midpoint falls three days before its end. */
@@ -51,7 +67,7 @@ class EstimateHistoryTest {
     var polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
-    var estimated = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules());
+    var estimated = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
 
     assertEquals(1, estimated.segments().size());
     var segment = estimated.segments().getFirst();
@@ -85,7 +101,7 @@ class EstimateHistoryTest {
     polls.addAll(
         CoverageValidationTest.weekly(LocalDate.of(2015, 6, 1), LocalDate.of(2015, 8, 3), "1"));
 
-    var estimated = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules());
+    var estimated = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
 
     assertEquals(2, estimated.segments().size());
     assertEquals(LocalDate.of(2015, 3, 2), estimated.segments().getFirst().to());
@@ -119,7 +135,7 @@ class EstimateHistoryTest {
     polls.addAll(window(LocalDate.of(2015, 5, 26), LocalDate.of(2015, 6, 1), "Sifo"));
 
     var history =
-        EstimateHistory.history(
+        history(
             List.of(period),
             polls,
             ELECTIONS,
@@ -148,7 +164,7 @@ class EstimateHistoryTest {
     polls.addAll(
         CoverageValidationTest.weekly(LocalDate.of(2015, 6, 1), LocalDate.of(2015, 8, 3), "1"));
     var history =
-        EstimateHistory.history(
+        history(
             List.of(period),
             polls,
             ELECTIONS,
@@ -190,7 +206,7 @@ class EstimateHistoryTest {
     var polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
     var history =
-        EstimateHistory.history(
+        history(
             List.of(period),
             polls,
             ELECTIONS,
@@ -215,6 +231,97 @@ class EstimateHistoryTest {
   }
 
   @Test
+  void publishesTheDrawnMeanAndKeepsTheTransformOfTheMeanStateAsADiagnostic() {
+    var period =
+        CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
+    var polls =
+        CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
+
+    var estimated = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
+    var drawn =
+        JointUncertainty.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS)
+            .segments()
+            .getFirst()
+            .days();
+    var stateMean = EstimateHistory.internalStateMean(period, polls, ELECTIONS, POINT, rules());
+
+    var days = estimated.segments().getFirst().days();
+    assertEquals(drawn.size(), days.size());
+    assertEquals(days.size(), stateMean.size());
+    double shift = 0;
+    for (int day = 0; day < days.size(); day++) {
+      var published = days.get(day);
+      var summary = drawn.get(day);
+      assertEquals(summary.date(), published.date());
+      // The same draws behind the published mean are behind its published endpoints.
+      for (var component : summary.components()) {
+        var estimate = published.components().get(component.component());
+        assertEquals(component.mean(), estimate.mean());
+        assertEquals(component.intervals(), estimate.intervals());
+        shift =
+            Math.max(
+                shift,
+                Math.abs(
+                    component.stateMean()
+                        - stateMean.get(day).shares().get(component.component())));
+      }
+      // Every draw is a composition, so the mean of the draws is one too.
+      assertEquals(
+          100, published.shares().values().stream().mapToDouble(Double::doubleValue).sum(), 1e-9);
+    }
+    // The diagnostic is exactly the transform of the mean state, and it is a different series.
+    assertEquals(0, shift);
+    assertNotEquals(
+        stateMean.getLast().shares().get("S"), days.getLast().shares().get("S"), "" + shift);
+    var report =
+        EstimateHistory.report(
+            history(
+                List.of(period),
+                polls,
+                ELECTIONS,
+                coverage(
+                    new CoverageValidation.Gate(false, List.of()),
+                    List.of(validated(period, polls)))));
+    assertFalse(report.contains("stateMean"));
+  }
+
+  @Test
+  void quotesPublishedNumbersAtTheRegisteredResolution() {
+    var period =
+        CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
+    var polls =
+        CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
+    var history =
+        history(
+            List.of(period),
+            polls,
+            ELECTIONS,
+            coverage(
+                new CoverageValidation.Gate(false, List.of()), List.of(validated(period, polls))));
+
+    assertEquals(PUBLICATION, history.publication());
+    assertEquals(new EstimateHistory.Publication(1), EstimateHistory.publication(PROTOCOL));
+    assertEquals(35.1, PUBLICATION.quote(35.14159));
+    assertEquals(35.2, PUBLICATION.quote(35.15));
+    assertThrows(IllegalArgumentException.class, () -> new EstimateHistory.Publication(-1));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EstimateHistory.publication(Path.of("docs", "validation", "tuning.json")));
+
+    // The series keeps every digit it drew; the report quotes them at the registered resolution.
+    assertTrue(
+        history.segments().getFirst().days().getFirst().shares().values().stream()
+            .anyMatch(share -> share != PUBLICATION.quote(share)));
+    var report = EstimateHistory.report(history);
+    for (var line : report.lines().toList())
+      if (line.contains("\"mean\"") || line.contains("\"lower\"") || line.contains("\"upper\"")) {
+        var quoted = line.substring(line.indexOf(':') + 1).replace(",", "").trim();
+        assertEquals(
+            quoted, "" + PUBLICATION.quote(Double.parseDouble(quoted)), "Unquoted number " + line);
+      }
+  }
+
+  @Test
   void anUnvalidatedPeriodPublishesNoCurveAndItsPartyStaysUnavailableRatherThanZero() {
     var eight = CoverageValidationTest.period("eight", LocalDate.of(2014, 1, 1), null, false, true);
     var candidate =
@@ -227,7 +334,7 @@ class EstimateHistoryTest {
             true, List.of("development tuning: 38 of 94 resolved folds sit on a grid boundary"));
 
     var history =
-        EstimateHistory.history(
+        history(
             List.of(eight, candidate),
             polls,
             ELECTIONS,
@@ -257,7 +364,7 @@ class EstimateHistoryTest {
       polls.addAll(
           PollCsv.parse(PollCsvTest.csv(CoverageValidationTest.row(date, "Novus", 0, "1"))));
 
-    var estimated = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules());
+    var estimated = EstimateHistory.estimate(period, polls, ELECTIONS, POINT, rules(), DRAWS);
 
     // One continuous series: the reference changed, the days did not stop.
     assertEquals(1, estimated.segments().size());
@@ -269,7 +376,7 @@ class EstimateHistoryTest {
     assertEquals(LocalDate.of(2014, 9, 14), reference.getFirst().date());
     // No change may be presented across it, even though every day around it is estimated.
     var history =
-        EstimateHistory.history(
+        history(
             List.of(period),
             polls,
             ELECTIONS,
@@ -288,7 +395,7 @@ class EstimateHistoryTest {
     var polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
     var history =
-        EstimateHistory.history(
+        history(
             List.of(period),
             polls,
             ELECTIONS,
@@ -315,7 +422,7 @@ class EstimateHistoryTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                EstimateHistory.history(
+                history(
                     List.of(period),
                     polls,
                     ELECTIONS,
@@ -331,7 +438,7 @@ class EstimateHistoryTest {
             List.of(),
             List.of("largest internal gap of 91 days exceeds 45"));
     var history =
-        EstimateHistory.history(
+        history(
             List.of(period),
             polls,
             ELECTIONS,

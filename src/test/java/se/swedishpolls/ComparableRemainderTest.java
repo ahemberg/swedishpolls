@@ -166,7 +166,7 @@ class ComparableRemainderTest {
     var estimated = estimate(period, polls);
 
     // The remainder is cut exactly where the daily history is cut, from the same fitted runs.
-    var history = EstimateHistory.estimate(period, polls, dates(), POINT, coverage());
+    var history = EstimateHistory.estimate(period, polls, dates(), POINT, coverage(), RULES);
     assertEquals(
         history.segments().stream().map(EstimateHistory.Segment::from).toList(),
         estimated.segments().stream().map(ComparableRemainder.Segment::from).toList());

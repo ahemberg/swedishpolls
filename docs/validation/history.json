@@ -1,5 +1,8 @@
 {
   "protocolVersion" : "v1-development-1",
+  "publication" : {
+    "decimals" : 1
+  },
   "gate" : {
     "blocked" : true,
     "reasons" : [ "development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails", "development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol" ]
@@ -9,27 +12,225 @@
     "from" : "2010-01-04",
     "to" : "2021-09-20",
     "days" : 4278,
-    "firstShares" : {
-      "S" : 35.09234856566843,
-      "M" : 26.5682183956171,
-      "SD" : 4.747938651615271,
-      "V" : 5.2915446132824115,
-      "C" : 4.736018425740112,
-      "KD" : 4.468001622010793,
-      "L" : 6.489037128765412,
-      "MP" : 10.553169994014102,
-      "OTHER" : 2.0537226032863547
+    "first" : {
+      "S" : {
+        "mean" : 35.1,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 34.5,
+          "upper" : 35.7
+        }, {
+          "level" : 0.95,
+          "lower" : 33.3,
+          "upper" : 36.9
+        } ]
+      },
+      "M" : {
+        "mean" : 26.6,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 26.0,
+          "upper" : 27.1
+        }, {
+          "level" : 0.95,
+          "lower" : 25.0,
+          "upper" : 28.1
+        } ]
+      },
+      "SD" : {
+        "mean" : 4.8,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 4.6,
+          "upper" : 4.9
+        }, {
+          "level" : 0.95,
+          "lower" : 4.3,
+          "upper" : 5.3
+        } ]
+      },
+      "V" : {
+        "mean" : 5.3,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 5.1,
+          "upper" : 5.5
+        }, {
+          "level" : 0.95,
+          "lower" : 4.8,
+          "upper" : 5.9
+        } ]
+      },
+      "C" : {
+        "mean" : 4.7,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 4.6,
+          "upper" : 4.9
+        }, {
+          "level" : 0.95,
+          "lower" : 4.2,
+          "upper" : 5.3
+        } ]
+      },
+      "KD" : {
+        "mean" : 4.5,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 4.3,
+          "upper" : 4.6
+        }, {
+          "level" : 0.95,
+          "lower" : 4.0,
+          "upper" : 5.0
+        } ]
+      },
+      "L" : {
+        "mean" : 6.5,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 6.3,
+          "upper" : 6.7
+        }, {
+          "level" : 0.95,
+          "lower" : 5.9,
+          "upper" : 7.1
+        } ]
+      },
+      "MP" : {
+        "mean" : 10.6,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 10.2,
+          "upper" : 10.9
+        }, {
+          "level" : 0.95,
+          "lower" : 9.7,
+          "upper" : 11.5
+        } ]
+      },
+      "OTHER" : {
+        "mean" : 2.1,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 2.0,
+          "upper" : 2.1
+        }, {
+          "level" : 0.95,
+          "lower" : 1.8,
+          "upper" : 2.3
+        } ]
+      }
     },
-    "lastShares" : {
-      "S" : 25.554236218870475,
-      "M" : 22.067389754739402,
-      "SD" : 20.048592719086038,
-      "V" : 10.599296285742096,
-      "C" : 8.661203997926078,
-      "KD" : 4.809630551051208,
-      "L" : 2.7301517138516016,
-      "MP" : 3.962992591939603,
-      "OTHER" : 1.5665061667934979
+    "last" : {
+      "S" : {
+        "mean" : 25.6,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 25.2,
+          "upper" : 26.0
+        }, {
+          "level" : 0.95,
+          "lower" : 24.4,
+          "upper" : 26.7
+        } ]
+      },
+      "M" : {
+        "mean" : 22.1,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 21.7,
+          "upper" : 22.4
+        }, {
+          "level" : 0.95,
+          "lower" : 21.0,
+          "upper" : 23.2
+        } ]
+      },
+      "SD" : {
+        "mean" : 20.0,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 19.7,
+          "upper" : 20.4
+        }, {
+          "level" : 0.95,
+          "lower" : 19.0,
+          "upper" : 21.1
+        } ]
+      },
+      "V" : {
+        "mean" : 10.6,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 10.3,
+          "upper" : 10.8
+        }, {
+          "level" : 0.95,
+          "lower" : 9.9,
+          "upper" : 11.3
+        } ]
+      },
+      "C" : {
+        "mean" : 8.7,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 8.4,
+          "upper" : 8.9
+        }, {
+          "level" : 0.95,
+          "lower" : 8.1,
+          "upper" : 9.3
+        } ]
+      },
+      "KD" : {
+        "mean" : 4.8,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 4.7,
+          "upper" : 5.0
+        }, {
+          "level" : 0.95,
+          "lower" : 4.4,
+          "upper" : 5.2
+        } ]
+      },
+      "L" : {
+        "mean" : 2.7,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 2.6,
+          "upper" : 2.8
+        }, {
+          "level" : 0.95,
+          "lower" : 2.5,
+          "upper" : 3.0
+        } ]
+      },
+      "MP" : {
+        "mean" : 4.0,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 3.8,
+          "upper" : 4.1
+        }, {
+          "level" : 0.95,
+          "lower" : 3.6,
+          "upper" : 4.4
+        } ]
+      },
+      "OTHER" : {
+        "mean" : 1.6,
+        "intervals" : [ {
+          "level" : 0.5,
+          "lower" : 1.5,
+          "upper" : 1.6
+        }, {
+          "level" : 0.95,
+          "lower" : 1.4,
+          "upper" : 1.8
+        } ]
+      }
     }
   } ],
   "boundaries" : [ {
@@ -58,15 +259,15 @@
     "asOf" : "2021-10-03",
     "estimatedOn" : "2021-09-20",
     "shares" : {
-      "S" : 25.554236218870475,
-      "M" : 22.067389754739402,
-      "SD" : 20.048592719086038,
-      "V" : 10.599296285742096,
-      "C" : 8.661203997926078,
-      "KD" : 4.809630551051208,
-      "L" : 2.7301517138516016,
-      "MP" : 3.962992591939603,
-      "OTHER" : 1.5665061667934979
+      "S" : 25.6,
+      "M" : 22.1,
+      "SD" : 20.0,
+      "V" : 10.6,
+      "C" : 8.7,
+      "KD" : 4.8,
+      "L" : 2.7,
+      "MP" : 4.0,
+      "OTHER" : 1.6
     }
   },
   "unavailable" : [ {
