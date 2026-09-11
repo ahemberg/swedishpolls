@@ -35,6 +35,13 @@ Run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per checkout s
 `git blame` skips the whole-tree reformat and attributes lines to the commit that
 wrote them. GitHub applies the file automatically.
 
+### Java package organization
+
+Before adding Java classes, moving classes, or changing package dependencies, read
+[java-packages.md](docs/java-packages.md) and [ADR 0008](docs/adr/0008-java-package-organization.md).
+Code is organized by responsibility (`source`, `estimation`, `publication`, `web`) with Spring MVC
+role subpackages where needed. CONTEXT.md stays the domain glossary.
+
 ### Java local variables
 
 Use explicit types for Java local variables; never use `var`. Declare every local that is
