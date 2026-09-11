@@ -1,7 +1,7 @@
 # Organize Java code by responsibility with Spring MVC role subpackages
 
-Java code is organized by responsibility — `source`, `estimation`, `publication`, `web` — with the
-classic Spring MVC roles as subpackages where a responsibility needs them: `source.service`,
+Java code is organized by responsibility: `source`, `estimation`, `publication` and `web`. Each
+responsibility gets the classic Spring MVC role subpackages it needs: `source.service`,
 `source.repository`, `publication.service`, `publication.repository`, `web.controller`. Only
 `Application` and the intentional image-smoke launcher stay directly in the root package. The full
 convention, placement examples and test rules are recorded in the contributor guide at
@@ -23,7 +23,7 @@ packages place them, they do not change them. Spring infrastructure remains as d
 ## Why
 
 A flat package gives a contributor nothing to reason from: nothing in the layout distinguishes a
-controller from a repository from a calculation, so placement gets decided fresh — and differently —
+controller from a repository from a calculation, so placement gets decided fresh, and differently,
 by each contributor, and code that mixes a repository lookup with a calculation has no boundary to
 be separated along. Naming the responsibilities and roles up front makes placement mechanical and
 gives the later architecture checks rules worth enforcing. This is the condition

@@ -55,7 +55,8 @@ method, log the outcome. `SnapshotIngestScheduler` sits in `source`, `PublisherS
 `publication`. They carry no business logic.
 
 **Configuration** for a responsibility lives in that responsibility. Only wiring that spans
-responsibilities — HTTP client registration, scheduling enablement — stays with `Application`.
+responsibilities, such as HTTP client registration and scheduling enablement, stays with
+`Application`.
 
 **Outbound HTTP clients** are `@HttpExchange` interfaces declared next to the service that uses
 them and registered through `Application`, per [ADR 0004](adr/0004-spring-infrastructure-and-integration-tests.md).
@@ -77,7 +78,7 @@ model ──▶ (nothing)
 ```
 
 No package imports upward from this order. The public surface of a responsibility for callers in
-other packages is its service classes — `source.service.SnapshotIngest` for ingestion,
+other packages is its service classes: `source.service.SnapshotIngest` for ingestion and
 `publication.service.Publisher` for publishing. Everything else defaults to package-private or
 stays inside its responsibility. Internal classes that only serve one responsibility are not opened
 up to serve another.
@@ -99,19 +100,19 @@ adopted. The migration separates them along the repository/calculation boundary:
 
 ## Placement examples
 
-**A new endpoint** — `GET /api/v1/turnout`:
+**A new endpoint**: `GET /api/v1/turnout`.
 Handler method in `web.controller.ApiV1Controller`. The controller validates `@RequestParam` and
 `@PathVariable` input, sets status and headers, and formats the response. It calls a service
 method; if the logic needs a new use case, the service class goes into the owning responsibility's
 `service` package. The response record is a plain immutable value, in `model` only if another
 responsibility needs it.
 
-**A new query** — polls by house:
+**A new query**: polls by house.
 SQL goes into a `source.repository` class as a `JdbcClient` method. The repository is called by a
 `source.service` class if the web layer needs the result; the controller never calls the
 repository directly.
 
-**A new calculation** — coalition volatility:
+**A new calculation**: coalition volatility.
 A plain `final` class in `estimation`, a plain JUnit test beside it, no Spring annotations. If a
 publication surface needs it, `publication.service` calls it; the web layer never does.
 
@@ -132,7 +133,7 @@ publication surface needs it, `publication.service` calls it; the web layer neve
 The package boundaries this convention creates are the dependency rules future architecture checks
 must enforce:
 
-1. `web.controller` depends only on service classes — never on repositories, `JdbcClient` or
+1. `web.controller` depends only on service classes, never on repositories, `JdbcClient` or
    `JdbcTemplate`, filesystem access, or estimation internals.
 2. Repositories never depend on controllers or service implementations.
 3. `estimation` never depends on `publication` or `web`; `publication` may depend on `estimation`
