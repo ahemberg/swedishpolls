@@ -1,12 +1,15 @@
 # swedishpolls
 
 Build foundation for [issue #16](https://github.com/ahemberg/swedishpolls/issues/16).
-Spring serves a bundled React page showing that estimates are not yet available.
-The snapshot worker captures polling data at startup and every 30 minutes.
-No estimator or publication is populated. See [snapshot ingest](docs/ingestion.md)
-for archival storage, eligibility rules and checks, and the
-[frozen v1 API contract](docs/api-contract.md) for the surfaces publication work
-must implement.
+Spring serves a bundled React page and the frozen v1 read API. The snapshot worker
+captures polling data at startup and every 30 minutes; the publication worker turns a
+changed snapshot into a complete, permanent publication.
+
+The audited release verdict blocks publication today, so a deployment publishes nothing
+and the estimate surfaces answer `503 estimates_unavailable`. See
+[snapshot ingest](docs/ingestion.md) for archival storage and eligibility rules,
+[publication](docs/publication.md) for the worker, retention and failure behaviour, and
+the [frozen v1 API contract](docs/api-contract.md) for the served surfaces.
 
 ## Build and run
 

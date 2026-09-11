@@ -1,0 +1,53 @@
+{
+  "developmentProtocolVersion": "v1-development-1",
+  "releaseProtocolVersion": "v1-release-1",
+  "release": {
+    "status": "blocked",
+    "failedBlockingGates": [
+      "development_gates"
+    ]
+  },
+  "seed": 20260908,
+  "draws": 10000,
+  "intervalLevels": [
+    0.5,
+    0.95
+  ],
+  "publicationDecimals": 1,
+  "maxDriftPoints": 10.0,
+  "coverageValidation": {
+    "development_through": "2021-10-05",
+    "min_observations": 30,
+    "min_institutes": 5,
+    "max_internal_gap_days": 45,
+    "boundary_shift_days": [
+      7,
+      14,
+      30
+    ],
+    "stability_burn_in_days": 60,
+    "max_stability_shift_points": 0.5
+  },
+  "periods": [
+    {
+      "periodId": "eight_party_2010",
+      "supported": true,
+      "parameters": {
+        "walkVariance": 0.0001,
+        "houseScale": 0.1,
+        "covarianceMultiplier": 1.5
+      }
+    },
+    {
+      "periodId": "fi_candidate_2014_2018",
+      "supported": true,
+      "parameters": {
+        "walkVariance": 0.0001,
+        "houseScale": 0.1,
+        "covarianceMultiplier": 1.5
+      }
+    }
+  ],
+  "estimatorVersion": "midpoint-ilr-state-space/v1-development-1",
+  "numericalLibrary": "org.ejml:ejml-simple:0.46.1"
+}

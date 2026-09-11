@@ -57,6 +57,18 @@ Poll-to-poll variation beyond pure sampling variation, treated as inflated obser
 **Release gate**:
 A pre-registered validation requirement that must pass before an estimation method may be published. A failed gate blocks release unless waived by a recorded owner decision.
 
+**Publication**:
+A complete, permanent set of results produced from one source snapshot by one model run. Its documents, image bytes, inputs, parameters and seeds are retained unchanged; a correction produces a new publication rather than an edit.
+
+**Candidate publication**:
+A publication being built. It is private until every document and image byte is written and verified, and it is abandoned rather than partially exposed when a check or a write fails.
+
+**Asset version**:
+One rendered version of a publication's share image. A renderer change publishes a new version beside the old one and never overwrites published bytes.
+
+**Staleness**:
+The notice a current publication carries after a later update failed. The publication itself is unchanged; only the notice is new, and unchanged source input never causes it.
+
 **Publication-time check**:
 An automated check run before each new estimate replaces the published one. On failure the last validated estimate stays published with a staleness notice.
 
