@@ -92,7 +92,7 @@ class PageIT {
   @BeforeEach
   void publishOnce() {
     if (publicationId == null) {
-      TestPublication.serve(wireMock, TestPublication.polls(TestPublication.FROM));
+      TestPublication.serve(wireMock, TestPublication.polls("2014-01-01"));
       final Publisher.Attempt attempt = publisher.publish();
       assertEquals(Publisher.Outcome.PUBLISHED, attempt.outcome(), attempt.detail());
       publicationId = attempt.publicationId();
@@ -103,7 +103,7 @@ class PageIT {
   void everyApprovedRouteIsServedInBothLanguagesWithItsOwnLanguageAttribute() {
     for (final SiteRoutes.Family family : SiteRoutes.Family.values()) {
       for (final String language : Translations.LANGUAGES) {
-        final String parameter = family == SiteRoutes.Family.PARTY ? "socialdemokraterna" : null;
+        final String parameter = family == SiteRoutes.Family.PARTY ? "S" : null;
         final String path = SiteRoutes.path(family, language, parameter);
         final HttpResponse<String> response = get(path);
         assertEquals(200, response.statusCode(), path);
@@ -112,6 +112,59 @@ class PageIT {
             response.headers().firstValue("Content-Type").orElse("").startsWith("text/html"), path);
       }
     }
+  }
+
+  @Test
+  void aCurrentPartyPageCarriesOnePartyThroughHtmlChartsEffectsAndDownloads() {
+    final String page = get("/en/party/social-democrats").body();
+    final JsonNode resolved = bootstrap(page);
+    final JsonNode party = resolved.get("data").get("party");
+    assertEquals("S", resolved.get("route").get("parameter").asString());
+    assertEquals("S", party.get("component").asString());
+    assertFalse(party.get("historicalOnly").asBoolean());
+    assertFalse(party.get("estimate").get("mean").isNull());
+    assertFalse(party.get("thresholdProbability").isNull());
+    assertTrue(
+        party.get("observations").findValues("modeled").stream().anyMatch(JsonNode::asBoolean));
+    assertTrue(page.contains("<table class=\"party-estimate\">"));
+    assertTrue(page.contains("Social Democrats"));
+    assertTrue(page.contains("relative to the ensemble"));
+    assertTrue(
+        page.contains(
+            "/api/v1/polls.csv?publication=" + publicationId + "&amp;language=en&amp;party=S"));
+    assertTrue(
+        page.contains("/api/v1/institutes?publication=" + publicationId + "&amp;language=en"));
+    assertTrue(
+        page.contains("/api/v1/elections?publication=" + publicationId + "&amp;language=en"));
+    assertEquals("/parti/socialdemokraterna", resolved.get("alternates").get("sv").asString());
+  }
+
+  @Test
+  void fiStaysDiscoverableAsDatedSourceHistoryWithoutInventingACurrentEstimate() {
+    final String page = get("/parti/feministiskt-initiativ").body();
+    final JsonNode resolved = bootstrap(page);
+    final JsonNode party = resolved.get("data").get("party");
+    assertEquals("FI", party.get("component").asString());
+    assertTrue(party.get("historicalOnly").asBoolean());
+    assertTrue(party.get("estimate").get("mean").isNull());
+    assertTrue(party.get("thresholdProbability").isNull());
+    assertTrue(party.get("pointSeats").isNull());
+    assertEquals("2022-08-29", resolved.get("headlineDate").asString());
+    assertTrue(party.get("observations").size() > 300);
+    for (final JsonNode observation : party.get("observations")) {
+      assertFalse(observation.get("share").isNull());
+      assertFalse(observation.get("modeled").asBoolean());
+    }
+    assertTrue(page.contains("Ingen aktuell enskild skattning finns för Feministiskt initiativ"));
+    assertFalse(page.contains(">0,0 %<"));
+    assertTrue(page.contains("2022"));
+    assertTrue(page.contains("/assets/" + publicationId + "/party-fi-sv-1.png"));
+    assertTrue(page.contains("hreflang=\"en\" href=\"/en/party/feminist-initiative\""));
+  }
+
+  @Test
+  void anUnknownPartySlugReturnsNotFound() {
+    assertEquals(404, get("/parti/okant").statusCode());
   }
 
   @Test

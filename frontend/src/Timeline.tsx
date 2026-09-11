@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { useId } from "react";
-import type { Bootstrap, Translate } from "./bootstrap";
+import type { Bootstrap, PartyObservation, Translate } from "./bootstrap";
 import { level, shortDate } from "./format";
 import { TimelineControlsRow } from "./timeline-controls-row";
 import { TimelineFigure, TimelineReadout, TimelineScrubber } from "./timeline-figure";
@@ -16,11 +16,24 @@ import { useTimeline } from "./useTimeline";
 interface Props {
   readonly page: Bootstrap;
   readonly t: Translate;
+  readonly component?: string;
+  readonly observations?: readonly PartyObservation[];
 }
 
-function Timeline({ page, t }: Props): JSX.Element | null {
+function drawnNames(
+  drawn: readonly { readonly component: string }[],
+  component: string | undefined,
+  naming: (component: string) => string,
+): string {
+  if (component !== undefined) {
+    return naming(component);
+  }
+  return drawn.map((entry) => naming(entry.component)).join(", ");
+}
+
+function Timeline({ page, t, component, observations = [] }: Props): JSX.Element | null {
   const ids = useId();
-  const state = useTimeline(page);
+  const state = useTimeline(page, component, observations);
   const { history, drawn, dates, index } = state;
   if (history === undefined) {
     return null;
@@ -30,20 +43,35 @@ function Timeline({ page, t }: Props): JSX.Element | null {
   const summary = t("timeline.summary", {
     from: shortDate(history.range.from, page.locale),
     to: shortDate(history.range.to, page.locale),
-    parties: drawn.map((entry) => naming(entry.component)).join(", "),
+    parties: drawnNames(drawn, component, naming),
   });
-
   return (
     <section className="sec o-timeline" aria-labelledby={`${ids}-title`}>
       <h2 id={`${ids}-title`}>{t("timeline.title")}</h2>
-      <TimelineControlsRow ids={ids} page={page} state={state} label={naming} t={t} />
-      <TimelineReadout page={page} drawn={drawn} index={index} day={day} t={t} />
+      <TimelineControlsRow
+        ids={ids}
+        page={page}
+        state={state}
+        label={naming}
+        t={t}
+        fixed={component !== undefined}
+      />
+      <TimelineReadout
+        page={page}
+        drawn={drawn}
+        index={index}
+        day={day}
+        t={t}
+        coveragePeriod={history.coveragePeriodByDate[index] ?? null}
+      />
       <TimelineFigure
         page={page}
         state={state}
         boundaries={history.boundaries}
         summary={summary}
         t={t}
+        component={component}
+        observations={observations}
       />
       <TimelineScrubber id={`${ids}-scrub`} state={state} day={day} locale={page.locale} t={t} />
       <TimelineNotes
@@ -52,6 +80,7 @@ function Timeline({ page, t }: Props): JSX.Element | null {
         step={String(history.range.step)}
         loading={state.loading}
         failed={state.failed}
+        pollDots={observations.length > 0}
       />
       <TimelineTableSection id={`${ids}-table`} page={page} state={state} label={naming} t={t} />
     </section>

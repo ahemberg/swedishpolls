@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Bootstrap, Boundary, Series } from "./bootstrap";
+import type { Bootstrap, Boundary, PartyObservation, Series } from "./bootstrap";
 import {
   axisLevels,
   BASELINE,
@@ -24,6 +24,7 @@ const TEXT_BASELINE = 4;
 const AXIS_LABEL_GAP = 6;
 const YEAR_LABEL_Y = 8;
 const ELECTION_RADIUS = 4;
+const POLL_RADIUS = 3;
 const PERCENT_SCALE = 100;
 
 type Scale = (value: number) => number;
@@ -175,11 +176,13 @@ function ElectionDots({
   dates,
   x,
   y,
+  component,
 }: {
   readonly page: Bootstrap;
   readonly dates: readonly string[];
   readonly x: Scale;
   readonly y: Scale;
+  readonly component: string | undefined;
 }): JSX.Element {
   const elections = page.data?.elections.elections ?? [];
   return (
@@ -189,20 +192,100 @@ function ElectionDots({
         if (index < 0) {
           return [];
         }
-        return Object.entries(election.results).map(([component, result]) => (
-          <circle
-            key={`${election.electionDate}-${component}`}
-            cx={x(index)}
-            cy={y((result.votes / election.validVotes) * PERCENT_SCALE)}
-            r={ELECTION_RADIUS}
-            fill="none"
-            stroke={colour(component)}
-            strokeWidth="2"
-          />
-        ));
+        return Object.entries(election.results).flatMap(([key, result]) => {
+          if (component !== undefined && component !== key) {
+            return [];
+          }
+          return [
+            <circle
+              key={`${election.electionDate}-${key}`}
+              cx={x(index)}
+              cy={y((result.votes / election.validVotes) * PERCENT_SCALE)}
+              r={ELECTION_RADIUS}
+              fill="none"
+              stroke={colour(key)}
+              strokeWidth="2"
+            />,
+          ];
+        });
       })}
     </g>
   );
+}
+
+function observationDay(observation: PartyObservation): string | null {
+  const from = observation.collectionFrom;
+  const to = observation.collectionTo;
+  if (from === null) {
+    return to;
+  }
+  if (to === null) {
+    return from;
+  }
+  const midpoint = (Date.parse(`${from}T00:00:00Z`) + Date.parse(`${to}T00:00:00Z`)) / 2;
+  return new Date(midpoint).toISOString().slice(0, 10);
+}
+
+function closest(dates: readonly string[], day: string): number {
+  let match = 0;
+  let distance = Number.POSITIVE_INFINITY;
+  for (const [index, date] of dates.entries()) {
+    const candidate = Math.abs(Date.parse(date) - Date.parse(day));
+    if (candidate < distance) {
+      match = index;
+      distance = candidate;
+    }
+  }
+  return match;
+}
+
+/** Source observations are solid dots, distinct from both the estimate and election rings. */
+function PollDots({
+  observations,
+  component,
+  dates,
+  x,
+  y,
+}: {
+  readonly observations: readonly PartyObservation[];
+  readonly component: string | null;
+  readonly dates: readonly string[];
+  readonly x: Scale;
+  readonly y: Scale;
+}): JSX.Element | null {
+  const [first] = dates;
+  const last = dates.at(-1);
+  if (component === null || first === undefined || last === undefined) {
+    return null;
+  }
+  return (
+    <g>
+      {observations.flatMap((observation) => {
+        const day = observationDay(observation);
+        if (day === null || day < first || day > last) {
+          return [];
+        }
+        return [
+          <circle
+            key={observation.pollId}
+            cx={x(closest(dates, day))}
+            cy={y(observation.share)}
+            r={POLL_RADIUS}
+            fill={colour(component)}
+            stroke="var(--ground)"
+          >
+            <title>{dotTitle(observation)}</title>
+          </circle>,
+        ];
+      })}
+    </g>
+  );
+}
+
+function dotTitle(observation: PartyObservation): string {
+  const from = observation.collectionFrom ?? "?";
+  const to = observation.collectionTo ?? "?";
+  return `${observation.institute}, ${from} - ${to}: ${observation.share}`;
 }
 
 /** The identity cue that is not colour: the key and the value, written at the end of the line. */
@@ -233,4 +316,4 @@ function EndLabels({ page, drawn, y }: Omit<LayerProps, "x">): JSX.Element {
   );
 }
 
-export { Bands, Boundaries, ElectionDots, EndLabels, Gridlines, Lines, YearLines };
+export { Bands, Boundaries, ElectionDots, EndLabels, Gridlines, Lines, PollDots, YearLines };

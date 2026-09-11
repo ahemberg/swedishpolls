@@ -1,5 +1,6 @@
 package se.swedishpolls;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,13 +14,24 @@ import java.util.Optional;
 public final class SiteRoutes {
   /** One approved page family. The path names differ per language; the family does not. */
   public enum Family {
-    OVERVIEW,
-    PARTY,
-    SEATS,
-    COALITIONS,
-    POLLSTERS,
-    POLLS,
-    METHOD
+    OVERVIEW("overview"),
+    PARTY("party"),
+    SEATS("seats"),
+    COALITIONS("coalitions"),
+    POLLSTERS("pollsters"),
+    POLLS("polls"),
+    METHOD("method");
+
+    private final String key;
+
+    Family(String key) {
+      this.key = key;
+    }
+
+    /** The text-key segment naming this family. Written out, so no case mapping runs per page. */
+    public String key() {
+      return key;
+    }
   }
 
   /** A resolved request: which page, in which language, for which optional path parameter. */
@@ -45,6 +57,10 @@ public final class SiteRoutes {
           Family.METHOD);
 
   private static final Map<Family, Map<String, String>> PATHS = paths();
+  private static final Map<String, Map<String, String>> PARTY_SLUGS = partySlugs();
+
+  /** Parties with individual pages, including FI's historical-only page. */
+  public static final List<String> PARTIES = List.copyOf(PARTY_SLUGS.keySet());
 
   private SiteRoutes() {}
 
@@ -54,7 +70,14 @@ public final class SiteRoutes {
     if (base == null) {
       throw new IllegalArgumentException("Unsupported language " + language);
     }
-    return parameter == null ? base : base + "/" + parameter;
+    if (parameter == null) {
+      return base;
+    }
+    final Map<String, String> slugs = PARTY_SLUGS.get(parameter);
+    if (family != Family.PARTY || slugs == null) {
+      throw new IllegalArgumentException("Unknown party " + parameter);
+    }
+    return base + "/" + slugs.get(language);
   }
 
   /** The same page in the other language, so a switch never lands on a different page. */
@@ -88,11 +111,14 @@ public final class SiteRoutes {
     if (!normalized.startsWith(prefix)) {
       return Optional.empty();
     }
-    final String parameter = normalized.substring(prefix.length());
-    if (parameter.isEmpty() || parameter.contains("/")) {
+    final String slug = normalized.substring(prefix.length());
+    if (slug.isEmpty() || slug.contains("/")) {
       return Optional.empty();
     }
-    return Optional.of(new Route(family, language, parameter));
+    return PARTY_SLUGS.entrySet().stream()
+        .filter(party -> slug.equals(party.getValue().get(language)))
+        .map(party -> new Route(family, language, party.getKey()))
+        .findFirst();
   }
 
   /** A trailing slash names the same page; the site root is the one path that keeps its slash. */
@@ -117,5 +143,19 @@ public final class SiteRoutes {
 
   private static Map<String, String> pair(String swedish, String english) {
     return Map.of(Translations.SWEDISH, swedish, Translations.ENGLISH, english);
+  }
+
+  private static Map<String, Map<String, String>> partySlugs() {
+    final LinkedHashMap<String, Map<String, String>> slugs = new LinkedHashMap<>();
+    slugs.put("S", pair("socialdemokraterna", "social-democrats"));
+    slugs.put("M", pair("moderaterna", "moderates"));
+    slugs.put("SD", pair("sverigedemokraterna", "sweden-democrats"));
+    slugs.put("V", pair("vansterpartiet", "left-party"));
+    slugs.put("C", pair("centerpartiet", "centre-party"));
+    slugs.put("KD", pair("kristdemokraterna", "christian-democrats"));
+    slugs.put("L", pair("liberalerna", "liberals"));
+    slugs.put("MP", pair("miljopartiet", "green-party"));
+    slugs.put("FI", pair("feministiskt-initiativ", "feminist-initiative"));
+    return Collections.unmodifiableMap(slugs);
   }
 }

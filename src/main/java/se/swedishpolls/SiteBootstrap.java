@@ -1,5 +1,6 @@
 package se.swedishpolls;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 import se.swedishpolls.source.PollQuery;
+import se.swedishpolls.source.Roster;
 import se.swedishpolls.source.service.PollQueryService;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -76,8 +78,11 @@ public final class SiteBootstrap {
       SiteRoutes.Route route, PublicationStore.Header header, boolean permanent) {
     final ObjectNode page = shell(route);
     publication(page, header, permanent);
-    if (route.family() == SiteRoutes.Family.OVERVIEW) {
+    if (route.family() == SiteRoutes.Family.OVERVIEW || route.family() == SiteRoutes.Family.PARTY) {
       overview(page, header);
+    }
+    if (route.family() == SiteRoutes.Family.PARTY) {
+      party(page, header, route.parameter());
     }
     return page;
   }
@@ -128,6 +133,10 @@ public final class SiteBootstrap {
     }
     for (final Coalitions.Preset preset : Coalitions.PRESETS) {
       components.put("coalition." + preset.id(), labels.coalition(preset.id()));
+    }
+    final ObjectNode partyPaths = node.putObject("partyPaths");
+    for (final String component : SiteRoutes.PARTIES) {
+      partyPaths.put(component, SiteRoutes.path(SiteRoutes.Family.PARTY, language, component));
     }
     return node;
   }
@@ -189,6 +198,147 @@ public final class SiteBootstrap {
     data.set("history", sampled(history, ranges, selected));
 
     data.set("polls", polls(header, labels));
+  }
+
+  /** One party page, cut from the same documents and snapshot as the overview. */
+  private void party(ObjectNode page, PublicationStore.Header header, String component) {
+    final ObjectNode data = (ObjectNode) page.get("data");
+    final ObjectNode party = data.putObject("party");
+    party.put("component", component);
+
+    final JsonNode current = component(data.get("latest").get("components"), component);
+    if (current == null) {
+      final ObjectNode unavailable = party.putObject("estimate");
+      unavailable.putNull("mean");
+      unavailable.putNull("lower");
+      unavailable.putNull("upper");
+      party.put("historicalOnly", true);
+    } else {
+      party.set("estimate", current.deepCopy());
+      party.put("historicalOnly", false);
+    }
+
+    final JsonNode seats = component(data.get("seats").get("parties"), component);
+    if (seats == null) {
+      party.putNull("thresholdProbability");
+      party.putNull("pointSeats");
+    } else {
+      party.set("thresholdProbability", seats.get("thresholdProbability").deepCopy());
+      party.set("pointSeats", seats.get("pointSeats").deepCopy());
+    }
+
+    final ArrayNode observations = observations(header, component);
+    party.set("observations", observations);
+    if (current == null) {
+      final LocalDate lastObservation = lastObservation(observations);
+      if (lastObservation != null) {
+        page.put("headlineDate", lastObservation.toString());
+      }
+    }
+    party.set("houseEffects", houseEffects(header, page.get("language").asString(), component));
+  }
+
+  private static JsonNode component(JsonNode values, String component) {
+    for (final JsonNode value : values) {
+      if (component.equals(value.get("component").asString())) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  /** Every dated source observation of the party, including rows outside modeled support. */
+  private ArrayNode observations(PublicationStore.Header header, String component) {
+    final List<Roster.CoveragePeriod> periods = queries.periods();
+    final PollQuery.Filters filters =
+        new PollQuery.Filters(null, null, List.of(), List.of(component), null, true);
+    final PollQuery.Result result =
+        queries.query(header.snapshotId(), filters, 1, Integer.MAX_VALUE);
+    final ArrayNode observations = JSON.createArrayNode();
+    for (final PollQuery.Row row : result.matching()) {
+      final BigDecimal share = row.poll().shares().get(component);
+      if (share == null) {
+        continue;
+      }
+      final ObjectNode observation = observations.addObject();
+      observation.put("pollId", row.pollId());
+      observation.put("institute", row.poll().institute());
+      put(observation, "collectionFrom", row.poll().collectionFrom());
+      put(observation, "collectionTo", row.poll().collectionTo());
+      observation.put("approximatePeriod", row.approximatePeriod());
+      if (row.poll().sampleSize() == null) {
+        observation.putNull("sampleSize");
+      } else {
+        observation.put("sampleSize", row.poll().sampleSize());
+      }
+      observation.put("share", share);
+      if (row.coveragePeriod() == null) {
+        observation.putNull("coveragePeriod");
+      } else {
+        observation.put("coveragePeriod", row.coveragePeriod());
+      }
+      observation.put("eligible", row.poll().eligible());
+      observation.put(
+          "modeled", row.poll().eligible() && modeled(periods, row.coveragePeriod(), component));
+      final ArrayNode reasons = observation.putArray("exclusionReasons");
+      row.poll().exclusionReasons().forEach(reasons::add);
+    }
+    return observations;
+  }
+
+  private static boolean modeled(
+      List<Roster.CoveragePeriod> periods, String periodId, String component) {
+    return periods.stream()
+        .filter(period -> period.id().equals(periodId))
+        .anyMatch(period -> period.roster().contains(component));
+  }
+
+  private static LocalDate lastObservation(ArrayNode observations) {
+    LocalDate last = null;
+    for (final JsonNode observation : observations) {
+      final JsonNode to = observation.get("collectionTo");
+      final JsonNode from = observation.get("collectionFrom");
+      final JsonNode date = to != null && !to.isNull() ? to : from;
+      if (date == null || date.isNull()) {
+        continue;
+      }
+      final LocalDate value = LocalDate.parse(date.asString());
+      if (last == null || value.isAfter(last)) {
+        last = value;
+      }
+    }
+    return last;
+  }
+
+  /** The selected party's effects in the latest published election cycle. */
+  private ObjectNode houseEffects(
+      PublicationStore.Header header, String language, String component) {
+    final ObjectNode institutes =
+        document(header, PublicationDocuments.INSTITUTES_SURFACE, language);
+    final ObjectNode result = JSON.createObjectNode();
+    result.set("reference", institutes.get("reference").deepCopy());
+    final JsonNode cycles = institutes.get("electionCycles");
+    final String selected = cycles.isEmpty() ? null : cycles.get(cycles.size() - 1).asString();
+    if (selected == null) {
+      result.putNull("electionCycle");
+    } else {
+      result.put("electionCycle", selected);
+    }
+    final ArrayNode effects = result.putArray("effects");
+    for (final JsonNode institute : institutes.get("institutes")) {
+      for (final JsonNode effect : institute.get("houseEffects")) {
+        if (component.equals(effect.get("component").asString())
+            && (selected == null || selected.equals(effect.get("electionCycle").asString()))) {
+          final ObjectNode value = effects.addObject();
+          value.put("institute", institute.get("institute").asString());
+          value.set("mean", effect.get("mean").deepCopy());
+          value.set("lower", effect.get("lower").deepCopy());
+          value.set("upper", effect.get("upper").deepCopy());
+          value.set("shrunk", effect.get("shrunk").deepCopy());
+        }
+      }
+    }
+    return result;
   }
 
   private ObjectNode sampled(ObjectNode history, ArrayNode ranges, String selected) {

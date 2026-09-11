@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class AssetController {
   private static final Pattern NAME =
-      Pattern.compile("^(?<kind>[a-z]+)-(?<language>sv|en)-(?<version>[1-9][0-9]*)\\.png$");
+      Pattern.compile("^(?<kind>[a-z][a-z-]*)-(?<language>sv|en)-(?<version>[1-9][0-9]*)\\.png$");
 
   private final PublicationStore store;
 

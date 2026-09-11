@@ -137,6 +137,23 @@ footer.about p {
   font-weight: 500;
 }
 
+.party-heading {
+  padding-bottom: 14px;
+}
+
+.party-number {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+
+.party-number b {
+  font-family: var(--serif);
+  font-size: 28px;
+}
+
 .meta {
   color: var(--muted);
   font-size: 13.5px;

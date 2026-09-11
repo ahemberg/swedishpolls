@@ -217,7 +217,7 @@ public class Publisher {
       }
       final List<PublicationStore.Asset> assets = new ArrayList<>();
       final List<byte[]> bytes = new ArrayList<>();
-      for (final ShareImages.Card card : ShareImages.cards(results, freeze)) {
+      for (final ShareImages.Card card : ShareImages.cards(results, freeze, polls)) {
         final byte[] png = ShareImages.render(card, Translations.of(card.language()));
         bytes.add(png);
         assets.add(

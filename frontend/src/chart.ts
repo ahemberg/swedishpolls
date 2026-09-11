@@ -61,8 +61,8 @@ function peak(series: Series): number {
 }
 
 /** The top of the axis: the highest drawn interval, rounded up, never below the threshold line. */
-function axisMaximum(drawn: readonly Series[]): number {
-  const highest = Math.max(THRESHOLD_PERCENT, ...drawn.map(peak));
+function axisMaximum(drawn: readonly Series[], observations: readonly number[] = []): number {
+  const highest = Math.max(THRESHOLD_PERCENT, ...drawn.map(peak), ...observations);
   return Math.max(MINIMUM_MAXIMUM, Math.ceil(highest / GRID_STEP) * GRID_STEP);
 }
 
