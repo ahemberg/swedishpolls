@@ -87,5 +87,6 @@
       "reason": "no_validated_coverage_period"
     }
   },
-  "excludedFromAllocation": ["OTHER"]
+  "excludedFromAllocation": ["OTHER"],
+  "sensitivity": "the 4% threshold probability for Liberals moves 12.4 percentage points under weighting each institute by how many polls it published."
 }

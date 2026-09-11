@@ -17,6 +17,7 @@
     "languages": ["sv", "en"],
     "probabilities": "Probabilities are unrounded. A display formats them as whole percent using <1% and >99% rather than 0% and 100%.",
     "assets": "Share images and other publication assets are versioned and immutable. Their links come from publication metadata; a renderer change creates a new asset version and never overwrites published bytes.",
+    "sensitivity": "A seats or coalitions response carries a sensitivity sentence only when a registered alternative fit moves a headline probability more than 10 percentage points, and it names every probability of that response's own kind that moved: threshold probabilities on seats, majority probabilities on coalitions. Movements are at one decimal, so a movement just over the rule never reads as the rule itself. It is a disclosure beside the numbers, never a block on publication, and it is translated like every other label.",
     "change30d": "A 30-day change stays inside one publication. It is unavailable, with a reason, when its comparison date is outside supported history, outside the supported fit, or on the other side of a coverage boundary."
   },
   "surfaces": [

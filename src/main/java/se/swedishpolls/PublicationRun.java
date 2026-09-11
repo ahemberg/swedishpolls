@@ -34,6 +34,13 @@ public final class PublicationRun {
     }
   }
 
+  /**
+   * One registered alternative fit of the headline period, drawn on the same final day as the
+   * published run. The sensitivity requirement names it, and a movement it causes is disclosed
+   * beside the number it moves rather than blocking the publication.
+   */
+  public record Alternative(String kind, String label, JointUncertainty.Draws draws) {}
+
   /** Everything one publication was computed from and everything it publishes. */
   public record Results(
       long snapshotId,
@@ -43,6 +50,7 @@ public final class PublicationRun {
       List<Roster.CoveragePeriod> coveragePeriods,
       List<Period> periods,
       Period headline,
+      List<Alternative> alternatives,
       NationalSeats.Rules allocationRule,
       List<NationalSeats.Rules> allocationRules,
       List<ElectionReferences.Election> elections,
@@ -50,6 +58,7 @@ public final class PublicationRun {
     public Results {
       coveragePeriods = List.copyOf(coveragePeriods);
       periods = List.copyOf(periods);
+      alternatives = List.copyOf(alternatives);
       allocationRules = List.copyOf(allocationRules);
       elections = List.copyOf(elections);
       institutes = Map.copyOf(institutes);
@@ -123,6 +132,7 @@ public final class PublicationRun {
     if (periods.isEmpty()) {
       throw new IllegalStateException("No validated coverage period produced an estimate");
     }
+    final Period headline = headline(periods, lastFieldworkDate);
     return new Results(
         snapshotId,
         snapshotSha256,
@@ -130,11 +140,37 @@ public final class PublicationRun {
         level,
         coveragePeriods,
         periods,
-        headline(periods, lastFieldworkDate),
+        headline,
+        alternatives(headline, polls, electionDates, freeze, coverage),
         allocation,
         allocationRules,
         elections,
         PollQuery.institutes(polls));
+  }
+
+  /**
+   * The registered alternative fits of the headline period. Only the centering alternative is
+   * refitted here; leave-one-institute-out stays in the release audit, where the whole registered
+   * set runs against recorded evidence rather than on every publication.
+   */
+  private static List<Alternative> alternatives(
+      Period headline,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> electionDates,
+      ModelFreeze freeze,
+      CoverageValidation.Rules coverage) {
+    return List.of(
+        new Alternative(
+            "centering",
+            SeatOutcomes.POLL_COUNT,
+            JointUncertainty.finalDayDraws(
+                headline.period(),
+                polls,
+                electionDates,
+                freeze.period(headline.period().id()).parameters(),
+                coverage,
+                freeze.uncertainty(),
+                DailyStateSpace.Centering.POLL_COUNT)));
   }
 
   /** The last fieldwork date any eligible poll of the snapshot reaches. */

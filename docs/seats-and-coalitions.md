@@ -118,6 +118,17 @@ Two studies sit behind those numbers, both recorded in
   percentage points of probability. A movement over 10 percentage points is disclosed
   beside the number; it does not block the release.
 
+Where each rerun runs differs. The publication refits only the poll-count centering
+alternative, against the numbers it is about to publish, and writes the disclosure it
+earns into the `sensitivity` field of the seats and coalitions documents. Each page
+discloses the probabilities it shows: the seats page names every party whose threshold
+probability moved past the rule, the coalitions page every coalition whose majority
+probability did, and a publication that discloses nothing carries no field at all.
+Movements are written at one decimal, because the rule discloses a movement over ten
+points and a rounded whole number would let 10.4 read as the ten it is above. The
+leave-one-institute-out reruns stay in the recorded evidence above, where the whole
+registered set runs once rather than on every publication.
+
 ## Historical FI
 
 FI has no validated coverage period, so it has no seat or threshold estimate. It appears

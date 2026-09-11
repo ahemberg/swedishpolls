@@ -60,6 +60,11 @@ public final class Translations {
     return text("coalition." + id);
   }
 
+  /** Replaces one {@code {token}} placeholder in a translated template. */
+  public static String fill(String template, String token, String value) {
+    return template.replace("{" + token + "}", value);
+  }
+
   private static Map<String, String> english() {
     final LinkedHashMap<String, String> text = new LinkedHashMap<>();
     text.put("site.name", "Swedish poll of polls");
@@ -81,6 +86,13 @@ public final class Translations {
     text.put("seats.tie", NationalSeats.TIE_NOTE);
     text.put("coalitions.note", Coalitions.MEMBERSHIP_NOTE);
     text.put("coverage.otherAlsoIncludes", "every other party outside the roster");
+    text.put(
+        "sensitivity.movement", "{quantity} moves {points} percentage points under {alternative}.");
+    text.put("sensitivity.quantity.threshold", "the 4% threshold probability for {label}");
+    text.put("sensitivity.quantity.majority", "the majority probability for {label}");
+    text.put(
+        "sensitivity.alternative." + SeatOutcomes.POLL_COUNT,
+        "weighting each institute by how many polls it published");
     text.put("component.S", "Social Democrats");
     text.put("component.M", "Moderates");
     text.put("component.SD", "Sweden Democrats");
@@ -126,6 +138,13 @@ public final class Translations {
     text.put("seats.tie", SEATS_TIE_SV);
     text.put("coalitions.note", COALITIONS_NOTE_SV);
     text.put("coverage.otherAlsoIncludes", "varje annat parti utanför uppsättningen");
+    text.put(
+        "sensitivity.movement", "{quantity} ändras {points} procentenheter vid {alternative}.");
+    text.put("sensitivity.quantity.threshold", "chansen att {label} klarar fyraprocentsspärren");
+    text.put("sensitivity.quantity.majority", "chansen till majoritet för {label}");
+    text.put(
+        "sensitivity.alternative." + SeatOutcomes.POLL_COUNT,
+        "viktning av varje institut efter hur många mätningar det publicerat");
     text.put("component.S", "Socialdemokraterna");
     text.put("component.M", "Moderaterna");
     text.put("component.SD", "Sverigedemokraterna");

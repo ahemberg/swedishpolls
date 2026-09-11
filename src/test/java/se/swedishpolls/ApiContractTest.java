@@ -107,6 +107,10 @@ class ApiContractTest {
         rules.get("probabilities").asString().contains(">99%"),
         "Probabilities stay unrounded and are never displayed as 0% or 100%");
     assertTrue(rules.get("change30d").asString().contains("coverage boundary"));
+    // A sensitivity movement is disclosed beside the numbers it moves; it never blocks publication.
+    assertTrue(rules.get("sensitivity").asString().contains("10 percentage points"));
+    assertTrue(rules.get("sensitivity").asString().contains("never a block"));
+    assertTrue(rules.get("sensitivity").asString().contains("one decimal"));
     assertTrue(rules.get("assets").asString().contains("immutable"));
 
     final java.util.LinkedHashMap<java.lang.String, java.lang.Integer> errors =
@@ -339,9 +343,19 @@ class ApiContractTest {
         "OTHER receives no seats as a group");
     assertEquals(1.2, seats.get("allocationRule").get("firstDivisor").asDouble());
     assertEquals(4.0, seats.get("allocationRule").get("thresholdPercent").asDouble());
+    assertTrue(
+        seats.get("sensitivity").asString().contains("threshold probability"),
+        "The seats page discloses movements in the probabilities it shows");
 
     final tools.jackson.databind.JsonNode coalitions = read("examples/coalitions.json");
     assertEquals(175, coalitions.get("majoritySeats").asInt());
+    assertTrue(
+        coalitions.get("sensitivity").asString().contains("majority probability"),
+        "The coalitions page discloses movements in the probabilities it shows");
+    assertNotEquals(
+        seats.get("sensitivity").asString(),
+        coalitions.get("sensitivity").asString(),
+        "Each page names its own quantities, not the other page's");
     assertEquals(
         List.of("tido", "opposition", "left", "s_m"), texts(coalitions.get("overviewDefaults")));
     final java.util.LinkedHashMap<java.lang.String, java.util.List<java.lang.String>> memberships =
