@@ -43,7 +43,7 @@ function Overview({ page, t }: Props): JSX.Element | null {
           <BlocStandings page={page} data={data} t={t} />
           <Threshold page={page} seats={data.seats} t={t} />
         </div>
-        <LatestPolls page={page} polls={data.polls} t={t} />
+        {data.polls !== undefined && <LatestPolls page={page} polls={data.polls} t={t} />}
         <div className="cols2">
           <Downloads page={page} t={t} />
           <Share page={page} t={t} />

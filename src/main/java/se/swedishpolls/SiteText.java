@@ -102,6 +102,17 @@ public final class SiteText {
     text.put("head.imageAlt.party", "Sammanfattande bild för {party} per {date}.");
     text.put(
         "head.imageAlt.partyHistorical", "Historisk sammanfattande bild för {party} per {date}.");
+    text.put(
+        "head.description.seats",
+        "Approximerad nationell mandatfördelning per {date}: heltalsmandat, väntevärden och"
+            + " intervall. Inte en valprognos.");
+    text.put(
+        "head.description.coalitions",
+        "Tio regeringsunderlag per {date}: mandatintervall, sannolikhet för egen majoritet och"
+            + " jämförelser mellan dem. Inte en valprognos.");
+    text.put(
+        "head.imageAlt.seats", "Sammanfattande bild: approximerad mandatfördelning per {date}.");
+    text.put("head.imageAlt.coalitions", "Sammanfattande bild: regeringsunderlag per {date}.");
 
     text.put("headline", "Skattat väljarstöd");
     text.put("headline.asOf", "per {date}");
@@ -268,6 +279,58 @@ public final class SiteText {
 
     text.put("sensitivity.title", "Känslighet");
     text.put("sensitivity.note", "Publicerad känslighetsanalys: {note}");
+
+    text.put("seats.title", "Approximerad mandatfördelning");
+    text.put(
+        "seats.lead", "Fördelningen av 349 mandat utifrån det skattade väljarstödet per {date}.");
+    text.put("seats.column.point", "Mandat");
+    text.put("seats.column.mean", "Väntevärde");
+    text.put("seats.column.interval", "Mandatintervall");
+    text.put("seats.column.threshold", "Över spärren");
+    text.put("seats.caption", "Heltalsmandat, väntevärde och {level} %-intervall per parti.");
+    text.put(
+        "seats.pointVersusMean",
+        "Mandatkolumnen är en heltalsfördelning av den skattade medelandelen och summerar till"
+            + " 349. Väntevärdet är genomsnittet av mandaten över modellens dragningar och är"
+            + " något annat; bågen visar heltalsfördelningen och inte avrundade väntevärden.");
+    text.put(
+        "seats.era",
+        "Fördelningen följer de jämkade uddatalsregler som gällde vid valet {year}, inte dagens"
+            + " regler tillämpade bakåt i tiden.");
+    text.put(
+        "seats.threshold",
+        "Ett parti fördelas mandat först vid 4 % nationellt. Spärren jämförs mot den oavrundade"
+            + " andelen, och exakt 4 % räcker. Sannolikheten avser att nå 4 % nationellt, inte"
+            + " hela den rättsliga vägen in i riksdagen.");
+    text.put(
+        "seats.other",
+        "Övriga är samlat stöd utanför de särredovisade partierna och tilldelas inga mandat som"
+            + " grupp.");
+
+    text.put("coalitions.title", "Regeringsunderlag");
+    text.put(
+        "coalitions.lead",
+        "Tio bestämda partikombinationer per {date}. Etiketten anger vilka partier som räknas"
+            + " samman.");
+    text.put("coalitions.column.parties", "Partier");
+    text.put("coalitions.column.majority", "Egen majoritet");
+    text.put("coalitions.caption", "Mandat och sannolikhet för egen majoritet per underlag.");
+    text.put(
+        "coalitions.majorityLine",
+        "Ett underlag behöver {majority} av 349 mandat för egen majoritet.");
+    text.put("pairwise.title", "Jämförelse mellan underlag");
+    text.put(
+        "pairwise.caption",
+        "Sannolikhet att det ena underlaget får fler mandat än det andra, över samma dragningar.");
+    text.put("pairwise.column.left", "Underlag");
+    text.put("pairwise.column.right", "Jämfört med");
+    text.put("pairwise.column.leftLeads", "Fler mandat");
+    text.put("pairwise.column.rightLeads", "Färre mandat");
+    text.put("pairwise.tied", "Lika");
+    text.put(
+        "pairwise.tieNote",
+        "Exakt lika mandattal räknas som att ingen av sidorna vinner, och redovisas i egen"
+            + " kolumn. De tre kolumnerna summerar till 100 %.");
     return Map.copyOf(text);
   }
 
@@ -310,6 +373,16 @@ public final class SiteText {
     text.put("head.imageAlt", "Summary image: estimated voter support as of {date}.");
     text.put("head.imageAlt.party", "Summary image for {party} as of {date}.");
     text.put("head.imageAlt.partyHistorical", "Historical summary image for {party} as of {date}.");
+    text.put(
+        "head.description.seats",
+        "National seat approximation as of {date}: integer seats, posterior means and intervals."
+            + " Not an election forecast.");
+    text.put(
+        "head.description.coalitions",
+        "Ten coalitions as of {date}: seat intervals, majority probabilities and comparisons"
+            + " between them. Not an election forecast.");
+    text.put("head.imageAlt.seats", "Summary image: national seat approximation as of {date}.");
+    text.put("head.imageAlt.coalitions", "Summary image: coalitions as of {date}.");
 
     text.put("headline", "Estimated voter support");
     text.put("headline.asOf", "as of {date}");
@@ -476,6 +549,57 @@ public final class SiteText {
 
     text.put("sensitivity.title", "Sensitivity");
     text.put("sensitivity.note", "Published sensitivity analysis: {note}");
+
+    text.put("seats.title", "National seat approximation");
+    text.put("seats.lead", "The 349 seats allocated from estimated voter support as of {date}.");
+    text.put("seats.column.point", "Seats");
+    text.put("seats.column.mean", "Posterior mean");
+    text.put("seats.column.interval", "Seat interval");
+    text.put("seats.column.threshold", "Above the threshold");
+    text.put("seats.caption", "Integer seats, posterior mean and {level}% interval per party.");
+    text.put(
+        "seats.pointVersusMean",
+        "The seat column is an integer allocation of the estimated mean support and sums to 349."
+            + " The posterior mean is the average number of seats across the model's draws and is"
+            + " a different quantity; the arc shows the integer allocation, not rounded posterior"
+            + " means.");
+    text.put(
+        "seats.era",
+        "The allocation follows the modified Sainte-Lague rules in force at the {year} election,"
+            + " not today's rules applied backwards.");
+    text.put(
+        "seats.threshold",
+        "A party is allocated seats only at 4% nationally. The threshold is compared with the"
+            + " unrounded share, and exactly 4% qualifies. The probability is of reaching 4%"
+            + " nationally, not of the full legal path into parliament.");
+    text.put(
+        "seats.other",
+        "Other is combined support outside the separately reported parties and is allocated no"
+            + " seats as a group.");
+
+    text.put("coalitions.title", "Coalitions");
+    text.put(
+        "coalitions.lead",
+        "Ten fixed party combinations as of {date}. The label states which parties are counted"
+            + " together.");
+    text.put("coalitions.column.parties", "Parties");
+    text.put("coalitions.column.majority", "Own majority");
+    text.put("coalitions.caption", "Seats and majority probability per coalition.");
+    text.put(
+        "coalitions.majorityLine", "A coalition needs {majority} of the 349 seats for a majority.");
+    text.put("pairwise.title", "Comparison between coalitions");
+    text.put(
+        "pairwise.caption",
+        "Probability that one coalition takes more seats than the other, over the same draws.");
+    text.put("pairwise.column.left", "Coalition");
+    text.put("pairwise.column.right", "Compared with");
+    text.put("pairwise.column.leftLeads", "More seats");
+    text.put("pairwise.column.rightLeads", "Fewer seats");
+    text.put("pairwise.tied", "Tied");
+    text.put(
+        "pairwise.tieNote",
+        "An exact tie in seats counts as neither side winning and is reported in its own column."
+            + " The three columns sum to 100%.");
     return Map.copyOf(text);
   }
 }

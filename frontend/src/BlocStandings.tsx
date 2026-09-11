@@ -1,7 +1,8 @@
 import type { JSX } from "react";
-import type { Bootstrap, Coalition, PageData, Translate } from "./bootstrap";
+import type { Bootstrap, PageData, Translate } from "./bootstrap";
+import type { Coalition } from "./chamber";
 import { count, probability } from "./format";
-import { Hemicycle } from "./Hemicycle";
+import { Hemicycle, hemicycleSummary } from "./Hemicycle";
 
 /**
  * Blockläget: the seat arc with its majority marker, and the four default coalition results beside
@@ -30,10 +31,7 @@ function defaults(data: PageData): readonly Coalition[] {
 
 function BlocStandings({ page, data, t }: Props): JSX.Element {
   const { seats, coalitions } = data;
-  const summary = seats.parties
-    .filter((party) => party.pointSeats !== null)
-    .map((party) => `${name(page, party.component)} ${party.pointSeats}`)
-    .join(", ");
+  const summary = hemicycleSummary(seats, (component) => name(page, component));
   return (
     <section className="sec o-blocs">
       <h2>{t("blocs.title")}</h2>

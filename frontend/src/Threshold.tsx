@@ -1,5 +1,6 @@
 import type { JSX } from "react";
-import type { Bootstrap, Seats, SeatsParty, Translate } from "./bootstrap";
+import type { Bootstrap, Translate } from "./bootstrap";
+import type { Seats, SeatsParty } from "./chamber";
 import { colour, probability } from "./format";
 
 /**

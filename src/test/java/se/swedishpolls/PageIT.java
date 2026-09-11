@@ -12,6 +12,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -328,6 +329,18 @@ class PageIT {
         "one results table, not one per rendering");
   }
 
+  /**
+   * One rendered table, so an assertion reads the markup rather than the bootstrap JSON below it.
+   * Every label the page writes is also in that JSON, which would otherwise satisfy a whole-page
+   * {@code contains} without a single row being rendered.
+   */
+  private static String table(String page, String name) {
+    final String open = "<table class=\"" + name + "\">";
+    final int start = page.indexOf(open);
+    assertTrue(start >= 0, "the page has no " + name + " table");
+    return page.substring(start, page.indexOf("</table>", start));
+  }
+
   private static int occurrences(String page, String needle) {
     int count = 0;
     int at = page.indexOf(needle);
@@ -370,6 +383,220 @@ class PageIT {
 
   private static String header(HttpResponse<?> response, String name) {
     return response.headers().firstValue(name).orElse("");
+  }
+
+  // The seats page: the integer hemicycle, and the posterior summaries kept separate from it.
+
+  @Test
+  void theSeatsPageCarriesItsIntegerAllocationBeforeAnyScriptRuns() {
+    final String page = get("/mandat").body();
+    final JsonNode seats = bootstrap(page).get("data").get("seats");
+    final SiteText text = SiteText.of(Translations.SWEDISH);
+    assertTrue(page.contains("<table class=\"seats\">"), "the seat table");
+    assertTrue(page.contains(SiteHtml.escape(text.text("seats.title"))), "the seats heading");
+    for (final JsonNode party : seats.get("parties")) {
+      final String label =
+          Translations.of(Translations.SWEDISH).component(party.get("component").asString());
+      assertTrue(page.contains(SiteHtml.escape(label)), label);
+    }
+  }
+
+  /**
+   * The hemicycle is the integer allocation, which is why the seat column has to sum to the full
+   * chamber. Rounding each posterior mean instead is what this forbids: those round independently
+   * and need not sum to 349 at all.
+   */
+  @Test
+  void theHemicycleSeatsAreAllocatedRatherThanRoundedFromPosteriorMeans() {
+    final JsonNode seats = bootstrap(get("/mandat").body()).get("data").get("seats");
+    int allocated = 0;
+    for (final JsonNode party : seats.get("parties")) {
+      assertFalse(party.get("pointSeats").isNull(), party.get("component").asString());
+      allocated += party.get("pointSeats").asInt();
+    }
+    assertEquals(
+        seats.get("totalSeats").asInt(),
+        allocated,
+        "Integer point seats fill the chamber exactly; rounded posterior means need not");
+  }
+
+  @Test
+  void theSeatsPageSeparatesPointSeatsFromPosteriorMeansAndIntervals() {
+    final String page = get("/en/seats").body();
+    final SiteText text = SiteText.of(Translations.ENGLISH);
+    for (final String column :
+        List.of("seats.column.point", "seats.column.mean", "seats.column.interval")) {
+      assertTrue(page.contains(SiteHtml.escape(text.text(column))), column);
+    }
+    assertTrue(
+        page.contains(SiteHtml.escape(text.text("blocs.majority"))),
+        "the 175-seat majority marker");
+  }
+
+  @Test
+  void theSeatsPageExplainsTheApproximationItPublishes() {
+    final String page = get("/mandat").body();
+    final Translations swedish = Translations.of(Translations.SWEDISH);
+    final SiteText text = SiteText.of(Translations.SWEDISH);
+    assertTrue(page.contains(SiteHtml.escape(swedish.text("seats.note"))), "omitted exceptions");
+    assertTrue(page.contains(SiteHtml.escape(swedish.text("seats.tie"))), "deterministic ties");
+    assertTrue(page.contains(SiteHtml.escape(text.text("seats.era"))), "election-era allocation");
+    assertTrue(page.contains(SiteHtml.escape(text.text("seats.threshold"))), "the 4% threshold");
+    assertTrue(page.contains(SiteHtml.escape(text.text("seats.other"))), "OTHER is not allocated");
+  }
+
+  // The coalitions page: all ten memberships, and every pair of them.
+
+  @Test
+  void theCoalitionsPageListsAllTenApprovedMembershipsWithTheirParties() {
+    final String page = get("/regeringsunderlag").body();
+    final Translations labels = Translations.of(Translations.SWEDISH);
+    assertTrue(page.contains("<table class=\"coalitions\">"), "the catalogue table");
+    // Scoped to the rendered table: every label is also in the bootstrap JSON, so asserting on
+    // the whole document would pass without rendering a single row.
+    final String catalogue = table(page, "coalitions");
+    for (final Coalitions.Preset preset : Coalitions.PRESETS) {
+      assertTrue(catalogue.contains(SiteHtml.escape(labels.coalition(preset.id()))), preset.id());
+      for (final String party : preset.parties()) {
+        assertTrue(
+            catalogue.contains(SiteHtml.escape(labels.component(party))),
+            preset.id() + " " + party);
+      }
+    }
+    assertEquals(
+        Coalitions.PRESETS.size(),
+        bootstrap(page).get("data").get("coalitions").get("coalitions").size());
+  }
+
+  /**
+   * Both presets count four parties and differ in exactly one of them. A page that collapsed them
+   * would read as nine memberships, so the distinction is asserted on the membership, not the name.
+   */
+  @Test
+  void theOppositionPresetStaysDistinctFromCLMPSBecauseOneCountsVAndTheOtherL() {
+    final List<String> opposition = Coalitions.preset("opposition").parties();
+    final List<String> clmps = Coalitions.preset("c_l_mp_s").parties();
+    assertTrue(opposition.contains("V") && !opposition.contains("L"));
+    assertTrue(clmps.contains("L") && !clmps.contains("V"));
+
+    final String catalogue = table(get("/regeringsunderlag").body(), "coalitions");
+    final Translations labels = Translations.of(Translations.SWEDISH);
+    assertNotEquals(labels.coalition("opposition"), labels.coalition("c_l_mp_s"));
+    assertTrue(catalogue.contains(SiteHtml.escape(labels.coalition("opposition"))));
+    assertTrue(catalogue.contains(SiteHtml.escape(labels.coalition("c_l_mp_s"))));
+  }
+
+  @Test
+  void theCoalitionsPageComparesEveryPairFromTheSameDraws() {
+    final String page = get("/regeringsunderlag").body();
+    final JsonNode comparison = bootstrap(page).get("data").get("coalitions").get("comparison");
+    final int presets = Coalitions.PRESETS.size();
+    assertEquals(presets * (presets - 1) / 2, comparison.get("pairs").size(), "every pair");
+    assertEquals(Coalitions.TIE_OUTCOME, comparison.get("tie").asString());
+    assertTrue(page.contains("<table class=\"pairwise\">"), "the comparison table");
+    assertEquals(
+        comparison.get("pairs").size(),
+        occurrences(page, "<tr class=\"pair\">"),
+        "one rendered row per pair");
+    assertTrue(
+        page.contains(SiteHtml.escape(SiteText.of(Translations.SWEDISH).text("pairwise.tied"))),
+        "a tie is neither side winning");
+  }
+
+  @Test
+  void theCoalitionsPageStatesThatALabelIsNotAnEndorsement() {
+    final String page = get("/en/coalitions").body();
+    assertTrue(
+        page.contains(
+            SiteHtml.escape(Translations.of(Translations.ENGLISH).text("coalitions.note"))));
+  }
+
+  @Test
+  void aCoalitionProbabilityReadsAsWholePercentAndNeverAsCertainty() {
+    final String page = get("/en/coalitions").body();
+    final String catalogue = table(page, "coalitions");
+    assertFalse(catalogue.contains(">0%<"), "a coalition that can win does not read as 0%");
+    assertFalse(catalogue.contains(">100%<"), "a coalition that can lose does not read as 100%");
+    for (final JsonNode coalition :
+        bootstrap(page).get("data").get("coalitions").get("coalitions")) {
+      final String rendered =
+          SiteFormat.probability(
+              coalition.get("majorityProbability").asDouble(), Translations.ENGLISH);
+      assertTrue(catalogue.contains(SiteHtml.escape(rendered)), coalition.get("id").asString());
+    }
+  }
+
+  // Both pages are shareable in their own right.
+
+  @Test
+  void theSeatsAndCoalitionsPagesShareTheirOwnCardRatherThanTheOverviewCard() {
+    final JsonNode assets = bootstrap(get("/mandat").body()).get("publication").get("assets");
+    final String seatsCard = assets.get(ShareImages.SEATS).get("sv").asString();
+    final String coalitionsCard = assets.get(ShareImages.COALITIONS).get("sv").asString();
+    assertNotEquals(seatsCard, coalitionsCard);
+
+    assertTrue(
+        get("/mandat")
+            .body()
+            .contains("<meta property=\"og:image\" content=\"" + ORIGIN + seatsCard),
+        "the seats page shares the seats card");
+    assertTrue(
+        get("/regeringsunderlag")
+            .body()
+            .contains("<meta property=\"og:image\" content=\"" + ORIGIN + coalitionsCard),
+        "the coalitions page shares the coalitions card");
+  }
+
+  @Test
+  void eachPageDescribesItselfRatherThanRepeatingTheOverviewDescription() {
+    final SiteText text = SiteText.of(Translations.SWEDISH);
+    final String template = text.text("head.description.overview");
+    final String overview = SiteHtml.escape(template.substring(0, template.indexOf('{')));
+    for (final Map.Entry<String, String> page :
+        Map.of("/mandat", "seats", "/regeringsunderlag", "coalitions").entrySet()) {
+      final String body = get(page.getKey()).body();
+      assertFalse(
+          body.contains("<meta name=\"description\" content=\"" + overview),
+          page.getKey() + " repeats the overview description");
+      final String own = text.text("head.description." + page.getValue());
+      assertTrue(
+          body.contains(
+              "<meta name=\"description\" content=\""
+                  + SiteHtml.escape(own.substring(0, own.indexOf('{')))),
+          page.getKey() + " describes itself");
+    }
+  }
+
+  /**
+   * At 390px these tables are wider than the screen. The approved design scrolls a wide table
+   * inside its own container rather than letting the page scroll sideways, and that has to hold
+   * before the script runs too: the container is markup, not something React adds later.
+   */
+  @Test
+  void aWideTableScrollsInsideItsOwnContainerRatherThanWideningThePage() {
+    for (final Map.Entry<String, List<String>> page :
+        Map.of(
+                "/mandat", List.of("seats"),
+                "/regeringsunderlag", List.of("coalitions", "pairwise"))
+            .entrySet()) {
+      final String body = get(page.getKey()).body();
+      for (final String name : page.getValue()) {
+        assertTrue(
+            body.contains("<div class=\"scroll\">\n<table class=\"" + name + "\">"),
+            page.getKey() + " " + name + " is not inside a scroll container");
+      }
+    }
+  }
+
+  @Test
+  void theSeatsAndCoalitionsPagesPinTheSamePublicationForEveryDependentLink() {
+    for (final String path : List.of("/mandat", "/regeringsunderlag")) {
+      final String page = get(path).body();
+      final JsonNode resolved = bootstrap(page);
+      assertEquals(publicationId, resolved.get("api").get("publication").asString(), path);
+      assertTrue(
+          page.contains("/api/v1/seats?publication=" + publicationId + "&amp;language=sv"), path);
+    }
   }
 
   @Test
