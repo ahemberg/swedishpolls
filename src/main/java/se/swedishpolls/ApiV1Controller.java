@@ -298,52 +298,7 @@ public class ApiV1Controller {
   // Publication metadata, composed from the immutable rows and the current pointer.
 
   private ObjectNode publicationBody(Resolved resolved, Translations text) {
-    final PublicationStore.Header header = header(resolved);
-    final PublicationStore.Run run = store.run(header.runId());
-    final PublicationStore.Snapshot snapshot = store.snapshot(header.snapshotId());
-    final Optional<PublicationStore.Current> current = store.current();
-    final boolean isCurrent =
-        current.isPresent() && current.get().publicationId().equals(header.publicationId());
-    final ObjectNode node = JSON.createObjectNode();
-    node.put("publicationId", header.publicationId());
-    node.put("publishedAt", header.publishedAt().toString());
-    node.put("sourceCheckedAt", header.sourceCheckedAt().toString());
-    node.put("lastFieldworkDate", header.lastFieldworkDate().toString());
-    node.put("stale", isCurrent && current.get().stale());
-    if (isCurrent && current.get().stale()) {
-      node.put("staleSince", current.get().staleSince().toString());
-    } else {
-      node.putNull("staleSince");
-    }
-    node.put("permalink", "/api/v1/publications/" + header.publicationId());
-    final ObjectNode model = node.putObject("modelRun");
-    model.put("runId", run.runId());
-    model.put("codeVersion", run.codeVersion());
-    model.put("estimatorVersion", run.estimatorVersion());
-    model.put("seed", run.seed());
-    model.put("runtime", run.runtime());
-    model.put("numericalLibrary", run.numericalLibrary());
-    final ObjectNode archived = node.putObject("snapshot");
-    archived.put("snapshotId", snapshot.snapshotId());
-    archived.put("sha256", snapshot.sha256());
-    archived.put("sourceUrl", snapshot.sourceUrl());
-    archived.put("capturedAt", snapshot.capturedAt().toString());
-    final ObjectNode assets = node.putObject("assets");
-    assets.put("note", text.text("assets.note"));
-    for (final String kind : ShareImages.KINDS) {
-      final ObjectNode byLanguage = assets.putObject(kind);
-      for (final String code : Translations.LANGUAGES) {
-        final Optional<PublicationStore.Asset> asset =
-            store.latestAsset(header.publicationId(), kind, code);
-        if (asset.isPresent()) {
-          byLanguage.put(code, asset.get().path());
-        } else {
-          byLanguage.putNull(code);
-        }
-      }
-    }
-    node.put("history", header.history());
-    return node;
+    return PublicationMetadata.of(store, header(resolved), text);
   }
 
   private ObjectNode pollsBody(

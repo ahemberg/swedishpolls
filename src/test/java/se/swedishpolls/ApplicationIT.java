@@ -53,7 +53,15 @@ class ApplicationIT {
       }
       assertNotNull(response, "Server did not start; see " + log);
       assertEquals(200, response.statusCode());
-      assertTrue(response.body().contains("Skattningar är ännu inte tillgängliga."));
+      assertTrue(
+          response.body().contains("<html lang=\"sv\">"),
+          "The root serves the Swedish overview route");
+      assertTrue(
+          response
+              .body()
+              .contains(
+                  SiteHtml.escape(SiteText.of(Translations.SWEDISH).text("unavailable.title"))),
+          "No publication exists in this run, so the page says so rather than showing zeros");
       final java.util.regex.Matcher asset =
           Pattern.compile("src=\"(/assets/[^\"]+\\.js)\"").matcher(response.body());
       assertTrue(asset.find(), "HTML must reference compiled JavaScript");
@@ -63,7 +71,10 @@ class ApplicationIT {
               HttpResponse.BodyHandlers.ofString());
       assertEquals(200, script.statusCode());
       assertTrue(script.headers().firstValue("content-type").orElse("").contains("javascript"));
-      assertTrue(script.body().contains("hydrateRoot"));
+      assertTrue(
+          script.body().contains("createRoot"),
+          "The script mounts over the server markup rather than hydrating it");
+      assertTrue(script.body().contains(SiteHtml.MOUNT), "and it mounts on the server's element");
 
       final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
       final java.lang.String serverVersion =

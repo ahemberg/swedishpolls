@@ -1,0 +1,62 @@
+/* Part of the approved visual design. See site.css. */
+
+:root {
+  color-scheme: light dark;
+
+  --ground: rgb(247 246 242);
+  --surface: rgb(255 255 255);
+  --ink: rgb(27 37 48);
+  --muted: rgb(86 97 110);
+  --faint: rgb(124 136 148);
+  --line: rgb(221 220 213);
+  --rule: rgb(27 37 48);
+  --accent: rgb(35 96 110);
+  --warn-bg: rgb(244 236 214);
+  --warn-ink: rgb(92 67 0);
+  --chip: rgb(237 236 230);
+  --band-alpha: 0.14;
+
+  --c-S: rgb(199 35 58);
+  --c-M: rgb(53 110 159);
+  --c-SD: rgb(138 109 0);
+  --c-V: rgb(147 40 60);
+  --c-C: rgb(18 148 95);
+  --c-KD: rgb(23 54 94);
+  --c-L: rgb(76 143 214);
+  --c-MP: rgb(103 162 43);
+  --c-FI: rgb(108 63 153);
+  --c-OTHER: rgb(119 128 143);
+  --c-REMAINDER: rgb(119 128 143);
+
+  --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: rgb(20 23 28);
+    --surface: rgb(27 32 38);
+    --ink: rgb(232 234 236);
+    --muted: rgb(154 165 175);
+    --faint: rgb(120 130 140);
+    --line: rgb(44 51 59);
+    --rule: rgb(232 234 236);
+    --accent: rgb(99 176 191);
+    --warn-bg: rgb(56 49 26);
+    --warn-ink: rgb(228 206 134);
+    --chip: rgb(36 43 51);
+    --band-alpha: 0.2;
+
+    --c-S: rgb(232 106 124);
+    --c-M: rgb(111 166 214);
+    --c-SD: rgb(199 169 60);
+    --c-V: rgb(200 106 128);
+    --c-C: rgb(63 191 139);
+    --c-KD: rgb(124 156 208);
+    --c-L: rgb(143 188 235);
+    --c-MP: rgb(143 197 86);
+    --c-FI: rgb(180 140 224);
+    --c-OTHER: rgb(152 162 172);
+    --c-REMAINDER: rgb(152 162 172);
+  }
+}

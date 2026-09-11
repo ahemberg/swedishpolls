@@ -1,0 +1,121 @@
+package se.swedishpolls;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * The translated route map. Every page family has one path per language, so a language switch maps
+ * an equivalent path rather than prefixing the current one, and a shared link keeps the language it
+ * was written in: nothing here reads an Accept-Language header.
+ */
+public final class SiteRoutes {
+  /** One approved page family. The path names differ per language; the family does not. */
+  public enum Family {
+    OVERVIEW,
+    PARTY,
+    SEATS,
+    COALITIONS,
+    POLLSTERS,
+    POLLS,
+    METHOD
+  }
+
+  /** A resolved request: which page, in which language, for which optional path parameter. */
+  public record Route(Family family, String language, String parameter) {
+    public Route {
+      if (!Translations.supported(language)) {
+        throw new IllegalArgumentException("Unsupported language " + language);
+      }
+      if ((family == Family.PARTY) != (parameter != null)) {
+        throw new IllegalArgumentException(family + " does not take the parameter " + parameter);
+      }
+    }
+  }
+
+  /** The families the header navigation lists, in order. A party page is reached from the table. */
+  public static final List<Family> NAVIGATION =
+      List.of(
+          Family.OVERVIEW,
+          Family.SEATS,
+          Family.COALITIONS,
+          Family.POLLSTERS,
+          Family.POLLS,
+          Family.METHOD);
+
+  private static final Map<Family, Map<String, String>> PATHS = paths();
+
+  private SiteRoutes() {}
+
+  /** The path of one page family in one language, with the parameter appended where one applies. */
+  public static String path(Family family, String language, String parameter) {
+    final String base = PATHS.get(family).get(language);
+    if (base == null) {
+      throw new IllegalArgumentException("Unsupported language " + language);
+    }
+    return parameter == null ? base : base + "/" + parameter;
+  }
+
+  /** The same page in the other language, so a switch never lands on a different page. */
+  public static String translated(Route route, String language) {
+    return path(route.family(), language, route.parameter());
+  }
+
+  /** The route a request path names, or empty when no family claims it. */
+  public static Optional<Route> resolve(String path) {
+    final String normalized = normalize(path);
+    for (final Map.Entry<Family, Map<String, String>> family : PATHS.entrySet()) {
+      for (final Map.Entry<String, String> language : family.getValue().entrySet()) {
+        final Optional<Route> route =
+            match(family.getKey(), language.getKey(), language.getValue(), normalized);
+        if (route.isPresent()) {
+          return route;
+        }
+      }
+    }
+    return Optional.empty();
+  }
+
+  private static Optional<Route> match(
+      Family family, String language, String base, String normalized) {
+    if (family != Family.PARTY) {
+      return normalized.equals(base)
+          ? Optional.of(new Route(family, language, null))
+          : Optional.empty();
+    }
+    final String prefix = base + "/";
+    if (!normalized.startsWith(prefix)) {
+      return Optional.empty();
+    }
+    final String parameter = normalized.substring(prefix.length());
+    if (parameter.isEmpty() || parameter.contains("/")) {
+      return Optional.empty();
+    }
+    return Optional.of(new Route(family, language, parameter));
+  }
+
+  /** A trailing slash names the same page; the site root is the one path that keeps its slash. */
+  private static String normalize(String path) {
+    final String rooted = path.startsWith("/") ? path : "/" + path;
+    return rooted.length() > 1 && rooted.endsWith("/")
+        ? rooted.substring(0, rooted.length() - 1)
+        : rooted;
+  }
+
+  private static Map<Family, Map<String, String>> paths() {
+    final LinkedHashMap<Family, Map<String, String>> paths = new LinkedHashMap<>();
+    paths.put(Family.OVERVIEW, pair("/", "/en"));
+    paths.put(Family.PARTY, pair("/parti", "/en/party"));
+    paths.put(Family.SEATS, pair("/mandat", "/en/seats"));
+    paths.put(Family.COALITIONS, pair("/regeringsunderlag", "/en/coalitions"));
+    paths.put(Family.POLLSTERS, pair("/institut", "/en/pollsters"));
+    paths.put(Family.POLLS, pair("/matningar", "/en/polls"));
+    paths.put(Family.METHOD, pair("/metod", "/en/method"));
+    return Map.copyOf(paths);
+  }
+
+  private static Map<String, String> pair(String swedish, String english) {
+    return Map.of(Translations.SWEDISH, swedish, Translations.ENGLISH, english);
+  }
+}
