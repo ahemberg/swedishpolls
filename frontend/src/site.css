@@ -1,0 +1,14 @@
+@import "./styles/fonts.css";
+@import "./styles/theme.css";
+@import "./styles/layout.css";
+@import "./styles/tables.css";
+
+/*
+ * The approved visual design: the accessibility-adjusted party palette, flat rules instead of
+ * rounded cards, a serif display face over a sans text face, and both themes chosen by the
+ * reader's system rather than a control on the page.
+ *
+ * Every party colour clears 3:1 against its own theme's ground, and colour is never the only
+ * identity cue: a swatch always travels with a key or a name, lines carry direct end labels, and
+ * every chart has a table beside it.
+ */
