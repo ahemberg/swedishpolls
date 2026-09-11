@@ -87,8 +87,8 @@ does not split them by name.
 
 ## Splitting the existing shared classes
 
-Two production classes currently mix a JDBC lookup with a calculation. The migration separates
-them along the repository/calculation boundary:
+Two production classes mix a JDBC lookup with a calculation at the time this convention was
+adopted. The migration separates them along the repository/calculation boundary:
 
 - `Roster`: the supported-period lookup (`periods()`, backed by `JdbcClient`) becomes a method on a
   `source.repository` class. `compose` and `supportedPeriod` stay as plain calculations in
@@ -146,6 +146,9 @@ condition to reconsider when such boundaries exist. This convention is that cond
 that implement the migration decide on the tool.
 
 ## Current state (unmigrated code)
+
+This section describes the tree as of when the convention was adopted and is updated as migration
+tickets land, unlike the rest of this guide, which states the target.
 
 Today every production class lives in `se.swedishpolls` and this guide describes the target, not
 the tree. Follow the convention for new code and move existing classes only in tickets that own
