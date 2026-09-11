@@ -1,10 +1,11 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.12/schema.json",
   "files": {
-    "includes": ["src/**", "*.json", "index.html", "!package-lock.json"]
+    "includes": ["src/**", "*.json", "!package-lock.json"]
   },
   "formatter": {
-    "indentStyle": "space"
+    "indentStyle": "space",
+    "lineWidth": 100
   },
   "linter": {
     "rules": {

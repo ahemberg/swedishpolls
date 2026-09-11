@@ -1,0 +1,250 @@
+/**
+ * The page's resolved publication, as Spring wrote it into the document.
+ *
+ * Reading it is the whole data layer for the first paint: the server already pinned one
+ * publication, so nothing here has to resolve one again, and every later request carries that
+ * publication id. The wording comes from the same object, so the rendered page and the server's
+ * own HTML cannot word a number differently.
+ */
+
+/** The element Spring writes the bootstrap into. */
+const BOOTSTRAP_ELEMENT = "site-bootstrap";
+
+export type Language = "sv" | "en";
+
+/** One wording lookup, with optional {token} substitutions. */
+export type Translate = (key: string, values?: Record<string, string>) => string;
+
+export interface Interval {
+  readonly component: string;
+  readonly mean: number | null;
+  readonly lower: number | null;
+  readonly upper: number | null;
+}
+
+export interface CoveragePeriod {
+  readonly id: string;
+  readonly from: string;
+  readonly to: string | null;
+  readonly roster: readonly string[];
+  readonly otherMembers: readonly string[];
+  readonly individualFi: boolean;
+  readonly supportValidated: boolean;
+  readonly otherAlsoIncludes: string;
+}
+
+export interface Latest {
+  readonly lastFieldworkDate: string;
+  readonly intervalLevel: number;
+  readonly coveragePeriod: string;
+  readonly coveragePeriods: readonly CoveragePeriod[];
+  readonly components: readonly Interval[];
+  readonly unavailable: Readonly<Record<string, { readonly reason: string }>>;
+}
+
+export interface SeatsParty {
+  readonly component: string;
+  readonly pointSeats: number | null;
+  readonly meanSeats: number | null;
+  readonly seatInterval: readonly [number, number] | null;
+  readonly thresholdProbability: number | null;
+}
+
+export interface Seats {
+  readonly totalSeats: number;
+  readonly intervalLevel: number;
+  readonly note: string;
+  readonly parties: readonly SeatsParty[];
+  readonly excludedFromAllocation: readonly string[];
+  readonly unavailable: Readonly<Record<string, { readonly reason: string }>>;
+  readonly sensitivity?: string;
+}
+
+export interface Coalition {
+  readonly id: string;
+  readonly parties: readonly string[];
+  readonly pointSeats: number;
+  readonly meanSeats: number;
+  readonly seatInterval: readonly [number, number];
+  readonly majorityProbability: number;
+}
+
+export interface CoalitionResults {
+  readonly majoritySeats: number;
+  readonly note: string;
+  readonly overviewDefaults: readonly string[];
+  readonly coalitions: readonly Coalition[];
+  readonly sensitivity?: string;
+}
+
+export interface Series {
+  readonly component: string;
+  readonly mean: readonly (number | null)[];
+  readonly lower: readonly (number | null)[];
+  readonly upper: readonly (number | null)[];
+}
+
+export interface Boundary {
+  readonly kind: string;
+  readonly date: string;
+  readonly periodId: string;
+  readonly supportValidated: boolean;
+  readonly note: string;
+}
+
+export interface History {
+  readonly intervalLevel: number;
+  readonly range: {
+    readonly from: string;
+    readonly to: string;
+    readonly step: number;
+  };
+  readonly dates: readonly string[];
+  readonly coveragePeriodByDate: readonly (string | null)[];
+  readonly series: readonly Series[];
+  readonly boundaries: readonly Boundary[];
+}
+
+export interface Election {
+  readonly electionDate: string;
+  readonly electionYear: number;
+  readonly validVotes: number;
+  readonly results: Readonly<Record<string, { readonly votes: number }>>;
+}
+
+export interface Elections {
+  readonly note: string;
+  readonly elections: readonly Election[];
+}
+
+export interface Poll {
+  readonly pollId: string;
+  readonly institute: string;
+  readonly methodEra: string;
+  readonly collectionFrom: string | null;
+  readonly collectionTo: string | null;
+  readonly approximatePeriod: boolean;
+  readonly sampleSize: number | null;
+  readonly coveragePeriod: string;
+  readonly shares: Readonly<Record<string, number | null>>;
+  readonly other: number | null;
+}
+
+export interface Polls {
+  readonly total: number;
+  readonly polls: readonly Poll[];
+  readonly labels: Readonly<Record<string, string>>;
+}
+
+export interface Publication {
+  readonly publicationId: string;
+  readonly publishedAt: string;
+  readonly sourceCheckedAt: string;
+  readonly lastFieldworkDate: string;
+  readonly stale: boolean;
+  readonly staleSince: string | null;
+  readonly permalink: string;
+  readonly history: string;
+  readonly modelRun: {
+    readonly runId: string;
+    readonly codeVersion: string;
+    readonly seed: number;
+  };
+  readonly snapshot: {
+    readonly snapshotId: number;
+    readonly sha256: string;
+    readonly sourceUrl: string;
+    readonly capturedAt: string;
+  };
+  readonly assets: Readonly<Record<string, Readonly<Record<Language, string | null>>>>;
+}
+
+export interface RangeSpec {
+  readonly id: string;
+  readonly from: string;
+  readonly to: string;
+  readonly step: number;
+  readonly year: number | null;
+}
+
+export interface NavigationEntry {
+  readonly family: string;
+  readonly label: string;
+  readonly path: string;
+  readonly current: boolean;
+}
+
+export interface PageData {
+  readonly latest: Latest;
+  readonly seats: Seats;
+  readonly coalitions: CoalitionResults;
+  readonly elections: Elections;
+  readonly history: History;
+  readonly polls: Polls;
+}
+
+export interface Bootstrap {
+  readonly language: Language;
+  readonly locale: string;
+  readonly route: {
+    readonly family: string;
+    readonly path: string;
+    readonly parameter: string | null;
+  };
+  readonly alternates: Readonly<Record<Language, string>>;
+  readonly navigation: readonly NavigationEntry[];
+  readonly site: { readonly name: string; readonly origin: string };
+  readonly text: Readonly<Record<string, string>>;
+  readonly labels: Readonly<Record<string, string>>;
+  readonly permanent?: boolean;
+  readonly headlineDate?: string;
+  readonly lastSourceCheck?: string | null;
+  readonly publication?: Publication;
+  readonly api?: {
+    readonly base: string;
+    readonly publication: string;
+    readonly language: Language;
+  };
+  readonly data?: PageData;
+  readonly ranges?: readonly RangeSpec[];
+  readonly defaultRange?: string;
+}
+
+/** The overview page family, as the server names it. */
+export const OVERVIEW = "OVERVIEW";
+
+/** The element the script replaces. Its server-rendered children are the pre-script page. */
+export const MOUNT_ELEMENT = "site-root";
+
+/**
+ * The day the page's numbers claim. The server resolves it from the estimate's own last day, which
+ * is not always the snapshot's last fieldwork date, and it is absent only when nothing is published.
+ */
+export function headlineDate(page: Bootstrap): string {
+  return page.headlineDate ?? "";
+}
+
+export function readBootstrap(): Bootstrap {
+  const element = document.getElementById(BOOTSTRAP_ELEMENT);
+  if (element === null || element.textContent === null) {
+    throw new Error("The page carries no bootstrap");
+  }
+  return JSON.parse(element.textContent) as Bootstrap;
+}
+
+/** One wording, by key. A missing key is a bug in the page, not something to paper over. */
+export function translator(page: Bootstrap): Translate {
+  return (key, values) => {
+    const template = page.text[key];
+    if (template === undefined) {
+      throw new Error(`No ${page.language} page text for ${key}`);
+    }
+    if (values === undefined) {
+      return template;
+    }
+    return Object.entries(values).reduce(
+      (filled, [token, value]) => filled.replaceAll(`{${token}}`, value),
+      template,
+    );
+  };
+}

@@ -77,3 +77,22 @@ A documented period of a polling series with a particular measurement method. Me
 
 **Custom coalition**:
 A visitor-selected combination of parties whose estimated voting-intention shares are summed. The grouping does not imply an agreement between the parties to govern together.
+
+**Page family**:
+One approved page of the site, named independently of the path that reaches it. Each family has one
+translated path per language, so a language switch maps an equivalent page rather than prefixing the
+current path.
+
+**Headline date**:
+The last day the published estimate covers. It comes from the estimate rather than from the
+snapshot, so it can fall before the snapshot's last fieldwork date when the newest poll's midpoint
+does. A page never claims an estimate for a day the model did not estimate.
+
+**Basic HTML**:
+The complete page a request receives before any script runs, carrying the headline, its date and the
+results table. The script replaces this markup rather than hydrating it, so no result and no
+accessible label is ever present twice.
+
+**Configured origin**:
+The public HTTPS origin every canonical, alternate and image URL is built from. It is deployment
+configuration, never the incoming Host header.

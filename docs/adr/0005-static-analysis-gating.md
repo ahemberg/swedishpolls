@@ -24,6 +24,14 @@ a finding looks false. A permitted SpotBugs suppression uses `@SuppressFBWarning
 narrowest possible scope and states why the finding does not apply. Disabling a rule requires
 its own pull request and an update to this ADR.
 
+One suppression is in force. `SiteHtml.page` carries `@SuppressFBWarnings` for findsecbugs'
+`POTENTIAL_XML_INJECTION`, which fires because a non-constant string is appended into a buffer
+holding markup. The string is the page bootstrap: server-authored JSON, never request input, with
+every `<` written as the JSON escape `\u003c`, so it cannot close the script element or introduce
+markup. `PageIT` asserts that no raw `<` survives inside that element. The detector's heuristic
+fires for any server-side HTML renderer and cannot be answered in code; the owner approved the
+narrow suppression rather than excluding the detector, so it stays on for every other method.
+
 Error Prone runs on the compiler's annotation processor path with the default check set. The
 compiler arguments are `-XDcompilePolicy=simple`, `--should-stop=ifError=FLOW`,
 `-Xplugin:ErrorProne` and `-Werror`, so any Error Prone finding or javac warning fails

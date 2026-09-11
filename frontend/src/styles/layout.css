@@ -1,0 +1,161 @@
+/* Part of the approved visual design. See site.css. */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 15px / 1.55 var(--sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--serif);
+  text-wrap: balance;
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(26px, 4.5vw, 38px);
+  line-height: 1.15;
+}
+
+h2 {
+  font-size: 19px;
+}
+
+a {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--ink);
+  color: var(--ground);
+  padding: 10px 14px;
+  z-index: 10;
+}
+
+.skip:focus {
+  left: 0;
+}
+
+header.site {
+  display: flex;
+  align-items: baseline;
+  gap: 8px 18px;
+  flex-wrap: wrap;
+  padding: 16px 20px 12px;
+  border-bottom: 2px solid var(--rule);
+}
+
+.brand {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+nav.nav {
+  flex: 1;
+}
+
+nav.nav ul,
+nav.lang {
+  display: flex;
+  gap: 4px 14px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+nav.nav a,
+nav.lang a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+}
+
+nav.nav a[aria-current],
+nav.lang a[aria-current] {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+nav.lang abbr {
+  text-decoration: none;
+}
+
+.stale {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  margin: 0;
+  padding: 10px 20px;
+  font-size: 13.5px;
+}
+
+main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 26px 20px 0;
+}
+
+footer.about {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 14px 20px 48px;
+  border-top: 2px solid var(--rule);
+  color: var(--muted);
+  font-size: 13px;
+  max-inline-size: 1080px;
+}
+
+footer.about p {
+  max-width: 78ch;
+}
+
+.asof {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.footnote {
+  color: var(--faint);
+  font-size: 12.5px;
+  max-width: 78ch;
+}
+
+.sec {
+  border-top: 2px solid var(--rule);
+  padding: 14px 0 22px;
+  margin-top: 8px;
+}
+
+.cols2 {
+  display: grid;
+  gap: 0 36px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
