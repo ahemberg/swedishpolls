@@ -1,10 +1,12 @@
 # Frozen v1 API contract
 
 Checkpoint 4 of [issue #17](https://github.com/ahemberg/swedishpolls/issues/17)
-freezes the versioned read-only surfaces, their schemas and the request rules that
-[publication work](https://github.com/ahemberg/swedishpolls/issues/21) must implement.
-Nothing here is served yet: the checkpoint freezes the contract, and no endpoint,
-publication or estimate exists in this repository.
+froze the versioned read-only surfaces, their schemas and the request rules.
+[Issue #21](https://github.com/ahemberg/swedishpolls/issues/21) implements them:
+`ApiV1Controller` serves every surface below from a publication's stored documents and its
+pinned source snapshot. See [publication](publication.md) for how a publication is produced.
+The audited release verdict blocks publication today, so a deployment answers
+`503 estimates_unavailable` until it changes.
 
 [`api/v1/contract.json`](../src/main/resources/api/v1/contract.json) is the manifest.
 Each surface names its path, media type, query parameters, paging, cache class,
@@ -102,6 +104,11 @@ parameters, and a request needing a publication before the first one exists retu
 503 `estimates_unavailable` with no estimate fields.
 
 ## Verification
+
+`ApiV1IT` exercises the served surfaces end to end against a published publication: identity on
+every dependent response, the two cache classes and content ETags, columnar sampled history,
+null unsupported values, point seats apart from posterior means, the ten coalition memberships,
+table and download agreement, versioned image links, and the four error codes.
 
 `ApiContractTest` checks the manifest, every example and the shared rules: surface
 coverage, pinning and language parameters, paging, error codes, publication and run identity on every
