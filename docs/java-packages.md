@@ -2,7 +2,7 @@
 
 Read [ADR 0008](adr/0008-java-package-organization.md) for the decision and its rationale. This
 guide is the convention to follow when adding Java classes, moving classes, or changing package
-dependencies. The current code is not yet migrated; see [Current state](#current-state-unmigrated-code).
+dependencies. The code is partly migrated; see [Current state](#current-state-partially-migrated).
 
 ## Package map
 
@@ -13,14 +13,16 @@ not required: a role subpackage appears when the responsibility has that role.
 se.swedishpolls
 ├── Application, ImageSmokeCheck     root: boot entry and image-smoke launcher only
 ├── source                           reading polls into the system
-│   ├── (root)                       plain classes: PollCsv, PollObservations, PollQuery, WindowFilter
-│   ├── source.service               use cases: SnapshotIngest and its PollSourceClient @HttpExchange interface
-│   ├── source.repository            JDBC lookups: snapshot rows, election references
+│   ├── (root)                       plain classes: PollCsv, PollObservations, PollQuery, WindowFilter,
+│   │                                Roster grouping and the Snapshot value
+│   ├── source.service               use cases: SnapshotIngest and its PollSourceClient @HttpExchange
+│   │                                interface, PollQueryService, SourceHttpConfig
+│   ├── source.repository            JDBC lookups: snapshot rows, coverage periods, election references
 │   └── source                       scheduled entry points live beside the service they call
 ├── estimation                       the estimator and its model, all plain Java
 │   └── (root)                       DailyStateSpace, HouseEffects, RecencyBaseline, JointUncertainty,
 │                                    PredictiveComparison, CoverageValidation, Development*,
-│                                    roster composition and seat allocation mathematics
+│                                    and seat allocation mathematics
 ├── publication                      rendering and storing published documents
 │   ├── (root)                       plain classes: PublicationDocuments, ShareImages, PublicationRun
 │   ├── publication.service          the publish use case: Publisher

@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Map;
 
 /** Groups an eligible poll into the modeled components of one coverage period. */
-public class Roster {
+public final class Roster {
+  private Roster() {}
+
   public record CoveragePeriod(
       String id,
       LocalDate effectiveFrom,
