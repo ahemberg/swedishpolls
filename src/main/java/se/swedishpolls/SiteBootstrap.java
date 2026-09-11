@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
+import se.swedishpolls.source.PollQuery;
+import se.swedishpolls.source.service.PollQueryService;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -43,15 +45,12 @@ public final class SiteBootstrap {
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
   private final PublicationStore store;
-  private final SnapshotIngest ingest;
-  private final Roster roster;
+  private final PollQueryService queries;
   private final PublicSite site;
 
-  public SiteBootstrap(
-      PublicationStore store, SnapshotIngest ingest, Roster roster, PublicSite site) {
+  public SiteBootstrap(PublicationStore store, PollQueryService queries, PublicSite site) {
     this.store = store;
-    this.ingest = ingest;
-    this.roster = roster;
+    this.queries = queries;
     this.site = site;
   }
 
@@ -224,14 +223,7 @@ public final class SiteBootstrap {
   /** The most recently published polls of the pinned snapshot, in the poll table's own shape. */
   private ObjectNode polls(PublicationStore.Header header, Translations labels) {
     final PollQuery.Filters filters = PollQuery.Filters.none();
-    final PollQuery.Result result =
-        PollQuery.filter(
-            header.snapshotId(),
-            ingest.polls(header.snapshotId()),
-            roster.periods(),
-            filters,
-            1,
-            LATEST_POLLS);
+    final PollQuery.Result result = queries.query(header.snapshotId(), filters, 1, LATEST_POLLS);
     final ObjectNode node = JSON.createObjectNode();
     node.put("total", result.total());
     final ArrayNode rows = node.putArray("polls");
