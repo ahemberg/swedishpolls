@@ -11,6 +11,8 @@ import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.repository.CoveragePeriodRepository;
 
 /**
  * Builds the daily estimate history of the validated periods from the archived pre-2022 development
@@ -33,8 +35,8 @@ class EstimateHistoryIT {
     try {
       flyway.migrate();
       final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
-      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
-          new Roster(db).periods();
+      final java.util.List<se.swedishpolls.source.Roster.CoveragePeriod> periods =
+          new CoveragePeriodRepository(db).periods();
       final java.util.List<java.time.LocalDate> elections =
           db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
               .query(LocalDate.class)
@@ -78,7 +80,7 @@ class EstimateHistoryIT {
 
       // The published point estimate is the drawn mean, not the transform of the mean state: the
       // diagnostic runs over the same days and differs from the published series on some of them.
-      final se.swedishpolls.Roster.CoveragePeriod eight =
+      final se.swedishpolls.source.Roster.CoveragePeriod eight =
           periods.stream().filter(p -> p.id().equals("eight_party_2010")).findFirst().orElseThrow();
       final se.swedishpolls.CoverageValidation.Validated evidence =
           coverage.periods().stream()

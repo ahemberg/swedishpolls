@@ -1,4 +1,4 @@
-package se.swedishpolls;
+package se.swedishpolls.source.repository;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -8,6 +8,10 @@ import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import se.swedishpolls.TestDatabase;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.testsupport.PollCsvFixtures;
 
 class CoveragePeriodIT {
   @Test
@@ -22,13 +26,13 @@ class CoveragePeriodIT {
       flyway.migrate();
       assertEquals(0, flyway.migrate().migrationsExecuted);
       final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
-      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
-          new Roster(db).periods();
+      final java.util.List<se.swedishpolls.source.Roster.CoveragePeriod> periods =
+          new CoveragePeriodRepository(db).periods();
       assertEquals(
           List.of("eight_party_2010", "fi_candidate_2014_2018"),
           periods.stream().map(Roster.CoveragePeriod::id).toList());
 
-      final se.swedishpolls.Roster.CoveragePeriod current = periods.getFirst();
+      final se.swedishpolls.source.Roster.CoveragePeriod current = periods.getFirst();
       assertEquals(LocalDate.of(2010, 1, 1), current.effectiveFrom());
       assertNull(current.effectiveTo());
       assertEquals(List.of("S", "M", "SD", "V", "C", "KD", "L", "MP"), current.roster());
@@ -37,7 +41,7 @@ class CoveragePeriodIT {
       assertTrue(
           current.decisionUrl().startsWith("https://github.com/ahemberg/swedishpolls/issues/12"));
 
-      final se.swedishpolls.Roster.CoveragePeriod candidate = periods.get(1);
+      final se.swedishpolls.source.Roster.CoveragePeriod candidate = periods.get(1);
       assertEquals(LocalDate.of(2014, 4, 9), candidate.effectiveFrom());
       assertEquals(LocalDate.of(2018, 9, 7), candidate.effectiveTo());
       assertTrue(candidate.individualFi());
@@ -46,12 +50,13 @@ class CoveragePeriodIT {
       // unvalidated.
       assertFalse(candidate.supportValidated());
 
-      final se.swedishpolls.PollCsv.Poll inSegment =
-          PollCsv.parse(PollCsvTest.csv(PollCsvTest.SEGMENT_ROW)).getFirst();
+      final se.swedishpolls.source.PollCsv.Poll inSegment =
+          PollCsv.parse(PollCsvFixtures.csv(PollCsvFixtures.SEGMENT_ROW)).getFirst();
       assertEquals("eight_party_2010", Roster.supportedPeriod(periods, inSegment).id());
       assertTrue(candidate.covers(inSegment));
-      final se.swedishpolls.PollCsv.Poll beforeHistory =
-          PollCsv.parse(PollCsvTest.csv(PollCsvTest.ROW.replace("2020", "2009"))).getFirst();
+      final se.swedishpolls.source.PollCsv.Poll beforeHistory =
+          PollCsv.parse(PollCsvFixtures.csv(PollCsvFixtures.ROW.replace("2020", "2009")))
+              .getFirst();
       assertThrows(
           IllegalStateException.class, () -> Roster.supportedPeriod(periods, beforeHistory));
 

@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -253,9 +255,10 @@ public final class CoverageValidation {
       List<LocalDate> elections,
       DailyStateSpace.Parameters parameters,
       Rules rules) {
-    final java.util.List<se.swedishpolls.PollCsv.Poll> development = development(polls, rules);
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> development =
+        development(polls, rules);
     final se.swedishpolls.CoverageValidation.Support support = support(period, development, rules);
-    final se.swedishpolls.Roster.CoveragePeriod trimmed = supported(period, support);
+    final se.swedishpolls.source.Roster.CoveragePeriod trimmed = supported(period, support);
     final se.swedishpolls.PollObservations.Batch batch =
         PollObservations.prepare(trimmed, development);
     final java.util.NavigableMap<
@@ -291,7 +294,7 @@ public final class CoverageValidation {
         failures.add("boundary shift of " + shift + " days leaves no comparable span");
         continue;
       }
-      final se.swedishpolls.Roster.CoveragePeriod variant =
+      final se.swedishpolls.source.Roster.CoveragePeriod variant =
           new Roster.CoveragePeriod(
               period.id(),
               from,
@@ -347,14 +350,15 @@ public final class CoverageValidation {
       List<LocalDate> elections,
       DevelopmentTuning.Tuning tuning,
       Rules rules) {
-    final java.util.List<se.swedishpolls.PollCsv.Poll> development = development(polls, rules);
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> development =
+        development(polls, rules);
     final java.util.Map<java.lang.String, se.swedishpolls.DailyStateSpace.Parameters> parameters =
         DevelopmentTuning.latestParameters(tuning);
     final java.util.ArrayList<se.swedishpolls.CoverageValidation.Validated> validated =
         new ArrayList<Validated>();
     final java.util.LinkedHashMap<java.lang.String, se.swedishpolls.CoverageValidation.Support>
         supports = new LinkedHashMap<String, Support>();
-    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
+    for (se.swedishpolls.source.Roster.CoveragePeriod period : periods) {
       final se.swedishpolls.DailyStateSpace.Parameters point = parameters.get(period.id());
       if (point == null)
         throw new IllegalArgumentException("No tuned parameters for " + period.id());
@@ -365,9 +369,9 @@ public final class CoverageValidation {
     }
     final java.util.ArrayList<se.swedishpolls.CoverageValidation.BoundaryEffect> effects =
         new ArrayList<BoundaryEffect>();
-    for (se.swedishpolls.Roster.CoveragePeriod period : periods)
+    for (se.swedishpolls.source.Roster.CoveragePeriod period : periods)
       if (period.individualFi())
-        for (se.swedishpolls.Roster.CoveragePeriod against : periods)
+        for (se.swedishpolls.source.Roster.CoveragePeriod against : periods)
           if (!against.individualFi() && against.supportValidated())
             effects.addAll(
                 boundaryEffects(

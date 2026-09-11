@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.testsupport.PollCsvFixtures;
 
 class CoverageValidationTest {
   private static final Path PROTOCOL = Path.of("docs", "validation", "protocol.json");
@@ -58,7 +61,7 @@ class CoverageValidationTest {
     int index = 0;
     for (java.time.LocalDate date = from; !date.isAfter(to); date = date.plusDays(7), index++)
       rows.append(row(date, INSTITUTES.get(index % INSTITUTES.size()), index % 5 * 0.25, fi));
-    return PollCsv.parse(PollCsvTest.csv(rows.toString()));
+    return PollCsv.parse(PollCsvFixtures.csv(rows.toString()));
   }
 
   @Test
@@ -94,9 +97,9 @@ class CoverageValidationTest {
 
   @Test
   void supportReportsTheOutermostEligibleDatesTheLargestGapAndRetainedExclusions() {
-    final se.swedishpolls.Roster.CoveragePeriod declared =
+    final se.swedishpolls.source.Roster.CoveragePeriod declared =
         period("candidate", LocalDate.of(2014, 1, 1), LocalDate.of(2018, 12, 31), true, false);
-    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.ArrayList<se.swedishpolls.source.PollCsv.Poll> polls =
         new ArrayList<>(weekly(LocalDate.of(2015, 3, 2), LocalDate.of(2015, 5, 4), "1"));
     // A summer without any FI reading, then a poll the FI roster cannot place.
     polls.addAll(weekly(LocalDate.of(2015, 8, 3), LocalDate.of(2015, 9, 7), "1"));
@@ -115,7 +118,7 @@ class CoverageValidationTest {
     assertEquals(LocalDate.of(2015, 8, 3), support.largestGap().to());
     assertEquals(91, support.largestGap().days());
     // The trimmed period keeps every observation the declared period placed.
-    final se.swedishpolls.Roster.CoveragePeriod trimmed =
+    final se.swedishpolls.source.Roster.CoveragePeriod trimmed =
         CoverageValidation.supported(declared, support);
     assertEquals(
         support.observations(), PollObservations.prepare(trimmed, polls).observations().size());
@@ -124,9 +127,9 @@ class CoverageValidationTest {
 
   @Test
   void developmentEvidenceStopsAtTheRegisteredEndAndNeverReadsTheReservedWindow() {
-    final se.swedishpolls.Roster.CoveragePeriod open =
+    final se.swedishpolls.source.Roster.CoveragePeriod open =
         period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         weekly(LocalDate.of(2021, 8, 2), LocalDate.of(2021, 11, 29), "1");
     final se.swedishpolls.CoverageValidation.Rules rules = CoverageValidation.rules(PROTOCOL);
 
@@ -141,9 +144,9 @@ class CoverageValidationTest {
 
   @Test
   void thinCoverageFailsEveryBreachedRuleAndStillRetainsItsObservations() {
-    final se.swedishpolls.Roster.CoveragePeriod declared =
+    final se.swedishpolls.source.Roster.CoveragePeriod declared =
         period("candidate", LocalDate.of(2014, 1, 1), LocalDate.of(2018, 12, 31), true, false);
-    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.ArrayList<se.swedishpolls.source.PollCsv.Poll> polls =
         new ArrayList<>(weekly(LocalDate.of(2015, 3, 2), LocalDate.of(2015, 4, 6), "1"));
     polls.addAll(weekly(LocalDate.of(2015, 9, 7), LocalDate.of(2015, 10, 12), "1"));
     final se.swedishpolls.CoverageValidation.Rules rules = CoverageValidation.rules(PROTOCOL);
@@ -166,9 +169,9 @@ class CoverageValidationTest {
 
   @Test
   void denseCoverageIsSupportedAndBoundedUnderEveryRegisteredBoundaryShift() {
-    final se.swedishpolls.Roster.CoveragePeriod declared =
+    final se.swedishpolls.source.Roster.CoveragePeriod declared =
         period("candidate", LocalDate.of(2014, 1, 1), LocalDate.of(2018, 12, 31), true, false);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2017, 12, 25), "1");
     final se.swedishpolls.CoverageValidation.Rules rules = CoverageValidation.rules(PROTOCOL);
 
@@ -192,11 +195,11 @@ class CoverageValidationTest {
 
   @Test
   void everyModeledPartyCarriesAMeasuredStepAtTheCandidateBoundariesAndTheTuningBlockCarriesOver() {
-    final se.swedishpolls.Roster.CoveragePeriod eight =
+    final se.swedishpolls.source.Roster.CoveragePeriod eight =
         period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    final se.swedishpolls.Roster.CoveragePeriod candidate =
+    final se.swedishpolls.source.Roster.CoveragePeriod candidate =
         period("candidate", LocalDate.of(2015, 1, 1), LocalDate.of(2016, 12, 31), true, false);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         weekly(LocalDate.of(2014, 6, 2), LocalDate.of(2017, 6, 26), "1");
     final se.swedishpolls.DevelopmentTuning.Fold fold =
         new DevelopmentTuning.Fold(LocalDate.of(2017, 1, 1), LocalDate.of(2017, 2, 5));

@@ -2,7 +2,7 @@
 
 Read [ADR 0008](adr/0008-java-package-organization.md) for the decision and its rationale. This
 guide is the convention to follow when adding Java classes, moving classes, or changing package
-dependencies. The current code is not yet migrated; see [Current state](#current-state-unmigrated-code).
+dependencies. The code is partly migrated; see [Current state](#current-state-partially-migrated).
 
 ## Package map
 
@@ -13,14 +13,16 @@ not required: a role subpackage appears when the responsibility has that role.
 se.swedishpolls
 ├── Application, ImageSmokeCheck     root: boot entry and image-smoke launcher only
 ├── source                           reading polls into the system
-│   ├── (root)                       plain classes: PollCsv, PollObservations, PollQuery, WindowFilter
-│   ├── source.service               use cases: SnapshotIngest and its PollSourceClient @HttpExchange interface
-│   ├── source.repository            JDBC lookups: snapshot rows, election references
+│   ├── (root)                       plain classes: PollCsv, PollObservations, PollQuery, WindowFilter,
+│   │                                Roster grouping and the Snapshot value
+│   ├── source.service               use cases: SnapshotIngest and its PollSourceClient @HttpExchange
+│   │                                interface, PollQueryService, SourceHttpConfig
+│   ├── source.repository            JDBC lookups: snapshot rows, coverage periods, election references
 │   └── source                       scheduled entry points live beside the service they call
 ├── estimation                       the estimator and its model, all plain Java
 │   └── (root)                       DailyStateSpace, HouseEffects, RecencyBaseline, JointUncertainty,
 │                                    PredictiveComparison, CoverageValidation, Development*,
-│                                    roster composition and seat allocation mathematics
+│                                    and seat allocation mathematics
 ├── publication                      rendering and storing published documents
 │   ├── (root)                       plain classes: PublicationDocuments, ShareImages, PublicationRun
 │   ├── publication.service          the publish use case: Publisher
@@ -54,12 +56,14 @@ Repositories depend on values, not on controllers or service implementations.
 method, log the outcome. `SnapshotIngestScheduler` sits in `source`, `PublisherScheduler` in
 `publication`. They carry no business logic.
 
-**Configuration** for a responsibility lives in that responsibility. Only wiring that spans
-responsibilities, such as HTTP client registration and scheduling enablement, stays with
-`Application`.
+**Configuration** for a responsibility lives in that responsibility, including the registration of
+the outbound HTTP clients it owns. Only wiring that spans responsibilities, such as scheduling
+enablement, stays with `Application`.
 
 **Outbound HTTP clients** are `@HttpExchange` interfaces declared next to the service that uses
-them and registered through `Application`, per [ADR 0004](adr/0004-spring-infrastructure-and-integration-tests.md).
+them and registered through that responsibility's Spring configuration, per
+[ADR 0004](adr/0004-spring-infrastructure-and-integration-tests.md). The poll source client is
+registered by `source.service.SourceHttpConfig` (#116).
 
 **Numerical calculations and immutable model values** are plain Java with no Spring annotations.
 The estimator, coverage validation, roster composition, and seat allocation stay plain, tested with
@@ -92,8 +96,10 @@ Two production classes mix a JDBC lookup with a calculation at the time this con
 adopted. The migration separates them along the repository/calculation boundary:
 
 - `Roster`: the supported-period lookup (`periods()`, backed by `JdbcClient`) becomes a method on a
-  `source.repository` class. `compose` and `supportedPeriod` stay as plain calculations in
-  `estimation`.
+  `source.repository` class. `compose`, `supportedPeriod`, and the `CoveragePeriod` and
+  `Composition` values stay as plain calculations in `source`, independent of the repository
+  (#116 moved the grouping there rather than into `estimation`, because estimation is not its only
+  caller: publication and web resolve poll requests against it too).
 - `NationalSeats`: the rules lookup (`rules(electionYear)`, backed by `JdbcClient`) becomes a
   repository method. `qualifies`, `allocate`, `distribute`, and `SeatDraws` stay as plain
   calculations in `estimation`.
@@ -146,14 +152,22 @@ must enforce:
 condition to reconsider when such boundaries exist. This convention is that condition; the tickets
 that implement the migration decide on the tool.
 
-## Current state (unmigrated code)
+## Current state (partially migrated)
 
-This section describes the tree as of when the convention was adopted and is updated as migration
-tickets land, unlike the rest of this guide, which states the target.
+This section describes the tree and is updated as migration tickets land, unlike the rest of this
+guide, which states the target.
 
-Today every production class lives in `se.swedishpolls` and this guide describes the target, not
-the tree. Follow the convention for new code and move existing classes only in tickets that own
-that migration. [ADR 0003](adr/0003-immutable-model-values.md) (immutable model values),
+`source` is organized per this convention as of #116: `source` (root) holds the plain parsing,
+query and roster-grouping classes (`PollCsv`, `PollQuery`, `Roster`) and the
+`SnapshotIngestScheduler` entry point; `source.service` holds `SnapshotIngest` (with its
+`PollSourceClient` HTTP exchange interface), `PollQueryService`, and the `SourceHttpConfig` that
+registers the poll-source HTTP client; `source.repository` holds `SnapshotRepository` and
+`CoveragePeriodRepository`; the shared `Snapshot` value sits in `source` (root). Tests moved with
+their classes, and the shared CSV fixtures live in `se.swedishpolls.testsupport`.
+
+Everything else still lives in `se.swedishpolls` and this guide describes the target for it, not
+the tree. Estimation, publication and web classes move in the tickets that own those migrations
+(#117, #118, #119). [ADR 0003](adr/0003-immutable-model-values.md) (immutable model values),
 [ADR 0004](adr/0004-spring-infrastructure-and-integration-tests.md) (Spring infrastructure and
 integration tests), and [ADR 0007](adr/0007-publications-are-immutable-documents.md) (publications
 are immutable documents) are unaffected by this

@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.PollQuery;
+import se.swedishpolls.source.Roster;
 
 /**
  * One model run over one source snapshot, at the frozen parameters. It produces every quantity a
@@ -63,8 +66,8 @@ public final class PublicationRun {
       ModelFreeze freeze,
       long snapshotId,
       String snapshotSha256,
-      List<PollCsv.Poll> polls) {
-    final List<Roster.CoveragePeriod> coveragePeriods = new Roster(db).periods();
+      List<PollCsv.Poll> polls,
+      List<Roster.CoveragePeriod> coveragePeriods) {
     final List<ElectionReferences.Election> elections = new ElectionReferences(db).all();
     final List<ComparableRemainder.Reference> references =
         elections.stream().map(ElectionReferences.Election::reference).toList();

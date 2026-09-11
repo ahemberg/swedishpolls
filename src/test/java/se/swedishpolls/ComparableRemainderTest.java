@@ -9,6 +9,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.testsupport.PollCsvFixtures;
 
 class ComparableRemainderTest {
   private static final Path PROTOCOL = Path.of("docs", "validation", "protocol.json");
@@ -51,7 +54,7 @@ class ComparableRemainderTest {
       CoverageValidation.Gate gate, List<Roster.CoveragePeriod> periods, List<PollCsv.Poll> polls) {
     final java.util.ArrayList<se.swedishpolls.CoverageValidation.Validated> validated =
         new ArrayList<CoverageValidation.Validated>();
-    for (se.swedishpolls.Roster.CoveragePeriod period : periods)
+    for (se.swedishpolls.source.Roster.CoveragePeriod period : periods)
       validated.add(
           new CoverageValidation.Validated(
               period.id(),
@@ -66,11 +69,11 @@ class ComparableRemainderTest {
 
   @Test
   void combinesFiAndTheResidualOnlyWhereFiIsSeparate() {
-    final se.swedishpolls.Roster.CoveragePeriod eight =
+    final se.swedishpolls.source.Roster.CoveragePeriod eight =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    final se.swedishpolls.Roster.CoveragePeriod separate =
+    final se.swedishpolls.source.Roster.CoveragePeriod separate =
         CoverageValidationTest.period("separate", LocalDate.of(2015, 1, 1), null, true, true);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
     final se.swedishpolls.ComparableRemainder.Estimated withoutFi = estimate(eight, polls);
@@ -139,9 +142,9 @@ class ComparableRemainderTest {
 
   @Test
   void nestsTheLevelsAndClosesTheRemainderWithTheEightParties() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("separate", LocalDate.of(2015, 1, 1), null, true, true);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
     final se.swedishpolls.ComparableRemainder.Estimated estimated = estimate(period, polls);
@@ -162,9 +165,9 @@ class ComparableRemainderTest {
 
   @Test
   void preservesFitBoundariesAndSuppressesChangesAcrossThem() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.ArrayList<se.swedishpolls.source.PollCsv.Poll> polls =
         new ArrayList<>(
             CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 3, 2), "1"));
     polls.addAll(
@@ -225,19 +228,20 @@ class ComparableRemainderTest {
 
   @Test
   void suppressesAChangeAcrossACenteringReferenceChangeInsideOneSegment() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls = new ArrayList<PollCsv.Poll>();
+    final java.util.ArrayList<se.swedishpolls.source.PollCsv.Poll> polls =
+        new ArrayList<PollCsv.Poll>();
     for (java.time.LocalDate date = LocalDate.of(2014, 6, 2);
         date.isBefore(LocalDate.of(2014, 9, 14));
         date = date.plusDays(7))
       polls.addAll(
-          PollCsv.parse(PollCsvTest.csv(CoverageValidationTest.row(date, "Sifo", 0, "1"))));
+          PollCsv.parse(PollCsvFixtures.csv(CoverageValidationTest.row(date, "Sifo", 0, "1"))));
     for (java.time.LocalDate date = LocalDate.of(2014, 9, 15);
         !date.isAfter(LocalDate.of(2014, 12, 22));
         date = date.plusDays(7))
       polls.addAll(
-          PollCsv.parse(PollCsvTest.csv(CoverageValidationTest.row(date, "Novus", 0, "1"))));
+          PollCsv.parse(PollCsvFixtures.csv(CoverageValidationTest.row(date, "Novus", 0, "1"))));
 
     final se.swedishpolls.ComparableRemainder.Estimated estimated = estimate(period, polls);
 
@@ -253,9 +257,9 @@ class ComparableRemainderTest {
 
   @Test
   void groupsOneElectionReferenceConsistentlyAcrossRosters() {
-    final se.swedishpolls.Roster.CoveragePeriod eight =
+    final se.swedishpolls.source.Roster.CoveragePeriod eight =
         CoverageValidationTest.period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    final se.swedishpolls.Roster.CoveragePeriod separate =
+    final se.swedishpolls.source.Roster.CoveragePeriod separate =
         CoverageValidationTest.period("separate", LocalDate.of(2014, 1, 1), null, true, true);
     final se.swedishpolls.ComparableRemainder.Reference election = ELECTIONS.getFirst();
 
@@ -305,9 +309,9 @@ class ComparableRemainderTest {
 
   @Test
   void marksAnElectionOutsideTheEstimatedHistoryWithoutMakingItAnObservation() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2014, 1, 1), null, false, true);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2014, 6, 2), LocalDate.of(2014, 12, 22), "1");
 
     final se.swedishpolls.ComparableRemainder.Estimated estimated = estimate(period, polls);
@@ -327,12 +331,12 @@ class ComparableRemainderTest {
 
   @Test
   void publishesOnlyValidatedPeriodsAndCarriesTheCoverageGateInWhole() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    final se.swedishpolls.Roster.CoveragePeriod candidate =
+    final se.swedishpolls.source.Roster.CoveragePeriod candidate =
         CoverageValidationTest.period(
             "candidate", LocalDate.of(2015, 1, 1), LocalDate.of(2016, 12, 31), true, false);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
     final se.swedishpolls.CoverageValidation.Gate gate =
         new CoverageValidation.Gate(true, List.of("development tuning: blocked"));

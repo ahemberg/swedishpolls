@@ -8,9 +8,12 @@ import java.util.stream.Stream;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.simple.SimpleMatrix;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.testsupport.PollCsvFixtures;
 
 class PollObservationsTest {
-  private static final String ROW = PollCsvTest.SEGMENT_ROW.replace("20.123", "20");
+  private static final String ROW = PollCsvFixtures.SEGMENT_ROW.replace("20.123", "20");
 
   @Test
   void modelValuesDoNotExposeTheirMatrixForMutation() {
@@ -39,8 +42,8 @@ class PollObservationsTest {
   void replacesOnlyExactZerosAndPreservesPositiveRatiosAndSourceValues() {
     final java.lang.String row = ROW.replace(",20,5,", ",0,5,").replace(",17,1,10,", ",17,0,10,");
     for (boolean fi : List.of(false, true)) {
-      final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
-          PollCsv.parse(PollCsvTest.csv(row));
+      final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
+          PollCsv.parse(PollCsvFixtures.csv(row));
       final se.swedishpolls.PollObservations.Batch batch =
           PollObservations.prepare(period(fi), polls);
       final se.swedishpolls.PollObservations.Observation observation =
@@ -58,7 +61,7 @@ class PollObservationsTest {
     }
     final se.swedishpolls.PollObservations.Batch capped =
         PollObservations.prepare(
-            period(true), PollCsv.parse(PollCsvTest.csv(row.replace(",1000,", ",1,"))));
+            period(true), PollCsv.parse(PollCsvFixtures.csv(row.replace(",1000,", ",1,"))));
     assertEquals(0.25, proportions(capped).get(0), 1e-14);
     assertEquals(0.25, proportions(capped).get(8), 1e-14);
   }
@@ -67,7 +70,7 @@ class PollObservationsTest {
   void sharesInvertTheTransformBackToTheReplacedCompositionInComponentOrder() {
     for (boolean fi : List.of(false, true)) {
       final se.swedishpolls.PollObservations.Batch batch =
-          PollObservations.prepare(period(fi), PollCsv.parse(PollCsvTest.csv(ROW)));
+          PollObservations.prepare(period(fi), PollCsv.parse(PollCsvFixtures.csv(ROW)));
       final java.util.Map<java.lang.String, java.lang.Double> shares =
           PollObservations.shares(batch, batch.observations().getFirst().ilr());
       assertEquals(batch.components(), List.copyOf(shares.keySet()));
@@ -113,7 +116,8 @@ class PollObservationsTest {
             + ROW.replace("Ipsos", "NegativeResidual").replace(",17,1,10,", ",17,3,10,")
             + ROW.replace("Ipsos", "Straddles").replace("2016-06-01", "2014-04-08")
             + ROW.replace("Ipsos", "Reversed").replace("2016-06-19", "2016-05-31");
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = PollCsv.parse(PollCsvTest.csv(rows));
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
+        PollCsv.parse(PollCsvFixtures.csv(rows));
     final se.swedishpolls.PollObservations.Batch batch =
         PollObservations.prepare(period(true), polls);
     assertEquals(
@@ -139,10 +143,11 @@ class PollObservationsTest {
 
   @Test
   void rejectsMalformedRostersAndUnrepresentableNumericalInputs() {
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = PollCsv.parse(PollCsvTest.csv(ROW));
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
+        PollCsv.parse(PollCsvFixtures.csv(ROW));
     for (java.util.List<java.lang.String> roster :
         List.of(List.of("M"), Stream.concat(PollCsv.PARTIES.stream(), Stream.of("M")).toList())) {
-      final se.swedishpolls.Roster.CoveragePeriod invalid =
+      final se.swedishpolls.source.Roster.CoveragePeriod invalid =
           new Roster.CoveragePeriod(
               "bad",
               period(false).effectiveFrom(),
@@ -159,7 +164,7 @@ class PollObservationsTest {
         List.of(ROW.replace(",20,5,", ",1e-999,5,"), ROW.replace(",1000,", ",1e999,")))
       assertThrows(
           IllegalArgumentException.class,
-          () -> PollObservations.prepare(period(false), PollCsv.parse(PollCsvTest.csv(row))));
+          () -> PollObservations.prepare(period(false), PollCsv.parse(PollCsvFixtures.csv(row))));
   }
 
   @Test
@@ -167,16 +172,17 @@ class PollObservationsTest {
     for (boolean fi : List.of(false, true)) {
       final java.lang.String zeroRemainder = ROW.replace(",20,5,", fi ? ",21,5," : ",22,5,");
       final se.swedishpolls.PollObservations.Batch batch =
-          PollObservations.prepare(period(fi), PollCsv.parse(PollCsvTest.csv(zeroRemainder)));
+          PollObservations.prepare(period(fi), PollCsv.parse(PollCsvFixtures.csv(zeroRemainder)));
       assertEquals(1, batch.observations().getFirst().replacedZeros());
       assertEquals(0.0005, proportions(batch).get(batch.components().size() - 1), 1e-15);
     }
     final se.swedishpolls.PollObservations.Batch small =
         PollObservations.prepare(
-            period(false), PollCsv.parse(PollCsvTest.csv(ROW.replace(",20,5,", ",0.000001,5,"))));
+            period(false),
+            PollCsv.parse(PollCsvFixtures.csv(ROW.replace(",20,5,", ",0.000001,5,"))));
     assertEquals(0, small.observations().getFirst().replacedZeros());
     assertEquals(1e-8, proportions(small).get(0), 1e-20);
-    final se.swedishpolls.Roster.CoveragePeriod reverse =
+    final se.swedishpolls.source.Roster.CoveragePeriod reverse =
         new Roster.CoveragePeriod(
             "reverse",
             period(false).effectiveFrom(),
@@ -186,7 +192,7 @@ class PollObservationsTest {
             true,
             "https://example.invalid");
     final se.swedishpolls.PollObservations.Batch reordered =
-        PollObservations.prepare(reverse, PollCsv.parse(PollCsvTest.csv(ROW)));
+        PollObservations.prepare(reverse, PollCsv.parse(PollCsvFixtures.csv(ROW)));
     assertEquals("SD", reordered.components().getFirst());
     assertEquals(0.17, proportions(reordered).get(0), 1e-14);
     assertEquals(0.20, proportions(reordered).get(7), 1e-14);
@@ -246,8 +252,8 @@ class PollObservationsTest {
       }
     };
     for (boolean fi : List.of(false, true)) {
-      final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
-          PollCsv.parse(PollCsvTest.csv(ROW));
+      final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
+          PollCsv.parse(PollCsvFixtures.csv(ROW));
       final se.swedishpolls.PollObservations.Batch batch =
           PollObservations.prepare(period(fi), polls);
       assertEquals(1, batch.observations().size());

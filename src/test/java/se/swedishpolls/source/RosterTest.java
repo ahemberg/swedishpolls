@@ -1,4 +1,4 @@
-package se.swedishpolls;
+package se.swedishpolls.source;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.testsupport.PollCsvFixtures;
 
 class RosterTest {
   private static final Roster.CoveragePeriod EIGHT =
@@ -34,21 +35,21 @@ class RosterTest {
           "https://example.invalid/decision");
 
   private static PollCsv.Poll poll(String row) {
-    return PollCsv.parse(PollCsvTest.csv(row)).getFirst();
+    return PollCsv.parse(PollCsvFixtures.csv(row)).getFirst();
   }
 
   @Test
   void groupsFiIntoOtherOutsideAnFiSegmentAndSeparatesItInside() {
-    final se.swedishpolls.Roster.Composition outside =
-        Roster.compose(EIGHT, poll(PollCsvTest.SEGMENT_ROW));
+    final se.swedishpolls.source.Roster.Composition outside =
+        Roster.compose(EIGHT, poll(PollCsvFixtures.SEGMENT_ROW));
     assertEquals(
         List.of("M", "L", "C", "KD", "S", "V", "MP", "SD", "OTHER"),
         List.copyOf(outside.components().keySet()));
     assertEquals(new BigDecimal("1.877"), outside.components().get("OTHER"));
     assertTrue(outside.complete());
 
-    final se.swedishpolls.Roster.Composition inside =
-        Roster.compose(FI_SEGMENT, poll(PollCsvTest.SEGMENT_ROW));
+    final se.swedishpolls.source.Roster.Composition inside =
+        Roster.compose(FI_SEGMENT, poll(PollCsvFixtures.SEGMENT_ROW));
     assertEquals(
         List.of("M", "L", "C", "KD", "S", "V", "MP", "SD", "FI", "RESIDUAL"),
         List.copyOf(inside.components().keySet()));
@@ -60,23 +61,23 @@ class RosterTest {
 
   @Test
   void excludesPollsThatCannotFormThePeriodComposition() {
-    final se.swedishpolls.PollCsv.Poll missingFi =
-        poll(PollCsvTest.SEGMENT_ROW.replace(",17,1,10,", ",17,NA,10,"));
+    final se.swedishpolls.source.PollCsv.Poll missingFi =
+        poll(PollCsvFixtures.SEGMENT_ROW.replace(",17,1,10,", ",17,NA,10,"));
     assertTrue(missingFi.eligible());
     assertTrue(Roster.compose(EIGHT, missingFi).complete());
     assertEquals(
         List.of("missing_share:FI"), Roster.compose(FI_SEGMENT, missingFi).exclusionReasons());
     assertTrue(Roster.compose(FI_SEGMENT, missingFi).components().isEmpty());
 
-    final se.swedishpolls.PollCsv.Poll largeFi =
-        poll(PollCsvTest.SEGMENT_ROW.replace(",17,1,10,", ",17,3,10,"));
+    final se.swedishpolls.source.PollCsv.Poll largeFi =
+        poll(PollCsvFixtures.SEGMENT_ROW.replace(",17,1,10,", ",17,3,10,"));
     assertEquals(
         List.of("negative_residual"), Roster.compose(FI_SEGMENT, largeFi).exclusionReasons());
 
     // A collection window is inside a period only as a whole, so a straddling poll cannot compose.
-    final se.swedishpolls.PollCsv.Poll straddling =
+    final se.swedishpolls.source.PollCsv.Poll straddling =
         poll(
-            PollCsvTest.SEGMENT_ROW
+            PollCsvFixtures.SEGMENT_ROW
                 .replace("2016-06-01", "2014-04-08")
                 .replace("2016-06-19", "2014-04-20")
                 .replace("2016-06-20", "2014-04-25"));
@@ -85,8 +86,8 @@ class RosterTest {
         Roster.compose(FI_SEGMENT, straddling).exclusionReasons());
     assertTrue(Roster.compose(EIGHT, straddling).complete());
 
-    final se.swedishpolls.PollCsv.Poll ineligible =
-        poll(PollCsvTest.SEGMENT_ROW.replace("Ipsos", "Demoskop valdag"));
+    final se.swedishpolls.source.PollCsv.Poll ineligible =
+        poll(PollCsvFixtures.SEGMENT_ROW.replace("Ipsos", "Demoskop valdag"));
     assertEquals(
         List.of("exit_or_election_day"), Roster.compose(FI_SEGMENT, ineligible).exclusionReasons());
   }
@@ -97,12 +98,12 @@ class RosterTest {
     try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
       bytes = input.readAllBytes();
     }
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = PollCsv.parse(bytes);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> eligible =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls = PollCsv.parse(bytes);
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> eligible =
         polls.stream().filter(PollCsv.Poll::eligible).toList();
-    final java.util.List<se.swedishpolls.PollCsv.Poll> window =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> window =
         eligible.stream().filter(FI_SEGMENT::covers).toList();
-    final java.util.List<se.swedishpolls.PollCsv.Poll> withFi =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> withFi =
         window.stream()
             .filter(poll -> poll.shares().get("FI") != null)
             .sorted(Comparator.comparing(PollCsv.Poll::collectionFrom))
@@ -153,7 +154,7 @@ class RosterTest {
     // Merging the collection windows in start order leaves one break far wider than the rest.
     final java.util.ArrayList<java.lang.Long> breaks = new java.util.ArrayList<Long>();
     java.time.LocalDate covered = FI_SEGMENT.effectiveFrom();
-    for (se.swedishpolls.PollCsv.Poll poll : withFi) {
+    for (se.swedishpolls.source.PollCsv.Poll poll : withFi) {
       breaks.add(ChronoUnit.DAYS.between(covered, poll.collectionFrom()));
       if (poll.collectionTo().isAfter(covered)) covered = poll.collectionTo();
     }
@@ -162,7 +163,7 @@ class RosterTest {
     assertEquals(List.of(27L, 15L), widest);
     assertEquals(LocalDate.of(2016, 8, 1), withFi.get(breaks.indexOf(27L)).collectionFrom());
 
-    final java.util.List<se.swedishpolls.Roster.Composition> excluded =
+    final java.util.List<se.swedishpolls.source.Roster.Composition> excluded =
         window.stream()
             .map(poll -> Roster.compose(FI_SEGMENT, poll))
             .filter(composition -> !composition.complete())
@@ -193,7 +194,7 @@ class RosterTest {
             .collect(Collectors.groupingBy(PollCsv.Poll::institute, Collectors.counting())));
 
     // The two isolated 2022 observations stay archived and never join the candidate segment.
-    final java.util.List<se.swedishpolls.PollCsv.Poll> later =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> later =
         eligible.stream()
             .filter(
                 poll ->

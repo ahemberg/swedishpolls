@@ -1,4 +1,4 @@
-package se.swedishpolls;
+package se.swedishpolls.source;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -18,7 +18,7 @@ import org.apache.commons.csv.DuplicateHeaderMode;
 
 /** Parses the source without rounding shares or filling missing values. */
 public final class PollCsv {
-  static final List<String> PARTIES = List.of("M", "L", "C", "KD", "S", "V", "MP", "SD");
+  public static final List<String> PARTIES = List.of("M", "L", "C", "KD", "S", "V", "MP", "SD");
 
   private static final List<String> REQUIRED =
       List.of(
@@ -101,7 +101,7 @@ public final class PollCsv {
           throw new IllegalArgumentException("Incomplete CSV row " + record.getRecordNumber());
         keys.merge(key(record.toMap()), 1, Integer::sum);
       }
-      final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls = new ArrayList<Poll>();
+      final java.util.ArrayList<se.swedishpolls.source.PollCsv.Poll> polls = new ArrayList<Poll>();
       for (org.apache.commons.csv.CSVRecord record : records) {
         final java.util.Map<java.lang.String, java.lang.String> raw = record.toMap();
         final java.util.ArrayList<java.lang.String> reasons = new ArrayList<String>();

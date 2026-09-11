@@ -9,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -413,7 +415,7 @@ public final class ComparableRemainder {
         new ArrayList<>(coverage.gate().reasons());
     final java.util.ArrayList<se.swedishpolls.ComparableRemainder.Published> published =
         new ArrayList<Published>();
-    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
+    for (se.swedishpolls.source.Roster.CoveragePeriod period : periods) {
       if (!period.supportValidated()) continue;
       final se.swedishpolls.CoverageValidation.Validated validated = evidence.get(period.id());
       if (validated == null)

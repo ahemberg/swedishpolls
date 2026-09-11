@@ -16,6 +16,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -246,7 +248,7 @@ public final class EstimateHistory {
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules rules,
       DailyStateSpace.Centering centering) {
-    final java.util.List<se.swedishpolls.PollCsv.Poll> development =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> development =
         CoverageValidation.development(polls, rules);
     final se.swedishpolls.CoverageValidation.Support support =
         CoverageValidation.support(period, development, rules);
@@ -283,9 +285,9 @@ public final class EstimateHistory {
       DailyStateSpace.Parameters parameters,
       int gapDays,
       DailyStateSpace.Centering centering) {
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         observations.stream().map(PollObservations.Observation::poll).toList();
-    final se.swedishpolls.Roster.CoveragePeriod window =
+    final se.swedishpolls.source.Roster.CoveragePeriod window =
         new Roster.CoveragePeriod(
             period.id(),
             polls.stream()
@@ -467,7 +469,7 @@ public final class EstimateHistory {
     final java.util.LinkedHashMap<java.lang.String, java.time.LocalDate> lastFieldwork =
         new LinkedHashMap<String, LocalDate>();
     final java.util.LinkedHashSet<java.lang.String> published = new LinkedHashSet<String>();
-    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
+    for (se.swedishpolls.source.Roster.CoveragePeriod period : periods) {
       if (!period.supportValidated()) continue;
       final se.swedishpolls.CoverageValidation.Validated validated = evidence.get(period.id());
       if (validated == null)
@@ -492,7 +494,7 @@ public final class EstimateHistory {
     final java.util.ArrayList<se.swedishpolls.EstimateHistory.Unavailable> unavailable =
         new ArrayList<Unavailable>();
     final java.util.LinkedHashSet<java.lang.String> seen = new LinkedHashSet<String>();
-    for (se.swedishpolls.Roster.CoveragePeriod period : periods)
+    for (se.swedishpolls.source.Roster.CoveragePeriod period : periods)
       for (java.lang.String component : period.roster())
         if (!published.contains(component) && seen.add(component))
           unavailable.add(new Unavailable(component, NO_VALIDATED_PERIOD));

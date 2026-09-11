@@ -9,6 +9,8 @@ import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.util.HexFormat;
 import java.util.List;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
 
 /** Prints a digest of the final development-day draws for cross-architecture comparison. */
 public final class ReproductionProbe {
@@ -22,7 +24,7 @@ public final class ReproductionProbe {
     final java.nio.file.Path protocol = Path.of("docs", "validation", "protocol.json");
     final se.swedishpolls.CoverageValidation.Report coverage =
         CoverageValidation.validation(Path.of("docs", "validation", "coverage.json"));
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         new Roster.CoveragePeriod(
             "eight_party_2010",
             LocalDate.of(2010, 1, 1),
@@ -36,7 +38,7 @@ public final class ReproductionProbe {
             .filter(candidate -> candidate.periodId().equals(period.id()))
             .findFirst()
             .orElseThrow();
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         PollCsv.parse(
             Files.readAllBytes(Path.of("src", "test", "resources", "polls", "audit.csv")));
     final se.swedishpolls.EstimateHistory.Fitted fitted =

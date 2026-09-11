@@ -1,4 +1,4 @@
-package se.swedishpolls;
+package se.swedishpolls.source.service;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -27,6 +27,12 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
+import se.swedishpolls.DailyStateSpace;
+import se.swedishpolls.PollObservations;
+import se.swedishpolls.TestDatabase;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.repository.CoveragePeriodRepository;
+import se.swedishpolls.testsupport.PollCsvFixtures;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.NONE,
@@ -46,7 +52,7 @@ class SnapshotIngestIT {
   @Autowired private PlatformTransactionManager transactions;
   @InjectWireMock private WireMockServer wireMock;
 
-  private byte[] body = PollCsvTest.csv(PollCsvTest.ROW);
+  private byte[] body = PollCsvFixtures.csv(PollCsvFixtures.ROW);
   private int status = 200;
   private String etag = "\"first\"";
   private StubMapping stub;
@@ -56,7 +62,7 @@ class SnapshotIngestIT {
     wireMock.resetAll();
     flyway.clean();
     flyway.migrate();
-    body = PollCsvTest.csv(PollCsvTest.ROW);
+    body = PollCsvFixtures.csv(PollCsvFixtures.ROW);
     status = 200;
     etag = "\"first\"";
     stub = null;
@@ -78,19 +84,19 @@ class SnapshotIngestIT {
 
   @Test
   void completeSnapshotsReplaceMembershipAndRemainReadable() {
-    final java.lang.String original = PollCsvTest.ROW.replace("2020-01-20", "NA");
-    body = PollCsvTest.csv(original + PollCsvTest.ROW.replace("Ipsos", "Novus"));
+    final java.lang.String original = PollCsvFixtures.ROW.replace("2020-01-20", "NA");
+    body = PollCsvFixtures.csv(original + PollCsvFixtures.ROW.replace("Ipsos", "Novus"));
     assertEquals(SnapshotIngest.Result.CHANGED, check());
-    final se.swedishpolls.SnapshotIngest.Snapshot first = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.source.Snapshot first = ingest.activeSnapshot().orElseThrow();
     assertArrayEquals(body, ingest.rawCsv(first.id()));
     assertEquals(2, ingest.polls(first.id()).size());
 
     // A corrected share, changed sample-size key and deleted Novus row replace the whole active
     // set.
     etag = "\"second\"";
-    body = PollCsvTest.csv(original.replace("20.123", "20.124").replace(",1000,", ",1001,"));
+    body = PollCsvFixtures.csv(original.replace("20.123", "20.124").replace(",1000,", ",1001,"));
     assertEquals(SnapshotIngest.Result.CHANGED, check());
-    final se.swedishpolls.SnapshotIngest.Snapshot second = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.source.Snapshot second = ingest.activeSnapshot().orElseThrow();
     assertNotEquals(first.id(), second.id());
     assertEquals(1, ingest.polls(second.id()).size());
     assertEquals("1001", ingest.polls(second.id()).getFirst().raw().get("n"));
@@ -100,7 +106,7 @@ class SnapshotIngestIT {
     assertEquals(2, ingest.polls(first.id()).size());
     assertEquals(first, ingest.snapshot(first.id()));
     assertArrayEquals(
-        PollCsvTest.csv(original + PollCsvTest.ROW.replace("Ipsos", "Novus")),
+        PollCsvFixtures.csv(original + PollCsvFixtures.ROW.replace("Ipsos", "Novus")),
         ingest.rawCsv(first.id()));
     assertEquals(second.id(), ingest.activeSnapshot().orElseThrow().id());
   }
@@ -113,7 +119,7 @@ class SnapshotIngestIT {
         getRequestedFor(urlEqualTo("/polls.csv"))
             .withoutHeader("If-None-Match")
             .withoutHeader("If-Modified-Since"));
-    final se.swedishpolls.SnapshotIngest.Snapshot first = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.source.Snapshot first = ingest.activeSnapshot().orElseThrow();
     status = 304;
     assertEquals(SnapshotIngest.Result.UNCHANGED, check());
     wireMock.verify(
@@ -125,7 +131,7 @@ class SnapshotIngestIT {
     etag = "\"new-validator-same-bytes\"";
     assertEquals(SnapshotIngest.Result.UNCHANGED, check());
     assertEquals(first.id(), ingest.activeSnapshot().orElseThrow().id());
-    body = PollCsvTest.csv(PollCsvTest.ROW.replace("20.123", "20.125"));
+    body = PollCsvFixtures.csv(PollCsvFixtures.ROW.replace("20.123", "20.125"));
     assertEquals(SnapshotIngest.Result.CHANGED, check());
     body = ingest.rawCsv(first.id());
     assertEquals(SnapshotIngest.Result.CHANGED, check());
@@ -140,7 +146,7 @@ class SnapshotIngestIT {
     assertTrue(ingest.activeSnapshot().isEmpty());
     status = 200;
     check();
-    final se.swedishpolls.SnapshotIngest.Snapshot first = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.source.Snapshot first = ingest.activeSnapshot().orElseThrow();
     etag = "\"bad\"";
     for (int code : new int[] {500, 206, 404}) {
       status = code;
@@ -151,8 +157,8 @@ class SnapshotIngestIT {
     for (byte[] invalid :
         new byte[][] {
           new byte[0],
-          PollCsvTest.HEADER.getBytes(StandardCharsets.UTF_8),
-          PollCsvTest.csv("short,row\n"),
+          PollCsvFixtures.HEADER.getBytes(StandardCharsets.UTF_8),
+          PollCsvFixtures.csv("short,row\n"),
           new byte[] {(byte) 0xc3, (byte) 0x28}
         }) {
       body = invalid;
@@ -170,11 +176,12 @@ class SnapshotIngestIT {
   @Test
   void aFailedRowWriteRollsBackTheArchiveAndPointerTogether() {
     check();
-    final se.swedishpolls.SnapshotIngest.Snapshot first = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.source.Snapshot first = ingest.activeSnapshot().orElseThrow();
     db.sql(
             "ALTER TABLE snapshot_poll ADD CONSTRAINT simulated_disk_failure CHECK (poll->>'company' <> 'Broken')")
         .update();
-    body = PollCsvTest.csv(PollCsvTest.ROW + PollCsvTest.ROW.replace("Ipsos", "Broken"));
+    body =
+        PollCsvFixtures.csv(PollCsvFixtures.ROW + PollCsvFixtures.ROW.replace("Ipsos", "Broken"));
     assertThrows(org.springframework.dao.DataAccessException.class, this::check);
     assertEquals(first.id(), ingest.activeSnapshot().orElseThrow().id());
     db.sql("ALTER TABLE snapshot_poll DROP CONSTRAINT simulated_disk_failure").update();
@@ -210,9 +217,9 @@ class SnapshotIngestIT {
     try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
       body = input.readAllBytes();
     }
-    final java.util.List<se.swedishpolls.PollCsv.Poll> expected = PollCsv.parse(body);
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> expected = PollCsv.parse(body);
     assertEquals(SnapshotIngest.Result.CHANGED, check());
-    final se.swedishpolls.SnapshotIngest.Snapshot snapshot = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.source.Snapshot snapshot = ingest.activeSnapshot().orElseThrow();
     assertEquals(
         "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608", snapshot.sha256());
     assertArrayEquals(body, ingest.rawCsv(snapshot.id()));
@@ -221,14 +228,15 @@ class SnapshotIngestIT {
         4, db.sql("SELECT count(*) FROM election_reference").query(Integer.class).single());
     // Only pre-2022 development inputs enter the numerical checks. Official outcomes stay in their
     // own tables.
-    final java.util.List<se.swedishpolls.PollCsv.Poll> development =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> development =
         ingest.polls(snapshot.id()).stream()
             .filter(
                 poll ->
                     poll.collectionTo() != null
                         && poll.collectionTo().isBefore(java.time.LocalDate.of(2022, 1, 1)))
             .toList();
-    final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods = new Roster(db).periods();
+    final java.util.List<se.swedishpolls.source.Roster.CoveragePeriod> periods =
+        new CoveragePeriodRepository(db).periods();
     final java.util.List<java.time.LocalDate> elections =
         db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
             .query(java.time.LocalDate.class)
@@ -315,7 +323,7 @@ class SnapshotIngestIT {
   @Test
   void oversizedDownloadsAreStoppedByTheHttpClientAndRetainTheArchive() {
     check();
-    final se.swedishpolls.SnapshotIngest.Snapshot first = ingest.activeSnapshot().orElseThrow();
+    final se.swedishpolls.source.Snapshot first = ingest.activeSnapshot().orElseThrow();
     body = new byte[16 * 1024 * 1024 + 1];
     assertThrows(IllegalStateException.class, this::check);
     assertEquals(first.id(), ingest.activeSnapshot().orElseThrow().id());

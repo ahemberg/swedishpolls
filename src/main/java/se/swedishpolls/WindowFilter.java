@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import org.ejml.simple.SimpleMatrix;
+import se.swedishpolls.source.PollCsv;
 
 /**
  * The forward filter that scores held-out polls, where a poll observes the arithmetic average of

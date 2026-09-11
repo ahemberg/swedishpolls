@@ -15,6 +15,9 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.source.repository.CoveragePeriodRepository;
 
 /**
  * The once-only reserved 2022 comparison and the release verdict it feeds. The archived result is
@@ -123,7 +126,7 @@ class ReleaseAuditIT {
               .list();
 
       final CoverageValidation.Report coverage = CoverageValidation.validation(COVERAGE);
-      final List<Roster.CoveragePeriod> periods = new Roster(db).periods();
+      final List<Roster.CoveragePeriod> periods = new CoveragePeriodRepository(db).periods();
       final Roster.CoveragePeriod period =
           periods.stream()
               .filter(Roster.CoveragePeriod::supportValidated)

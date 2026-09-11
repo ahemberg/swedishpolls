@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.testsupport.PollCsvFixtures;
 
 class DevelopmentTuningTest {
   private static final LocalDate START = LocalDate.of(2014, 1, 1);
@@ -58,7 +61,7 @@ class DevelopmentTuningTest {
   }
 
   private static List<PollCsv.Poll> polls(String rows) {
-    return PollCsv.parse(PollCsvTest.csv(rows));
+    return PollCsv.parse(PollCsvFixtures.csv(rows));
   }
 
   @Test
@@ -108,7 +111,7 @@ class DevelopmentTuningTest {
                 START.plusDays(200).toString()) // late publication of early fieldwork
             + row("SVT", 9, 11, "22") // exit poll, ineligible
             + row("Novus", 12, 14, "150"); // invalid share, ineligible
-    final java.util.List<se.swedishpolls.PollCsv.Poll> training =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> training =
         DevelopmentTuning.training(polls(rows), FOLD);
     assertEquals(List.of("Novus"), training.stream().map(PollCsv.Poll::institute).toList());
     assertEquals(List.of(1), training.stream().map(PollCsv.Poll::rowNumber).toList());
@@ -128,7 +131,7 @@ class DevelopmentTuningTest {
           .append(row("Novus", week * 7 + 2, week * 7 + 3, "18"));
     // Eligible and published in time, but its fieldwork starts before the coverage period.
     rows.append(row("Sifo", -12, -10, "22"));
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = polls(rows.toString());
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls = polls(rows.toString());
     for (boolean fi : List.of(false, true)) {
       final se.swedishpolls.DevelopmentTuning.Resolved resolved =
           DevelopmentTuning.tune(period(fi), polls, ELECTIONS, FOLD, GRID);
@@ -156,7 +159,7 @@ class DevelopmentTuningTest {
     for (int week = 0; week < 20; week++)
       rows.append(row("Sifo", week * 7, week * 7 + 1, "24"))
           .append(row("Novus", week * 7 + 2, week * 7 + 3, "18"));
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = polls(rows.toString());
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls = polls(rows.toString());
     // A single-valued axis is a fixed parameter, so its optimum is at both ends of that axis.
     final se.swedishpolls.DevelopmentTuning.Grid fixed =
         new DevelopmentTuning.Grid(List.of(1e-4), List.of(0.05), List.of(1.5));
@@ -197,7 +200,7 @@ class DevelopmentTuningTest {
     for (int week = 0; week < 24; week++)
       rows.append(row("Sifo", week * 7, week * 7 + 1, week % 2 == 0 ? "24" : "20"))
           .append(row("Novus", week * 7 + 2, week * 7 + 3, "18"));
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = polls(rows.toString());
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls = polls(rows.toString());
     final se.swedishpolls.DevelopmentTuning.Fold late =
         new DevelopmentTuning.Fold(LocalDate.of(2013, 12, 31), LocalDate.of(2014, 2, 4));
     final se.swedishpolls.DevelopmentTuning.Protocol protocol =
@@ -240,7 +243,8 @@ class DevelopmentTuningTest {
 
   @Test
   void emptyFoldsAndFailedFitsStopTuningInsteadOfBeingDroppedFromTheGrid() {
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls = polls(row("Novus", 30, 32, "20"));
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
+        polls(row("Novus", 30, 32, "20"));
     final se.swedishpolls.DevelopmentTuning.Fold early =
         new DevelopmentTuning.Fold(LocalDate.of(2013, 12, 31), LocalDate.of(2014, 2, 4));
     final java.lang.IllegalArgumentException empty =

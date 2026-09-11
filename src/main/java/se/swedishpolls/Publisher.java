@@ -21,6 +21,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Snapshot;
+import se.swedishpolls.source.service.PollQueryService;
+import se.swedishpolls.source.service.SnapshotIngest;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -69,24 +73,31 @@ public class Publisher {
   private final DataSource dataSource;
   private final JdbcClient db;
   private final SnapshotIngest ingest;
+  private final PollQueryService queries;
   private final PublicationStore store;
   private final ModelFreeze freeze;
 
   @Autowired
   public Publisher(
-      DataSource dataSource, JdbcClient db, SnapshotIngest ingest, PublicationStore store) {
-    this(dataSource, db, ingest, store, ModelFreeze.load());
+      DataSource dataSource,
+      JdbcClient db,
+      SnapshotIngest ingest,
+      PollQueryService queries,
+      PublicationStore store) {
+    this(dataSource, db, ingest, queries, store, ModelFreeze.load());
   }
 
   Publisher(
       DataSource dataSource,
       JdbcClient db,
       SnapshotIngest ingest,
+      PollQueryService queries,
       PublicationStore store,
       ModelFreeze freeze) {
     this.dataSource = dataSource;
     this.db = db;
     this.ingest = ingest;
+    this.queries = queries;
     this.store = store;
     this.freeze = freeze;
   }
@@ -117,7 +128,7 @@ public class Publisher {
       return new Attempt(Outcome.BUSY, null, "a source check is running");
     }
     final Instant sourceCheckedAt = store.lastSuccessfulCheck().orElseGet(Instant::now);
-    final Optional<SnapshotIngest.Snapshot> active = ingest.activeSnapshot();
+    final Optional<Snapshot> active = ingest.activeSnapshot();
     if (active.isEmpty()) {
       return fail(sourceCheckedAt, "no archived source snapshot");
     }
@@ -169,11 +180,11 @@ public class Publisher {
     return new Attempt(Outcome.FAILED, null, failure);
   }
 
-  private Attempt run(SnapshotIngest.Snapshot snapshot, Instant sourceCheckedAt) {
+  private Attempt run(Snapshot snapshot, Instant sourceCheckedAt) {
     ShareImages.checkFonts();
     final List<PollCsv.Poll> polls = ingest.polls(snapshot.id());
     final PublicationRun.Results results =
-        PublicationRun.run(db, freeze, snapshot.id(), snapshot.sha256(), polls);
+        PublicationRun.run(db, freeze, snapshot.id(), snapshot.sha256(), polls, queries.periods());
     checkInvariants(results);
     checkReproduction(results, polls);
     checkDrift(results);

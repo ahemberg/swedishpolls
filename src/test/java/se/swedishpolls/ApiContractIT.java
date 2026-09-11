@@ -13,6 +13,10 @@ import java.util.stream.Collectors;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.source.repository.CoveragePeriodRepository;
+import se.swedishpolls.testsupport.PollCsvFixtures;
 import tools.jackson.databind.JsonNode;
 
 /**
@@ -37,10 +41,11 @@ class ApiContractIT {
 
       final tools.jackson.databind.JsonNode described =
           read("estimates-latest.json").get("coveragePeriods");
-      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> stored = new Roster(db).periods();
+      final java.util.List<se.swedishpolls.source.Roster.CoveragePeriod> stored =
+          new CoveragePeriodRepository(db).periods();
       assertEquals(stored.size(), described.size());
       for (int index = 0; index < stored.size(); index++) {
-        final se.swedishpolls.Roster.CoveragePeriod period = stored.get(index);
+        final se.swedishpolls.source.Roster.CoveragePeriod period = stored.get(index);
         final tools.jackson.databind.JsonNode example = described.get(index);
         assertEquals(period.id(), example.get("id").asString());
         assertEquals(period.effectiveFrom(), LocalDate.parse(example.get("from").asString()));
@@ -134,8 +139,8 @@ class ApiContractIT {
       // coalition.
       final java.util.List<java.lang.String> roster =
           Roster.supportedPeriod(
-                  new Roster(db).periods(),
-                  PollCsv.parse(PollCsvTest.csv(PollCsvTest.ROW)).getFirst())
+                  new CoveragePeriodRepository(db).periods(),
+                  PollCsv.parse(PollCsvFixtures.csv(PollCsvFixtures.ROW)).getFirst())
               .roster();
       for (tools.jackson.databind.JsonNode party : read("seats.json").get("parties"))
         assertTrue(

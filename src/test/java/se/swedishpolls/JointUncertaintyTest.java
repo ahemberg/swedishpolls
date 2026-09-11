@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
 
 class JointUncertaintyTest {
   private static final Path PROTOCOL = Path.of("docs", "validation", "protocol.json");
@@ -60,9 +62,9 @@ class JointUncertaintyTest {
 
   @Test
   void transformsEveryDrawBeforeAveragingSupport() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
     final se.swedishpolls.JointUncertainty.Estimated estimated = estimate(period, polls, RULES);
@@ -105,9 +107,9 @@ class JointUncertaintyTest {
 
   @Test
   void intervalsNestByLevelAndBracketTheDrawnMean() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
     final se.swedishpolls.JointUncertainty.Day day =
@@ -127,9 +129,9 @@ class JointUncertaintyTest {
 
   @Test
   void reproducesEveryDrawAtTheSameSeedAndMovesAtAnother() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
 
     final se.swedishpolls.JointUncertainty.Estimated first = estimate(period, polls, RULES);
@@ -153,9 +155,9 @@ class JointUncertaintyTest {
 
   @Test
   void aDayDrawsFromItsOwnStreamSoItDoesNotDependOnTheRunAroundIt() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.ArrayList<se.swedishpolls.source.PollCsv.Poll> polls =
         new ArrayList<>(
             CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 3, 2), "1"));
     polls.addAll(
@@ -187,9 +189,9 @@ class JointUncertaintyTest {
 
   @Test
   void theNarrowedFinalDayReturnsWhatTheWholeRunReturnsForThatDay() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    final java.util.ArrayList<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.ArrayList<se.swedishpolls.source.PollCsv.Poll> polls =
         new ArrayList<>(
             CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 3, 2), "1"));
     polls.addAll(
@@ -222,9 +224,9 @@ class JointUncertaintyTest {
 
   @Test
   void repeatedSeedsMoveTheEndpointsOnlyByMonteCarloError() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 4, 6), "1");
     final java.util.ArrayList<se.swedishpolls.JointUncertainty.Estimated> repeats =
         new ArrayList<JointUncertainty.Estimated>();
@@ -251,14 +253,14 @@ class JointUncertaintyTest {
 
   @Test
   void recordsTheInputsBasisAndVersionsARerunNeeds() {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
-    final se.swedishpolls.Roster.CoveragePeriod candidate =
+    final se.swedishpolls.source.Roster.CoveragePeriod candidate =
         CoverageValidationTest.period(
             "candidate", LocalDate.of(2015, 1, 1), LocalDate.of(2015, 6, 1), true, false);
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
-    final java.util.List<se.swedishpolls.PollCsv.Poll> fewer =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> fewer =
         CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 5, 25), "1");
 
     final se.swedishpolls.JointUncertainty.Reproduction run =

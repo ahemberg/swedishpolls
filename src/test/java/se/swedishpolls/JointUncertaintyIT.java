@@ -11,6 +11,8 @@ import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.repository.CoveragePeriodRepository;
 
 /**
  * Draws the joint uncertainty of the archived pre-2022 development rows at the registered seed and
@@ -33,8 +35,8 @@ class JointUncertaintyIT {
     try {
       flyway.migrate();
       final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
-      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
-          new Roster(db).periods();
+      final java.util.List<se.swedishpolls.source.Roster.CoveragePeriod> periods =
+          new CoveragePeriodRepository(db).periods();
       final java.util.List<java.time.LocalDate> elections =
           db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
               .query(LocalDate.class)
