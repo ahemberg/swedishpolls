@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.ejml.simple.SimpleMatrix;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.testsupport.PollCsvFixtures;
 
 class WindowFilterTest {
   private static final LocalDate START = LocalDate.of(2018, 6, 1);
@@ -34,7 +37,7 @@ class WindowFilterTest {
   }
 
   private static PollObservations.Batch batch(boolean fi, int days, String rows) {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         new Roster.CoveragePeriod(
             "test",
             START,
@@ -45,7 +48,7 @@ class WindowFilterTest {
             fi,
             false,
             "https://example.invalid");
-    return PollObservations.prepare(period, PollCsv.parse(PollCsvTest.csv(rows)));
+    return PollObservations.prepare(period, PollCsv.parse(PollCsvFixtures.csv(rows)));
   }
 
   @Test

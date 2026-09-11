@@ -7,9 +7,9 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-final class TestDatabase {
+public final class TestDatabase {
   @TestConfiguration(proxyBeanMethods = false)
-  static class Configuration {
+  public static class Configuration {
     @Bean
     @ServiceConnection
     PostgreSQLContainer postgres() {
@@ -19,16 +19,17 @@ final class TestDatabase {
 
   private TestDatabase() {}
 
-  static DriverManagerDataSource dataSource() {
+  public static DriverManagerDataSource dataSource() {
     return dataSourceAt(Shared.POSTGRESQL.getJdbcUrl());
   }
 
-  static DriverManagerDataSource dataSource(String schema) {
+  public static DriverManagerDataSource dataSource(String schema) {
     final java.lang.String url = Shared.POSTGRESQL.getJdbcUrl();
     return dataSourceAt(url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema);
   }
 
-  static ProcessBuilder configure(ProcessBuilder builder, DriverManagerDataSource dataSource) {
+  public static ProcessBuilder configure(
+      ProcessBuilder builder, DriverManagerDataSource dataSource) {
     builder.environment().put("DATABASE_URL", dataSource.getUrl());
     builder.environment().put("DATABASE_USER", dataSource.getUsername());
     builder.environment().put("DATABASE_PASSWORD", dataSource.getPassword());

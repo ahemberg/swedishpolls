@@ -1,4 +1,4 @@
-package se.swedishpolls;
+package se.swedishpolls.source;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,7 +22,7 @@ class PollCsvTest {
 
   @Test
   void preservesPrecisionAndMissingnessWithoutMixingUncertainIntoComposition() {
-    final se.swedishpolls.PollCsv.Poll poll =
+    final se.swedishpolls.source.PollCsv.Poll poll =
         PollCsv.parse(csv(ROW.replace("2020-01-20", "NA"))).getFirst();
     assertEquals(new BigDecimal("20.123"), poll.shares().get("M"));
     assertEquals(new BigDecimal("1.877"), poll.remainder());
@@ -38,7 +38,7 @@ class PollCsvTest {
 
   @Test
   void archivesIneligibleRowsWithReasonsAndKeepsMissingSharesNull() {
-    final java.util.List<se.swedishpolls.PollCsv.Poll> rows =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> rows =
         PollCsv.parse(
             csv(
                 ROW.replace(",17,1,10,", ",NA,1,10,")
@@ -68,7 +68,7 @@ class PollCsvTest {
       assertThrows(
           IllegalArgumentException.class,
           () -> PollCsv.parse(body.getBytes(StandardCharsets.UTF_8)));
-    final java.util.List<se.swedishpolls.PollCsv.Poll> rows =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> rows =
         PollCsv.parse(
             csv(
                 ROW.replace("2020-01-20", "NA")
@@ -79,7 +79,7 @@ class PollCsvTest {
 
   @Test
   void recordsDocumentedMethodBreakWithoutRenamingSourceIdentities() {
-    final java.util.List<se.swedishpolls.PollCsv.Poll> rows =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> rows =
         PollCsv.parse(
             csv(
                 ROW.replace("Ipsos", "Demoskop").replace("2020", "2018")
@@ -102,9 +102,9 @@ class PollCsvTest {
         "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
         java.util.HexFormat.of()
             .formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes)));
-    final java.util.List<se.swedishpolls.PollCsv.Poll> rows = PollCsv.parse(bytes);
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> rows = PollCsv.parse(bytes);
     assertEquals(2650, rows.size());
-    final java.util.List<se.swedishpolls.PollCsv.Poll> retained =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> retained =
         rows.stream()
             .filter(
                 p ->

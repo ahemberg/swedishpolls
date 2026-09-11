@@ -12,6 +12,8 @@ import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.repository.CoveragePeriodRepository;
 
 /**
  * Draws the comparable remainder of the archived pre-2022 development rows at the registered seed
@@ -33,8 +35,8 @@ class ComparableRemainderIT {
     try {
       flyway.migrate();
       final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
-      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
-          new Roster(db).periods();
+      final java.util.List<se.swedishpolls.source.Roster.CoveragePeriod> periods =
+          new CoveragePeriodRepository(db).periods();
       final java.util.List<se.swedishpolls.ComparableRemainder.Reference> elections = elections(db);
       final List<PollCsv.Poll> polls;
       try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
@@ -68,7 +70,7 @@ class ComparableRemainderIT {
 
       // The remainder is the same draws the component summaries read, not a second run. Only the
       // final day is compared, so only the final day is summarized.
-      final se.swedishpolls.Roster.CoveragePeriod period =
+      final se.swedishpolls.source.Roster.CoveragePeriod period =
           periods.stream()
               .filter(candidate -> candidate.id().equals(published.periodId()))
               .findFirst()

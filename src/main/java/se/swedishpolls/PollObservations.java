@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.simple.SimpleMatrix;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
 
 /** Numerical inputs for one separate fit, using polls read from one archived snapshot. */
 public final class PollObservations {
@@ -139,8 +141,8 @@ public final class PollObservations {
         new ArrayList<Observation>();
     final java.util.ArrayList<se.swedishpolls.PollObservations.Exclusion> exclusions =
         new ArrayList<Exclusion>();
-    for (se.swedishpolls.PollCsv.Poll poll : polls) {
-      final se.swedishpolls.Roster.Composition composition = Roster.compose(period, poll);
+    for (se.swedishpolls.source.PollCsv.Poll poll : polls) {
+      final se.swedishpolls.source.Roster.Composition composition = Roster.compose(period, poll);
       if (!composition.complete()) {
         exclusions.add(new Exclusion(poll.rowNumber(), composition.exclusionReasons()));
         continue;

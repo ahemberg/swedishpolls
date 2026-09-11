@@ -16,6 +16,9 @@ import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.source.repository.CoveragePeriodRepository;
 
 /** Rebuilds the seat and coalition evidence with `-Dseats.full=true`. */
 class NationalSeatsIT {
@@ -181,7 +184,7 @@ class NationalSeatsIT {
           final double level = uncertainty.intervalLevels().getLast();
           final List<String> reasons = new ArrayList<>(coverage.gate().reasons());
           final List<SeatOutcomes.Published> published = new ArrayList<>();
-          for (final Roster.CoveragePeriod period : new Roster(db).periods()) {
+          for (final Roster.CoveragePeriod period : new CoveragePeriodRepository(db).periods()) {
             if (!period.supportValidated()) {
               continue;
             }

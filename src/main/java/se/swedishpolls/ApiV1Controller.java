@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.PollQuery;
+import se.swedishpolls.source.service.PollQueryService;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -38,13 +41,11 @@ public class ApiV1Controller {
   private static final long IMMUTABLE_MAX_AGE_SECONDS = 31_536_000;
 
   private final PublicationStore store;
-  private final SnapshotIngest ingest;
-  private final Roster roster;
+  private final PollQueryService queries;
 
-  public ApiV1Controller(PublicationStore store, SnapshotIngest ingest, Roster roster) {
+  public ApiV1Controller(PublicationStore store, PollQueryService queries) {
     this.store = store;
-    this.ingest = ingest;
-    this.roster = roster;
+    this.queries = queries;
   }
 
   /** A resolved publication: which one, and whether the caller pinned it permanently. */
@@ -247,13 +248,7 @@ public class ApiV1Controller {
     }
     final PublicationStore.Header header = header(resolved);
     final PollQuery.Result result =
-        PollQuery.filter(
-            header.snapshotId(),
-            ingest.polls(header.snapshotId()),
-            roster.periods(),
-            filters,
-            requestedPage,
-            size);
+        queries.query(header.snapshotId(), filters, requestedPage, size);
     return json(
         pollsBody(header, result, filters, resolved, Translations.of(language)),
         resolved,
@@ -280,13 +275,7 @@ public class ApiV1Controller {
     }
     final PublicationStore.Header header = header(resolved);
     final PollQuery.Result result =
-        PollQuery.filter(
-            header.snapshotId(),
-            ingest.polls(header.snapshotId()),
-            roster.periods(),
-            filters,
-            1,
-            PollQuery.MAX_PAGE_SIZE);
+        queries.query(header.snapshotId(), filters, 1, PollQuery.MAX_PAGE_SIZE);
     final byte[] body = PollQuery.csv(result, filters).getBytes(StandardCharsets.UTF_8);
     return respond(
         body,
@@ -471,8 +460,7 @@ public class ApiV1Controller {
       String coveragePeriod,
       String includeExcluded,
       List<ApiErrors.Invalid> invalid) {
-    if (coveragePeriod != null
-        && roster.periods().stream().noneMatch(period -> period.id().equals(coveragePeriod))) {
+    if (coveragePeriod != null && !queries.knownPeriod(coveragePeriod)) {
       invalid.add(new ApiErrors.Invalid("coveragePeriod", "unknown_coverage_period"));
     }
     final LocalDate fromDate = date(from, "from", invalid);

@@ -13,6 +13,9 @@ import java.util.TreeSet;
 import java.util.stream.Stream;
 import org.ejml.simple.SimpleMatrix;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.testsupport.PollCsvFixtures;
 
 class DailyStateSpaceTest {
   private static final LocalDate START = LocalDate.of(2018, 6, 1);
@@ -41,7 +44,7 @@ class DailyStateSpaceTest {
   }
 
   private static PollObservations.Batch batch(boolean fi, int days, String rows) {
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         new Roster.CoveragePeriod(
             "test",
             START,
@@ -52,7 +55,7 @@ class DailyStateSpaceTest {
             fi,
             false,
             "https://example.invalid");
-    return PollObservations.prepare(period, PollCsv.parse(PollCsvTest.csv(rows)));
+    return PollObservations.prepare(period, PollCsv.parse(PollCsvFixtures.csv(rows)));
   }
 
   @Test
@@ -227,7 +230,7 @@ class DailyStateSpaceTest {
     // Demoskop's era changes with its publication date; Inizio continues the same era under a new
     // name.
     final java.time.LocalDate start = LocalDate.of(2019, 6, 1);
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         new Roster.CoveragePeriod(
             "era",
             start,
@@ -246,7 +249,7 @@ class DailyStateSpaceTest {
     }
     final se.swedishpolls.DailyStateSpace.Fit fit =
         DailyStateSpace.fit(
-            PollObservations.prepare(period, PollCsv.parse(PollCsvTest.csv(rows.toString()))),
+            PollObservations.prepare(period, PollCsv.parse(PollCsvFixtures.csv(rows.toString()))),
             List.of(),
             PARAMETERS);
     final se.swedishpolls.DailyStateSpace.Cycle cycle = fit.cycles().getFirst();
@@ -314,7 +317,7 @@ class DailyStateSpaceTest {
   @Test
   void cyclesWithoutEligiblePollsHoldNoHouseEffects() {
     // The period opens well before the election, so its first cycle sees no poll at all.
-    final se.swedishpolls.Roster.CoveragePeriod period =
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
         new Roster.CoveragePeriod(
             "gap",
             START.minusYears(2),
@@ -324,7 +327,8 @@ class DailyStateSpaceTest {
             false,
             "https://example.invalid");
     final se.swedishpolls.PollObservations.Batch batch =
-        PollObservations.prepare(period, PollCsv.parse(PollCsvTest.csv(row("Novus", 0, 1, "20"))));
+        PollObservations.prepare(
+            period, PollCsv.parse(PollCsvFixtures.csv(row("Novus", 0, 1, "20"))));
     final se.swedishpolls.DailyStateSpace.Fit fit =
         DailyStateSpace.fit(batch, List.of(START.minusYears(1)), PARAMETERS);
     assertEquals(2, fit.cycles().size());
@@ -343,7 +347,7 @@ class DailyStateSpaceTest {
       rows.append(row("Sifo", week * 7, week * 7 + 1, "24"))
           .append(row("Novus", week * 7 + 2, week * 7 + 3, "18"));
     final se.swedishpolls.PollObservations.Batch whole = batch(false, 100, rows.toString());
-    final se.swedishpolls.Roster.CoveragePeriod later =
+    final se.swedishpolls.source.Roster.CoveragePeriod later =
         new Roster.CoveragePeriod(
             "later",
             START.plusDays(22),
@@ -353,7 +357,7 @@ class DailyStateSpaceTest {
             false,
             "https://example.invalid");
     final se.swedishpolls.PollObservations.Batch tail =
-        PollObservations.prepare(later, PollCsv.parse(PollCsvTest.csv(rows.toString())));
+        PollObservations.prepare(later, PollCsv.parse(PollCsvFixtures.csv(rows.toString())));
     final se.swedishpolls.DailyStateSpace.Fit fit =
         DailyStateSpace.fit(tail, ELECTIONS, PARAMETERS);
     assertEquals(START.plusDays(22), fit.days().getFirst().date());
@@ -575,7 +579,7 @@ class DailyStateSpaceTest {
           .append(era("Demoskop", eraStart.plusDays(200 + week * 7), "24"))
           .append(era("Inizio", eraStart.plusDays(210 + week * 7), "24"))
           .append(era("Novus", eraStart.plusDays(week * 7 + 3), "21"));
-    final se.swedishpolls.Roster.CoveragePeriod eraPeriod =
+    final se.swedishpolls.source.Roster.CoveragePeriod eraPeriod =
         new Roster.CoveragePeriod(
             "era",
             eraStart,
@@ -631,7 +635,8 @@ class DailyStateSpaceTest {
                 0.10291234119299039)),
         new Scenario(
             "method eras",
-            PollObservations.prepare(eraPeriod, PollCsv.parse(PollCsvTest.csv(eras.toString()))),
+            PollObservations.prepare(
+                eraPeriod, PollCsv.parse(PollCsvFixtures.csv(eras.toString()))),
             List.of(),
             PARAMETERS,
             new Pinned(

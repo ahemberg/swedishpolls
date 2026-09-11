@@ -17,6 +17,8 @@ import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.simple.SimpleMatrix;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -717,7 +719,7 @@ public final class JointUncertainty {
         new ArrayList<Published>();
     final java.util.ArrayList<se.swedishpolls.JointUncertainty.ProposedTolerance> tolerances =
         new ArrayList<ProposedTolerance>();
-    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
+    for (se.swedishpolls.source.Roster.CoveragePeriod period : periods) {
       if (!period.supportValidated()) continue;
       final se.swedishpolls.CoverageValidation.Validated validated = evidence.get(period.id());
       if (validated == null)

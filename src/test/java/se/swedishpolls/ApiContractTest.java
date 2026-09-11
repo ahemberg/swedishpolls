@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.stream.StreamSupport;
 import org.apache.commons.csv.CSVFormat;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.source.PollCsv;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -282,7 +283,7 @@ class ApiContractTest {
     try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
       bytes = input.readAllBytes();
     }
-    final java.util.Map<java.lang.String, se.swedishpolls.PollCsv.Poll> source =
+    final java.util.Map<java.lang.String, se.swedishpolls.source.PollCsv.Poll> source =
         PollCsv.parse(bytes).stream()
             .filter(PollCsv.Poll::eligible)
             .collect(
@@ -294,7 +295,7 @@ class ApiContractTest {
     for (int index = 0; index < rows.size(); index++) {
       final java.util.Map<java.lang.String, java.lang.String> row = rows.get(index);
       final tools.jackson.databind.JsonNode json = polls.get("polls").get(index);
-      final se.swedishpolls.PollCsv.Poll poll =
+      final se.swedishpolls.source.PollCsv.Poll poll =
           source.get(row.get("institute") + "/" + row.get("publication_date"));
       assertNotNull(poll, "The example must quote an eligible poll from the pinned snapshot");
       assertEquals(poll.collectionFrom().toString(), row.get("collection_from"));

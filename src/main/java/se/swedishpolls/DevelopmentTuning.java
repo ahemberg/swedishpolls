@@ -8,6 +8,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -202,7 +204,7 @@ public final class DevelopmentTuning {
       List<LocalDate> elections,
       Fold fold,
       Grid grid) {
-    final java.util.List<se.swedishpolls.PollCsv.Poll> training = training(polls, fold);
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> training = training(polls, fold);
     final se.swedishpolls.PollObservations.Batch batch = PollObservations.prepare(period, training);
     if (batch.observations().isEmpty())
       throw new IllegalArgumentException("Empty fold " + fold.cutoff() + " for " + period.id());
@@ -223,9 +225,9 @@ public final class DevelopmentTuning {
         new ArrayList<Resolved>();
     final java.util.ArrayList<se.swedishpolls.DevelopmentTuning.Unresolved> unresolved =
         new ArrayList<Unresolved>();
-    for (se.swedishpolls.Roster.CoveragePeriod period : periods)
+    for (se.swedishpolls.source.Roster.CoveragePeriod period : periods)
       for (se.swedishpolls.DevelopmentTuning.Fold fold : protocol.folds()) {
-        final java.util.List<se.swedishpolls.PollCsv.Poll> training = training(polls, fold);
+        final java.util.List<se.swedishpolls.source.PollCsv.Poll> training = training(polls, fold);
         final se.swedishpolls.PollObservations.Batch batch =
             PollObservations.prepare(period, training);
         if (batch.observations().isEmpty()) {

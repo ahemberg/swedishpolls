@@ -1,4 +1,4 @@
-package se.swedishpolls;
+package se.swedishpolls.source;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -458,7 +460,7 @@ public final class DevelopmentDiagnostics {
   /** The SHA-256 of the ordered {@code row:sha256} identities of one fold's rows. */
   private static String rowsSha256(List<PollCsv.Poll> polls) {
     final java.lang.StringBuilder rows = new StringBuilder();
-    for (se.swedishpolls.PollCsv.Poll poll : polls)
+    for (se.swedishpolls.source.PollCsv.Poll poll : polls)
       rows.append(poll.rowNumber())
           .append(':')
           .append(sha256(String.join(",", poll.raw().values())))
@@ -551,13 +553,14 @@ public final class DevelopmentDiagnostics {
       DevelopmentTuning.Grid grid,
       DailyStateSpace.Parameters candidateParameters,
       Rules rules) {
-    final java.util.List<se.swedishpolls.PollCsv.Poll> trainingPolls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> trainingPolls =
         DevelopmentTuning.training(polls, fold);
     final se.swedishpolls.PollObservations.Batch training =
         PollObservations.prepare(period, trainingPolls);
     if (training.observations().isEmpty())
       throw new IllegalArgumentException("no eligible training observation in the period");
-    final java.util.List<se.swedishpolls.PollCsv.Poll> heldOutPolls = heldOut(polls, fold, rules);
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> heldOutPolls =
+        heldOut(polls, fold, rules);
     final se.swedishpolls.PollObservations.Batch heldOut =
         PollObservations.prepare(period, heldOutPolls);
     if (heldOut.observations().isEmpty())
@@ -969,7 +972,7 @@ public final class DevelopmentDiagnostics {
         new ArrayList<LeftOut>();
     for (java.util.Map.Entry<java.lang.String, java.lang.Integer> counted : counts.entrySet()) {
       final java.lang.String institute = counted.getKey();
-      final java.util.List<se.swedishpolls.PollCsv.Poll> kept =
+      final java.util.List<se.swedishpolls.source.PollCsv.Poll> kept =
           polls.stream().filter(poll -> !institute.equals(poll.institute())).toList();
       final se.swedishpolls.EstimateHistory.Fitted dropped =
           EstimateHistory.fitted(period, kept, elections, parameters, rules);
@@ -1091,7 +1094,7 @@ public final class DevelopmentDiagnostics {
         autocorrelation = new ArrayList<Autocorrelation>();
     final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Dependence> dependence =
         new ArrayList<Dependence>();
-    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
+    for (se.swedishpolls.source.Roster.CoveragePeriod period : periods) {
       final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.Fold> periodFolds =
           new ArrayList<Fold>();
       final java.util.ArrayList<java.util.List<se.swedishpolls.DevelopmentDiagnostics.Scored>>
@@ -1198,7 +1201,7 @@ public final class DevelopmentDiagnostics {
         new ArrayList<CenteringShift>();
     final java.util.ArrayList<se.swedishpolls.DevelopmentDiagnostics.LeftOut> leftOut =
         new ArrayList<LeftOut>();
-    for (se.swedishpolls.Roster.CoveragePeriod period : periods) {
+    for (se.swedishpolls.source.Roster.CoveragePeriod period : periods) {
       final se.swedishpolls.CoverageValidation.Validated validated = evidence.get(period.id());
       if (!period.supportValidated() || validated == null || !validated.supported()) continue;
       centering.add(centering(period, polls, elections, validated.parameters(), coverage.rules()));

@@ -6,6 +6,9 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.testsupport.PollCsvFixtures;
 
 class DevelopmentDiagnosticsTest {
   private static final Path PROTOCOL = Path.of("docs", "validation", "protocol.json");
@@ -54,7 +57,7 @@ class DevelopmentDiagnosticsTest {
   }
 
   private static PollObservations.Batch batch(String rows) {
-    return PollObservations.prepare(period(), PollCsv.parse(PollCsvTest.csv(rows)));
+    return PollObservations.prepare(period(), PollCsv.parse(PollCsvFixtures.csv(rows)));
   }
 
   @Test
@@ -121,9 +124,9 @@ class DevelopmentDiagnosticsTest {
 
   @Test
   void scoresEveryEligiblePollPublishedInsideTheHorizonAndNoOther() {
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
         PollCsv.parse(
-            PollCsvTest.csv(
+            PollCsvFixtures.csv(
                 row("Novus", 0, 2, 3, "20")
                     + row("Sifo", 40, 42, 43, "21")
                     + row("Novus", 60, 62, 80, "22")
@@ -131,7 +134,7 @@ class DevelopmentDiagnosticsTest {
                     + row("Skop", 41, 43, 44, "24").replace(",1000,", ",NA,")));
     final se.swedishpolls.DevelopmentTuning.Fold fold =
         new DevelopmentTuning.Fold(START.plusDays(45), START.plusDays(80));
-    final java.util.List<se.swedishpolls.PollCsv.Poll> heldOut =
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> heldOut =
         DevelopmentDiagnostics.heldOut(polls, fold, RULES);
     // Published on day 80, inside the horizon; the day 43 publication trained and the day 100 one
     // is beyond it. The missing sample size is ineligible and never scored.
@@ -208,8 +211,8 @@ class DevelopmentDiagnosticsTest {
       rows.append(row("Novus", week * 7, week * 7 + 2, week * 7 + 3, "20"));
       rows.append(row("Sifo", week * 7 + 3, week * 7 + 5, week * 7 + 6, "22"));
     }
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
-        PollCsv.parse(PollCsvTest.csv(rows.toString()));
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
+        PollCsv.parse(PollCsvFixtures.csv(rows.toString()));
     final se.swedishpolls.DevelopmentTuning.Fold fold =
         new DevelopmentTuning.Fold(START.plusDays(100), START.plusDays(135));
     final se.swedishpolls.DevelopmentTuning.Grid grid =
@@ -261,8 +264,8 @@ class DevelopmentDiagnosticsTest {
       rows.append(row("Sifo", week * 7 + 1, week * 7 + 8, week * 7 + 9, "22"));
       rows.append(row("Skop", week * 7 + 2, week * 7 + 18, week * 7 + 19, "21"));
     }
-    final java.util.List<se.swedishpolls.PollCsv.Poll> polls =
-        PollCsv.parse(PollCsvTest.csv(rows.toString()));
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
+        PollCsv.parse(PollCsvFixtures.csv(rows.toString()));
     final se.swedishpolls.DevelopmentDiagnostics.Folded folded =
         DevelopmentDiagnostics.fold(
             period(),

@@ -24,6 +24,9 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
+import se.swedishpolls.source.PollQuery;
+import se.swedishpolls.source.service.PollQueryService;
+import se.swedishpolls.source.service.SnapshotIngest;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -56,8 +59,9 @@ class ApiV1IT {
         javax.sql.DataSource dataSource,
         JdbcClient db,
         SnapshotIngest ingest,
+        PollQueryService queries,
         PublicationStore store) {
-      return new Publisher(dataSource, db, ingest, store, TestPublication.released(DRAWS));
+      return new Publisher(dataSource, db, ingest, queries, store, TestPublication.released(DRAWS));
     }
 
     @Bean

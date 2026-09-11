@@ -25,6 +25,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
+import se.swedishpolls.source.service.PollQueryService;
+import se.swedishpolls.source.service.SnapshotIngest;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -58,6 +60,7 @@ class PublicationIT {
   @Autowired private DataSource dataSource;
   @Autowired private Flyway flyway;
   @Autowired private SnapshotIngest ingest;
+  @Autowired private PollQueryService queries;
   @Autowired private PublicationStore store;
   @Autowired private PlatformTransactionManager transactions;
   @InjectWireMock private WireMockServer wireMock;
@@ -77,7 +80,7 @@ class PublicationIT {
   }
 
   private Publisher publisher(PublicationStore target, ModelFreeze freeze) {
-    return new Publisher(dataSource, db, ingest, target, freeze);
+    return new Publisher(dataSource, db, ingest, queries, target, freeze);
   }
 
   @Test

@@ -15,6 +15,9 @@ import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import se.swedishpolls.source.PollCsv;
+import se.swedishpolls.source.Roster;
+import se.swedishpolls.source.repository.CoveragePeriodRepository;
 
 /** Rebuilds the final development gate with `-Dgates.full=true`. */
 class DevelopmentGatesIT {
@@ -70,8 +73,8 @@ class DevelopmentGatesIT {
     try {
       flyway.migrate();
       final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
-      final java.util.List<se.swedishpolls.Roster.CoveragePeriod> periods =
-          new Roster(db).periods();
+      final java.util.List<se.swedishpolls.source.Roster.CoveragePeriod> periods =
+          new CoveragePeriodRepository(db).periods();
       final java.util.List<java.time.LocalDate> elections =
           db.sql(
                   "SELECT election_date FROM election_reference WHERE election_date < DATE"
@@ -84,7 +87,7 @@ class DevelopmentGatesIT {
       }
       final se.swedishpolls.CoverageValidation.Report coverage =
           CoverageValidation.validation(COVERAGE);
-      final se.swedishpolls.Roster.CoveragePeriod period =
+      final se.swedishpolls.source.Roster.CoveragePeriod period =
           periods.stream()
               .filter(Roster.CoveragePeriod::supportValidated)
               .findFirst()
@@ -211,8 +214,8 @@ class DevelopmentGatesIT {
     final java.util.ArrayList<se.swedishpolls.DevelopmentGates.Perturbation> perturbations =
         new ArrayList<DevelopmentGates.Perturbation>();
     for (se.swedishpolls.PollObservations.Observation observation : latest.values()) {
-      final se.swedishpolls.PollCsv.Poll changed = observation.poll();
-      final java.util.List<se.swedishpolls.PollCsv.Poll> removed =
+      final se.swedishpolls.source.PollCsv.Poll changed = observation.poll();
+      final java.util.List<se.swedishpolls.source.PollCsv.Poll> removed =
           polls.stream().filter(poll -> poll.rowNumber() != changed.rowNumber()).toList();
       perturbations.add(
           DevelopmentGates.compare(
@@ -221,7 +224,7 @@ class DevelopmentGatesIT {
               baseline,
               EstimateHistory.estimate(
                   period, removed, elections, parameters, rules, uncertaintyRules)));
-      final java.util.List<se.swedishpolls.PollCsv.Poll> corrected =
+      final java.util.List<se.swedishpolls.source.PollCsv.Poll> corrected =
           polls.stream()
               .map(poll -> poll.rowNumber() == changed.rowNumber() ? corrected(poll) : poll)
               .toList();
