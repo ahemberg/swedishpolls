@@ -27,6 +27,11 @@ public final class PublicationDocuments {
 
   public static final String NO_VALIDATED_PERIOD = "no_validated_coverage_period";
 
+  /** The two families of headline probability, and the page each one is shown on. */
+  private static final String THRESHOLD = "threshold";
+
+  private static final String MAJORITY = "majority";
+
   /** The identity every dependent response repeats. */
   public record Identity(String publicationId, String runId, long snapshotId) {}
 
@@ -438,7 +443,7 @@ public final class PublicationDocuments {
     }
     final ArrayNode excluded = node.putArray("excludedFromAllocation");
     summary.excludedFromAllocation().forEach(excluded::add);
-    sensitivity(node, results, drawn, text);
+    sensitivity(node, results, drawn, THRESHOLD, text);
     return node;
   }
 
@@ -500,19 +505,20 @@ public final class PublicationDocuments {
       entry.put("tied", pair.tied());
     }
     comparison.put("tie", summary.tie());
-    sensitivity(node, results, drawn, text);
+    sensitivity(node, results, drawn, MAJORITY, text);
     return node;
   }
 
   /**
    * The disclosure the registered alternative fits earn against these same numbers. Each
-   * alternative is allocated under the rule of the document it sits in, so the movement is measured
+   * alternative is allocated under the rule of the document it sits in, so a movement is measured
    * on the probabilities the page shows rather than on another election's allocation.
    */
   private static void sensitivity(
       ObjectNode node,
       PublicationRun.Results results,
       NationalSeats.SeatDraws drawn,
+      String quantityKind,
       Translations text) {
     final SeatOutcomes.Headline published = SeatOutcomes.headline(drawn);
     final List<SeatOutcomes.Sensitivity> sensitivity =
@@ -526,41 +532,55 @@ public final class PublicationDocuments {
                         SeatOutcomes.headline(
                             NationalSeats.allocateDraws(alternative.draws(), drawn.rules()))))
             .toList();
-    final String note = sensitivityNote(sensitivity, text);
+    final String note = sensitivityNote(sensitivity, quantityKind, text);
     if (note != null) {
       node.put("sensitivity", note);
     }
   }
 
   /**
-   * The registered alternative fits that moved a headline probability far enough to be disclosed,
-   * worded in the language of the document they sit beside. Null when none of them did, so a
-   * publication with nothing to disclose carries no field rather than an empty one.
+   * Every probability of this document's own kind that a registered alternative moved past the
+   * disclosure threshold, worded in the document's language. Each page discloses the numbers it
+   * shows: threshold probabilities on the seats page, majority probabilities on the coalitions
+   * page. Null when nothing moved that far, so a publication with nothing to disclose carries no
+   * field rather than an empty one.
    */
-  static String sensitivityNote(List<SeatOutcomes.Sensitivity> sensitivity, Translations text) {
-    final List<String> movements =
-        sensitivity.stream()
-            .filter(SeatOutcomes.Sensitivity::needsDisclosure)
-            .map(alternative -> movement(alternative, text))
-            .toList();
+  static String sensitivityNote(
+      List<SeatOutcomes.Sensitivity> sensitivity, String quantityKind, Translations text) {
+    final List<String> movements = new ArrayList<>();
+    for (final SeatOutcomes.Sensitivity alternative : sensitivity) {
+      final Map<String, Double> differences =
+          THRESHOLD.equals(quantityKind)
+              ? alternative.thresholdDifferencePoints()
+              : alternative.majorityDifferencePoints();
+      for (final Map.Entry<String, Double> moved : differences.entrySet()) {
+        final double points = Math.abs(moved.getValue());
+        if (points > SeatOutcomes.DISCLOSED_SHIFT_POINTS) {
+          movements.add(movement(quantityKind, moved.getKey(), points, alternative, text));
+        }
+      }
+    }
     return movements.isEmpty() ? null : String.join(" ", movements);
   }
 
-  private static String movement(SeatOutcomes.Sensitivity alternative, Translations text) {
-    final String quantity = alternative.largestMovement();
-    final int separator = quantity.indexOf(':');
-    final String kind = quantity.substring(0, separator);
-    final String subject = quantity.substring(separator + 1);
+  /**
+   * One movement, at one decimal. The rule discloses a movement over ten points, so a rounded whole
+   * number would let 10.4 print as the ten it is above.
+   */
+  private static String movement(
+      String quantityKind,
+      String subject,
+      double points,
+      SeatOutcomes.Sensitivity alternative,
+      Translations text) {
     final String label =
-        "threshold".equals(kind) ? text.component(subject) : text.coalition(subject);
+        THRESHOLD.equals(quantityKind) ? text.component(subject) : text.coalition(subject);
+    final String quantity =
+        Translations.fill(text.text("sensitivity.quantity." + quantityKind), "label", label);
+    final String sentence =
+        Translations.fill(text.text("sensitivity.movement"), "quantity", quantity);
     return Translations.fill(
-        Translations.fill(
-            Translations.fill(
-                text.text("sensitivity.movement"),
-                "quantity",
-                Translations.fill(text.text("sensitivity.quantity." + kind), "label", label)),
-            "points",
-            Long.toString(Math.round(alternative.maxAbsoluteDifferencePoints()))),
+        Translations.fill(sentence, "points", SiteFormat.decimal(points, text.language())),
         "alternative",
         text.text("sensitivity.alternative." + alternative.label()));
   }

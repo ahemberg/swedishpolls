@@ -88,5 +88,5 @@
     }
   },
   "excludedFromAllocation": ["OTHER"],
-  "sensitivity": "the majority probability for M, L, KD and SD moves 12 percentage points under weighting each institute by how many polls it published."
+  "sensitivity": "the 4% threshold probability for Liberals moves 12.4 percentage points under weighting each institute by how many polls it published."
 }

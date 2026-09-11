@@ -278,7 +278,7 @@ class PublicationIT {
   }
 
   @Test
-  void theRegisteredCenteringAlternativeIsRefitAndDiscloseItsMovementBesideTheNumbers() {
+  void theRegisteredCenteringAlternativeIsRefitAndItsMovementSitsBesideTheNumbers() {
     ingest.check();
     final long snapshotId = ingest.activeSnapshot().orElseThrow().id();
     final ModelFreeze freeze = TestPublication.released(DRAWS);
@@ -305,27 +305,30 @@ class PublicationIT {
     final NationalSeats.Rules rules = results.allocationRule();
     final NationalSeats.SeatDraws drawn =
         NationalSeats.allocateDraws(results.headline().draws(), rules);
-    final String expected =
-        PublicationDocuments.sensitivityNote(
-            List.of(
-                SeatOutcomes.sensitivity(
-                    centering.kind(),
-                    centering.label(),
-                    SeatOutcomes.headline(drawn),
-                    SeatOutcomes.headline(NationalSeats.allocateDraws(centering.draws(), rules)))),
-            Translations.of(Translations.ENGLISH));
-    for (final tools.jackson.databind.node.ObjectNode document :
+    final Translations english = Translations.of(Translations.ENGLISH);
+    final List<SeatOutcomes.Sensitivity> sensitivity =
         List.of(
-            PublicationDocuments.seats(
-                identity, results, drawn, freeze, Translations.of(Translations.ENGLISH)),
-            PublicationDocuments.coalitions(
-                identity, results, drawn, freeze, Translations.of(Translations.ENGLISH)))) {
-      if (expected == null) {
-        assertFalse(
-            document.has("sensitivity"), "Nothing moved far enough to disclose beside the numbers");
-      } else {
-        assertEquals(expected, document.get("sensitivity").asString());
-      }
+            SeatOutcomes.sensitivity(
+                centering.kind(),
+                centering.label(),
+                SeatOutcomes.headline(drawn),
+                SeatOutcomes.headline(NationalSeats.allocateDraws(centering.draws(), rules))));
+    // Each page discloses the probabilities it shows, so the two notes are not the same note.
+    assertDisclosure(
+        PublicationDocuments.seats(identity, results, drawn, freeze, english),
+        PublicationDocuments.sensitivityNote(sensitivity, "threshold", english));
+    assertDisclosure(
+        PublicationDocuments.coalitions(identity, results, drawn, freeze, english),
+        PublicationDocuments.sensitivityNote(sensitivity, "majority", english));
+  }
+
+  private static void assertDisclosure(
+      tools.jackson.databind.node.ObjectNode document, String expected) {
+    if (expected == null) {
+      assertFalse(
+          document.has("sensitivity"), "Nothing moved far enough to disclose beside the numbers");
+    } else {
+      assertEquals(expected, document.get("sensitivity").asString());
     }
   }
 

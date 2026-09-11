@@ -63,11 +63,6 @@ public final class PublicationRun {
       elections = List.copyOf(elections);
       institutes = Map.copyOf(institutes);
     }
-
-    @Override
-    public List<Alternative> alternatives() {
-      return List.copyOf(alternatives);
-    }
   }
 
   /**

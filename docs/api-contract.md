@@ -89,8 +89,10 @@ names the election year being approximated, its first divisor, the inclusive 4%
 threshold, the documented tie order and the omitted constituency exceptions.
 
 Both responses carry a `sensitivity` sentence when a registered alternative fit moves a
-headline probability more than 10 percentage points, and no such field when none does. It
-is a disclosure beside the numbers, never a block on publication.
+headline probability more than 10 percentage points, and no such field when none does. Each
+names every probability of its own kind that moved, at one decimal: threshold probabilities
+on seats, majority probabilities on coalitions. It is a disclosure beside the numbers, never
+a block on publication.
 
 Coalition responses carry the ten approved memberships, a 175-seat majority line,
 the overview defaults and probabilities from the same joint draws; an exact tie

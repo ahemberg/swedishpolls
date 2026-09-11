@@ -8,61 +8,98 @@ import org.junit.jupiter.api.Test;
 
 /** The published wording of a sensitivity movement, in the language of the document it sits in. */
 class PublicationDocumentsTest {
-  private static SeatOutcomes.Sensitivity moved(String quantity, double points) {
-    return new SeatOutcomes.Sensitivity(
+  private static SeatOutcomes.Sensitivity moved(
+      Map<String, Double> thresholds, Map<String, Double> majorities) {
+    return SeatOutcomes.sensitivity(
         "centering",
         SeatOutcomes.POLL_COUNT,
-        Map.of(),
-        Map.of(),
-        points,
-        quantity,
-        points > SeatOutcomes.DISCLOSED_SHIFT_POINTS);
+        new SeatOutcomes.Headline(zeroed(thresholds), zeroed(majorities)),
+        new SeatOutcomes.Headline(fractions(thresholds), fractions(majorities)));
+  }
+
+  private static Map<String, Double> zeroed(Map<String, Double> points) {
+    return points.keySet().stream()
+        .collect(java.util.stream.Collectors.toMap(key -> key, key -> 0.0));
+  }
+
+  private static Map<String, Double> fractions(Map<String, Double> points) {
+    return points.entrySet().stream()
+        .collect(
+            java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue() / 100));
   }
 
   @Test
-  void staysSilentWhenNoAlternativeEarnsADisclosure() {
+  void staysSilentWhenNoProbabilityMovesPastTheThreshold() {
+    final List<SeatOutcomes.Sensitivity> sensitivity =
+        List.of(moved(Map.of("L", 4.2), Map.of("tido", 9.9)));
     assertNull(
         PublicationDocuments.sensitivityNote(
-            List.of(moved("majority:tido", 4.2)), Translations.of(Translations.ENGLISH)));
+            sensitivity, "threshold", Translations.of(Translations.ENGLISH)));
     assertNull(
-        PublicationDocuments.sensitivityNote(List.of(), Translations.of(Translations.SWEDISH)));
+        PublicationDocuments.sensitivityNote(
+            sensitivity, "majority", Translations.of(Translations.SWEDISH)));
   }
 
   @Test
-  void namesTheMovedMajorityTheDistanceAndTheAlternativeInBothLanguages() {
-    final List<SeatOutcomes.Sensitivity> sensitivity = List.of(moved("majority:tido", 12.4));
+  void namesTheMovedQuantityTheDistanceAndTheAlternativeInBothLanguages() {
+    final List<SeatOutcomes.Sensitivity> sensitivity =
+        List.of(moved(Map.of(), Map.of("tido", 12.4)));
     final String english =
-        PublicationDocuments.sensitivityNote(sensitivity, Translations.of(Translations.ENGLISH));
+        PublicationDocuments.sensitivityNote(
+            sensitivity, "majority", Translations.of(Translations.ENGLISH));
     assertNotNull(english);
     assertTrue(english.contains("majority probability for M, L, KD and SD"), english);
-    assertTrue(english.contains("12 percentage points"), english);
+    assertTrue(english.contains("12.4 percentage points"), english);
     assertTrue(english.contains("poll"), english);
 
     final String swedish =
-        PublicationDocuments.sensitivityNote(sensitivity, Translations.of(Translations.SWEDISH));
+        PublicationDocuments.sensitivityNote(
+            sensitivity, "majority", Translations.of(Translations.SWEDISH));
     assertNotNull(swedish);
-    assertTrue(swedish.contains("12 procentenheter"), swedish);
+    assertTrue(swedish.contains("12,4 procentenheter"), swedish);
     assertNotEquals(english, swedish);
   }
 
   @Test
-  void namesTheThresholdQuantityByTheParty() {
+  void keepsADecimalSoAMovementJustOverTheRuleNeverPrintsAsTheRuleItself() {
     final String english =
         PublicationDocuments.sensitivityNote(
-            List.of(moved("threshold:L", 11.6)), Translations.of(Translations.ENGLISH));
+            List.of(moved(Map.of("L", 10.4), Map.of())),
+            "threshold",
+            Translations.of(Translations.ENGLISH));
     assertNotNull(english);
     assertTrue(english.contains("4% threshold probability for Liberals"), english);
-    assertTrue(english.contains("12 percentage points"), english);
+    assertTrue(english.contains("10.4 percentage points"), english);
   }
 
   @Test
-  void listsEveryDisclosedMovementAndSkipsTheRest() {
+  void namesEveryProbabilityThatMovedPastTheThresholdAndNoOther() {
     final String english =
         PublicationDocuments.sensitivityNote(
-            List.of(moved("majority:left", 18.0), moved("threshold:MP", 3.0)),
+            List.of(moved(Map.of("L", 18.0, "MP", 14.0, "C", 3.0), Map.of())),
+            "threshold",
             Translations.of(Translations.ENGLISH));
     assertNotNull(english);
-    assertTrue(english.contains("18 percentage points"), english);
-    assertFalse(english.contains("3 percentage points"), english);
+    assertTrue(english.contains("18.0 percentage points"), english);
+    assertTrue(english.contains("14.0 percentage points"), english);
+    assertFalse(english.contains("3.0 percentage points"), english);
+    assertTrue(english.contains("Liberals"), english);
+    assertTrue(english.contains("Green Party"), english);
+    assertFalse(english.contains("Centre Party"), english);
+  }
+
+  @Test
+  void eachPageDisclosesOnlyTheProbabilitiesItShows() {
+    final List<SeatOutcomes.Sensitivity> sensitivity =
+        List.of(moved(Map.of("L", 18.0), Map.of("tido", 15.0)));
+    final Translations text = Translations.of(Translations.ENGLISH);
+    final String seats = PublicationDocuments.sensitivityNote(sensitivity, "threshold", text);
+    final String coalitions = PublicationDocuments.sensitivityNote(sensitivity, "majority", text);
+    assertNotNull(seats);
+    assertNotNull(coalitions);
+    assertTrue(seats.contains("Liberals"), seats);
+    assertFalse(seats.contains("M, L, KD and SD"), seats);
+    assertTrue(coalitions.contains("M, L, KD and SD"), coalitions);
+    assertFalse(coalitions.contains("Liberals"), coalitions);
   }
 }
