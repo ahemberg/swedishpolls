@@ -239,6 +239,7 @@ public final class SiteText {
     text.put("downloads.polls", "Mätningar (CSV)");
     text.put("downloads.estimates", "Skattningar (JSON)");
     text.put("downloads.seats", "Mandat (JSON)");
+    text.put("downloads.coalitions", "Regeringsunderlag (JSON)");
     text.put("downloads.houseEffects", "Huseffekter (JSON)");
     text.put("downloads.elections", "Valresultat (JSON)");
     text.put("downloads.image", "Sammanfattande bild (PNG)");
@@ -509,6 +510,7 @@ public final class SiteText {
     text.put("downloads.polls", "Polls (CSV)");
     text.put("downloads.estimates", "Estimates (JSON)");
     text.put("downloads.seats", "Seats (JSON)");
+    text.put("downloads.coalitions", "Coalitions (JSON)");
     text.put("downloads.houseEffects", "House effects (JSON)");
     text.put("downloads.elections", "Election results (JSON)");
     text.put("downloads.image", "Summary image (PNG)");

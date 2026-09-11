@@ -18,18 +18,14 @@ export interface SeatsParty {
 }
 
 /**
- * The election-era rule one allocation was made under. It is published with the seats rather than
- * assumed, because the first divisor and the tie order are not the same in every election year.
+ * The election-era rule one allocation was made under, as far as a page reads it.
+ *
+ * The published document carries the whole rule: divisors, the threshold, the tie order and its
+ * source. A page says which election's rules these were and what the deterministic tie order
+ * stands in for, so only those two are declared here.
  */
 export interface AllocationRule {
   readonly electionYear: number;
-  readonly seats: number;
-  readonly thresholdPercent: number;
-  readonly thresholdInclusive: boolean;
-  readonly otherReceivesSeats: boolean;
-  readonly officialTieRule: string;
-  readonly constituencyExceptionsIncluded: boolean;
-  readonly sourceUrl: string;
   readonly tieNote: string;
 }
 

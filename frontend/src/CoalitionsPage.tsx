@@ -1,9 +1,10 @@
 import type { JSX } from "react";
 import type { Bootstrap, PageData, Translate } from "./bootstrap";
-import { headlineDate } from "./bootstrap";
+import { ChamberHeading } from "./ChamberHeading";
 import type { CoalitionResults } from "./chamber";
 import { Downloads } from "./Downloads";
-import { date, decimal, probability } from "./format";
+import { decimal, probability } from "./format";
+import { coalitionName, memberNames } from "./labels";
 import { SeatColumns, seatSpan } from "./seat-columns";
 
 /**
@@ -22,19 +23,6 @@ interface Props {
   readonly page: Bootstrap;
   readonly data: PageData;
   readonly t: Translate;
-}
-
-function name(page: Bootstrap, component: string): string {
-  return page.labels[component] ?? component;
-}
-
-function coalitionName(page: Bootstrap, id: string): string {
-  return name(page, `coalition.${id}`);
-}
-
-/** The parties a coalition counts, named rather than left as keys. */
-function members(page: Bootstrap, parties: readonly string[]): string {
-  return parties.map((party) => name(page, party)).join(", ");
 }
 
 function Catalogue({
@@ -64,7 +52,7 @@ function Catalogue({
           {coalitions.coalitions.map((coalition) => (
             <tr key={coalition.id}>
               <th scope="row">{coalitionName(page, coalition.id)}</th>
-              <td>{members(page, coalition.parties)}</td>
+              <td>{memberNames(page, coalition.parties)}</td>
               <td className="num">{coalition.pointSeats}</td>
               <td className="num">{decimal(coalition.meanSeats, page.language)}</td>
               <td className="num">{seatSpan(coalition.seatInterval)}</td>
@@ -130,16 +118,13 @@ function CoalitionsPage({ page, data, t }: Props): JSX.Element {
   const { coalitions } = data;
   return (
     <div>
-      <h1>
-        {t("coalitions.title")}
-        <span className="asof">
-          {t("headline.asOf", { date: date(headlineDate(page), page.locale) })}
-        </span>
-      </h1>
-      <p className="meta">{t("notForecast")}</p>
-      <p className="meta">
-        {t("coalitions.majorityLine", { majority: String(coalitions.majoritySeats) })}
-      </p>
+      <ChamberHeading
+        page={page}
+        t={t}
+        title="coalitions.title"
+        lead="coalitions.lead"
+        majoritySeats={coalitions.majoritySeats}
+      />
       <section className="sec">
         <Catalogue page={page} coalitions={coalitions} t={t} />
         <p className="footnote">{coalitions.note}</p>

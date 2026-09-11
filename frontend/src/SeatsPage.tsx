@@ -1,10 +1,11 @@
 import type { JSX } from "react";
 import type { Bootstrap, PageData, Translate } from "./bootstrap";
-import { headlineDate } from "./bootstrap";
+import { ChamberHeading } from "./ChamberHeading";
 import type { Seats, SeatsParty } from "./chamber";
 import { Downloads } from "./Downloads";
-import { date, decimal, level, probability } from "./format";
+import { decimal, level, probability } from "./format";
 import { Hemicycle, hemicycleSummary } from "./Hemicycle";
+import { componentName } from "./labels";
 import { SeatColumns, seatSpan } from "./seat-columns";
 
 /**
@@ -20,10 +21,6 @@ interface Props {
   readonly page: Bootstrap;
   readonly data: PageData;
   readonly t: Translate;
-}
-
-function name(page: Bootstrap, component: string): string {
-  return page.labels[component] ?? component;
 }
 
 /** The seat interval as the two integers the publication carries. */
@@ -76,7 +73,7 @@ function SeatTable({
         <tbody>
           {seats.parties.map((party) => (
             <tr key={party.component}>
-              <th scope="row">{name(page, party.component)}</th>
+              <th scope="row">{componentName(page, party.component)}</th>
               <td className="num">{party.pointSeats}</td>
               <td className="num">{mean(party, page)}</td>
               <td className="num">{span(party)}</td>
@@ -85,7 +82,7 @@ function SeatTable({
           ))}
           {Object.keys(seats.unavailable).map((component) => (
             <tr key={component}>
-              <th scope="row">{name(page, component)}</th>
+              <th scope="row">{componentName(page, component)}</th>
               <td className="num" colSpan={4}>
                 {t("estimate.unavailable")}
               </td>
@@ -93,7 +90,7 @@ function SeatTable({
           ))}
           {seats.excludedFromAllocation.map((component) => (
             <tr key={component}>
-              <th scope="row">{name(page, component)}</th>
+              <th scope="row">{componentName(page, component)}</th>
               <td className="num" colSpan={4}>
                 {t("estimate.noSeats")}
               </td>
@@ -107,16 +104,16 @@ function SeatTable({
 
 function SeatsPage({ page, data, t }: Props): JSX.Element {
   const { seats, coalitions } = data;
-  const summary = hemicycleSummary(seats, (component) => name(page, component));
+  const summary = hemicycleSummary(seats, (component) => componentName(page, component));
   return (
     <div>
-      <h1>
-        {t("seats.title")}
-        <span className="asof">
-          {t("headline.asOf", { date: date(headlineDate(page), page.locale) })}
-        </span>
-      </h1>
-      <p className="meta">{t("notForecast")}</p>
+      <ChamberHeading
+        page={page}
+        t={t}
+        title="seats.title"
+        lead="seats.lead"
+        majoritySeats={coalitions.majoritySeats}
+      />
       <section className="sec">
         <Hemicycle
           seats={seats}

@@ -3,6 +3,7 @@ import type { Bootstrap, PageData, Translate } from "./bootstrap";
 import type { Coalition } from "./chamber";
 import { count, probability } from "./format";
 import { Hemicycle, hemicycleSummary } from "./Hemicycle";
+import { coalitionName, componentName } from "./labels";
 
 /**
  * Blockläget: the seat arc with its majority marker, and the four default coalition results beside
@@ -13,10 +14,6 @@ interface Props {
   readonly page: Bootstrap;
   readonly data: PageData;
   readonly t: Translate;
-}
-
-function name(page: Bootstrap, component: string): string {
-  return page.labels[component] ?? component;
 }
 
 function defaults(data: PageData): readonly Coalition[] {
@@ -31,7 +28,7 @@ function defaults(data: PageData): readonly Coalition[] {
 
 function BlocStandings({ page, data, t }: Props): JSX.Element {
   const { seats, coalitions } = data;
-  const summary = hemicycleSummary(seats, (component) => name(page, component));
+  const summary = hemicycleSummary(seats, (component) => componentName(page, component));
   return (
     <section className="sec o-blocs">
       <h2>{t("blocs.title")}</h2>
@@ -59,7 +56,7 @@ function BlocStandings({ page, data, t }: Props): JSX.Element {
           <tbody>
             {defaults(data).map((coalition) => (
               <tr key={coalition.id}>
-                <th scope="row">{name(page, `coalition.${coalition.id}`)}</th>
+                <th scope="row">{coalitionName(page, coalition.id)}</th>
                 <td className="num">{count(coalition.pointSeats, page.locale)}</td>
                 <td className="num">{probability(coalition.majorityProbability, page.language)}</td>
               </tr>

@@ -594,8 +594,12 @@ class PageIT {
       final String page = get(path).body();
       final JsonNode resolved = bootstrap(page);
       assertEquals(publicationId, resolved.get("api").get("publication").asString(), path);
-      assertTrue(
-          page.contains("/api/v1/seats?publication=" + publicationId + "&amp;language=sv"), path);
+      for (final String surface : List.of("seats", "coalitions")) {
+        assertTrue(
+            page.contains(
+                "/api/v1/" + surface + "?publication=" + publicationId + "&amp;language=sv"),
+            path + " does not offer " + surface + " pinned to its own publication");
+      }
     }
   }
 

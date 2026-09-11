@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -350,9 +351,13 @@ public final class SiteHtml {
         .append(escape(text.text("notForecast")))
         .append("</p>\n");
     html.append("<p class=\"meta\">")
-        .append(escape(text.text("blocs.majority")))
-        .append(" · ")
-        .append(escape(text.text("blocs.total")))
+        .append(
+            escape(
+                SiteText.fill(
+                    text.text("coalitions.majorityLine"),
+                    "majority",
+                    Integer.toString(
+                        bootstrap.get("data").get("coalitions").get("majoritySeats").asInt()))))
         .append("</p>\n");
     html.append("<div class=\"scroll\">\n<table class=\"seats\">\n<caption>")
         .append(escape(SiteText.fill(text.text("seats.caption"), "level", level)))
@@ -370,21 +375,18 @@ public final class SiteHtml {
     for (final JsonNode party : seats.get("parties")) {
       final String key = party.get("component").asString();
       html.append("<tr><th scope=\"row\">")
-          .append(escape(labels.get(key).asString()))
+          .append(escape(label(labels, key)))
           .append("</th><td class=\"num\">")
-          .append(escape(Integer.toString(party.get("pointSeats").asInt())))
+          .append(escape(count(party.get("pointSeats"), text)))
           .append("</td><td class=\"num\">")
-          .append(escape(SiteFormat.decimal(party.get("meanSeats").asDouble(), language)))
+          .append(escape(decimal(party.get("meanSeats"), language, text)))
           .append("</td><td class=\"num\">")
           .append(escape(interval(party.get("seatInterval"))))
           .append("</td><td class=\"num\">")
-          .append(
-              escape(
-                  SiteFormat.probability(party.get("thresholdProbability").asDouble(), language)))
+          .append(escape(chance(party.get("thresholdProbability"), language, text)))
           .append("</td></tr>\n");
     }
-    for (final java.util.Map.Entry<String, JsonNode> missing :
-        seats.get("unavailable").properties()) {
+    for (final Map.Entry<String, JsonNode> missing : seats.get("unavailable").properties()) {
       html.append("<tr><th scope=\"row\">")
           .append(escape(label(labels, missing.getKey())))
           .append("</th><td colspan=\"4\">")
@@ -524,7 +526,33 @@ public final class SiteHtml {
 
   /** A seat interval, as the two integers the publication carries. */
   private static String interval(JsonNode bounds) {
+    if (bounds == null || bounds.isNull()) {
+      return "";
+    }
     return bounds.get(0).asInt() + "–" + bounds.get(1).asInt();
+  }
+
+  // A published value a page has to show. Null means the publication has no number for it, which
+  // is not zero and not a certainty: it reads as unavailable, the way the mounted page reads it.
+
+  private static String count(JsonNode value, SiteText text) {
+    return absent(value) ? text.text("estimate.unavailable") : Integer.toString(value.asInt());
+  }
+
+  private static String decimal(JsonNode value, String language, SiteText text) {
+    return absent(value)
+        ? text.text("estimate.unavailable")
+        : SiteFormat.decimal(value.asDouble(), language);
+  }
+
+  private static String chance(JsonNode value, String language, SiteText text) {
+    return absent(value)
+        ? text.text("estimate.unavailable")
+        : SiteFormat.probability(value.asDouble(), language);
+  }
+
+  private static boolean absent(JsonNode value) {
+    return value == null || value.isNull();
   }
 
   /** The parties a coalition counts, named rather than left as keys. */
@@ -848,6 +876,7 @@ public final class SiteHtml {
     link(html, "/api/v1/polls.csv" + pin, text.text("downloads.polls"));
     link(html, "/api/v1/estimates/latest" + pin, text.text("downloads.estimates"));
     link(html, "/api/v1/seats" + pin, text.text("downloads.seats"));
+    link(html, "/api/v1/coalitions" + pin, text.text("downloads.coalitions"));
     final String image = shareImage(bootstrap);
     if (image != null) {
       link(html, image, text.text("downloads.image"));
