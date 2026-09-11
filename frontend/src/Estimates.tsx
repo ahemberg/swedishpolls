@@ -18,6 +18,21 @@ interface RowProps extends Props {
   readonly component: Interval;
 }
 
+function PartyName({
+  page,
+  component,
+}: {
+  readonly page: Bootstrap;
+  readonly component: string;
+}): JSX.Element {
+  const name = page.labels[component] ?? component;
+  const path = page.partyPaths[component];
+  if (path === undefined) {
+    return <>{name}</>;
+  }
+  return <a href={path}>{name}</a>;
+}
+
 function verbal(component: Interval, page: Bootstrap, t: Translate): string {
   if (component.lower === null || component.upper === null) {
     return t("estimate.unavailable");
@@ -41,13 +56,12 @@ function seatsOf(seats: Seats, component: string, t: Translate): string {
 }
 
 function EstimateRow({ page, data, t, component }: RowProps): JSX.Element {
-  const name = page.labels[component.component] ?? component.component;
   if (component.mean === null) {
     return (
       <tr>
         <th scope="row">
           <span className="swatch" style={{ background: colour(component.component) }} />
-          {name}
+          <PartyName page={page} component={component.component} />
         </th>
         <td colSpan={4}>{t("estimate.unavailable")}</td>
       </tr>
@@ -57,7 +71,7 @@ function EstimateRow({ page, data, t, component }: RowProps): JSX.Element {
     <tr>
       <th scope="row">
         <span className="swatch" style={{ background: colour(component.component) }} />
-        {name}
+        <PartyName page={page} component={component.component} />
       </th>
       <td className="num">{percent(decimal(component.mean, page.language), page.language)}</td>
       <td>{verbal(component, page, t)}</td>
@@ -71,6 +85,7 @@ function EstimateRow({ page, data, t, component }: RowProps): JSX.Element {
 
 function Estimates({ page, data, t }: Props): JSX.Element {
   const { latest } = data;
+  const fi = page.partyPaths.FI;
   return (
     <section className="sec o-estimates">
       <h2>{t("estimate.title")}</h2>
@@ -113,6 +128,11 @@ function Estimates({ page, data, t }: Props): JSX.Element {
           {`${page.labels[component] ?? component}: ${t("estimate.unavailable")} (${reason.reason})`}
         </p>
       ))}
+      {fi !== undefined && (
+        <p>
+          <a href={fi}>{t("party.fiLink")}</a>
+        </p>
+      )}
     </section>
   );
 }

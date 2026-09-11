@@ -14,10 +14,12 @@ class ShareImagesTest {
 
   private static ShareImages.Card card(String kind, String language, boolean historical) {
     final Translations text = Translations.of(language);
+    final String title =
+        kind.startsWith("party-") ? text.component("S") : text.text("card." + kind);
     return new ShareImages.Card(
         kind,
         language,
-        text.text("card." + kind),
+        title,
         text.text("site.name"),
         FIELDWORK,
         List.of(

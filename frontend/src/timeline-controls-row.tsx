@@ -11,9 +11,10 @@ interface Props {
   readonly state: TimelineState;
   readonly label: (component: string) => string;
   readonly t: Translate;
+  readonly fixed?: boolean;
 }
 
-function TimelineControlsRow({ ids, page, state, label, t }: Props): JSX.Element {
+function TimelineControlsRow({ ids, page, state, label, t, fixed = false }: Props): JSX.Element {
   return (
     <div>
       <Ranges
@@ -22,22 +23,26 @@ function TimelineControlsRow({ ids, page, state, label, t }: Props): JSX.Element
         t={t}
         onSelect={state.chooseRange}
       />
-      <Isolation
-        id={`${ids}-isolate`}
-        series={state.series}
-        isolated={state.isolated}
-        onIsolate={state.isolate}
-        label={label}
-        t={t}
-      />
-      <PartyToggles
-        series={state.series}
-        hidden={state.hidden}
-        locked={state.isolated !== ALL_PARTIES}
-        onToggle={state.toggle}
-        label={label}
-        t={t}
-      />
+      {!fixed && (
+        <>
+          <Isolation
+            id={`${ids}-isolate`}
+            series={state.series}
+            isolated={state.isolated}
+            onIsolate={state.isolate}
+            label={label}
+            t={t}
+          />
+          <PartyToggles
+            series={state.series}
+            hidden={state.hidden}
+            locked={state.isolated !== ALL_PARTIES}
+            onToggle={state.toggle}
+            label={label}
+            t={t}
+          />
+        </>
+      )}
     </div>
   );
 }

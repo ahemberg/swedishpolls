@@ -12,13 +12,21 @@ interface Props {
   readonly t: Translate;
 }
 
-/** This publication's overview card in this language, at its published asset version. */
-function overviewImage(publication: Publication, language: Language): string | null {
-  const { overview } = publication.assets;
-  if (overview === undefined) {
+/** This route's card in this language, at its published asset version. */
+function image(
+  publication: Publication,
+  language: Language,
+  component: string | null,
+): string | null {
+  let kind = "overview";
+  if (component !== null) {
+    kind = `party-${component.toLowerCase()}`;
+  }
+  const asset = publication.assets[kind];
+  if (asset === undefined) {
     return null;
   }
-  return overview[language];
+  return asset[language];
 }
 
 function Download({ href, label }: { readonly href: string; readonly label: string }): JSX.Element {
@@ -50,21 +58,48 @@ function ImageDownload({
   );
 }
 
+function partyComponent(page: Bootstrap): string | null {
+  return page.data?.party?.component ?? null;
+}
+
+function pollsQuery(pin: string, component: string | null): string {
+  if (component === null) {
+    return pin;
+  }
+  return `${pin}&party=${component}`;
+}
+
+function estimatesPath(component: string | null): string {
+  if (component === null) {
+    return "estimates/latest";
+  }
+  return "estimates/history";
+}
+
 function Downloads({ page, t }: Props): JSX.Element | null {
   const { api, publication } = page;
   if (api === undefined || publication === undefined) {
     return null;
   }
+  const component = partyComponent(page);
   const pin = `?publication=${api.publication}&language=${api.language}`;
+  const polls = pollsQuery(pin, component);
+  const estimates = estimatesPath(component);
   return (
     <section className="sec o-journalists">
       <h2>{t("downloads.title")}</h2>
       <ul className="downloads">
-        <Download href={`${api.base}/polls.csv${pin}`} label={t("downloads.polls")} />
-        <Download href={`${api.base}/estimates/latest${pin}`} label={t("downloads.estimates")} />
+        <Download href={`${api.base}/polls.csv${polls}`} label={t("downloads.polls")} />
+        <Download href={`${api.base}/${estimates}${pin}`} label={t("downloads.estimates")} />
         <Download href={`${api.base}/seats${pin}`} label={t("downloads.seats")} />
+        {component !== null && (
+          <>
+            <Download href={`${api.base}/institutes${pin}`} label={t("downloads.houseEffects")} />
+            <Download href={`${api.base}/elections${pin}`} label={t("downloads.elections")} />
+          </>
+        )}
         <ImageDownload
-          href={overviewImage(publication, page.language)}
+          href={image(publication, page.language, component)}
           label={t("downloads.image")}
         />
       </ul>

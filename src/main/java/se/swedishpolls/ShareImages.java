@@ -14,7 +14,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
 import javax.imageio.ImageIO;
+import se.swedishpolls.source.PollCsv;
 
 /**
  * Renders a publication's summary cards as PNG bytes. A card is a picture of one publication on one
@@ -36,8 +39,8 @@ public final class ShareImages {
   public static final String SEATS = "seats";
   public static final String COALITIONS = "coalitions";
 
-  /** The four rendered cards. Polls, pollsters and method pages reuse the overview card. */
-  public static final List<String> KINDS = List.of(OVERVIEW, PARTIES, SEATS, COALITIONS);
+  /** Every rendered card kind. Polls, pollsters and method pages reuse the overview card. */
+  public static final List<String> KINDS = kinds();
 
   private static final String FONT_FAMILY = "DejaVu Sans";
   private static final String SWEDISH_GLYPHS = "åäöÅÄÖ";
@@ -90,7 +93,8 @@ public final class ShareImages {
   }
 
   /** Every card of one publication, in both languages. */
-  public static List<Card> cards(PublicationRun.Results results, ModelFreeze freeze) {
+  public static List<Card> cards(
+      PublicationRun.Results results, ModelFreeze freeze, List<PollCsv.Poll> polls) {
     final List<Card> cards = new ArrayList<>();
     for (final String language : Translations.LANGUAGES) {
       final Translations text = Translations.of(language);
@@ -131,6 +135,9 @@ public final class ShareImages {
               ranked.subList(0, Math.min(6, ranked.size())),
               intervalFooter(text, results.intervalLevel()),
               historical));
+      for (final String component : SiteRoutes.PARTIES) {
+        cards.add(partyCard(results, freeze, polls, text, component));
+      }
       cards.add(
           new Card(
               PARTIES,
@@ -193,6 +200,66 @@ public final class ShareImages {
               historical));
     }
     return List.copyOf(cards);
+  }
+
+  /** The immutable asset kind for one party page. */
+  public static String partyKind(String component) {
+    return "party-" + component.toLowerCase(Locale.ROOT);
+  }
+
+  private static Card partyCard(
+      PublicationRun.Results results,
+      ModelFreeze freeze,
+      List<PollCsv.Poll> polls,
+      Translations text,
+      String component) {
+    for (int index = results.periods().size() - 1; index >= 0; index--) {
+      final PublicationRun.Period period = results.periods().get(index);
+      final EstimateHistory.Day day = PublicationDocuments.lastDay(period.history());
+      final EstimateHistory.Estimate estimate = day.components().get(component);
+      if (estimate == null) {
+        continue;
+      }
+      final JointUncertainty.Interval bounds =
+          PublicationDocuments.bounds(estimate.intervals(), results.intervalLevel());
+      final double mean = freeze.resolution().quote(estimate.mean());
+      return new Card(
+          partyKind(component),
+          text.language(),
+          text.component(component),
+          text.text("site.name"),
+          day.date(),
+          List.of(
+              new Bar(
+                  text.component(component),
+                  mean,
+                  freeze.resolution().quote(bounds.lower()),
+                  freeze.resolution().quote(bounds.upper()),
+                  percent(mean, text.language()))),
+          intervalFooter(text, results.intervalLevel()),
+          period.period().effectiveTo() != null);
+    }
+    final Optional<LocalDate> lastObservation =
+        polls.stream()
+            .filter(poll -> poll.shares().get(component) != null)
+            .map(poll -> poll.collectionTo() == null ? poll.collectionFrom() : poll.collectionTo())
+            .filter(Objects::nonNull)
+            .max(LocalDate::compareTo);
+    return new Card(
+        partyKind(component),
+        text.language(),
+        text.component(component),
+        text.text("site.name"),
+        lastObservation.orElse(results.lastFieldworkDate()),
+        List.of(),
+        text.text("card.unavailable"),
+        true);
+  }
+
+  private static List<String> kinds() {
+    final List<String> kinds = new ArrayList<>(List.of(OVERVIEW, PARTIES, SEATS, COALITIONS));
+    SiteRoutes.PARTIES.stream().map(ShareImages::partyKind).forEach(kinds::add);
+    return List.copyOf(kinds);
   }
 
   /** The card as PNG bytes, decoded once before it is returned so a broken encoder cannot ship. */

@@ -14,7 +14,7 @@ class SiteRoutesTest {
     final Set<String> paths = new HashSet<>();
     for (final SiteRoutes.Family family : SiteRoutes.Family.values()) {
       for (final String language : Translations.LANGUAGES) {
-        final String parameter = family == SiteRoutes.Family.PARTY ? "socialdemokraterna" : null;
+        final String parameter = family == SiteRoutes.Family.PARTY ? "S" : null;
         final String path = SiteRoutes.path(family, language, parameter);
         assertTrue(path.startsWith("/"), path);
         assertTrue(paths.add(path), path + " is claimed twice");
@@ -26,7 +26,7 @@ class SiteRoutesTest {
   void aPathResolvesBackToItsOwnFamilyAndLanguage() {
     for (final SiteRoutes.Family family : SiteRoutes.Family.values()) {
       for (final String language : Translations.LANGUAGES) {
-        final String parameter = family == SiteRoutes.Family.PARTY ? "moderaterna" : null;
+        final String parameter = family == SiteRoutes.Family.PARTY ? "M" : null;
         final String path = SiteRoutes.path(family, language, parameter);
         final SiteRoutes.Route route = SiteRoutes.resolve(path).orElseThrow();
         assertEquals(family, route.family(), path);
@@ -43,7 +43,8 @@ class SiteRoutesTest {
     assertEquals("/regeringsunderlag", SiteRoutes.translated(swedish, Translations.SWEDISH));
 
     final SiteRoutes.Route party = SiteRoutes.resolve("/en/party/liberals").orElseThrow();
-    assertEquals("/parti/liberals", SiteRoutes.translated(party, Translations.SWEDISH));
+    assertEquals("L", party.parameter());
+    assertEquals("/parti/liberalerna", SiteRoutes.translated(party, Translations.SWEDISH));
   }
 
   @Test
@@ -56,7 +57,15 @@ class SiteRoutesTest {
   @Test
   void aPathNoFamilyClaimsResolvesToNothing() {
     for (final String path :
-        java.util.List.of("/parti", "/parti/a/b", "/en/parties", "/sv", "/mandat/extra", "/api")) {
+        java.util.List.of(
+            "/parti",
+            "/parti/a/b",
+            "/parti/okant",
+            "/en/parties",
+            "/en/party/socialdemokraterna",
+            "/sv",
+            "/mandat/extra",
+            "/api")) {
       assertEquals(Optional.empty(), SiteRoutes.resolve(path), path);
     }
   }

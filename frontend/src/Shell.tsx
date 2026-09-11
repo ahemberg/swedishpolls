@@ -1,9 +1,10 @@
 import type { JSX } from "react";
 import { About } from "./About";
 import type { Bootstrap, Translate } from "./bootstrap";
-import { headlineDate, OVERVIEW } from "./bootstrap";
+import { headlineDate, OVERVIEW, PARTY } from "./bootstrap";
 import { date, timestamp } from "./format";
 import { Overview } from "./Overview";
+import { Party } from "./Party";
 import { SiteHeader } from "./SiteHeader";
 
 /**
@@ -67,6 +68,9 @@ function Body({ page, t }: Props): JSX.Element {
   }
   if (page.route.family === OVERVIEW) {
     return <Overview page={page} t={t} />;
+  }
+  if (page.route.family === PARTY) {
+    return <Party page={page} t={t} />;
   }
   return <h1>{t(`head.title.${page.route.family.toLowerCase()}`)}</h1>;
 }

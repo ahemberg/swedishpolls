@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import type { Bootstrap, Poll, Polls, Translate } from "./bootstrap";
 import { count, decimal, shortDate } from "./format";
+import { PollColumns } from "./poll-columns";
 
 /**
  * The most recently published polls of the pinned snapshot.
@@ -52,11 +53,7 @@ function LatestPolls({ page, polls, t }: Props): JSX.Element {
           <caption>{t("polls.caption")}</caption>
           <thead>
             <tr>
-              <th scope="col">{t("polls.column.institute")}</th>
-              <th scope="col">{t("polls.column.fieldwork")}</th>
-              <th scope="col" className="num">
-                {t("polls.column.sample")}
-              </th>
+              <PollColumns t={t} />
               {components.map((component) => (
                 <th scope="col" className="num" key={component} title={polls.labels[component]}>
                   {component}

@@ -1,7 +1,6 @@
 package se.swedishpolls;
 
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -50,7 +49,7 @@ public final class SiteText {
 
   /** The navigation label of a page family. */
   public String navigation(SiteRoutes.Family family) {
-    return text("nav." + family.name().toLowerCase(Locale.ROOT));
+    return text("nav." + family.key());
   }
 
   /** Every key, for the bootstrap the browser reads. The page and the script share one wording. */
@@ -91,7 +90,18 @@ public final class SiteText {
         "head.description.overview",
         "Sammanvägt väljarstöd per {date}, med intervall, approximerade mandat och de mätningar"
             + " som ingår. Inte en valprognos.");
+    text.put(
+        "head.description.party",
+        "{party}: skattat väljarstöd per {date}, mätningar och instituteffekter. Inte en"
+            + " valprognos.");
+    text.put(
+        "head.description.partyHistorical",
+        "{party}: historiska källobservationer till och med {date}. Ingen aktuell enskild"
+            + " skattning finns.");
     text.put("head.imageAlt", "Sammanfattande bild: skattat väljarstöd per {date}.");
+    text.put("head.imageAlt.party", "Sammanfattande bild för {party} per {date}.");
+    text.put(
+        "head.imageAlt.partyHistorical", "Historisk sammanfattande bild för {party} per {date}.");
 
     text.put("headline", "Skattat väljarstöd");
     text.put("headline.asOf", "per {date}");
@@ -119,7 +129,10 @@ public final class SiteText {
         "timeline.hint",
         "Dra i diagrammet, eller använd piltangenterna, för att läsa av ett datum.");
     text.put("timeline.readout.label", "Avläsning");
+    text.put("timeline.coverage", "Modellperiod {period}. Partier: {roster}.");
+    text.put("timeline.noCoverage", "Ingen validerad modellperiod.");
     text.put("timeline.electionDot", "Ringar är faktiska valresultat.");
+    text.put("timeline.pollDots", "Fyllda prickar är enskilda publicerade mätningar.");
     text.put("timeline.bandNote", "Det skuggade fältet är {level} %-intervallet.");
     text.put("timeline.isolate", "Visa ett parti i taget");
     text.put("timeline.isolateAll", "Visa alla");
@@ -158,6 +171,32 @@ public final class SiteText {
     text.put(
         "estimate.caption", "Skattat väljarstöd per parti, i procent, med {level} %-intervall.");
 
+    text.put("party.fiLink", "Historiska mätningar för Feministiskt initiativ");
+    text.put(
+        "party.noCurrent",
+        "Ingen aktuell enskild skattning finns för {party}. Historiska källobservationer visas"
+            + " med sina datum.");
+    text.put("party.threshold", "Sannolikhet att nå 4 %-spärren");
+    text.put("party.thresholdReading", "Sannolikhet att nå 4 %-spärren: {probability}");
+    text.put("party.seatsReading", "Approximerad mandatfördelning: {seats} mandat");
+    text.put("party.observations", "Källobservationer");
+    text.put(
+        "party.observationsCaption",
+        "Publicerade mätningar som redovisar {party}, även utanför perioder med en validerad"
+            + " enskild skattning.");
+    text.put("party.column.support", "Stöd");
+    text.put("party.column.eligibility", "Modellstatus");
+    text.put("party.eligible", "Ingår där perioden stöds");
+    text.put("party.excluded", "Källobservation, ingår inte");
+    text.put("party.houseEffects", "Huseffekter");
+    text.put("party.houseEffect", "Effekt");
+    text.put("party.houseInterval", "Intervall");
+    text.put("party.effectRange", "{lower} till {upper}");
+    text.put(
+        "party.houseReference",
+        "Huseffekter relativt genomsnittet för instituten i mandatperioden, i procentenheter.");
+    text.put("party.houseUnavailable", "Ingen validerad huseffekt finns för perioden.");
+
     text.put("blocs.title", "Blockläget");
     text.put("blocs.majority", "175 för majoritet");
     text.put("blocs.majorityProbability", "{probability} sannolikhet för egen majoritet");
@@ -189,6 +228,8 @@ public final class SiteText {
     text.put("downloads.polls", "Mätningar (CSV)");
     text.put("downloads.estimates", "Skattningar (JSON)");
     text.put("downloads.seats", "Mandat (JSON)");
+    text.put("downloads.houseEffects", "Huseffekter (JSON)");
+    text.put("downloads.elections", "Valresultat (JSON)");
     text.put("downloads.image", "Sammanfattande bild (PNG)");
     text.put(
         "downloads.imageNote",
@@ -258,7 +299,17 @@ public final class SiteText {
         "head.description.overview",
         "Pooled voting intention as of {date}, with intervals, approximated seats and the polls"
             + " behind them. Not an election forecast.");
+    text.put(
+        "head.description.party",
+        "{party}: estimated voter support as of {date}, source polls and house effects. Not an"
+            + " election forecast.");
+    text.put(
+        "head.description.partyHistorical",
+        "{party}: historical source observations through {date}. No current individual estimate"
+            + " is available.");
     text.put("head.imageAlt", "Summary image: estimated voter support as of {date}.");
+    text.put("head.imageAlt.party", "Summary image for {party} as of {date}.");
+    text.put("head.imageAlt.partyHistorical", "Historical summary image for {party} as of {date}.");
 
     text.put("headline", "Estimated voter support");
     text.put("headline.asOf", "as of {date}");
@@ -284,7 +335,10 @@ public final class SiteText {
     text.put("timeline.range.label", "Time range");
     text.put("timeline.hint", "Drag on the chart, or use the arrow keys, to read off a date.");
     text.put("timeline.readout.label", "Readout");
+    text.put("timeline.coverage", "Model period {period}. Parties: {roster}.");
+    text.put("timeline.noCoverage", "No validated model period.");
     text.put("timeline.electionDot", "Rings are actual election results.");
+    text.put("timeline.pollDots", "Solid dots are individual published polls.");
     text.put("timeline.bandNote", "The shaded band is the {level}% interval.");
     text.put("timeline.isolate", "Show one party at a time");
     text.put("timeline.isolateAll", "Show all");
@@ -323,6 +377,33 @@ public final class SiteText {
         "estimate.caption",
         "Estimated voter support per party, in percent, with {level}% intervals.");
 
+    text.put("party.fiLink", "Historical polls for Feminist Initiative");
+    text.put(
+        "party.noCurrent",
+        "No current individual estimate is available for {party}. Historical source observations"
+            + " retain their dates.");
+    text.put("party.threshold", "Probability of reaching the 4% threshold");
+    text.put("party.thresholdReading", "Probability of reaching the 4% threshold: {probability}");
+    text.put("party.seatsReading", "Approximated seat allocation: {seats} seats");
+    text.put("party.observations", "Source observations");
+    text.put(
+        "party.observationsCaption",
+        "Published polls reporting {party}, including observations outside periods with a"
+            + " validated individual estimate.");
+    text.put("party.column.support", "Support");
+    text.put("party.column.eligibility", "Model status");
+    text.put("party.eligible", "Included where the period is supported");
+    text.put("party.excluded", "Source observation, not included");
+    text.put("party.houseEffects", "House effects");
+    text.put("party.houseEffect", "Effect");
+    text.put("party.houseInterval", "Interval");
+    text.put("party.effectRange", "{lower} to {upper}");
+    text.put(
+        "party.houseReference",
+        "House effects relative to the ensemble of institutes in the election cycle, in"
+            + " percentage points.");
+    text.put("party.houseUnavailable", "No validated house effect is available for the period.");
+
     text.put("blocs.title", "Bloc standings");
     text.put("blocs.majority", "175 for a majority");
     text.put("blocs.majorityProbability", "{probability} probability of a majority");
@@ -355,6 +436,8 @@ public final class SiteText {
     text.put("downloads.polls", "Polls (CSV)");
     text.put("downloads.estimates", "Estimates (JSON)");
     text.put("downloads.seats", "Seats (JSON)");
+    text.put("downloads.houseEffects", "House effects (JSON)");
+    text.put("downloads.elections", "Election results (JSON)");
     text.put("downloads.image", "Summary image (PNG)");
     text.put(
         "downloads.imageNote",

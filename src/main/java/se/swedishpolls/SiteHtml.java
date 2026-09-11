@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -115,36 +114,61 @@ public final class SiteHtml {
   }
 
   private static String title(ObjectNode bootstrap, SiteText text) {
-    final String family = bootstrap.get("route").get("family").asString();
-    return text.text("head.title." + family.toLowerCase(Locale.ROOT));
+    final SiteRoutes.Family family = family(bootstrap);
+    if (family == SiteRoutes.Family.PARTY) {
+      return partyName(bootstrap);
+    }
+    return text.text("head.title." + family.key());
+  }
+
+  private static SiteRoutes.Family family(ObjectNode bootstrap) {
+    return SiteRoutes.Family.valueOf(bootstrap.get("route").get("family").asString());
   }
 
   private static String description(ObjectNode bootstrap, SiteText text) {
     if (!bootstrap.has("publication")) {
       return text.text("unavailable.body");
     }
+    final SiteRoutes.Family family = family(bootstrap);
+    final boolean party = family == SiteRoutes.Family.PARTY;
     final String key =
-        "head.description."
-            + bootstrap.get("route").get("family").asString().toLowerCase(Locale.ROOT);
+        party && bootstrap.get("data").get("party").get("historicalOnly").asBoolean()
+            ? "head.description.partyHistorical"
+            : "head.description." + family.key();
     if (!text.all().containsKey(key)) {
       return text.text("notForecast");
     }
-    return SiteText.fill(text.text(key), "date", fieldwork(bootstrap));
+    final String dated = SiteText.fill(text.text(key), "date", fieldwork(bootstrap));
+    return party ? SiteText.fill(dated, "party", partyName(bootstrap)) : dated;
   }
 
   private static String imageAlt(ObjectNode bootstrap, SiteText text) {
     if (!bootstrap.has("publication")) {
       return text.text("unavailable.title");
     }
+    if (SiteRoutes.Family.PARTY.name().equals(bootstrap.get("route").get("family").asString())) {
+      final boolean historical =
+          bootstrap.get("data").get("party").get("historicalOnly").asBoolean();
+      final String key = historical ? "head.imageAlt.partyHistorical" : "head.imageAlt.party";
+      return SiteText.fill(
+          SiteText.fill(text.text(key), "party", partyName(bootstrap)),
+          "date",
+          fieldwork(bootstrap));
+    }
     return SiteText.fill(text.text("head.imageAlt"), "date", fieldwork(bootstrap));
   }
 
-  /** The overview card of this publication, in this language, at its published asset version. */
+  /** This route's card in this language, at its published asset version. */
   private static String shareImage(ObjectNode bootstrap) {
     if (!bootstrap.has("publication")) {
       return null;
     }
-    final JsonNode overview = bootstrap.get("publication").get("assets").get(ShareImages.OVERVIEW);
+    final JsonNode route = bootstrap.get("route");
+    final String kind =
+        SiteRoutes.Family.PARTY.name().equals(route.get("family").asString())
+            ? ShareImages.partyKind(route.get("parameter").asString())
+            : ShareImages.OVERVIEW;
+    final JsonNode overview = bootstrap.get("publication").get("assets").get(kind);
     final JsonNode path =
         overview == null ? null : overview.get(bootstrap.get("language").asString());
     return path == null || path.isNull() ? null : path.asString();
@@ -159,6 +183,11 @@ public final class SiteHtml {
     return SiteFormat.date(
         LocalDate.parse(bootstrap.get("headlineDate").asString()),
         bootstrap.get("language").asString());
+  }
+
+  private static String partyName(ObjectNode bootstrap) {
+    final String component = bootstrap.get("route").get("parameter").asString();
+    return bootstrap.get("labels").get(component).asString();
   }
 
   // The shell and the page body, as they read with no script at all.
@@ -212,6 +241,10 @@ public final class SiteHtml {
         .name()
         .equals(bootstrap.get("route").get("family").asString())) {
       overview(html, bootstrap, text);
+    } else if (SiteRoutes.Family.PARTY
+        .name()
+        .equals(bootstrap.get("route").get("family").asString())) {
+      party(html, bootstrap, text);
     } else {
       html.append("<h1>").append(escape(title(bootstrap, text))).append("</h1>\n");
     }
@@ -275,6 +308,14 @@ public final class SiteHtml {
                         Instant.parse(publication.get("publishedAt").asString()), language))))
         .append("</p>\n");
     estimateTable(html, bootstrap, text, latest);
+    html.append("<p><a href=\"")
+        .append(
+            escape(
+                SiteRoutes.path(
+                    SiteRoutes.Family.PARTY, bootstrap.get("language").asString(), "FI")))
+        .append("\">")
+        .append(escape(text.text("party.fiLink")))
+        .append("</a></p>\n");
     blocs(html, bootstrap, text);
     downloads(html, bootstrap, text);
   }
@@ -300,9 +341,20 @@ public final class SiteHtml {
     html.append("</tr></thead>\n<tbody>\n");
     for (final JsonNode component : latest.get("components")) {
       final String key = component.get("component").asString();
-      html.append("<tr><th scope=\"row\">")
-          .append(escape(labels.get(key).asString()))
-          .append("</th>");
+      html.append("<tr><th scope=\"row\">");
+      if (SiteRoutes.PARTIES.contains(key)) {
+        html.append("<a href=\"")
+            .append(
+                escape(
+                    SiteRoutes.path(
+                        SiteRoutes.Family.PARTY, bootstrap.get("language").asString(), key)))
+            .append("\">")
+            .append(escape(labels.get(key).asString()))
+            .append("</a>");
+      } else {
+        html.append(escape(labels.get(key).asString()));
+      }
+      html.append("</th>");
       if (component.get("mean").isNull()) {
         html.append("<td colspan=\"3\">")
             .append(escape(text.text("estimate.unavailable")))
@@ -350,6 +402,179 @@ public final class SiteHtml {
       }
     }
     return text.text("estimate.unavailable");
+  }
+
+  private static void party(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final JsonNode party = bootstrap.get("data").get("party");
+    final String name = partyName(bootstrap);
+    html.append("<h1>").append(escape(name)).append("</h1>\n");
+    html.append("<p class=\"meta\">").append(escape(text.text("notForecast"))).append("</p>\n");
+    partyEstimate(html, bootstrap, text, party, name);
+    partyObservations(html, bootstrap, text, party, name);
+    partyHouseEffects(html, bootstrap, text, party);
+    partyDownloads(html, bootstrap, text, party.get("component").asString());
+  }
+
+  private static void partyEstimate(
+      StringBuilder html, ObjectNode bootstrap, SiteText text, JsonNode party, String name) {
+    final String language = bootstrap.get("language").asString();
+    final JsonNode estimate = party.get("estimate");
+    html.append("<h2>").append(escape(text.text("estimate.title"))).append("</h2>\n");
+    html.append("<table class=\"party-estimate\"><thead><tr>");
+    for (final String column :
+        List.of(
+            "estimate.column.estimate",
+            "estimate.column.interval",
+            "party.threshold",
+            "estimate.column.seats")) {
+      html.append("<th scope=\"col\">").append(escape(text.text(column))).append("</th>");
+    }
+    html.append("</tr></thead><tbody><tr>");
+    if (estimate.get("mean").isNull()) {
+      html.append("<td colspan=\"4\">")
+          .append(escape(SiteText.fill(text.text("party.noCurrent"), "party", name)))
+          .append("</td>");
+    } else {
+      html.append("<td class=\"num\">")
+          .append(
+              escape(
+                  SiteFormat.percent(
+                      SiteFormat.decimal(estimate.get("mean").asDouble(), language), language)))
+          .append("</td><td>")
+          .append(escape(verbal(text, estimate, language)))
+          .append("</td><td class=\"num\">")
+          .append(
+              escape(
+                  party.get("thresholdProbability").isNull()
+                      ? text.text("estimate.unavailable")
+                      : SiteFormat.probability(
+                          party.get("thresholdProbability").asDouble(), language)))
+          .append("</td><td class=\"num\">")
+          .append(
+              escape(
+                  party.get("pointSeats").isNull()
+                      ? text.text("estimate.unavailable")
+                      : Integer.toString(party.get("pointSeats").asInt())))
+          .append("</td>");
+    }
+    html.append("</tr></tbody></table>\n");
+  }
+
+  private static void partyObservations(
+      StringBuilder html, ObjectNode bootstrap, SiteText text, JsonNode party, String name) {
+    final String language = bootstrap.get("language").asString();
+    html.append("<h2>").append(escape(text.text("party.observations"))).append("</h2>\n");
+    html.append("<table class=\"party-observations\"><caption>")
+        .append(escape(SiteText.fill(text.text("party.observationsCaption"), "party", name)))
+        .append("</caption><thead><tr><th scope=\"col\">")
+        .append(escape(text.text("polls.column.institute")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("polls.column.fieldwork")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("party.column.support")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("party.column.eligibility")))
+        .append("</th></tr></thead><tbody>");
+    for (final JsonNode observation : party.get("observations")) {
+      html.append("<tr><th scope=\"row\">")
+          .append(escape(observation.get("institute").asString()))
+          .append("</th><td>")
+          .append(escape(fieldwork(observation, language, text)))
+          .append("</td><td class=\"num\">")
+          .append(
+              escape(
+                  SiteFormat.percent(
+                      SiteFormat.decimal(observation.get("share").asDouble(), language), language)))
+          .append("</td><td>")
+          .append(
+              escape(
+                  observation.get("modeled").asBoolean()
+                      ? text.text("party.eligible")
+                      : text.text("party.excluded")))
+          .append("</td></tr>\n");
+    }
+    html.append("</tbody></table>\n");
+  }
+
+  private static String fieldwork(JsonNode observation, String language, SiteText text) {
+    final JsonNode from = observation.get("collectionFrom");
+    final JsonNode to = observation.get("collectionTo");
+    if ((from == null || from.isNull()) && (to == null || to.isNull())) {
+      return text.text("polls.missing");
+    }
+    final String first =
+        from == null || from.isNull()
+            ? null
+            : SiteFormat.date(LocalDate.parse(from.asString()), language);
+    final String last =
+        to == null || to.isNull()
+            ? null
+            : SiteFormat.date(LocalDate.parse(to.asString()), language);
+    if (first == null) {
+      return last;
+    }
+    return last == null || first.equals(last) ? first : first + " - " + last;
+  }
+
+  private static void partyHouseEffects(
+      StringBuilder html, ObjectNode bootstrap, SiteText text, JsonNode party) {
+    final String language = bootstrap.get("language").asString();
+    final JsonNode house = party.get("houseEffects");
+    html.append("<h2>").append(escape(text.text("party.houseEffects"))).append("</h2>\n");
+    html.append("<p>").append(escape(text.text("party.houseReference"))).append("</p>\n");
+    if (house.get("effects").isEmpty()) {
+      html.append("<p>").append(escape(text.text("party.houseUnavailable"))).append("</p>\n");
+      return;
+    }
+    html.append("<table class=\"house-effects\"><thead><tr><th scope=\"col\">")
+        .append(escape(text.text("polls.column.institute")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("party.houseEffect")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("party.houseInterval")))
+        .append("</th></tr></thead><tbody>");
+    for (final JsonNode effect : house.get("effects")) {
+      html.append("<tr><th scope=\"row\">")
+          .append(escape(effect.get("institute").asString()))
+          .append("</th><td class=\"num\">")
+          .append(escape(SiteFormat.decimal(effect.get("mean").asDouble(), language)))
+          .append("</td><td>")
+          .append(
+              escape(
+                  SiteText.fill(
+                      SiteText.fill(
+                          text.text("party.effectRange"),
+                          "lower",
+                          SiteFormat.decimal(effect.get("lower").asDouble(), language)),
+                      "upper",
+                      SiteFormat.decimal(effect.get("upper").asDouble(), language))))
+          .append("</td></tr>\n");
+    }
+    html.append("</tbody></table>\n<p class=\"meta\">")
+        .append(escape(house.get("reference").asString()))
+        .append("</p>\n");
+  }
+
+  private static void partyDownloads(
+      StringBuilder html, ObjectNode bootstrap, SiteText text, String component) {
+    final String publication = bootstrap.get("api").get("publication").asString();
+    final String language = bootstrap.get("language").asString();
+    final String pin = "?publication=" + publication + "&language=" + language;
+    html.append("<h2>")
+        .append(escape(text.text("downloads.title")))
+        .append("</h2>\n<ul class=\"downloads\">\n");
+    link(html, "/api/v1/polls.csv" + pin + "&party=" + component, text.text("downloads.polls"));
+    link(html, "/api/v1/estimates/history" + pin, text.text("downloads.estimates"));
+    link(html, "/api/v1/seats" + pin, text.text("downloads.seats"));
+    link(html, "/api/v1/institutes" + pin, text.text("downloads.houseEffects"));
+    link(html, "/api/v1/elections" + pin, text.text("downloads.elections"));
+    final String image = shareImage(bootstrap);
+    if (image != null) {
+      link(html, image, text.text("downloads.image"));
+    }
+    html.append("</ul>\n<p class=\"meta\">")
+        .append(escape(SiteText.fill(text.text("downloads.pinned"), "publication", publication)))
+        .append("</p>\n");
   }
 
   private static void blocs(StringBuilder html, ObjectNode bootstrap, SiteText text) {

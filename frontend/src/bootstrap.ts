@@ -136,6 +136,42 @@ export interface Polls {
   readonly labels: Readonly<Record<string, string>>;
 }
 
+export interface PartyObservation {
+  readonly pollId: string;
+  readonly institute: string;
+  readonly collectionFrom: string | null;
+  readonly collectionTo: string | null;
+  readonly approximatePeriod: boolean;
+  readonly sampleSize: number | null;
+  readonly share: number;
+  readonly coveragePeriod: string | null;
+  readonly eligible: boolean;
+  readonly modeled: boolean;
+  readonly exclusionReasons: readonly string[];
+}
+
+export interface HouseEffect {
+  readonly institute: string;
+  readonly mean: number;
+  readonly lower: number;
+  readonly upper: number;
+  readonly shrunk: boolean;
+}
+
+export interface PartyData {
+  readonly component: string;
+  readonly historicalOnly: boolean;
+  readonly estimate: Interval;
+  readonly thresholdProbability: number | null;
+  readonly pointSeats: number | null;
+  readonly observations: readonly PartyObservation[];
+  readonly houseEffects: {
+    readonly reference: string;
+    readonly electionCycle: string | null;
+    readonly effects: readonly HouseEffect[];
+  };
+}
+
 export interface Publication {
   readonly publicationId: string;
   readonly publishedAt: string;
@@ -181,6 +217,7 @@ export interface PageData {
   readonly elections: Elections;
   readonly history: History;
   readonly polls: Polls;
+  readonly party?: PartyData;
 }
 
 export interface Bootstrap {
@@ -196,6 +233,7 @@ export interface Bootstrap {
   readonly site: { readonly name: string; readonly origin: string };
   readonly text: Readonly<Record<string, string>>;
   readonly labels: Readonly<Record<string, string>>;
+  readonly partyPaths: Readonly<Record<string, string>>;
   readonly permanent?: boolean;
   readonly headlineDate?: string;
   readonly lastSourceCheck?: string | null;
@@ -212,6 +250,9 @@ export interface Bootstrap {
 
 /** The overview page family, as the server names it. */
 export const OVERVIEW = "OVERVIEW";
+
+/** The individual party page family. */
+export const PARTY = "PARTY";
 
 /** The element the script replaces. Its server-rendered children are the pre-script page. */
 export const MOUNT_ELEMENT = "site-root";

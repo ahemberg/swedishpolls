@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import type { Bootstrap, History, Series } from "./bootstrap";
+import type { Bootstrap, History, PartyObservation, Series } from "./bootstrap";
 import { axisMaximum, xAt, yAt } from "./chart";
 import { ALL_PARTIES } from "./timeline-controls";
 import { useCursor } from "./useCursor";
@@ -68,9 +68,30 @@ function datesOf(history: History | undefined): readonly string[] {
   return history.dates;
 }
 
-function useTimeline(page: Bootstrap): TimelineState {
+function observationValues(
+  observations: readonly PartyObservation[],
+  dates: readonly string[],
+): readonly number[] {
+  const [first] = dates;
+  const last = dates.at(-1);
+  if (first === undefined || last === undefined) {
+    return [];
+  }
+  return observations
+    .filter((entry) => {
+      const day = entry.collectionTo ?? entry.collectionFrom;
+      return day !== null && day >= first && day <= last;
+    })
+    .map((entry) => entry.share);
+}
+
+function useTimeline(
+  page: Bootstrap,
+  component = ALL_PARTIES,
+  observations: readonly PartyObservation[] = [],
+): TimelineState {
   const [rangeId, setRangeId] = useState(page.defaultRange ?? "");
-  const [isolated, isolate] = useState(ALL_PARTIES);
+  const [isolated, isolate] = useState(component);
   const [hidden, setHidden] = useState<readonly string[]>([]);
   const { history, loading, failed } = useHistory(page, rangeId);
 
@@ -79,7 +100,10 @@ function useTimeline(page: Bootstrap): TimelineState {
   const days = dates.length;
   const cursor = useCursor(days);
   const drawn = useMemo(() => shown(series, isolated, hidden), [series, isolated, hidden]);
-  const maximum = useMemo(() => axisMaximum(drawn), [drawn]);
+  const maximum = useMemo(
+    () => axisMaximum(drawn, observationValues(observations, dates)),
+    [drawn, observations, dates],
+  );
   const x = useCallback((position: number) => xAt(position, days), [days]);
   const y = useCallback((value: number) => yAt(value, maximum), [maximum]);
   const { reset } = cursor;

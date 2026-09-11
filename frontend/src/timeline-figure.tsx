@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Bootstrap, Boundary, Series, Translate } from "./bootstrap";
+import type { Bootstrap, Boundary, PartyObservation, Series, Translate } from "./bootstrap";
 import { BASELINE, HEIGHT, TOP, WIDTH } from "./chart";
 import { colour, decimal, percent, shortDate } from "./format";
 import {
@@ -9,6 +9,7 @@ import {
   EndLabels,
   Gridlines,
   Lines,
+  PollDots,
   YearLines,
 } from "./timeline-chart";
 import type { TimelineState } from "./useTimeline";
@@ -21,6 +22,8 @@ interface FigureProps {
   readonly boundaries: readonly Boundary[];
   readonly summary: string;
   readonly t: Translate;
+  readonly component: string | undefined;
+  readonly observations?: readonly PartyObservation[];
 }
 
 interface ReadoutProps {
@@ -29,6 +32,7 @@ interface ReadoutProps {
   readonly index: number;
   readonly day: string;
   readonly t: Translate;
+  readonly coveragePeriod: string | null;
 }
 
 interface ScrubberProps {
@@ -49,7 +53,22 @@ function reading(page: Bootstrap, series: Series, index: number, t: Translate): 
   return `${name} ${percent(decimal(value, page.language), page.language)}`;
 }
 
-function TimelineReadout({ page, drawn, index, day, t }: ReadoutProps): JSX.Element {
+function TimelineReadout({
+  page,
+  drawn,
+  index,
+  day,
+  t,
+  coveragePeriod,
+}: ReadoutProps): JSX.Element {
+  const coverage = page.data?.latest.coveragePeriods.find((entry) => entry.id === coveragePeriod);
+  let coverageReading = t("timeline.noCoverage");
+  if (coverage !== undefined) {
+    coverageReading = t("timeline.coverage", {
+      period: coverage.id,
+      roster: coverage.roster.map((entry) => page.labels[entry] ?? entry).join(", "),
+    });
+  }
   return (
     <p className="readout" aria-live="polite">
       <b>{shortDate(day, page.locale)}</b>
@@ -59,11 +78,20 @@ function TimelineReadout({ page, drawn, index, day, t }: ReadoutProps): JSX.Elem
           {reading(page, entry, index, t)}
         </span>
       ))}
+      <span>{coverageReading}</span>
     </p>
   );
 }
 
-function TimelineFigure({ page, state, boundaries, summary, t }: FigureProps): JSX.Element {
+function TimelineFigure({
+  page,
+  state,
+  boundaries,
+  summary,
+  t,
+  component,
+  observations = [],
+}: FigureProps): JSX.Element {
   const { drawn, dates, maximum, index, x, y, scrub, svg } = state;
   return (
     <svg
@@ -85,7 +113,14 @@ function TimelineFigure({ page, state, boundaries, summary, t }: FigureProps): J
       <Boundaries boundaries={boundaries} dates={dates} x={x} />
       <Bands drawn={drawn} x={x} y={y} />
       <Lines drawn={drawn} x={x} y={y} />
-      <ElectionDots page={page} dates={dates} x={x} y={y} />
+      <PollDots
+        observations={observations}
+        component={component ?? null}
+        dates={dates}
+        x={x}
+        y={y}
+      />
+      <ElectionDots page={page} dates={dates} x={x} y={y} component={component} />
       <EndLabels page={page} drawn={drawn} y={y} />
       <line
         x1={x(index)}
