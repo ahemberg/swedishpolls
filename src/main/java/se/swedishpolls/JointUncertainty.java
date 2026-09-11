@@ -366,6 +366,32 @@ public final class JointUncertainty {
         reproduction(period, fitted, parameters, rules));
   }
 
+  /**
+   * The final day's draws under one centering, without the summaries and the reproduction record a
+   * published run keeps. A sensitivity rerun reads only the draws, and it allocates them under the
+   * same rules and the same day seed the published run does, so the two differ only in centering.
+   */
+  public static Draws finalDayDraws(
+      Roster.CoveragePeriod period,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      DailyStateSpace.Parameters parameters,
+      CoverageValidation.Rules coverage,
+      Rules rules,
+      DailyStateSpace.Centering centering) {
+    final se.swedishpolls.EstimateHistory.Fitted fitted =
+        EstimateHistory.fitted(period, polls, elections, parameters, coverage, centering);
+    final se.swedishpolls.EstimateHistory.Span last = fitted.spans().getLast();
+    final se.swedishpolls.DailyStateSpace.Day lastDay = last.fit().days().getLast();
+    final double[][] basis = PollObservations.transposedBasis(last.batch());
+    return retained(
+        last.batch(),
+        period.id(),
+        lastDay,
+        transformed(last.batch(), basis, period.id(), lastDay, rules),
+        rules);
+  }
+
   /** The day's transformed draws as the retained matrix, one row per draw. */
   private static Draws retained(
       PollObservations.Batch batch,

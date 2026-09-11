@@ -29,8 +29,7 @@ function ChamberHeading({ page, t, title, lead, majoritySeats }: Props): JSX.Ele
   return (
     <>
       <h1>
-        {t(title)}
-        <span className="asof">{t("headline.asOf", { date: asOf })}</span>
+        {t(title)} <span className="asof">{t("headline.asOf", { date: asOf })}</span>
       </h1>
       <p className="meta">
         {t(lead, { date: asOf })} {t("notForecast")}

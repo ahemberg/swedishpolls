@@ -132,6 +132,12 @@ footer.about p {
   max-width: 78ch;
 }
 
+/* The source URL and the snapshot digest are one long unbreakable run. Without this the
+   whole page scrolls sideways at phone width instead of the line wrapping. */
+footer.about p.meta {
+  overflow-wrap: anywhere;
+}
+
 .asof {
   color: var(--muted);
   font-weight: 500;

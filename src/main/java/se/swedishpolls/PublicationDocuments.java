@@ -438,6 +438,7 @@ public final class PublicationDocuments {
     }
     final ArrayNode excluded = node.putArray("excludedFromAllocation");
     summary.excludedFromAllocation().forEach(excluded::add);
+    sensitivity(node, results, drawn, text);
     return node;
   }
 
@@ -499,7 +500,69 @@ public final class PublicationDocuments {
       entry.put("tied", pair.tied());
     }
     comparison.put("tie", summary.tie());
+    sensitivity(node, results, drawn, text);
     return node;
+  }
+
+  /**
+   * The disclosure the registered alternative fits earn against these same numbers. Each
+   * alternative is allocated under the rule of the document it sits in, so the movement is measured
+   * on the probabilities the page shows rather than on another election's allocation.
+   */
+  private static void sensitivity(
+      ObjectNode node,
+      PublicationRun.Results results,
+      NationalSeats.SeatDraws drawn,
+      Translations text) {
+    final SeatOutcomes.Headline published = SeatOutcomes.headline(drawn);
+    final List<SeatOutcomes.Sensitivity> sensitivity =
+        results.alternatives().stream()
+            .map(
+                alternative ->
+                    SeatOutcomes.sensitivity(
+                        alternative.kind(),
+                        alternative.label(),
+                        published,
+                        SeatOutcomes.headline(
+                            NationalSeats.allocateDraws(alternative.draws(), drawn.rules()))))
+            .toList();
+    final String note = sensitivityNote(sensitivity, text);
+    if (note != null) {
+      node.put("sensitivity", note);
+    }
+  }
+
+  /**
+   * The registered alternative fits that moved a headline probability far enough to be disclosed,
+   * worded in the language of the document they sit beside. Null when none of them did, so a
+   * publication with nothing to disclose carries no field rather than an empty one.
+   */
+  static String sensitivityNote(List<SeatOutcomes.Sensitivity> sensitivity, Translations text) {
+    final List<String> movements =
+        sensitivity.stream()
+            .filter(SeatOutcomes.Sensitivity::needsDisclosure)
+            .map(alternative -> movement(alternative, text))
+            .toList();
+    return movements.isEmpty() ? null : String.join(" ", movements);
+  }
+
+  private static String movement(SeatOutcomes.Sensitivity alternative, Translations text) {
+    final String quantity = alternative.largestMovement();
+    final int separator = quantity.indexOf(':');
+    final String kind = quantity.substring(0, separator);
+    final String subject = quantity.substring(separator + 1);
+    final String label =
+        "threshold".equals(kind) ? text.component(subject) : text.coalition(subject);
+    return Translations.fill(
+        Translations.fill(
+            Translations.fill(
+                text.text("sensitivity.movement"),
+                "quantity",
+                Translations.fill(text.text("sensitivity.quantity." + kind), "label", label)),
+            "points",
+            Long.toString(Math.round(alternative.maxAbsoluteDifferencePoints()))),
+        "alternative",
+        text.text("sensitivity.alternative." + alternative.label()));
   }
 
   // Shared helpers.

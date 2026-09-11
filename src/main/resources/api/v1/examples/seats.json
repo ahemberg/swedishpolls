@@ -87,5 +87,6 @@
       "reason": "no_validated_coverage_period"
     }
   },
-  "excludedFromAllocation": ["OTHER"]
+  "excludedFromAllocation": ["OTHER"],
+  "sensitivity": "the majority probability for M, L, KD and SD moves 12 percentage points under weighting each institute by how many polls it published."
 }

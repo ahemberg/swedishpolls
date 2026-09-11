@@ -30,7 +30,7 @@ function Overview({ page, t }: Props): JSX.Element | null {
   return (
     <div>
       <h1>
-        {t("headline")}
+        {t("headline")}{" "}
         <span className="asof">
           {t("headline.asOf", { date: date(headlineDate(page), page.locale) })}
         </span>

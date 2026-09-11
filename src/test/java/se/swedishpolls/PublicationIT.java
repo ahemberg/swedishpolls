@@ -277,6 +277,58 @@ class PublicationIT {
     assertNotEquals(version1.path(), version2.path());
   }
 
+  @Test
+  void theRegisteredCenteringAlternativeIsRefitAndDiscloseItsMovementBesideTheNumbers() {
+    ingest.check();
+    final long snapshotId = ingest.activeSnapshot().orElseThrow().id();
+    final ModelFreeze freeze = TestPublication.released(DRAWS);
+    final PublicationRun.Results results =
+        PublicationRun.run(
+            db, freeze, snapshotId, "sha", ingest.polls(snapshotId), queries.periods());
+
+    final PublicationRun.Alternative centering =
+        results.alternatives().stream()
+            .filter(alternative -> SeatOutcomes.POLL_COUNT.equals(alternative.label()))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("The publication ran no centering alternative"));
+    final JointUncertainty.Draws published = results.headline().draws();
+    assertEquals(published.periodId(), centering.draws().periodId());
+    assertEquals(published.date(), centering.draws().date(), "Both fits read the same final day");
+    assertEquals(published.components(), centering.draws().components());
+    assertNotEquals(
+        published.shares().get(0, 0),
+        centering.draws().shares().get(0, 0),
+        "A refit under the other centering is not the published run");
+
+    final PublicationDocuments.Identity identity =
+        new PublicationDocuments.Identity("pub", "run", snapshotId);
+    final NationalSeats.Rules rules = results.allocationRule();
+    final NationalSeats.SeatDraws drawn =
+        NationalSeats.allocateDraws(results.headline().draws(), rules);
+    final String expected =
+        PublicationDocuments.sensitivityNote(
+            List.of(
+                SeatOutcomes.sensitivity(
+                    centering.kind(),
+                    centering.label(),
+                    SeatOutcomes.headline(drawn),
+                    SeatOutcomes.headline(NationalSeats.allocateDraws(centering.draws(), rules)))),
+            Translations.of(Translations.ENGLISH));
+    for (final tools.jackson.databind.node.ObjectNode document :
+        List.of(
+            PublicationDocuments.seats(
+                identity, results, drawn, freeze, Translations.of(Translations.ENGLISH)),
+            PublicationDocuments.coalitions(
+                identity, results, drawn, freeze, Translations.of(Translations.ENGLISH)))) {
+      if (expected == null) {
+        assertFalse(
+            document.has("sensitivity"), "Nothing moved far enough to disclose beside the numbers");
+      } else {
+        assertEquals(expected, document.get("sensitivity").asString());
+      }
+    }
+  }
+
   private int published() {
     return db.sql("SELECT count(*) FROM publication WHERE state = 'published'")
         .query(Integer.class)
