@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -235,18 +236,9 @@ public final class PollQuery {
       LocalDate lastCollection,
       Map<String, String> methodEras) {
     public Institute {
-      companies = new LinkedHashSet<>(companies);
-      methodEras = new LinkedHashMap<>(methodEras);
-    }
-
-    @Override
-    public Set<String> companies() {
-      return Set.copyOf(companies);
-    }
-
-    @Override
-    public Map<String, String> methodEras() {
-      return Map.copyOf(methodEras);
+      // Insertion order is the display order, so the copies keep it.
+      companies = Collections.unmodifiableSet(new LinkedHashSet<>(companies));
+      methodEras = Collections.unmodifiableMap(new LinkedHashMap<>(methodEras));
     }
 
     static Institute of(PollCsv.Poll poll) {

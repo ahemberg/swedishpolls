@@ -25,6 +25,10 @@ CREATE TABLE publication (
     source_checked_at timestamptz NOT NULL,
     published_at timestamptz NOT NULL,
     history text NOT NULL CHECK (history = 'corrected'),
+    -- The period whose estimates the current-opinion surfaces read, and the election the seat
+    -- allocation approximates. A request without a pin resolves these rather than guessing.
+    headline_period text NOT NULL,
+    approximated_election integer NOT NULL,
     -- A candidate is private until the pointer switches. It never becomes visible on failure.
     state text NOT NULL CHECK (state IN ('candidate', 'published', 'abandoned'))
 );

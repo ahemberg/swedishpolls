@@ -22,6 +22,46 @@ public final class HouseEffects {
   private static final RandomGeneratorFactory<RandomGenerator> RANDOM_FACTORY =
       RandomGeneratorFactory.of("Random");
 
+  /**
+   * What every effect of one fitted cycle is measured against: the basis and components it is
+   * closed through, the cycle's own opinion and the shares that opinion makes, and the draw rules
+   * the interval is read from.
+   */
+  private static final class Against {
+    // Model coordinates, not a record: these arrays are read in place by every effect of the
+    // cycle, and a record component may not be an array.
+    final List<String> components;
+    final double[][] basis;
+    final String periodId;
+    final double[] opinion;
+    final double[] reference;
+    final double houseScale;
+    final double intervalLevel;
+    final int draws;
+    final long seed;
+
+    Against(
+        List<String> components,
+        double[][] basis,
+        String periodId,
+        double[] opinion,
+        double[] reference,
+        double houseScale,
+        double intervalLevel,
+        int draws,
+        long seed) {
+      this.components = components;
+      this.basis = basis;
+      this.periodId = periodId;
+      this.opinion = opinion;
+      this.reference = reference;
+      this.houseScale = houseScale;
+      this.intervalLevel = intervalLevel;
+      this.draws = draws;
+      this.seed = seed;
+    }
+  }
+
   /** One institute's deviation from the cycle ensemble, in points of the component's share. */
   public record Effect(
       String electionCycle,
@@ -49,6 +89,17 @@ public final class HouseEffects {
           Arrays.copyOf(closest(fit.days(), cycle.end()).smoothedMean().toArray(), dimension);
       final double[] reference = new double[components.size()];
       PollObservations.close(basis, opinion, reference, periodId);
+      final Against against =
+          new Against(
+              components,
+              basis,
+              periodId,
+              opinion,
+              reference,
+              fit.parameters().houseScale(),
+              intervalLevel,
+              draws,
+              seed);
       final String label = cycleLabel(cycle, elections);
       final double[] stacked = cycle.smoothedMean().toArray();
       for (int index = 0; index < cycle.effects().size(); index++) {
@@ -56,41 +107,27 @@ public final class HouseEffects {
             effect(
                 cycle.effects().get(index),
                 label,
-                components,
-                basis,
-                periodId,
-                opinion,
-                reference,
                 Arrays.copyOfRange(stacked, index * dimension, (index + 1) * dimension),
                 block(cycle.smoothedCovariance(), index, dimension),
-                fit.parameters().houseScale(),
-                intervalLevel,
-                draws,
-                seed));
+                against));
       }
     }
     return List.copyOf(effects);
   }
 
   private static List<Effect> effect(
-      String name,
-      String electionCycle,
-      List<String> components,
-      double[][] basis,
-      String periodId,
-      double[] opinion,
-      double[] reference,
-      double[] mean,
-      double[][] covariance,
-      double houseScale,
-      double intervalLevel,
-      int draws,
-      long seed) {
+      String name, String electionCycle, double[] mean, double[][] covariance, Against against) {
+    final List<String> components = against.components;
+    final double[][] basis = against.basis;
+    final String periodId = against.periodId;
+    final double[] opinion = against.opinion;
+    final double[] reference = against.reference;
+    final int draws = against.draws;
     final double[] point = new double[components.size()];
     PollObservations.close(basis, sum(opinion, mean), point, periodId);
     final double[][] factor = WindowFilter.factor(covariance);
     final RandomGenerator random =
-        RANDOM_FACTORY.create(effectSeed(periodId, electionCycle, name, seed));
+        RANDOM_FACTORY.create(effectSeed(periodId, electionCycle, name, against.seed));
     final double[][] sampled = new double[components.size()][draws];
     final double[] normal = new double[mean.length];
     final double[] state = new double[mean.length];
@@ -113,7 +150,7 @@ public final class HouseEffects {
     }
     // A posterior still close to its prior scale says the cycle has too few polls of this
     // institute to move it. The reader sees that rather than a confident number.
-    final boolean shrunk = largestStandardDeviation(covariance) > 0.5 * houseScale;
+    final boolean shrunk = largestStandardDeviation(covariance) > 0.5 * against.houseScale;
     final List<Effect> effects = new ArrayList<>(components.size());
     for (int component = 0; component < components.size(); component++) {
       final double[] column = sampled[component];
@@ -124,8 +161,8 @@ public final class HouseEffects {
               name,
               components.get(component),
               point[component] - reference[component],
-              JointUncertainty.quantile(column, (1 - intervalLevel) / 2),
-              JointUncertainty.quantile(column, (1 + intervalLevel) / 2),
+              JointUncertainty.quantile(column, (1 - against.intervalLevel) / 2),
+              JointUncertainty.quantile(column, (1 + against.intervalLevel) / 2),
               shrunk));
     }
     return effects;

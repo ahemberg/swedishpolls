@@ -2,284 +2,288 @@ package se.swedishpolls;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
+import java.util.stream.Stream;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.wiremock.spring.EnableWireMock;
+import org.wiremock.spring.InjectWireMock;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /** The publication worker end to end: what it publishes, and what a failed update leaves behind. */
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.NONE,
+    properties = {
+      "logging.level.WireMock=warn",
+      "polls.ingest.enabled=false",
+      "publication.enabled=false",
+      "polls.source-url=${wiremock.server.baseUrl}/polls.csv",
+      "spring.docker.compose.enabled=false",
+      "spring.flyway.clean-disabled=false"
+    })
+@Import(TestDatabase.Configuration.class)
+@EnableWireMock
 class PublicationIT {
   private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final int DRAWS = 200;
+  private static final String PERIOD = "eight_party_2010";
 
-  private interface Work {
-    void run(Fixture fixture) throws Exception;
+  private static Path root;
+
+  @DynamicPropertySource
+  static void volume(DynamicPropertyRegistry registry) throws IOException {
+    root = Files.createTempDirectory("swedishpolls-publications");
+    registry.add("publication.root", () -> root.toString());
   }
 
-  /** One isolated schema, publication volume and worker. */
-  private record Fixture(
-      JdbcClient db,
-      DataSource dataSource,
-      PublicationStore store,
-      SnapshotIngest ingest,
-      TestPublication.FixedSource source,
-      Path root) {
-    Publisher publisher(ModelFreeze freeze) {
-      return new Publisher(dataSource, db, ingest, store, freeze);
+  @Autowired private JdbcClient db;
+  @Autowired private DataSource dataSource;
+  @Autowired private Flyway flyway;
+  @Autowired private SnapshotIngest ingest;
+  @Autowired private PublicationStore store;
+  @Autowired private PlatformTransactionManager transactions;
+  @InjectWireMock private WireMockServer wireMock;
+
+  @BeforeEach
+  void reset() throws IOException {
+    wireMock.resetAll();
+    flyway.clean();
+    flyway.migrate();
+    deleteRecursively(root);
+    Files.createDirectories(root);
+    TestPublication.serve(wireMock, TestPublication.polls(TestPublication.FROM));
+  }
+
+  private Publisher publisher() {
+    return publisher(store, TestPublication.released(DRAWS));
+  }
+
+  private Publisher publisher(PublicationStore target, ModelFreeze freeze) {
+    return new Publisher(dataSource, db, ingest, target, freeze);
+  }
+
+  @Test
+  void aChangedSnapshotBecomesOnePublicationWithEveryDocumentAndEveryCard() {
+    final Publisher.Attempt attempt = publisher().publish();
+    assertEquals(Publisher.Outcome.PUBLISHED, attempt.outcome(), attempt.detail());
+
+    final PublicationStore.Current current = store.current().orElseThrow();
+    assertEquals(attempt.publicationId(), current.publicationId());
+    assertFalse(current.stale());
+    assertNull(current.staleSince());
+
+    final PublicationStore.Header header = store.header(current.publicationId()).orElseThrow();
+    assertEquals(PublicationStore.PUBLISHED, header.state());
+    assertEquals("corrected", header.history());
+    assertEquals(PERIOD, header.headlinePeriod());
+    assertTrue(header.approximatedElection() >= header.lastFieldworkDate().getYear());
+    // The three times are distinct quantities, and none of them stands in for the others.
+    assertFalse(header.publishedAt().isBefore(header.sourceCheckedAt()));
+    assertTrue(header.lastFieldworkDate().isBefore(LocalDate.now(ZoneOffset.UTC)));
+
+    for (final String language : Translations.LANGUAGES) {
+      for (final String surface :
+          List.of(
+              PublicationDocuments.HISTORY_SURFACE,
+              PublicationDocuments.INSTITUTES_SURFACE,
+              PublicationDocuments.latestSurface(PERIOD),
+              PublicationDocuments.electionsSurface(PERIOD))) {
+        assertTrue(
+            store.document(current.publicationId(), surface, language).isPresent(),
+            surface + "/" + language);
+      }
     }
+
+    final List<PublicationStore.Asset> assets = store.assets(current.publicationId());
+    assertEquals(ShareImages.KINDS.size() * Translations.LANGUAGES.size(), assets.size());
+    for (final PublicationStore.Asset asset : assets) {
+      assertEquals(1, asset.version());
+      assertEquals(ShareImages.RENDERER_VERSION, asset.rendererVersion());
+      assertEquals(ShareImages.MEDIA_TYPE, asset.mediaType());
+      assertEquals(asset.byteCount(), store.bytes(asset).length);
+    }
+    assertFalse(
+        Files.exists(root.resolve("staging").resolve(current.publicationId())),
+        "A promoted candidate leaves no staging directory behind");
+
+    final JsonNode latest =
+        JSON.readTree(
+            store
+                .document(
+                    current.publicationId(),
+                    PublicationDocuments.latestSurface(PERIOD),
+                    Translations.ENGLISH)
+                .orElseThrow());
+    assertEquals(
+        current.publicationId(), latest.get("publication").get("publicationId").asString());
+    assertEquals(header.runId(), latest.get("publication").get("runId").asString());
+    assertEquals(header.snapshotId(), latest.get("publication").get("snapshotId").longValue());
+    double total = 0;
+    for (final JsonNode component : latest.get("components")) {
+      total += component.get("mean").doubleValue();
+    }
+    assertEquals(100.0, total, 0.2, "The published composition closes");
+    // FI has no validated coverage period, so it is null with a reason and never zero.
+    assertTrue(latest.get("unavailable").get("FI").get("mean").isNull());
+    assertEquals(
+        PublicationDocuments.NO_VALIDATED_PERIOD,
+        latest.get("unavailable").get("FI").get("reason").asString());
   }
 
   @Test
-  void aChangedSnapshotBecomesOnePublicationWithEveryDocumentAndEveryCard() throws Exception {
-    withFixture(
-        fixture -> {
-          final Publisher.Attempt attempt =
-              fixture.publisher(TestPublication.released(DRAWS)).publish();
-          assertEquals(Publisher.Outcome.PUBLISHED, attempt.outcome(), attempt.detail());
-
-          final PublicationStore.Current current = fixture.store().current().orElseThrow();
-          assertEquals(attempt.publicationId(), current.publicationId());
-          assertFalse(current.stale());
-          assertNull(current.staleSince());
-
-          final PublicationStore.Header header =
-              fixture.store().header(current.publicationId()).orElseThrow();
-          assertEquals(PublicationStore.PUBLISHED, header.state());
-          assertEquals("corrected", header.history());
-          // The three times are distinct quantities, and none of them is the others.
-          assertFalse(header.publishedAt().isBefore(header.sourceCheckedAt()));
-          assertTrue(
-              header
-                  .lastFieldworkDate()
-                  .isBefore(java.time.LocalDate.now(java.time.ZoneOffset.UTC)));
-
-          for (final String language : Translations.LANGUAGES) {
-            assertTrue(
-                fixture
-                    .store()
-                    .document(
-                        current.publicationId(), PublicationDocuments.HISTORY_SURFACE, language)
-                    .isPresent());
-            assertTrue(
-                fixture
-                    .store()
-                    .document(
-                        current.publicationId(), PublicationDocuments.INSTITUTES_SURFACE, language)
-                    .isPresent());
-            assertTrue(
-                fixture
-                    .store()
-                    .document(
-                        current.publicationId(),
-                        PublicationDocuments.latestSurface("eight_party_2010"),
-                        language)
-                    .isPresent());
-          }
-
-          final List<PublicationStore.Asset> assets =
-              fixture.store().assets(current.publicationId());
-          assertEquals(ShareImages.KINDS.size() * Translations.LANGUAGES.size(), assets.size());
-          for (final PublicationStore.Asset asset : assets) {
-            assertEquals(1, asset.version());
-            assertEquals(ShareImages.RENDERER_VERSION, asset.rendererVersion());
-            assertEquals(ShareImages.MEDIA_TYPE, asset.mediaType());
-            assertEquals(asset.byteCount(), fixture.store().bytes(asset).length);
-          }
-          assertFalse(
-              Files.exists(fixture.root().resolve("staging").resolve(current.publicationId())),
-              "A promoted candidate leaves no staging directory behind");
-
-          final JsonNode latest =
-              JSON.readTree(
-                  fixture
-                      .store()
-                      .document(
-                          current.publicationId(),
-                          PublicationDocuments.latestSurface("eight_party_2010"),
-                          Translations.ENGLISH)
-                      .orElseThrow());
-          assertEquals(
-              current.publicationId(), latest.get("publication").get("publicationId").asString());
-          assertEquals(header.runId(), latest.get("publication").get("runId").asString());
-          assertEquals(
-              header.snapshotId(), latest.get("publication").get("snapshotId").longValue());
-          double total = 0;
-          for (final JsonNode component : latest.get("components")) {
-            total += component.get("mean").doubleValue();
-          }
-          assertEquals(100.0, total, 0.2, "The published composition closes");
-          // FI has no validated coverage period, so it is null with a reason and never zero.
-          assertTrue(latest.get("unavailable").get("FI").get("mean").isNull());
-          assertEquals(
-              PublicationDocuments.NO_VALIDATED_PERIOD,
-              latest.get("unavailable").get("FI").get("reason").asString());
-        });
+  void anUnchangedSnapshotIsNotAFailureAndKeepsThePublicationFresh() {
+    final Publisher publisher = publisher();
+    final Publisher.Attempt first = publisher.publish();
+    assertEquals(Publisher.Outcome.PUBLISHED, first.outcome(), first.detail());
+    final Publisher.Attempt second = publisher.publish();
+    assertEquals(Publisher.Outcome.UNCHANGED, second.outcome());
+    assertEquals(first.publicationId(), second.publicationId());
+    assertFalse(store.current().orElseThrow().stale());
+    assertEquals(1, published());
   }
 
   @Test
-  void anUnchangedSnapshotIsNotAFailureAndKeepsThePublicationFresh() throws Exception {
-    withFixture(
-        fixture -> {
-          final Publisher publisher = fixture.publisher(TestPublication.released(DRAWS));
-          final Publisher.Attempt first = publisher.publish();
-          assertEquals(Publisher.Outcome.PUBLISHED, first.outcome(), first.detail());
-          final Publisher.Attempt second = publisher.publish();
-          assertEquals(Publisher.Outcome.UNCHANGED, second.outcome());
-          assertEquals(first.publicationId(), second.publicationId());
-          assertFalse(fixture.store().current().orElseThrow().stale());
-          assertEquals(
-              1,
-              fixture
-                  .db()
-                  .sql("SELECT count(*) FROM publication WHERE state = 'published'")
-                  .query(Integer.class)
-                  .single());
-        });
+  void aBlockedReleaseVerdictPublishesNothingAndSaysWhy() {
+    final Publisher.Attempt attempt = publisher(store, TestPublication.blocked(DRAWS)).publish();
+    assertEquals(Publisher.Outcome.BLOCKED, attempt.outcome());
+    assertNull(attempt.publicationId());
+    assertTrue(attempt.detail().contains("development_gates"));
+    assertTrue(store.current().isEmpty());
+    assertEquals(0, db.sql("SELECT count(*) FROM publication").query(Integer.class).single());
   }
 
   @Test
-  void aBlockedReleaseVerdictPublishesNothingAndSaysWhy() throws Exception {
-    withFixture(
-        fixture -> {
-          final Publisher.Attempt attempt =
-              fixture.publisher(TestPublication.blocked(DRAWS)).publish();
-          assertEquals(Publisher.Outcome.BLOCKED, attempt.outcome());
-          assertNull(attempt.publicationId());
-          assertTrue(attempt.detail().contains("development_gates"));
-          assertTrue(fixture.store().current().isEmpty());
-          assertEquals(
-              0,
-              fixture.db().sql("SELECT count(*) FROM publication").query(Integer.class).single());
-        });
+  void aFailedUpdateExposesNoPartialPublicationAndKeepsThePriorOneWithStaleness() {
+    final Publisher.Attempt first = publisher().publish();
+    assertEquals(Publisher.Outcome.PUBLISHED, first.outcome(), first.detail());
+    final List<PublicationStore.Asset> published = store.assets(first.publicationId());
+
+    TestPublication.serve(wireMock, TestPublication.polls("2019-06-01"));
+    final Publisher.Attempt failed =
+        publisher(new FailingStore(db, transactions, root), TestPublication.released(DRAWS))
+            .publish();
+    assertEquals(Publisher.Outcome.FAILED, failed.outcome());
+
+    final PublicationStore.Current current = store.current().orElseThrow();
+    assertEquals(first.publicationId(), current.publicationId(), "The prior one stays current");
+    assertTrue(current.stale());
+    assertNotNull(current.staleSince());
+    assertEquals(published, store.assets(first.publicationId()));
+    assertEquals(
+        0,
+        db.sql("SELECT count(*) FROM publication WHERE state = 'candidate'")
+            .query(Integer.class)
+            .single(),
+        "A candidate is abandoned rather than left half visible");
+    assertEquals(1, published());
+    assertTrue(
+        db.sql("SELECT failure FROM publication_attempt WHERE outcome = 'failed'")
+            .query(String.class)
+            .single()
+            .contains("injected"));
   }
 
   @Test
-  void aFailedUpdateExposesNoPartialPublicationAndKeepsThePriorOneWithStaleness() throws Exception {
-    withFixture(
-        fixture -> {
-          final Publisher publisher = fixture.publisher(TestPublication.released(DRAWS));
-          final Publisher.Attempt first = publisher.publish();
-          assertEquals(Publisher.Outcome.PUBLISHED, first.outcome(), first.detail());
-          final List<PublicationStore.Asset> published =
-              fixture.store().assets(first.publicationId());
+  void anEarlierPublicationSurvivesTheNextOneAndItsPermanentLinkNeverFallsBack() {
+    final Publisher publisher = publisher();
+    final Publisher.Attempt first = publisher.publish();
+    assertEquals(Publisher.Outcome.PUBLISHED, first.outcome(), first.detail());
+    final byte[] card =
+        store.bytes(
+            store.latestAsset(first.publicationId(), ShareImages.OVERVIEW, "sv").orElseThrow());
+    final String document =
+        store
+            .document(first.publicationId(), PublicationDocuments.latestSurface(PERIOD), "sv")
+            .orElseThrow();
 
-          fixture.source().change(TestPublication.polls("2019-06-01"));
-          final Publisher failing =
-              new Publisher(
-                  fixture.dataSource(),
-                  fixture.db(),
-                  fixture.ingest(),
-                  new FailingStore(fixture.db(), fixture.dataSource(), fixture.root()),
-                  TestPublication.released(DRAWS));
-          final Publisher.Attempt failed = failing.publish();
-          assertEquals(Publisher.Outcome.FAILED, failed.outcome());
+    TestPublication.serve(wireMock, TestPublication.polls("2019-06-01"));
+    final Publisher.Attempt second = publisher.publish();
+    assertEquals(Publisher.Outcome.PUBLISHED, second.outcome(), second.detail());
+    assertNotEquals(first.publicationId(), second.publicationId());
+    assertEquals(second.publicationId(), store.current().orElseThrow().publicationId());
 
-          final PublicationStore.Current current = fixture.store().current().orElseThrow();
-          assertEquals(
-              first.publicationId(), current.publicationId(), "The prior one stays current");
-          assertTrue(current.stale());
-          assertNotNull(current.staleSince());
-          assertEquals(published, fixture.store().assets(first.publicationId()));
-          assertEquals(
-              0,
-              fixture
-                  .db()
-                  .sql("SELECT count(*) FROM publication WHERE state = 'candidate'")
-                  .query(Integer.class)
-                  .single(),
-              "A candidate is abandoned rather than left half visible");
-          assertEquals(
-              1,
-              fixture
-                  .db()
-                  .sql("SELECT count(*) FROM publication WHERE state = 'published'")
-                  .query(Integer.class)
-                  .single());
-          assertTrue(
-              fixture
-                  .db()
-                  .sql("SELECT failure FROM publication_attempt WHERE outcome = 'failed'")
-                  .query(String.class)
-                  .single()
-                  .contains("injected"));
-        });
+    assertArrayEquals(
+        card,
+        store.bytes(
+            store.latestAsset(first.publicationId(), ShareImages.OVERVIEW, "sv").orElseThrow()),
+        "Published bytes are never overwritten");
+    assertEquals(
+        document,
+        store
+            .document(first.publicationId(), PublicationDocuments.latestSurface(PERIOD), "sv")
+            .orElseThrow());
+
+    // A restart reads the same rows and the same volume; nothing is held in memory.
+    final PublicationStore restarted = new PublicationStore(db, transactions, root.toString());
+    assertTrue(restarted.header(first.publicationId()).isPresent());
+    assertTrue(restarted.header("pub_00000000T000000Z").isEmpty());
+    assertEquals(second.publicationId(), restarted.current().orElseThrow().publicationId());
   }
 
   @Test
-  void anEarlierPublicationSurvivesTheNextOneAndItsPermanentLinkNeverFallsBack() throws Exception {
-    withFixture(
-        fixture -> {
-          final Publisher publisher = fixture.publisher(TestPublication.released(DRAWS));
-          final Publisher.Attempt first = publisher.publish();
-          assertEquals(Publisher.Outcome.PUBLISHED, first.outcome(), first.detail());
-          final byte[] card =
-              fixture
-                  .store()
-                  .bytes(
-                      fixture
-                          .store()
-                          .latestAsset(first.publicationId(), ShareImages.OVERVIEW, "sv")
-                          .orElseThrow());
-          final String document =
-              fixture
-                  .store()
-                  .document(
-                      first.publicationId(),
-                      PublicationDocuments.latestSurface("eight_party_2010"),
-                      "sv")
-                  .orElseThrow();
+  void aRendererChangeAddsAnAssetVersionBesideTheOneAlreadyPublished() {
+    final Publisher.Attempt first = publisher().publish();
+    assertEquals(Publisher.Outcome.PUBLISHED, first.outcome(), first.detail());
+    final PublicationStore.Asset version1 =
+        store.latestAsset(first.publicationId(), ShareImages.OVERVIEW, "sv").orElseThrow();
+    final byte[] original = store.bytes(version1);
 
-          fixture.source().change(TestPublication.polls("2019-06-01"));
-          final Publisher.Attempt second = publisher.publish();
-          assertEquals(Publisher.Outcome.PUBLISHED, second.outcome(), second.detail());
-          assertNotEquals(first.publicationId(), second.publicationId());
-          assertEquals(
-              second.publicationId(), fixture.store().current().orElseThrow().publicationId());
+    assertEquals(2, store.nextAssetVersion(first.publicationId(), ShareImages.OVERVIEW, "sv"));
+    final byte[] rerendered = new byte[original.length + 1];
+    System.arraycopy(original, 0, rerendered, 0, original.length);
+    final PublicationStore.Asset version2 =
+        new PublicationStore.Asset(
+            first.publicationId(),
+            ShareImages.OVERVIEW,
+            "sv",
+            2,
+            "2",
+            ShareImages.MEDIA_TYPE,
+            rerendered.length,
+            PublicationStore.sha256(rerendered));
+    store.promote(
+        first.publicationId(),
+        store.stage(first.publicationId(), List.of(version2), List.of(rerendered)));
 
-          assertArrayEquals(
-              card,
-              fixture
-                  .store()
-                  .bytes(
-                      fixture
-                          .store()
-                          .latestAsset(first.publicationId(), ShareImages.OVERVIEW, "sv")
-                          .orElseThrow()),
-              "Published bytes are never overwritten");
-          assertEquals(
-              document,
-              fixture
-                  .store()
-                  .document(
-                      first.publicationId(),
-                      PublicationDocuments.latestSurface("eight_party_2010"),
-                      "sv")
-                  .orElseThrow());
+    assertEquals(
+        2,
+        store
+            .latestAsset(first.publicationId(), ShareImages.OVERVIEW, "sv")
+            .orElseThrow()
+            .version());
+    assertArrayEquals(original, store.bytes(version1), "Version 1 keeps its own bytes");
+    assertArrayEquals(rerendered, store.bytes(version2));
+    assertNotEquals(version1.path(), version2.path());
+  }
 
-          // A restart reads the same rows and the same volume; nothing is held in memory.
-          final PublicationStore restarted =
-              new PublicationStore(
-                  fixture.db(),
-                  new DataSourceTransactionManager(fixture.dataSource()),
-                  fixture.root().toString());
-          assertTrue(restarted.header(first.publicationId()).isPresent());
-          assertTrue(restarted.header("pub_00000000T000000Z").isEmpty());
-          assertEquals(second.publicationId(), restarted.current().orElseThrow().publicationId());
-        });
+  private int published() {
+    return db.sql("SELECT count(*) FROM publication WHERE state = 'published'")
+        .query(Integer.class)
+        .single();
   }
 
   /** A store that stages nothing, standing in for a failed image write or an interrupted move. */
   private static final class FailingStore extends PublicationStore {
-    FailingStore(JdbcClient db, DataSource dataSource, Path root) {
-      super(db, new DataSourceTransactionManager(dataSource), root.toString());
+    FailingStore(JdbcClient db, PlatformTransactionManager transactions, Path root) {
+      super(db, transactions, root.toString());
     }
 
     @Override
@@ -289,45 +293,18 @@ class PublicationIT {
     }
   }
 
-  private void withFixture(Work work) throws Exception {
-    final String schema = "publication_" + UUID.randomUUID().toString().replace("-", "");
-    final DataSource dataSource = TestDatabase.dataSource(schema);
-    final Flyway flyway =
-        Flyway.configure().dataSource(dataSource).schemas(schema).cleanDisabled(false).load();
-    final Path root = Files.createTempDirectory("swedishpolls-publications");
-    try {
-      flyway.migrate();
-      final JdbcClient db = JdbcClient.create(dataSource);
-      final DataSourceTransactionManager transactions =
-          new DataSourceTransactionManager(dataSource);
-      final TestPublication.FixedSource source =
-          new TestPublication.FixedSource(TestPublication.polls(TestPublication.FROM));
-      work.run(
-          new Fixture(
-              db,
-              dataSource,
-              new PublicationStore(db, transactions, root.toString()),
-              new SnapshotIngest(db, source, transactions, TestPublication.SOURCE_URL),
-              source,
-              root));
-    } finally {
-      flyway.clean();
-      deleteRecursively(root);
-    }
-  }
-
   private static void deleteRecursively(Path directory) throws IOException {
     if (!Files.exists(directory)) {
       return;
     }
-    try (final java.util.stream.Stream<Path> walk = Files.walk(directory)) {
-      walk.sorted(java.util.Comparator.reverseOrder())
+    try (final Stream<Path> walk = Files.walk(directory)) {
+      walk.sorted(Comparator.reverseOrder())
           .forEach(
               path -> {
                 try {
                   Files.deleteIfExists(path);
                 } catch (IOException e) {
-                  throw new java.io.UncheckedIOException(e);
+                  throw new UncheckedIOException(e);
                 }
               });
     }

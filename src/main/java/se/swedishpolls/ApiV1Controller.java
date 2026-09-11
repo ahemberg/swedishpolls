@@ -1,7 +1,8 @@
 package se.swedishpolls;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -12,7 +13,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -39,12 +39,12 @@ public class ApiV1Controller {
 
   private final PublicationStore store;
   private final SnapshotIngest ingest;
-  private final JdbcClient db;
+  private final Roster roster;
 
-  public ApiV1Controller(PublicationStore store, SnapshotIngest ingest, JdbcClient db) {
+  public ApiV1Controller(PublicationStore store, SnapshotIngest ingest, Roster roster) {
     this.store = store;
     this.ingest = ingest;
-    this.db = db;
+    this.roster = roster;
   }
 
   /** A resolved publication: which one, and whether the caller pinned it permanently. */
@@ -74,11 +74,12 @@ public class ApiV1Controller {
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Resolved resolved = resolve(publication, language);
-    final String surface =
-        coveragePeriod == null
-            ? defaultLatestSurface(resolved.publicationId(), language)
-            : PublicationDocuments.latestSurface(coveragePeriod);
-    return json(document(resolved, surface, language, "coveragePeriod"), resolved, ifNoneMatch);
+    final String period =
+        coveragePeriod == null ? header(resolved).headlinePeriod() : coveragePeriod;
+    return json(
+        document(resolved, PublicationDocuments.latestSurface(period), language, "coveragePeriod"),
+        resolved,
+        ifNoneMatch);
   }
 
   @GetMapping("/estimates/history")
@@ -158,11 +159,13 @@ public class ApiV1Controller {
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Resolved resolved = resolve(publication, language);
-    final String surface =
-        coveragePeriod == null
-            ? defaultElectionsSurface(resolved.publicationId(), language)
-            : PublicationDocuments.electionsSurface(coveragePeriod);
-    return json(document(resolved, surface, language, "coveragePeriod"), resolved, ifNoneMatch);
+    final String period =
+        coveragePeriod == null ? header(resolved).headlinePeriod() : coveragePeriod;
+    return json(
+        document(
+            resolved, PublicationDocuments.electionsSurface(period), language, "coveragePeriod"),
+        resolved,
+        ifNoneMatch);
   }
 
   @GetMapping("/seats")
@@ -172,11 +175,12 @@ public class ApiV1Controller {
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Resolved resolved = resolve(publication, language);
-    final String surface =
-        election == null
-            ? defaultYearSurface(resolved.publicationId(), language, "seats")
-            : PublicationDocuments.seatsSurface(year(election));
-    return json(document(resolved, surface, language, "election"), resolved, ifNoneMatch);
+    final int electionYear =
+        election == null ? header(resolved).approximatedElection() : year(election);
+    return json(
+        document(resolved, PublicationDocuments.seatsSurface(electionYear), language, "election"),
+        resolved,
+        ifNoneMatch);
   }
 
   @GetMapping("/coalitions")
@@ -187,11 +191,11 @@ public class ApiV1Controller {
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Resolved resolved = resolve(publication, language);
-    final String surface =
-        election == null
-            ? defaultYearSurface(resolved.publicationId(), language, "coalitions")
-            : PublicationDocuments.coalitionsSurface(year(election));
-    final ObjectNode stored = document(resolved, surface, language, "election");
+    final int electionYear =
+        election == null ? header(resolved).approximatedElection() : year(election);
+    final ObjectNode stored =
+        document(
+            resolved, PublicationDocuments.coalitionsSurface(electionYear), language, "election");
     if (coalition == null) {
       return json(stored, resolved, ifNoneMatch);
     }
@@ -246,11 +250,14 @@ public class ApiV1Controller {
         PollQuery.filter(
             header.snapshotId(),
             ingest.polls(header.snapshotId()),
-            new Roster(db).periods(),
+            roster.periods(),
             filters,
             requestedPage,
             size);
-    return json(pollsBody(header, result, filters, resolved), resolved, ifNoneMatch);
+    return json(
+        pollsBody(header, result, filters, resolved, Translations.of(language)),
+        resolved,
+        ifNoneMatch);
   }
 
   @GetMapping(value = "/polls.csv", produces = "text/csv; charset=utf-8")
@@ -276,7 +283,7 @@ public class ApiV1Controller {
         PollQuery.filter(
             header.snapshotId(),
             ingest.polls(header.snapshotId()),
-            new Roster(db).periods(),
+            roster.periods(),
             filters,
             1,
             PollQuery.MAX_PAGE_SIZE);
@@ -311,14 +318,11 @@ public class ApiV1Controller {
     node.put("permalink", "/api/v1/publications/" + header.publicationId());
     final ObjectNode model = node.putObject("modelRun");
     model.put("runId", run.runId());
-    model.put("protocolVersion", run.protocolVersion());
     model.put("codeVersion", run.codeVersion());
     model.put("estimatorVersion", run.estimatorVersion());
     model.put("seed", run.seed());
-    model.put("draws", run.draws());
     model.put("runtime", run.runtime());
     model.put("numericalLibrary", run.numericalLibrary());
-    model.set("parameters", JSON.readTree(run.parameters()));
     final ObjectNode archived = node.putObject("snapshot");
     archived.put("snapshotId", snapshot.snapshotId());
     archived.put("sha256", snapshot.sha256());
@@ -346,7 +350,8 @@ public class ApiV1Controller {
       PublicationStore.Header header,
       PollQuery.Result result,
       PollQuery.Filters filters,
-      Resolved resolved) {
+      Resolved resolved,
+      Translations text) {
     final ObjectNode node = JSON.createObjectNode();
     final ObjectNode identity = node.putObject("publication");
     identity.put("publicationId", header.publicationId());
@@ -373,15 +378,35 @@ public class ApiV1Controller {
     } else {
       declared.put("coveragePeriod", filters.coveragePeriod());
     }
+    if (filters.coveragePeriod() == null) {
+      node.put("coveragePeriod", header.headlinePeriod());
+    } else {
+      node.put("coveragePeriod", filters.coveragePeriod());
+    }
     node.put("total", result.total());
     node.put("page", result.page1());
     node.put("pageSize", result.pageSize());
     node.put("csv", csvLink(resolved, filters));
+    final ObjectNode labels = node.putObject("labels");
+    for (final String component : filters.selectedComponents()) {
+      labels.put(component, text.component(component));
+    }
     final ArrayNode polls = node.putArray("polls");
     for (final PollQuery.Row row : result.page()) {
       polls.add(pollNode(row, filters));
     }
     return node;
+  }
+
+  /** An absent value is null, never zero and never an empty string standing in for one. */
+  private static void putOrNull(ObjectNode node, String field, Object value) {
+    switch (value) {
+      case null -> node.putNull(field);
+      case String text -> node.put(field, text);
+      case LocalDate date -> node.put(field, date.toString());
+      case BigDecimal number -> node.put(field, number);
+      default -> throw new IllegalArgumentException("Unpublishable value for " + field);
+    }
   }
 
   private ObjectNode pollNode(PollQuery.Row row, PollQuery.Filters filters) {
@@ -393,37 +418,18 @@ public class ApiV1Controller {
     node.put("methodEra", poll.methodEra());
     node.put("methodEvidence", poll.methodEvidence());
     node.put("surveyType", poll.surveyType());
-    node.put(
-        "publicationDate",
-        poll.publicationDate() == null ? null : poll.publicationDate().toString());
-    node.put(
-        "collectionFrom", poll.collectionFrom() == null ? null : poll.collectionFrom().toString());
-    node.put("collectionTo", poll.collectionTo() == null ? null : poll.collectionTo().toString());
+    putOrNull(node, "publicationDate", poll.publicationDate());
+    putOrNull(node, "collectionFrom", poll.collectionFrom());
+    putOrNull(node, "collectionTo", poll.collectionTo());
     node.put("approximatePeriod", row.approximatePeriod());
-    if (poll.sampleSize() == null) {
-      node.putNull("sampleSize");
-    } else {
-      node.put("sampleSize", poll.sampleSize());
-    }
+    putOrNull(node, "sampleSize", poll.sampleSize());
     node.put("denominatorNote", poll.denominatorNote());
     final ObjectNode shares = node.putObject("shares");
     for (final String component : filters.selectedComponents()) {
-      if (poll.shares().get(component) == null) {
-        shares.putNull(component);
-      } else {
-        shares.put(component, poll.shares().get(component));
-      }
+      putOrNull(shares, component, poll.shares().get(component));
     }
-    if (poll.remainder() == null) {
-      node.putNull("other");
-    } else {
-      node.put("other", poll.remainder());
-    }
-    if (row.uncertain() == null) {
-      node.putNull("uncertain");
-    } else {
-      node.put("uncertain", row.uncertain());
-    }
+    putOrNull(node, "other", poll.remainder());
+    putOrNull(node, "uncertain", row.uncertain());
     node.put("coveragePeriod", row.coveragePeriod());
     node.put("eligible", poll.eligible());
     final ArrayNode reasons = node.putArray("exclusionReasons");
@@ -465,6 +471,10 @@ public class ApiV1Controller {
       String coveragePeriod,
       String includeExcluded,
       List<ApiErrors.Invalid> invalid) {
+    if (coveragePeriod != null
+        && roster.periods().stream().noneMatch(period -> period.id().equals(coveragePeriod))) {
+      invalid.add(new ApiErrors.Invalid("coveragePeriod", "unknown_coverage_period"));
+    }
     final LocalDate fromDate = date(from, "from", invalid);
     final LocalDate toDate = date(to, "to", invalid);
     if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
@@ -567,7 +577,8 @@ public class ApiV1Controller {
         store
             .current()
             .map(PublicationStore.Current::publicationId)
-            .orElseThrow(() -> ApiErrors.estimatesUnavailable(lastCheck())),
+            .orElseThrow(
+                () -> ApiErrors.estimatesUnavailable(store.lastSuccessfulCheck().orElse(null))),
         false);
   }
 
@@ -585,34 +596,6 @@ public class ApiV1Controller {
     return (ObjectNode) JSON.readTree(body.get());
   }
 
-  private String defaultLatestSurface(String publicationId, String language) {
-    return firstSurface(publicationId, language, "estimates-latest:");
-  }
-
-  private String defaultElectionsSurface(String publicationId, String language) {
-    return firstSurface(publicationId, language, "elections:");
-  }
-
-  private String defaultYearSurface(String publicationId, String language, String prefix) {
-    return db.sql(
-            "SELECT surface FROM publication_document WHERE publication_id = ? AND language = ?"
-                + " AND surface LIKE ? ORDER BY surface DESC LIMIT 1")
-        .params(publicationId, language, prefix + ":%")
-        .query(String.class)
-        .optional()
-        .orElseThrow(ApiErrors::unknownPublication);
-  }
-
-  private String firstSurface(String publicationId, String language, String prefix) {
-    return db.sql(
-            "SELECT surface FROM publication_document WHERE publication_id = ? AND language = ?"
-                + " AND surface LIKE ? ORDER BY surface LIMIT 1")
-        .params(publicationId, language, prefix + "%")
-        .query(String.class)
-        .optional()
-        .orElseThrow(ApiErrors::unknownPublication);
-  }
-
   private static boolean knownPeriod(ObjectNode history, String coveragePeriod) {
     for (final JsonNode period : history.get("coveragePeriodByDate")) {
       if (!period.isNull() && coveragePeriod.equals(period.asString())) {
@@ -620,14 +603,6 @@ public class ApiV1Controller {
       }
     }
     return false;
-  }
-
-  private Instant lastCheck() {
-    return db.sql("SELECT max(last_successful_check_at) FROM poll_source")
-        .query(java.sql.Timestamp.class)
-        .optional()
-        .map(java.sql.Timestamp::toInstant)
-        .orElse(null);
   }
 
   // Response shaping: content ETags and the two cache classes.
@@ -645,11 +620,10 @@ public class ApiV1Controller {
     final String etag = "\"" + PublicationStore.sha256(body) + "\"";
     final CacheControl cache =
         permanent
-            ? CacheControl.maxAge(java.time.Duration.ofSeconds(IMMUTABLE_MAX_AGE_SECONDS))
+            ? CacheControl.maxAge(Duration.ofSeconds(IMMUTABLE_MAX_AGE_SECONDS))
                 .cachePublic()
                 .immutable()
-            : CacheControl.maxAge(java.time.Duration.ofSeconds(CURRENT_MAX_AGE_SECONDS))
-                .cachePublic();
+            : CacheControl.maxAge(Duration.ofSeconds(CURRENT_MAX_AGE_SECONDS)).cachePublic();
     if (etag.equals(ifNoneMatch)) {
       return ResponseEntity.status(HttpStatus.NOT_MODIFIED).eTag(etag).cacheControl(cache).build();
     }

@@ -55,6 +55,23 @@ class TranslationsTest {
     }
   }
 
+  /** A key added to one language and forgotten in the other fails here, not at publication time. */
+  @Test
+  void theTwoLanguagesCarryTheSameKeys() {
+    for (final String key : KEYS) {
+      for (final String language : Translations.LANGUAGES) {
+        assertNotEquals(
+            Translations.of(language).text(key),
+            Translations.of(other(language)).text(key),
+            key + " reads the same in both languages");
+      }
+    }
+  }
+
+  private static String other(String language) {
+    return Translations.SWEDISH.equals(language) ? Translations.ENGLISH : Translations.SWEDISH;
+  }
+
   @Test
   void anUnsupportedLanguageIsRejectedRatherThanFallingBack() {
     assertFalse(Translations.supported("de"));

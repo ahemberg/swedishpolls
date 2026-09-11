@@ -1,5 +1,6 @@
 package se.swedishpolls;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Component;
 @Component
 @ConditionalOnProperty(name = "publication.enabled", havingValue = "true", matchIfMissing = true)
 final class PublisherScheduler {
+  private static final Logger LOG = LoggerFactory.getLogger(PublisherScheduler.class);
+
   private final Publisher publisher;
 
   PublisherScheduler(Publisher publisher) {
@@ -23,17 +26,15 @@ final class PublisherScheduler {
       // Every log line is a literal. The reason a run did not publish is recorded on
       // publication_attempt, where it cannot reach a log file at all.
       final Publisher.Attempt attempt = publisher.publish();
-      final org.slf4j.Logger log = LoggerFactory.getLogger(PublisherScheduler.class);
       switch (attempt.outcome()) {
-        case PUBLISHED -> log.info("A new publication is current");
-        case UNCHANGED -> log.info("The source snapshot is unchanged");
-        case BLOCKED -> log.warn("The release verdict blocks publication");
-        case FAILED -> log.error("The update failed; the previous publication is retained");
-        case BUSY -> log.info("Another worker holds the publication lock");
+        case PUBLISHED -> LOG.info("A new publication is current");
+        case UNCHANGED -> LOG.info("The source snapshot is unchanged");
+        case BLOCKED -> LOG.warn("The release verdict blocks publication");
+        case FAILED -> LOG.error("The update failed; the previous publication is retained");
+        case BUSY -> LOG.info("Another worker holds the publication lock");
       }
     } catch (RuntimeException e) {
-      LoggerFactory.getLogger(PublisherScheduler.class)
-          .error("Publication worker failed; the previous publication is retained", e);
+      LOG.error("Publication worker failed; the previous publication is retained", e);
     }
   }
 }

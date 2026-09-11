@@ -2,11 +2,13 @@ package se.swedishpolls;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
@@ -43,6 +46,8 @@ public class PublicationStore {
       Instant sourceCheckedAt,
       Instant publishedAt,
       String history,
+      String headlinePeriod,
+      int approximatedElection,
       String state) {}
 
   /** The model run behind a publication. */
@@ -70,9 +75,14 @@ public class PublicationStore {
       String mediaType,
       int byteCount,
       String sha256) {
+    /** The file this version is stored as, under the publication's own directory. */
+    public String fileName() {
+      return kind + "-" + language + "-" + version + ".png";
+    }
+
     /** The permanent path of this version. A renderer change adds a version, never a rewrite. */
     public String path() {
-      return "/assets/" + publicationId + "/" + kind + "-" + language + "-" + version + ".png";
+      return "/assets/" + publicationId + "/" + fileName();
     }
   }
 
@@ -110,7 +120,7 @@ public class PublicationStore {
     return db.sql(
             """
             SELECT id, run_id, snapshot_id, last_fieldwork_date, source_checked_at, published_at,
-                   history, state
+                   history, headline_period, approximated_election, state
             FROM publication WHERE id = ? AND state = 'published'
             """)
         .param(publicationId)
@@ -124,6 +134,8 @@ public class PublicationStore {
                     rs.getTimestamp("source_checked_at").toInstant(),
                     rs.getTimestamp("published_at").toInstant(),
                     rs.getString("history"),
+                    rs.getString("headline_period"),
+                    rs.getInt("approximated_election"),
                     rs.getString("state")))
         .optional();
   }
@@ -206,6 +218,14 @@ public class PublicationStore {
         .findFirst();
   }
 
+  /**
+   * The version a newly rendered card is stored as: one past the highest version already there. A
+   * renderer change therefore adds a version rather than replacing published bytes.
+   */
+  public int nextAssetVersion(String publicationId, String kind, String language) {
+    return latestAsset(publicationId, kind, language).map(Asset::version).orElse(0) + 1;
+  }
+
   /** The current version of one card: the highest version stored for it. */
   public Optional<Asset> latestAsset(String publicationId, String kind, String language) {
     return assets(publicationId).stream()
@@ -227,9 +247,7 @@ public class PublicationStore {
   }
 
   public Path assetFile(Asset asset) {
-    return root.resolve("assets")
-        .resolve(asset.publicationId())
-        .resolve(asset.kind() + "-" + asset.language() + "-" + asset.version() + ".png");
+    return root.resolve("assets").resolve(asset.publicationId()).resolve(asset.fileName());
   }
 
   private Path stagingDirectory(String publicationId) {
@@ -250,7 +268,7 @@ public class PublicationStore {
       Files.createDirectories(staging);
       for (int index = 0; index < assets.size(); index++) {
         final Asset asset = assets.get(index);
-        final Path file = staging.resolve(fileName(asset));
+        final Path file = staging.resolve(asset.fileName());
         Files.write(file, bytes.get(index));
         final byte[] written = Files.readAllBytes(file);
         if (!sha256(written).equals(asset.sha256()) || written.length != asset.byteCount()) {
@@ -263,10 +281,6 @@ public class PublicationStore {
     }
   }
 
-  private static String fileName(Asset asset) {
-    return asset.kind() + "-" + asset.language() + "-" + asset.version() + ".png";
-  }
-
   /**
    * Moves the verified staging directory into place and switches the current pointer in one
    * transaction. The pointer never moves before every byte it will serve is readable.
@@ -275,17 +289,19 @@ public class PublicationStore {
     try {
       final Path staging = stagingDirectory(publicationId);
       final Path target = root.resolve("assets").resolve(publicationId);
-      Files.createDirectories(root.resolve("assets"));
-      if (Files.exists(target)) {
-        throw new IllegalStateException("Published assets already exist for " + publicationId);
-      }
-      Files.move(staging, target, StandardCopyOption.ATOMIC_MOVE);
+      Files.createDirectories(target);
       for (final Asset asset : assets) {
-        final byte[] written = Files.readAllBytes(assetFile(asset));
+        final Path file = assetFile(asset);
+        if (Files.exists(file)) {
+          throw new IllegalStateException("Published asset " + asset.path() + " already exists");
+        }
+        Files.move(staging.resolve(asset.fileName()), file, StandardCopyOption.ATOMIC_MOVE);
+        final byte[] written = Files.readAllBytes(file);
         if (!sha256(written).equals(asset.sha256())) {
           throw new IllegalStateException("Moved asset " + asset.path() + " failed verification");
         }
       }
+      deleteRecursively(staging);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -346,7 +362,7 @@ public class PublicationStore {
   /** Marks the kept publication stale after a failed update. Its own bytes do not change. */
   public void markStale(Instant since) {
     db.sql("UPDATE current_publication SET stale = true, stale_since = ? WHERE NOT stale")
-        .param(java.sql.Timestamp.from(since))
+        .param(Timestamp.from(since))
         .update();
   }
 
@@ -383,20 +399,25 @@ public class PublicationStore {
       long snapshotId,
       LocalDate lastFieldworkDate,
       Instant sourceCheckedAt,
-      Instant publishedAt) {
+      Instant publishedAt,
+      String headlinePeriod,
+      int approximatedElection) {
     db.sql(
             """
             INSERT INTO publication(id, run_id, snapshot_id, last_fieldwork_date,
-                source_checked_at, published_at, history, state)
-            VALUES (?, ?, ?, ?, ?, ?, 'corrected', 'candidate')
+                source_checked_at, published_at, history, headline_period,
+                approximated_election, state)
+            VALUES (?, ?, ?, ?, ?, ?, 'corrected', ?, ?, 'candidate')
             """)
         .params(
             publicationId,
             runId,
             snapshotId,
             lastFieldworkDate,
-            java.sql.Timestamp.from(sourceCheckedAt),
-            java.sql.Timestamp.from(publishedAt))
+            Timestamp.from(sourceCheckedAt),
+            Timestamp.from(publishedAt),
+            headlinePeriod,
+            approximatedElection)
         .update();
   }
 
@@ -405,11 +426,7 @@ public class PublicationStore {
             "INSERT INTO publication_document(publication_id, surface, language, body, sha256)"
                 + " VALUES (?, ?, ?, ?::jsonb, ?)")
         .params(
-            publicationId,
-            surface,
-            language,
-            body,
-            sha256(body.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+            publicationId, surface, language, body, sha256(body.getBytes(StandardCharsets.UTF_8)))
         .update();
   }
 
@@ -422,19 +439,33 @@ public class PublicationStore {
             VALUES (now(), ?, ?, ?, ?)
             """)
         .params(
-            sourceCheckedAt == null ? null : java.sql.Timestamp.from(sourceCheckedAt),
+            sourceCheckedAt == null ? null : Timestamp.from(sourceCheckedAt),
             outcome.stored(),
             publicationId,
             failure)
         .update();
   }
 
-  /** The snapshot the current publication pinned, so a poll request never reads a newer one. */
-  public Optional<Long> pinnedSnapshot(String publicationId) {
-    return db.sql("SELECT snapshot_id FROM publication WHERE id = ? AND state = 'published'")
+  /** The coverage periods one publication rendered an estimate for. */
+  public List<String> coveragePeriods(String publicationId) {
+    return db
+        .sql(
+            "SELECT DISTINCT surface FROM publication_document WHERE publication_id = ?"
+                + " AND surface LIKE 'estimates-latest:%' ORDER BY surface")
         .param(publicationId)
-        .query(Long.class)
-        .optional();
+        .query(String.class)
+        .list()
+        .stream()
+        .map(surface -> surface.substring(surface.indexOf(':') + 1))
+        .toList();
+  }
+
+  /** When the source was last read successfully, whether or not a publication followed. */
+  public Optional<Instant> lastSuccessfulCheck() {
+    return db.sql("SELECT max(last_successful_check_at) FROM poll_source")
+        .query(Timestamp.class)
+        .optional()
+        .map(Timestamp::toInstant);
   }
 
   static String sha256(byte[] bytes) {
@@ -450,7 +481,7 @@ public class PublicationStore {
       return;
     }
     final List<Path> paths = new ArrayList<>();
-    try (final java.util.stream.Stream<Path> walk = Files.walk(directory)) {
+    try (final Stream<Path> walk = Files.walk(directory)) {
       walk.forEach(paths::add);
     }
     paths.sort(Comparator.reverseOrder());

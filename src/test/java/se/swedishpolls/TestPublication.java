@@ -1,13 +1,17 @@
 package se.swedishpolls;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -16,7 +20,8 @@ import tools.jackson.databind.json.JsonMapper;
  * changes, so the pipeline under test is the production one.
  */
 final class TestPublication {
-  static final String SOURCE_URL = "https://example.invalid/Polls.csv";
+  /** The path the WireMock source is stubbed on. */
+  static final String SOURCE_PATH = "/polls.csv";
 
   /** The first fieldwork date the trimmed fixture keeps. */
   static final String FROM = "2019-01-01";
@@ -48,26 +53,16 @@ final class TestPublication {
     }
   }
 
-  /**
-   * A source client that serves fixed bytes, so a test controls exactly when the source changes.
-   */
-  static final class FixedSource implements SnapshotIngest.PollSourceClient {
-    private byte[] body;
-
-    FixedSource(byte[] body) {
-      this.body = body.clone();
-    }
-
-    void change(byte[] body) {
-      this.body = body.clone();
-    }
-
-    @Override
-    public ResponseEntity<byte[]> fetch(String etag, String modified) {
-      final HttpHeaders headers = new HttpHeaders();
-      headers.set("ETag", "\"" + PublicationStore.sha256(body) + "\"");
-      return new ResponseEntity<>(body.clone(), headers, org.springframework.http.HttpStatus.OK);
-    }
+  /** Serves the fixture over HTTP, so a test exercises the production source client. */
+  static StubMapping serve(WireMockServer wireMock, byte[] body) {
+    return wireMock.stubFor(
+        get(urlEqualTo(SOURCE_PATH))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("ETag", "\"" + PublicationStore.sha256(body) + "\"")
+                    .withHeader("Last-Modified", "Mon, 07 Sep 2026 05:09:49 GMT")
+                    .withBody(body)));
   }
 
   /** The shipped freeze, released, at a draw count a test can run in seconds. */

@@ -8,7 +8,7 @@ share images, served through the [frozen v1 API contract](api-contract.md).
 
 | Part | Where it lives |
 | --- | --- |
-| Header: identity, run, snapshot, three times | `publication` |
+| Header: identity, run, snapshot, three times, headline period, approximated election | `publication` |
 | The model run: protocol, seed, draws, parameters, executable versions | `model_run` |
 | One rendered document per surface and language | `publication_document` |
 | One immutable image version per card and language | `publication_asset` plus `PUBLICATION_ROOT` |
@@ -58,11 +58,20 @@ answers `503 estimates_unavailable` with the last source-check time.
 
 ## Serving
 
+A request without `coveragePeriod` or `election` reads the headline period and the approximated
+election recorded on the publication row, so a default never depends on how surface keys happen to
+sort. An explicit value that the publication has no document for is an `invalid_filter`, not an
+unknown publication.
+
 Every surface except polls is served from a stored document. `estimates/history` stores the whole
 daily series; a request selects dates from it, which is why a display step never refits anything
 and why the last requested supported date is always retained. `polls` and `polls.csv` are read at
 request time from the publication's pinned snapshot, so both agree on rows and on archived
 precision, and neither can see a newer snapshot.
+
+The poll table carries translated component labels, so a Swedish and an English table are two
+representations with two ETags. `polls.csv` is a data file: its header and its values are the
+archived source, identical in both languages by design.
 
 Current responses carry `max-age=300`; permanent publication links and asset links carry
 `max-age=31536000, immutable`. Every ETag is the digest of the response body, so a query, a schema
@@ -71,8 +80,9 @@ and a translation validate separately.
 ## Share images
 
 `ShareImages` renders four 1200 by 630 Java2D cards - overview, parties, seats and coalitions - in
-both languages. Polls, pollster and method pages reuse the overview card. Fonts are checked before
-anything is staged: a runtime that cannot draw `åäö` fails the attempt rather than publishing
+both languages. Polls, pollster and method pages reuse the overview card. An asset version is one past the highest already stored for that card, so a re-render adds a
+version beside the published one and `promote` refuses to overwrite a file that exists. Fonts are
+checked before anything is staged: a runtime that cannot draw `åäö` fails the attempt rather than publishing
 broken cards. A card of a closed coverage period carries that period's own date and says it is
 historical, so a historical FI estimate never reads as a current one.
 

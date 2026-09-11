@@ -18,6 +18,7 @@ import java.util.Properties;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
@@ -71,7 +72,7 @@ public class Publisher {
   private final PublicationStore store;
   private final ModelFreeze freeze;
 
-  @org.springframework.beans.factory.annotation.Autowired
+  @Autowired
   public Publisher(
       DataSource dataSource, JdbcClient db, SnapshotIngest ingest, PublicationStore store) {
     this(dataSource, db, ingest, store, ModelFreeze.load());
@@ -115,7 +116,7 @@ public class Publisher {
     if (check == SnapshotIngest.Result.BUSY) {
       return new Attempt(Outcome.BUSY, null, "a source check is running");
     }
-    final Instant sourceCheckedAt = lastSuccessfulCheck();
+    final Instant sourceCheckedAt = store.lastSuccessfulCheck().orElseGet(Instant::now);
     final Optional<SnapshotIngest.Snapshot> active = ingest.activeSnapshot();
     if (active.isEmpty()) {
       return fail(sourceCheckedAt, "no archived source snapshot");
@@ -189,7 +190,9 @@ public class Publisher {
           snapshot.id(),
           results.lastFieldworkDate(),
           sourceCheckedAt,
-          publishedAt);
+          publishedAt,
+          results.headline().period().id(),
+          results.allocationRule().electionYear());
       candidate = publicationId;
       final PublicationDocuments.Identity identity =
           new PublicationDocuments.Identity(publicationId, runId, snapshot.id());
@@ -211,7 +214,7 @@ public class Publisher {
                 publicationId,
                 card.kind(),
                 card.language(),
-                1,
+                store.nextAssetVersion(publicationId, card.kind(), card.language()),
                 ShareImages.RENDERER_VERSION,
                 ShareImages.MEDIA_TYPE,
                 png.length,
@@ -352,14 +355,6 @@ public class Publisher {
       entry.put("covarianceMultiplier", parameters.covarianceMultiplier());
     }
     return JSON.writeValueAsString(node);
-  }
-
-  private Instant lastSuccessfulCheck() {
-    return db.sql("SELECT max(last_successful_check_at) FROM poll_source")
-        .query(java.sql.Timestamp.class)
-        .optional()
-        .map(java.sql.Timestamp::toInstant)
-        .orElseGet(Instant::now);
   }
 
   /** The build this publication came from, so an archived result names its own executable. */

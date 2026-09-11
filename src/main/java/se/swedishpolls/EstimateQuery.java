@@ -1,7 +1,6 @@
 package se.swedishpolls;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -182,10 +181,5 @@ public final class EstimateQuery {
       periods.add(period.isNull() ? null : period.asString());
     }
     return periods;
-  }
-
-  /** The number of days between two dates, used where a range is reported rather than sampled. */
-  static long days(LocalDate from, LocalDate to) {
-    return ChronoUnit.DAYS.between(from, to);
   }
 }

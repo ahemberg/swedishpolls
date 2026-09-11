@@ -2,6 +2,7 @@ package se.swedishpolls;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -21,12 +22,23 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.wiremock.spring.EnableWireMock;
+import org.wiremock.spring.InjectWireMock;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /** The frozen v1 surface, served from one published publication. */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = {
+      "logging.level.WireMock=warn",
+      "polls.ingest.enabled=false",
+      "publication.enabled=false",
+      "polls.source-url=${wiremock.server.baseUrl}/polls.csv",
+      "spring.docker.compose.enabled=false"
+    })
 @Import({TestDatabase.Configuration.class, ApiV1IT.Fixture.class})
+@EnableWireMock
 @org.junit.jupiter.api.TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
 class ApiV1IT {
   private static final JsonMapper JSON = JsonMapper.builder().build();
@@ -35,14 +47,9 @@ class ApiV1IT {
   private static Path root;
   private static String publicationId;
 
+  /** Only the freeze is replaced: the source is served over HTTP like the production one. */
   @TestConfiguration(proxyBeanMethods = false)
   static class Fixture {
-    @Bean
-    @Primary
-    SnapshotIngest.PollSourceClient pollSource() {
-      return new TestPublication.FixedSource(TestPublication.polls(TestPublication.FROM));
-    }
-
     @Bean
     @Primary
     Publisher publisher(
@@ -63,19 +70,17 @@ class ApiV1IT {
   static void volume(DynamicPropertyRegistry registry) throws Exception {
     root = Files.createTempDirectory("swedishpolls-api");
     registry.add("publication.root", () -> root.toString());
-    registry.add("polls.ingest.enabled", () -> "false");
-    registry.add("publication.enabled", () -> "false");
-    registry.add("polls.source-url", () -> TestPublication.SOURCE_URL);
   }
 
   @org.springframework.boot.test.web.server.LocalServerPort private int port;
   @Autowired private Publisher publisher;
   @Autowired private PublicationStore store;
-  @Autowired private SnapshotIngest.PollSourceClient source;
+  @InjectWireMock private WireMockServer wireMock;
 
   @BeforeEach
   void publishOnce() {
     if (publicationId == null) {
+      TestPublication.serve(wireMock, TestPublication.polls(TestPublication.FROM));
       final Publisher.Attempt attempt = publisher.publish();
       assertEquals(Publisher.Outcome.PUBLISHED, attempt.outcome(), attempt.detail());
       publicationId = attempt.publicationId();
@@ -94,7 +99,8 @@ class ApiV1IT {
     assertFalse(body.get("modelRun").get("runId").asString().isBlank());
     assertFalse(body.get("modelRun").get("codeVersion").asString().isBlank());
     assertFalse(body.get("modelRun").get("runtime").asString().isBlank());
-    assertEquals(DRAWS, body.get("modelRun").get("draws").intValue());
+    assertFalse(body.get("modelRun").get("numericalLibrary").asString().isBlank());
+    assertTrue(body.get("modelRun").get("seed").longValue() > 0);
     assertTrue(body.get("snapshot").get("sha256").asString().matches("[0-9a-f]{64}"));
     for (final String kind : ShareImages.KINDS) {
       for (final String language : Translations.LANGUAGES) {
@@ -122,6 +128,10 @@ class ApiV1IT {
   void contentEtagsSeparateQueriesSchemasAndTranslations() {
     final String swedish = etag("/api/v1/estimates/latest?language=sv");
     final String english = etag("/api/v1/estimates/latest?language=en");
+    assertNotEquals(
+        etag("/api/v1/polls?language=sv"),
+        etag("/api/v1/polls?language=en"),
+        "A translated poll table is its own representation");
     final String seats = etag("/api/v1/seats?language=sv");
     final String sampled = etag("/api/v1/estimates/history?language=sv&step=7");
     final String whole = etag("/api/v1/estimates/history?language=sv&step=1");
@@ -357,7 +367,7 @@ class ApiV1IT {
     final String csv = get("/api/v1/polls.csv?publication=" + pinned).body();
     final byte[] card = bytes("/assets/" + pinned + "/overview-sv-1.png").body();
 
-    ((TestPublication.FixedSource) source).change(TestPublication.polls("2019-06-01"));
+    TestPublication.serve(wireMock, TestPublication.polls("2019-06-01"));
     final Publisher.Attempt next = publisher.publish();
     assertEquals(Publisher.Outcome.PUBLISHED, next.outcome(), next.detail());
     assertNotEquals(pinned, next.publicationId());

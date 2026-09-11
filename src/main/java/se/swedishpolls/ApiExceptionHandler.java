@@ -1,6 +1,7 @@
 package se.swedishpolls;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -31,6 +32,6 @@ public class ApiExceptionHandler {
   private static ResponseEntity<byte[]> body(ApiErrors.ApiException error) {
     return ResponseEntity.status(error.status())
         .contentType(MediaType.APPLICATION_JSON)
-        .body(error.body().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        .body(error.body().getBytes(StandardCharsets.UTF_8));
   }
 }
