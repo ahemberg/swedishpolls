@@ -17,18 +17,27 @@ Install Java 25, Docker, and Docker Compose 2.2.0 or newer. The Maven wrapper
 downloads Maven 3.9.12 with a SHA-256 check; Maven installs Node 24.13.1 and npm
 11.8.0 under `target/`.
 
+Copy the example file once, set the local password and any ports you need, then
+start the application:
+
 ```sh
-DATABASE_PASSWORD='choose-a-local-password' ./mvnw spring-boot:run
+cp .env.example .env
+./mvnw spring-boot:run
 ```
 
-Open http://localhost:8080. Spring Boot starts PostgreSQL from `compose.dev.yaml`,
+Spring Boot reads `.env` for this run, and Docker Compose reads the same file
+when it starts a service. Shell environment variables override values in the
+file. Keep `.env` untracked; `.gitignore` already excludes it.
+
+Open the app on localhost at the configured `APP_PORT` (8080 by default).
+Spring Boot starts PostgreSQL from `compose.dev.yaml`,
 waits for it, and stops it with the application. It leaves an already running service
 alone. Compose binds PostgreSQL only on localhost and retains it in a named volume.
 Never use `docker compose down -v` on retained data.
 
-For an occupied local port, add `DATABASE_PORT=55432`; Spring Boot connects to the
-mapped port. To connect to another PostgreSQL instance, disable Compose support and
-set the JDBC connection values:
+For an occupied local port, set `APP_PORT` or `DATABASE_PORT` in `.env`; Spring Boot
+uses the mapped database port. To connect to another PostgreSQL instance, disable
+Compose support and set the JDBC connection values:
 
 ```sh
 SPRING_DOCKER_COMPOSE_ENABLED=false \
@@ -49,8 +58,8 @@ Maven exits. They do not use `DATABASE_URL`, `DATABASE_USER`, or
 To run the repackaged application against the development database:
 
 ```sh
-DATABASE_PASSWORD='choose-a-local-password' docker compose -f compose.dev.yaml up -d --wait db
-DATABASE_PASSWORD='choose-a-local-password' java -jar target/swedishpolls-0.1.0.jar
+docker compose -f compose.dev.yaml up -d --wait db
+java -jar target/swedishpolls-0.1.0.jar
 ```
 
 The repackaged JAR does not include Docker Compose support. Set `DATABASE_URL`,
@@ -118,11 +127,10 @@ CI publishes `ghcr.io/ahemberg/swedishpolls:<commit>-amd64` and
 `main`. It keeps commit tags and never deploys to the host. Set the exact commit and host
 architecture when starting Compose:
 
+Set those production values in `.env`, then run:
+
 ```sh
-APP_VERSION='<full-main-commit>' ARCH=amd64 \
-  DATABASE_PASSWORD='choose-a-production-password' \
-  PUBLIC_ORIGIN='https://polls.example' SITE_NAME='Swedish Polls' \
-  docker compose up -d --wait
+docker compose up -d --wait
 ```
 
 Use `ARCH=arm64` only on a 64-bit ARM operating system. `PUBLIC_ORIGIN` is the public
