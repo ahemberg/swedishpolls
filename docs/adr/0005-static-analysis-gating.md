@@ -11,6 +11,14 @@ Every finding fails the build. The repository is small and clean when this decis
 a baseline would preserve no useful history. Adding one would instead make new and existing code
 follow different rules in a codebase small enough to fix outright.
 
+One detector is excluded outright. `spotbugs-exclude.xml` drops findsecbugs' `SPRING_ENDPOINT`,
+which reports that a class is an HTTP entry point and asks for it to be reviewed for injection and
+access control. It names no defect, and it fires on every handler method of every controller, so it
+cannot be answered in code: keeping it would mean an annotation per endpoint forever, for a notice
+that never changes. The review it asks for is a standing requirement of this repository, not a
+build gate: queries are parameterised, no request value reaches the filesystem unvalidated, and an
+unknown route or filter returns the frozen error body. Every other findsecbugs detector stays on.
+
 Suppressions are exceptions, not routine fixes. An agent must stop and ask for permission when
 a finding looks false. A permitted SpotBugs suppression uses `@SuppressFBWarnings` at the
 narrowest possible scope and states why the finding does not apply. Disabling a rule requires

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter xmlns="https://github.com/spotbugs/filter/3.1.0">
+  <!--
+    SPRING_ENDPOINT is findsecbugs' SECURITY_AUDIT notice that a class is an HTTP entry point.
+    It reports no defect and fires on every handler method of every controller, so it cannot be
+    answered in code. The controls it asks to be reviewed are enforced elsewhere and still are:
+    every query is parameterised, no request value reaches the filesystem unvalidated, and an
+    unknown route or filter returns the frozen error body. Recorded in ADR 0005.
+  -->
+  <Match>
+    <Bug pattern="SPRING_ENDPOINT"/>
+  </Match>
+</FindBugsFilter>
