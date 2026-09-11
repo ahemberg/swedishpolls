@@ -30,8 +30,11 @@ se.swedishpolls
 ├── model                            shared immutable values used by more than one responsibility
 │   └── (root)                       Translations, Coalitions, ComparableRemainder, SeatOutcomes,
 │                                    ModelFreeze and other frozen values (ADR 0003, ADR 0007)
-└── web                              the HTTP surface
-    └── web.controller               ApiV1Controller, AssetController, ApiExceptionHandler, ApiErrors
+└── web                              the HTTP surface and the server-rendered site
+    ├── (root)                       plain site-rendering classes: PublicSite, SiteHtml, SiteText,
+    │                                SiteFormat, SiteAssets, SiteRoutes, SiteBootstrap
+    └── web.controller               PageController, ApiV1Controller, AssetController,
+                                     ApiExceptionHandler, ApiErrors
 ```
 
 Values needed by a single responsibility stay in that responsibility. A value moves to `model`
@@ -164,6 +167,11 @@ query and roster-grouping classes (`PollCsv`, `PollQuery`, `Roster`) and the
 registers the poll-source HTTP client; `source.repository` holds `SnapshotRepository` and
 `CoveragePeriodRepository`; the shared `Snapshot` value sits in `source` (root). Tests moved with
 their classes, and the shared CSV fixtures live in `se.swedishpolls.testsupport`.
+
+Two classes named in the map above, `PollObservations` and `WindowFilter`, still sit in
+`se.swedishpolls`; #116 left them behind and they move to `source` (root) in a follow-up. The
+site-rendering cluster (`PublicSite`, `SiteHtml`, `SiteText`, `SiteFormat`, `SiteAssets`,
+`SiteRoutes`, `SiteBootstrap`) and `PageController` move to `web` under #118.
 
 Everything else still lives in `se.swedishpolls` and this guide describes the target for it, not
 the tree. Estimation, publication and web classes move in the tickets that own those migrations
