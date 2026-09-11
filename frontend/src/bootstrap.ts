@@ -1,3 +1,5 @@
+import type { CoalitionResults, Seats } from "./chamber";
+
 /**
  * The page's resolved publication, as Spring wrote it into the document.
  *
@@ -40,41 +42,6 @@ export interface Latest {
   readonly coveragePeriods: readonly CoveragePeriod[];
   readonly components: readonly Interval[];
   readonly unavailable: Readonly<Record<string, { readonly reason: string }>>;
-}
-
-export interface SeatsParty {
-  readonly component: string;
-  readonly pointSeats: number | null;
-  readonly meanSeats: number | null;
-  readonly seatInterval: readonly [number, number] | null;
-  readonly thresholdProbability: number | null;
-}
-
-export interface Seats {
-  readonly totalSeats: number;
-  readonly intervalLevel: number;
-  readonly note: string;
-  readonly parties: readonly SeatsParty[];
-  readonly excludedFromAllocation: readonly string[];
-  readonly unavailable: Readonly<Record<string, { readonly reason: string }>>;
-  readonly sensitivity?: string;
-}
-
-export interface Coalition {
-  readonly id: string;
-  readonly parties: readonly string[];
-  readonly pointSeats: number;
-  readonly meanSeats: number;
-  readonly seatInterval: readonly [number, number];
-  readonly majorityProbability: number;
-}
-
-export interface CoalitionResults {
-  readonly majoritySeats: number;
-  readonly note: string;
-  readonly overviewDefaults: readonly string[];
-  readonly coalitions: readonly Coalition[];
-  readonly sensitivity?: string;
 }
 
 export interface Series {
@@ -210,13 +177,20 @@ export interface NavigationEntry {
   readonly current: boolean;
 }
 
+/**
+ * What a results page carries.
+ *
+ * The estimate, the allocation and the memberships come from one publication and are on every
+ * page that shows numbers. The timeline, the election dots and the poll list belong to the
+ * overview alone, so they are absent rather than empty on the seats and coalitions pages.
+ */
 export interface PageData {
   readonly latest: Latest;
   readonly seats: Seats;
   readonly coalitions: CoalitionResults;
-  readonly elections: Elections;
-  readonly history: History;
-  readonly polls: Polls;
+  readonly elections?: Elections;
+  readonly history?: History;
+  readonly polls?: Polls;
   readonly party?: PartyData;
 }
 
@@ -248,11 +222,19 @@ export interface Bootstrap {
   readonly defaultRange?: string;
 }
 
-/** The overview page family, as the server names it. */
+/** The page families this build renders, as the server names them. */
 export const OVERVIEW = "OVERVIEW";
+export const SEATS = "SEATS";
+export const COALITIONS = "COALITIONS";
 
 /** The individual party page family. */
 export const PARTY = "PARTY";
+
+/**
+ * The publication-wide summary cards a page can offer. A party page is not here: it offers its
+ * own party's card, whose kind is built from the component rather than chosen from a fixed set.
+ */
+export type CardKind = "overview" | "seats" | "coalitions";
 
 /** The element the script replaces. Its server-rendered children are the pre-script page. */
 export const MOUNT_ELEMENT = "site-root";

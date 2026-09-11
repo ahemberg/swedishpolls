@@ -184,7 +184,7 @@ function ElectionDots({
   readonly y: Scale;
   readonly component: string | undefined;
 }): JSX.Element {
-  const elections = page.data?.elections.elections ?? [];
+  const elections = page.data?.elections?.elections ?? [];
   return (
     <g>
       {elections.flatMap((election) => {

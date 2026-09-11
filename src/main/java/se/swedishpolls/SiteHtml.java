@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -146,32 +147,44 @@ public final class SiteHtml {
     if (!bootstrap.has("publication")) {
       return text.text("unavailable.title");
     }
-    if (SiteRoutes.Family.PARTY.name().equals(bootstrap.get("route").get("family").asString())) {
+    if (family(bootstrap) == SiteRoutes.Family.PARTY) {
       final boolean historical =
           bootstrap.get("data").get("party").get("historicalOnly").asBoolean();
-      final String key = historical ? "head.imageAlt.partyHistorical" : "head.imageAlt.party";
+      final String party = historical ? "head.imageAlt.partyHistorical" : "head.imageAlt.party";
       return SiteText.fill(
-          SiteText.fill(text.text(key), "party", partyName(bootstrap)),
+          SiteText.fill(text.text(party), "party", partyName(bootstrap)),
           "date",
           fieldwork(bootstrap));
     }
-    return SiteText.fill(text.text("head.imageAlt"), "date", fieldwork(bootstrap));
+    final String key = "head.imageAlt." + family(bootstrap).key();
+    final String template =
+        text.all().containsKey(key) ? text.text(key) : text.text("head.imageAlt");
+    return SiteText.fill(template, "date", fieldwork(bootstrap));
   }
 
-  /** This route's card in this language, at its published asset version. */
+  /**
+   * This route's card, in this language, at its published asset version.
+   *
+   * <p>A party page shares its own party's card; every other family shares the publication-wide
+   * card that summarizes it, so a seats link does not preview as the overview.
+   */
   private static String shareImage(ObjectNode bootstrap) {
     if (!bootstrap.has("publication")) {
       return null;
     }
-    final JsonNode route = bootstrap.get("route");
-    final String kind =
-        SiteRoutes.Family.PARTY.name().equals(route.get("family").asString())
-            ? ShareImages.partyKind(route.get("parameter").asString())
-            : ShareImages.OVERVIEW;
-    final JsonNode overview = bootstrap.get("publication").get("assets").get(kind);
-    final JsonNode path =
-        overview == null ? null : overview.get(bootstrap.get("language").asString());
+    final JsonNode card = bootstrap.get("publication").get("assets").get(cardKind(bootstrap));
+    final JsonNode path = card == null ? null : card.get(bootstrap.get("language").asString());
     return path == null || path.isNull() ? null : path.asString();
+  }
+
+  /** Which published card a route shares. Polls, pollsters and method reuse the overview one. */
+  private static String cardKind(ObjectNode bootstrap) {
+    return switch (family(bootstrap)) {
+      case PARTY -> ShareImages.partyKind(bootstrap.get("route").get("parameter").asString());
+      case SEATS -> ShareImages.SEATS;
+      case COALITIONS -> ShareImages.COALITIONS;
+      case OVERVIEW, POLLSTERS, POLLS, METHOD -> ShareImages.OVERVIEW;
+    };
   }
 
   /**
@@ -237,16 +250,17 @@ public final class SiteHtml {
     html.append("<main id=\"main\">\n");
     if (!bootstrap.has("publication")) {
       unavailable(html, bootstrap, text);
-    } else if (SiteRoutes.Family.OVERVIEW
-        .name()
-        .equals(bootstrap.get("route").get("family").asString())) {
-      overview(html, bootstrap, text);
-    } else if (SiteRoutes.Family.PARTY
-        .name()
-        .equals(bootstrap.get("route").get("family").asString())) {
-      party(html, bootstrap, text);
     } else {
-      html.append("<h1>").append(escape(title(bootstrap, text))).append("</h1>\n");
+      // Exhaustive on purpose: a family this build has no rendering for yet still gets its own
+      // title, and adding one has to be a deliberate choice here rather than a silent fallback.
+      switch (family(bootstrap)) {
+        case OVERVIEW -> overview(html, bootstrap, text);
+        case PARTY -> party(html, bootstrap, text);
+        case SEATS -> seats(html, bootstrap, text);
+        case COALITIONS -> coalitions(html, bootstrap, text);
+        case POLLSTERS, POLLS, METHOD ->
+            html.append("<h1>").append(escape(title(bootstrap, text))).append("</h1>\n");
+      }
     }
     html.append("</main>\n");
     if (bootstrap.has("publication")) {
@@ -318,6 +332,241 @@ public final class SiteHtml {
         .append("</a></p>\n");
     blocs(html, bootstrap, text);
     downloads(html, bootstrap, text);
+  }
+
+  /**
+   * The seats page, read without a script: the integer allocation that fills the chamber, the
+   * posterior summaries beside it as separate quantities, and what the approximation leaves out.
+   */
+  private static void seats(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final String language = bootstrap.get("language").asString();
+    final JsonNode labels = bootstrap.get("labels");
+    final JsonNode seats = bootstrap.get("data").get("seats");
+    final JsonNode rule = seats.get("allocationRule");
+    final String level = SiteFormat.level(seats.get("intervalLevel").asDouble());
+    html.append("<h1>").append(escape(text.text("seats.title"))).append("</h1>\n");
+    html.append("<p class=\"meta\">")
+        .append(escape(SiteText.fill(text.text("seats.lead"), "date", fieldwork(bootstrap))))
+        .append(" ")
+        .append(escape(text.text("notForecast")))
+        .append("</p>\n");
+    html.append("<p class=\"meta\">")
+        .append(
+            escape(
+                SiteText.fill(
+                    text.text("coalitions.majorityLine"),
+                    "majority",
+                    Integer.toString(
+                        bootstrap.get("data").get("coalitions").get("majoritySeats").asInt()))))
+        .append("</p>\n");
+    html.append("<div class=\"scroll\">\n<table class=\"seats\">\n<caption>")
+        .append(escape(SiteText.fill(text.text("seats.caption"), "level", level)))
+        .append("</caption>\n<thead><tr>");
+    for (final String column :
+        List.of(
+            "estimate.column.party",
+            "seats.column.point",
+            "seats.column.mean",
+            "seats.column.interval",
+            "seats.column.threshold")) {
+      html.append("<th scope=\"col\">").append(escape(text.text(column))).append("</th>");
+    }
+    html.append("</tr></thead>\n<tbody>\n");
+    for (final JsonNode party : seats.get("parties")) {
+      final String key = party.get("component").asString();
+      html.append("<tr><th scope=\"row\">")
+          .append(escape(label(labels, key)))
+          .append("</th><td class=\"num\">")
+          .append(escape(count(party.get("pointSeats"), text)))
+          .append("</td><td class=\"num\">")
+          .append(escape(decimal(party.get("meanSeats"), language, text)))
+          .append("</td><td class=\"num\">")
+          .append(escape(interval(party.get("seatInterval"))))
+          .append("</td><td class=\"num\">")
+          .append(escape(chance(party.get("thresholdProbability"), language, text)))
+          .append("</td></tr>\n");
+    }
+    for (final Map.Entry<String, JsonNode> missing : seats.get("unavailable").properties()) {
+      html.append("<tr><th scope=\"row\">")
+          .append(escape(label(labels, missing.getKey())))
+          .append("</th><td colspan=\"4\">")
+          .append(escape(text.text("estimate.unavailable")))
+          .append("</td></tr>\n");
+    }
+    for (final JsonNode excluded : seats.get("excludedFromAllocation")) {
+      html.append("<tr><th scope=\"row\">")
+          .append(escape(label(labels, excluded.asString())))
+          .append("</th><td colspan=\"4\">")
+          .append(escape(text.text("estimate.noSeats")))
+          .append("</td></tr>\n");
+    }
+    html.append("</tbody>\n</table>\n</div>\n");
+    note(html, text.text("seats.pointVersusMean"));
+    note(
+        html,
+        SiteText.fill(
+            text.text("seats.era"), "year", Integer.toString(rule.get("electionYear").asInt())));
+    note(html, text.text("seats.threshold"));
+    note(html, text.text("seats.other"));
+    note(html, seats.get("note").asString());
+    note(html, rule.get("tieNote").asString());
+    sensitivity(html, seats, text);
+    downloads(html, bootstrap, text);
+  }
+
+  /**
+   * The coalitions page: all ten memberships, and every pair of them compared over the same draws.
+   * A label is membership and nothing more, which the page says next to the catalogue.
+   */
+  private static void coalitions(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final String language = bootstrap.get("language").asString();
+    final JsonNode labels = bootstrap.get("labels");
+    final JsonNode coalitions = bootstrap.get("data").get("coalitions");
+    html.append("<h1>").append(escape(text.text("coalitions.title"))).append("</h1>\n");
+    html.append("<p class=\"meta\">")
+        .append(escape(SiteText.fill(text.text("coalitions.lead"), "date", fieldwork(bootstrap))))
+        .append(" ")
+        .append(escape(text.text("notForecast")))
+        .append("</p>\n");
+    html.append("<p class=\"meta\">")
+        .append(
+            escape(
+                SiteText.fill(
+                    text.text("coalitions.majorityLine"),
+                    "majority",
+                    Integer.toString(coalitions.get("majoritySeats").asInt()))))
+        .append("</p>\n");
+    html.append("<div class=\"scroll\">\n<table class=\"coalitions\">\n<caption>")
+        .append(escape(text.text("coalitions.caption")))
+        .append("</caption>\n<thead><tr>");
+    for (final String column :
+        List.of(
+            "estimate.column.party",
+            "coalitions.column.parties",
+            "seats.column.point",
+            "seats.column.mean",
+            "seats.column.interval",
+            "coalitions.column.majority")) {
+      html.append("<th scope=\"col\">").append(escape(text.text(column))).append("</th>");
+    }
+    html.append("</tr></thead>\n<tbody>\n");
+    for (final JsonNode coalition : coalitions.get("coalitions")) {
+      html.append("<tr><th scope=\"row\">")
+          .append(escape(labels.get("coalition." + coalition.get("id").asString()).asString()))
+          .append("</th><td>")
+          .append(escape(members(labels, coalition.get("parties"))))
+          .append("</td><td class=\"num\">")
+          .append(escape(Integer.toString(coalition.get("pointSeats").asInt())))
+          .append("</td><td class=\"num\">")
+          .append(escape(SiteFormat.decimal(coalition.get("meanSeats").asDouble(), language)))
+          .append("</td><td class=\"num\">")
+          .append(escape(interval(coalition.get("seatInterval"))))
+          .append("</td><td class=\"num\">")
+          .append(
+              escape(
+                  SiteFormat.probability(
+                      coalition.get("majorityProbability").asDouble(), language)))
+          .append("</td></tr>\n");
+    }
+    html.append("</tbody>\n</table>\n</div>\n");
+    note(html, coalitions.get("note").asString());
+    sensitivity(html, coalitions, text);
+    pairwise(html, bootstrap, text, coalitions);
+    downloads(html, bootstrap, text);
+  }
+
+  /** Every ordered question about two coalitions, answered from one set of draws. */
+  private static void pairwise(
+      StringBuilder html, ObjectNode bootstrap, SiteText text, JsonNode coalitions) {
+    final String language = bootstrap.get("language").asString();
+    final JsonNode labels = bootstrap.get("labels");
+    html.append("<h2>").append(escape(text.text("pairwise.title"))).append("</h2>\n");
+    html.append("<div class=\"scroll\">\n<table class=\"pairwise\">\n<caption>")
+        .append(escape(text.text("pairwise.caption")))
+        .append("</caption>\n<thead><tr>");
+    for (final String column :
+        List.of(
+            "pairwise.column.left",
+            "pairwise.column.right",
+            "pairwise.column.leftLeads",
+            "pairwise.column.rightLeads",
+            "pairwise.tied")) {
+      html.append("<th scope=\"col\">").append(escape(text.text(column))).append("</th>");
+    }
+    html.append("</tr></thead>\n<tbody>\n");
+    for (final JsonNode pair : coalitions.get("comparison").get("pairs")) {
+      html.append("<tr class=\"pair\"><th scope=\"row\">")
+          .append(escape(labels.get("coalition." + pair.get("left").asString()).asString()))
+          .append("</th><td>")
+          .append(escape(labels.get("coalition." + pair.get("right").asString()).asString()))
+          .append("</td><td class=\"num\">")
+          .append(escape(SiteFormat.probability(pair.get("leftLeads").asDouble(), language)))
+          .append("</td><td class=\"num\">")
+          .append(escape(SiteFormat.probability(pair.get("rightLeads").asDouble(), language)))
+          .append("</td><td class=\"num\">")
+          .append(escape(SiteFormat.probability(pair.get("tied").asDouble(), language)))
+          .append("</td></tr>\n");
+    }
+    html.append("</tbody>\n</table>\n</div>\n");
+    note(html, text.text("pairwise.tieNote"));
+  }
+
+  /** A published sensitivity movement, next to the numbers it moves rather than in a footer. */
+  private static void sensitivity(StringBuilder html, JsonNode document, SiteText text) {
+    final JsonNode published = document.get("sensitivity");
+    if (published == null || published.isNull()) {
+      return;
+    }
+    note(html, SiteText.fill(text.text("sensitivity.note"), "note", published.asString()));
+  }
+
+  private static void note(StringBuilder html, String body) {
+    html.append("<p class=\"meta\">").append(escape(body)).append("</p>\n");
+  }
+
+  /** A seat interval, as the two integers the publication carries. */
+  private static String interval(JsonNode bounds) {
+    if (bounds == null || bounds.isNull()) {
+      return "";
+    }
+    return bounds.get(0).asInt() + "–" + bounds.get(1).asInt();
+  }
+
+  // A published value a page has to show. Null means the publication has no number for it, which
+  // is not zero and not a certainty: it reads as unavailable, the way the mounted page reads it.
+
+  private static String count(JsonNode value, SiteText text) {
+    return absent(value) ? text.text("estimate.unavailable") : Integer.toString(value.asInt());
+  }
+
+  private static String decimal(JsonNode value, String language, SiteText text) {
+    return absent(value)
+        ? text.text("estimate.unavailable")
+        : SiteFormat.decimal(value.asDouble(), language);
+  }
+
+  private static String chance(JsonNode value, String language, SiteText text) {
+    return absent(value)
+        ? text.text("estimate.unavailable")
+        : SiteFormat.probability(value.asDouble(), language);
+  }
+
+  private static boolean absent(JsonNode value) {
+    return value == null || value.isNull();
+  }
+
+  /** The parties a coalition counts, named rather than left as keys. */
+  private static String members(JsonNode labels, JsonNode parties) {
+    final List<String> named = new ArrayList<>();
+    for (final JsonNode party : parties) {
+      named.add(label(labels, party.asString()));
+    }
+    return String.join(", ", named);
+  }
+
+  private static String label(JsonNode labels, String key) {
+    final JsonNode label = labels.get(key);
+    return label == null ? key : label.asString();
   }
 
   private static void estimateTable(
@@ -627,6 +876,7 @@ public final class SiteHtml {
     link(html, "/api/v1/polls.csv" + pin, text.text("downloads.polls"));
     link(html, "/api/v1/estimates/latest" + pin, text.text("downloads.estimates"));
     link(html, "/api/v1/seats" + pin, text.text("downloads.seats"));
+    link(html, "/api/v1/coalitions" + pin, text.text("downloads.coalitions"));
     final String image = shareImage(bootstrap);
     if (image != null) {
       link(html, image, text.text("downloads.image"));

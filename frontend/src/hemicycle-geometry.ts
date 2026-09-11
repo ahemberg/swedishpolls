@@ -1,4 +1,4 @@
-import type { Seats } from "./bootstrap";
+import type { Seats } from "./chamber";
 
 /**
  * The seat arc's geometry.

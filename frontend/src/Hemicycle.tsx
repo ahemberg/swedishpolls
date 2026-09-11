@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Seats } from "./bootstrap";
+import type { Seats } from "./chamber";
 import { colour } from "./format";
 import {
   CENTRE_X,
@@ -14,6 +14,18 @@ import {
 } from "./hemicycle-geometry";
 
 /** The seat arc itself: integer point seats, and the marker at the majority line. */
+
+/**
+ * What the arc says to a reader who cannot see it: every allocated party and its integer seats.
+ * The arc is a picture of one allocation, so its alternative text has to be that same allocation
+ * and not a restatement of the posterior means.
+ */
+function hemicycleSummary(seats: Seats, name: (component: string) => string): string {
+  return seats.parties
+    .filter((party) => party.pointSeats !== null)
+    .map((party) => `${name(party.component)} ${party.pointSeats}`)
+    .join(", ");
+}
 
 const TITLE_GAP = 10;
 const TOTAL_GAP = 16;
@@ -82,4 +94,4 @@ function Hemicycle({ seats, majority, label, majorityLabel, totalLabel }: Props)
   );
 }
 
-export { Hemicycle };
+export { Hemicycle, hemicycleSummary };

@@ -1,5 +1,6 @@
 import type { JSX } from "react";
-import type { Bootstrap, Interval, PageData, Seats, Translate } from "./bootstrap";
+import type { Bootstrap, Interval, PageData, Translate } from "./bootstrap";
+import type { Seats } from "./chamber";
 import { colour, date, decimal, level, percent } from "./format";
 import { Sparkline } from "./Sparkline";
 
@@ -77,7 +78,9 @@ function EstimateRow({ page, data, t, component }: RowProps): JSX.Element {
       <td>{verbal(component, page, t)}</td>
       <td className="num">{seatsOf(data.seats, component.component, t)}</td>
       <td className="spark">
-        <Sparkline history={data.history} component={component.component} />
+        {data.history !== undefined && (
+          <Sparkline history={data.history} component={component.component} />
+        )}
       </td>
     </tr>
   );

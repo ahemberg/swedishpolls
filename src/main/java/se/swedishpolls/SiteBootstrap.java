@@ -78,13 +78,41 @@ public final class SiteBootstrap {
       SiteRoutes.Route route, PublicationStore.Header header, boolean permanent) {
     final ObjectNode page = shell(route);
     publication(page, header, permanent);
-    if (route.family() == SiteRoutes.Family.OVERVIEW || route.family() == SiteRoutes.Family.PARTY) {
-      overview(page, header);
+    // Exhaustive on purpose: a new family has to say which documents it reads, rather than
+    // inheriting an empty page from a default arm and rendering a heading with no numbers.
+    switch (route.family()) {
+      case OVERVIEW, PARTY -> overview(page, header);
+      case SEATS, COALITIONS -> chamber(page, header);
+      case POLLSTERS, POLLS, METHOD -> {}
     }
     if (route.family() == SiteRoutes.Family.PARTY) {
       party(page, header, route.parameter());
     }
     return page;
+  }
+
+  /**
+   * What the seats and coalitions pages read. Both are two views of one set of joint draws: the
+   * allocation and the memberships summarized from it, so both pages carry both documents and the
+   * seat totals on them cannot disagree.
+   */
+  private void chamber(ObjectNode page, PublicationStore.Header header) {
+    final String language = page.get("language").asString();
+    final ObjectNode data = page.putObject("data");
+    data.set(
+        "latest",
+        document(header, PublicationDocuments.latestSurface(header.headlinePeriod()), language));
+    data.set(
+        "seats",
+        document(
+            header, PublicationDocuments.seatsSurface(header.approximatedElection()), language));
+    data.set(
+        "coalitions",
+        document(
+            header,
+            PublicationDocuments.coalitionsSurface(header.approximatedElection()),
+            language));
+    page.put("headlineDate", data.get("latest").get("lastFieldworkDate").asString());
   }
 
   /** The shell every page carries: language, translated routes, wording and site identity. */

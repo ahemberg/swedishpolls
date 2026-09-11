@@ -78,6 +78,18 @@ A documented period of a polling series with a particular measurement method. Me
 **Custom coalition**:
 A visitor-selected combination of parties whose estimated voting-intention shares are summed. The grouping does not imply an agreement between the parties to govern together.
 
+**Preset coalition**:
+One of the ten approved party combinations published with every run, named by a fixed key and an explicit membership. A preset is not chosen by a visitor, which is what separates it from a custom coalition. Two presets may differ by a single party: opposition counts V where c_l_mp_s counts L.
+
+**Pairwise comparison**:
+The probability that one preset coalition takes more seats than another, counted over the same joint draws as the seat allocation. It cannot be derived from two separate seat intervals, because those carry no information about how the two totals move together.
+
+**Tie outcome**:
+How an exact equality between two compared coalitions is counted. A tie is credited to neither side and reported on its own, so the probabilities of a pair sum to one without either side being awarded the draw.
+
+**Allocation rule**:
+The election-era seat rules one allocation was made under: the divisors, the threshold, the documented tie order and its source. Rules are recorded per election year rather than applied backwards, so a historical estimate is allocated the way that election allocated.
+
 **Page family**:
 One approved page of the site, named independently of the path that reaches it. Each family has one
 translated path per language, so a language switch maps an equivalent page rather than prefixing the
