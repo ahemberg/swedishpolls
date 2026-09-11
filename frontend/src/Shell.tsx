@@ -68,29 +68,32 @@ function Title({ page, t }: Props): JSX.Element {
   return <h1>{t(`head.title.${page.route.family.toLowerCase()}`)}</h1>;
 }
 
-/** The page of whichever family carries results. The server attaches data only to those. */
-function Results({
-  page,
-  data,
-  t,
-}: {
+interface ResultsProps {
   readonly page: Bootstrap;
   readonly data: PageData;
   readonly t: Translate;
-}): JSX.Element {
-  if (page.route.family === OVERVIEW) {
-    return <Overview page={page} t={t} />;
+}
+
+/**
+ * Which page each family that carries results is rendered by.
+ *
+ * One table rather than a cascade of family tests: adding a family is a line here, and the server
+ * decides which family a route is rather than this file rediscovering it four times over.
+ */
+const PAGES: Readonly<Record<string, (props: ResultsProps) => JSX.Element>> = {
+  [OVERVIEW]: ({ page, t }) => <Overview page={page} t={t} />,
+  [PARTY]: ({ page, t }) => <Party page={page} t={t} />,
+  [SEATS]: ({ page, data, t }) => <SeatsPage page={page} data={data} t={t} />,
+  [COALITIONS]: ({ page, data, t }) => <CoalitionsPage page={page} data={data} t={t} />,
+};
+
+/** The page of whichever family carries results. The server attaches data only to those. */
+function Results({ page, data, t }: ResultsProps): JSX.Element {
+  const render = PAGES[page.route.family];
+  if (render === undefined) {
+    return <Title page={page} t={t} />;
   }
-  if (page.route.family === PARTY) {
-    return <Party page={page} t={t} />;
-  }
-  if (page.route.family === SEATS) {
-    return <SeatsPage page={page} data={data} t={t} />;
-  }
-  if (page.route.family === COALITIONS) {
-    return <CoalitionsPage page={page} data={data} t={t} />;
-  }
-  return <Title page={page} t={t} />;
+  return render({ page, data, t });
 }
 
 /**
