@@ -3,6 +3,7 @@ package se.swedishpolls;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
@@ -95,7 +96,7 @@ public class Publisher {
 
   /** One publication attempt, holding the worker lock for its whole run. */
   public Attempt publish() {
-    try (Connection connection = dataSource.getConnection()) {
+    try (final Connection connection = dataSource.getConnection()) {
       if (!lock(connection)) {
         return new Attempt(Outcome.BUSY, null, "another worker holds the publication lock");
       }
@@ -364,7 +365,7 @@ public class Publisher {
   /** The build this publication came from, so an archived result names its own executable. */
   static String codeVersion() {
     final Properties git = new Properties();
-    try (InputStream input = Publisher.class.getResourceAsStream("/git.properties")) {
+    try (final InputStream input = Publisher.class.getResourceAsStream("/git.properties")) {
       if (input != null) {
         git.load(input);
       }
@@ -388,15 +389,15 @@ public class Publisher {
   }
 
   private static boolean lock(Connection connection) throws SQLException {
-    try (Statement statement = connection.createStatement();
-        java.sql.ResultSet result =
+    try (final Statement statement = connection.createStatement();
+        final ResultSet result =
             statement.executeQuery("SELECT pg_try_advisory_lock(" + ADVISORY_LOCK + ")")) {
       return result.next() && result.getBoolean(1);
     }
   }
 
   private static void unlock(Connection connection) throws SQLException {
-    try (Statement statement = connection.createStatement()) {
+    try (final Statement statement = connection.createStatement()) {
       statement.execute("SELECT pg_advisory_unlock(" + ADVISORY_LOCK + ")");
     }
   }

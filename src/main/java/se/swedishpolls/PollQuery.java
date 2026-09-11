@@ -183,7 +183,7 @@ public final class PollQuery {
     final StringBuilder out = new StringBuilder();
     final CSVFormat format =
         CSVFormat.RFC4180.builder().setQuoteMode(QuoteMode.MINIMAL).setRecordSeparator("\n").get();
-    try (CSVPrinter printer = new CSVPrinter(out, format)) {
+    try (final CSVPrinter printer = new CSVPrinter(out, format)) {
       printer.printRecord(header);
       for (final Row row : result.matching()) {
         final List<String> values = new ArrayList<>(header.size());

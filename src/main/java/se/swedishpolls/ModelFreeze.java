@@ -67,7 +67,7 @@ public final class ModelFreeze {
   }
 
   public static ModelFreeze load() {
-    try (InputStream input = ModelFreeze.class.getResourceAsStream(RESOURCE)) {
+    try (final InputStream input = ModelFreeze.class.getResourceAsStream(RESOURCE)) {
       if (input == null) {
         throw new IllegalStateException("Missing frozen model resource " + RESOURCE);
       }

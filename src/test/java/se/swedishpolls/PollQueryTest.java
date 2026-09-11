@@ -26,7 +26,7 @@ class PollQueryTest {
 
   @BeforeAll
   static void readFixture() throws Exception {
-    try (InputStream input = PollQueryTest.class.getResourceAsStream("/polls/audit.csv")) {
+    try (final InputStream input = PollQueryTest.class.getResourceAsStream("/polls/audit.csv")) {
       polls = PollCsv.parse(input.readAllBytes());
     }
   }

@@ -27,7 +27,7 @@ final class TestPublication {
 
   /** The audit snapshot, keeping only rows whose fieldwork starts on or after {@link #FROM}. */
   static byte[] polls(String from) {
-    try (InputStream input = TestPublication.class.getResourceAsStream("/polls/audit.csv")) {
+    try (final InputStream input = TestPublication.class.getResourceAsStream("/polls/audit.csv")) {
       final List<String> lines =
           List.of(new String(input.readAllBytes(), StandardCharsets.UTF_8).split("\n", -1));
       final List<String> kept = new ArrayList<>();
@@ -82,7 +82,7 @@ final class TestPublication {
 
   private static tools.jackson.databind.JsonNode adjusted(
       int draws, String status, boolean clearGates) {
-    try (InputStream input = ModelFreeze.class.getResourceAsStream(ModelFreeze.RESOURCE)) {
+    try (final InputStream input = ModelFreeze.class.getResourceAsStream(ModelFreeze.RESOURCE)) {
       final tools.jackson.databind.node.ObjectNode root =
           (tools.jackson.databind.node.ObjectNode) JSON.readTree(input.readAllBytes());
       root.put("draws", draws);

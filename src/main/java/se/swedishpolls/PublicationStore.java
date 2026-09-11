@@ -450,7 +450,7 @@ public class PublicationStore {
       return;
     }
     final List<Path> paths = new ArrayList<>();
-    try (java.util.stream.Stream<Path> walk = Files.walk(directory)) {
+    try (final java.util.stream.Stream<Path> walk = Files.walk(directory)) {
       walk.forEach(paths::add);
     }
     paths.sort(Comparator.reverseOrder());

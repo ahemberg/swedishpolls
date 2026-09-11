@@ -420,7 +420,7 @@ class ApiV1IT {
     if (ifNoneMatch != null) {
       request.header("If-None-Match", ifNoneMatch);
     }
-    try (HttpClient client = HttpClient.newHttpClient()) {
+    try (final HttpClient client = HttpClient.newHttpClient()) {
       return client.send(request.build(), handler);
     } catch (java.io.IOException e) {
       throw new java.io.UncheckedIOException(e);

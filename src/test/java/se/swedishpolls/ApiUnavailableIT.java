@@ -65,7 +65,7 @@ class ApiUnavailableIT {
   }
 
   private HttpResponse<String> get(String path) throws Exception {
-    try (HttpClient client = HttpClient.newHttpClient()) {
+    try (final HttpClient client = HttpClient.newHttpClient()) {
       return client.send(
           HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path)).build(),
           HttpResponse.BodyHandlers.ofString());

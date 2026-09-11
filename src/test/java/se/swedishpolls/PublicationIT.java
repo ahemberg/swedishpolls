@@ -320,7 +320,7 @@ class PublicationIT {
     if (!Files.exists(directory)) {
       return;
     }
-    try (java.util.stream.Stream<Path> walk = Files.walk(directory)) {
+    try (final java.util.stream.Stream<Path> walk = Files.walk(directory)) {
       walk.sorted(java.util.Comparator.reverseOrder())
           .forEach(
               path -> {
