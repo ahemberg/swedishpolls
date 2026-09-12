@@ -13,46 +13,68 @@ the [frozen v1 API contract](docs/api-contract.md) for the served surfaces.
 
 ## Build and run
 
-Install Java 25, Docker, and Docker Compose 2.2.0 or newer. The Maven wrapper
-downloads Maven 3.9.12 with a SHA-256 check; Maven installs Node 24.13.1 and npm
-11.8.0 under `target/`.
+From a fresh checkout:
 
-Copy the example file once, set the local password and any ports you need, then
-start the application:
+1. Install Java 25, Docker, and Docker Compose 2.2.0 or newer. The Maven wrapper
+   downloads Maven 3.9.12 with a SHA-256 check; Maven installs Node 24.13.1 and
+   npm 11.8.0 under `target/`.
 
-```sh
-cp .env.example .env
-./mvnw spring-boot:run
-```
+2. Copy the example environment file once:
 
-Spring Boot reads `.env` for this run, and Docker Compose reads the same file
-when it starts a service. Shell environment variables override values in the
-file. Keep `.env` untracked; `.gitignore` already excludes it.
+   ```sh
+   cp .env.example .env
+   ```
 
-Open the app on localhost at the configured `APP_PORT` (8080 by default).
-Spring Boot starts PostgreSQL from `compose.dev.yaml`,
-waits for it, and stops it with the application. It leaves an already running service
-alone. Compose binds PostgreSQL only on localhost and retains it in a named volume.
-Never use `docker compose down -v` on retained data.
+   Then set the values a Maven run needs in `.env`: `DATABASE_PASSWORD` is required
+   and has no default, so choose a local-only password. `APP_PORT` (8080 by default)
+   and `DATABASE_PORT` (5432 by default) are optional. Keep `.env` untracked;
+   `.gitignore` already excludes it.
 
-For an occupied local port, set `APP_PORT` or `DATABASE_PORT` in `.env`; Spring Boot
-uses the mapped database port. To connect to another PostgreSQL instance, disable
-Compose support and set the JDBC connection values:
+3. Start the application:
+
+   ```sh
+   ./mvnw spring-boot:run
+   ```
+
+   Spring Boot reads `.env` for this run, so no inline environment assignments are
+   needed, and starts PostgreSQL through `compose.dev.yaml`. It waits for the
+   database, serves on `APP_PORT`, and stops the database container with the
+   application, leaving an already running service alone. Shell environment
+   variables override file values. Ctrl-C stops the application and the database
+   container; the named volume retains the database for the next start. Compose
+   binds PostgreSQL only on localhost. Never use `docker compose down -v` on
+   retained data. For an occupied local port, set `APP_PORT` or `DATABASE_PORT`
+   in `.env`; Spring Boot uses the mapped database port.
+
+4. Open `http://localhost:8080` in a browser. To wait for a successful response
+   from the root page instead:
+
+   ```sh
+   until curl -fsS http://localhost:8080/ >/dev/null; do sleep 2; done
+   ```
+
+   The page can correctly report unavailable estimates while the release gate
+   remains blocked.
+
+5. Run the full automated test suite:
+
+   ```sh
+   ./mvnw --batch-mode --no-transfer-progress clean verify
+   ```
+
+   Its integration tests require Docker. Maven tests do not start
+   `compose.dev.yaml`; Testcontainers starts a temporary PostgreSQL 18.4 container
+   and removes it when Maven exits. They do not use `DATABASE_URL`,
+   `DATABASE_USER`, or `DATABASE_PASSWORD`.
+
+To connect to another PostgreSQL instance, disable Compose support and set the
+JDBC connection values:
 
 ```sh
 SPRING_DOCKER_COMPOSE_ENABLED=false \
   DATABASE_URL='jdbc:postgresql://localhost:5432/swedishpolls' \
   DATABASE_USER='swedishpolls' DATABASE_PASSWORD='password' \
   ./mvnw spring-boot:run
-```
-
-Maven tests do not start `compose.dev.yaml`. Integration tests need Docker;
-Testcontainers starts a temporary PostgreSQL 18.4 container and removes it when
-Maven exits. They do not use `DATABASE_URL`, `DATABASE_USER`, or
-`DATABASE_PASSWORD`.
-
-```sh
-./mvnw --batch-mode --no-transfer-progress clean verify
 ```
 
 To run the repackaged application against the development database:
