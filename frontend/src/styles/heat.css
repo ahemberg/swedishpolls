@@ -1,0 +1,43 @@
+/* Part of the approved visual design. See site.css. */
+/*
+ * The pollsters page's heat table.
+ *
+ * One diverging colour per direction of the effect, deepening in half-point steps the server
+ * computed. The number stays in the cell, so colour is never the only cue, and both colours are
+ * theme variables so the cells keep their contrast when the theme flips.
+ */
+:root {
+  --heat-pos: rgb(154 34 54);
+  --heat-neg: rgb(38 84 124);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --heat-pos: rgb(232 106 124);
+    --heat-neg: rgb(111 166 214);
+  }
+}
+
+.heat.p1 {
+  background: color-mix(in srgb, var(--heat-pos) 16%, transparent);
+}
+
+.heat.p2 {
+  background: color-mix(in srgb, var(--heat-pos) 34%, transparent);
+}
+
+.heat.p3 {
+  background: color-mix(in srgb, var(--heat-pos) 55%, transparent);
+}
+
+.heat.n1 {
+  background: color-mix(in srgb, var(--heat-neg) 16%, transparent);
+}
+
+.heat.n2 {
+  background: color-mix(in srgb, var(--heat-neg) 34%, transparent);
+}
+
+.heat.n3 {
+  background: color-mix(in srgb, var(--heat-neg) 55%, transparent);
+}
