@@ -101,16 +101,16 @@ public final class PublicationRun {
         continue;
       }
       final DailyStateSpace.Parameters parameters = freeze.period(period.id()).parameters();
+      // One fit serves the history, the remainder, the final-day draws and the house effects; the
+      // seeded reproduction check refits independently, because reproducing the input is its point.
+      final EstimateHistory.Fitted fitted =
+          EstimateHistory.fitted(period, polls, electionDates, parameters, coverage);
       final EstimateHistory.Estimated history =
-          EstimateHistory.estimate(
-              period, polls, electionDates, parameters, coverage, freeze.uncertainty());
+          EstimateHistory.estimate(fitted, period, coverage, freeze.uncertainty());
       final ComparableRemainder.Estimated remainder =
-          ComparableRemainder.estimate(
-              period, polls, references, parameters, coverage, freeze.uncertainty());
+          ComparableRemainder.estimate(fitted, period, references, coverage, freeze.uncertainty());
       final JointUncertainty.Draws drawn =
-          JointUncertainty.finalDay(
-                  period, polls, electionDates, parameters, coverage, freeze.uncertainty())
-              .draws();
+          JointUncertainty.finalDay(fitted, period, parameters, freeze.uncertainty()).draws();
       periods.add(
           new Period(
               period,
@@ -118,11 +118,9 @@ public final class PublicationRun {
               remainder,
               drawn,
               HouseEffects.estimate(
-                  period,
-                  polls,
+                  fitted,
+                  period.id(),
                   electionDates,
-                  parameters,
-                  coverage,
                   level,
                   freeze.uncertainty().draws(),
                   freeze.uncertainty().seed())));

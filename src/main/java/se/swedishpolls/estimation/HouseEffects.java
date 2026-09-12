@@ -84,9 +84,27 @@ public final class HouseEffects {
       double intervalLevel,
       int draws,
       long seed) {
-    final EstimateHistory.Fitted fitted =
-        EstimateHistory.fitted(period, polls, elections, parameters, coverage);
-    return of(fitted.spans().getLast().fit(), period.id(), elections, intervalLevel, draws, seed);
+    return estimate(
+        EstimateHistory.fitted(period, polls, elections, parameters, coverage),
+        period.id(),
+        elections,
+        intervalLevel,
+        draws,
+        seed);
+  }
+
+  /**
+   * The same effects over a fit the publication already took: the history, the remainder, the
+   * final-day draws and these house effects all read one run rather than four refits.
+   */
+  public static List<Effect> estimate(
+      EstimateHistory.Fitted fitted,
+      String periodId,
+      List<LocalDate> elections,
+      double intervalLevel,
+      int draws,
+      long seed) {
+    return of(fitted.spans().getLast().fit(), periodId, elections, intervalLevel, draws, seed);
   }
 
   /** Every effect of one fitted run, ordered by cycle, then effect, then component. */
