@@ -353,8 +353,19 @@ public final class JointUncertainty {
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules coverage,
       Rules rules) {
-    final se.swedishpolls.estimation.EstimateHistory.Fitted fitted =
-        EstimateHistory.fitted(period, polls, elections, parameters, coverage);
+    return finalDay(
+        EstimateHistory.fitted(period, polls, elections, parameters, coverage),
+        period,
+        parameters,
+        rules);
+  }
+
+  /** The same final day over a fit the publication already took. */
+  public static FinalDay finalDay(
+      EstimateHistory.Fitted fitted,
+      Roster.CoveragePeriod period,
+      DailyStateSpace.Parameters parameters,
+      Rules rules) {
     final se.swedishpolls.estimation.EstimateHistory.Span last = fitted.spans().getLast();
     final se.swedishpolls.estimation.DailyStateSpace.Day lastDay = last.fit().days().getLast();
     final double[][] basis = PollObservations.transposedBasis(last.batch());

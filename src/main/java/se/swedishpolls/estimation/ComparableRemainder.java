@@ -183,8 +183,21 @@ public final class ComparableRemainder {
       JointUncertainty.Rules rules) {
     final java.util.List<java.time.LocalDate> dates =
         elections.stream().map(Reference::date).toList();
-    final se.swedishpolls.estimation.EstimateHistory.Fitted fitted =
-        EstimateHistory.fitted(period, polls, dates, parameters, coverage);
+    return estimate(
+        EstimateHistory.fitted(period, polls, dates, parameters, coverage),
+        period,
+        elections,
+        coverage,
+        rules);
+  }
+
+  /** The same remainder over a fit the publication already took. */
+  public static Estimated estimate(
+      EstimateHistory.Fitted fitted,
+      Roster.CoveragePeriod period,
+      List<Reference> elections,
+      CoverageValidation.Rules coverage,
+      JointUncertainty.Rules rules) {
     final java.util.ArrayList<se.swedishpolls.estimation.ComparableRemainder.Segment> segments =
         new ArrayList<Segment>();
     double endpointSumError = 0;

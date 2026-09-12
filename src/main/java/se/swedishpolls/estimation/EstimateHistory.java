@@ -221,7 +221,21 @@ public final class EstimateHistory {
    */
   record Span(PollObservations.Batch batch, DailyStateSpace.Fit fit, int gapDays) {}
 
-  record Fitted(CoverageValidation.Support support, List<Span> spans) {}
+  /**
+   * A period's support and fitted runs, which every summarizer of the period shares rather than
+   * refitting. A publication fits once and passes this to its history, remainder, final-day draws
+   * and house effects.
+   */
+  public record Fitted(CoverageValidation.Support support, List<Span> spans) {
+    public Fitted {
+      spans = List.copyOf(spans);
+    }
+
+    @Override
+    public List<Span> spans() {
+      return List.copyOf(spans);
+    }
+  }
 
   /**
    * Splits the period's eligible observations wherever the run between two consecutive midpoints
@@ -229,7 +243,7 @@ public final class EstimateHistory {
    * fit would leave the walk propagating through the unsupported run, which is the bridge the
    * protocol forbids; each run gets its own window and its own diffuse prior instead.
    */
-  static Fitted fitted(
+  public static Fitted fitted(
       Roster.CoveragePeriod period,
       List<PollCsv.Poll> polls,
       List<LocalDate> elections,
@@ -321,8 +335,15 @@ public final class EstimateHistory {
       DailyStateSpace.Parameters parameters,
       CoverageValidation.Rules rules,
       JointUncertainty.Rules draws) {
-    final se.swedishpolls.estimation.EstimateHistory.Fitted fitted =
-        fitted(period, polls, elections, parameters, rules);
+    return estimate(fitted(period, polls, elections, parameters, rules), period, rules, draws);
+  }
+
+  /** The same estimate over a fit the publication already took. */
+  public static Estimated estimate(
+      Fitted fitted,
+      Roster.CoveragePeriod period,
+      CoverageValidation.Rules rules,
+      JointUncertainty.Rules draws) {
     final java.util.ArrayList<se.swedishpolls.estimation.EstimateHistory.Segment> segments =
         new ArrayList<Segment>();
     for (se.swedishpolls.estimation.EstimateHistory.Span span : fitted.spans()) {

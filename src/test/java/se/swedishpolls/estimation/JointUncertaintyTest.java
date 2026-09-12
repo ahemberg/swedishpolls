@@ -230,6 +230,71 @@ class JointUncertaintyTest {
     assertNotEquals(narrowed.day(), other.day());
   }
 
+  /**
+   * One publication now fits each validated period once and passes that fit to its history,
+   * remainder, final-day draws and house effects. This test is the byte-identity check of #114: the
+   * four summarizers fed one shared fit come back with exactly what four separate refits computed,
+   * so sharing a fit changes a cost and never a number.
+   */
+  @Test
+  void sharingOneFitReproducesFourSeparateRefitsExactly() {
+    final se.swedishpolls.source.Roster.CoveragePeriod period =
+        CoverageValidationTest.period("eight", LocalDate.of(2015, 1, 1), null, false, true);
+    final java.util.List<se.swedishpolls.source.PollCsv.Poll> polls =
+        CoverageValidationTest.weekly(LocalDate.of(2015, 1, 5), LocalDate.of(2015, 6, 1), "1");
+    final java.util.List<se.swedishpolls.estimation.ComparableRemainder.Reference> references =
+        List.of(
+            reference(ELECTIONS.getFirst(), 0.9, 1.1), reference(ELECTIONS.getLast(), 0.4, 1.6));
+
+    final se.swedishpolls.estimation.EstimateHistory.Fitted shared =
+        EstimateHistory.fitted(period, polls, ELECTIONS, POINT, coverage());
+
+    assertEquals(
+        EstimateHistory.estimate(period, polls, ELECTIONS, POINT, coverage(), RULES),
+        EstimateHistory.estimate(shared, period, coverage(), RULES));
+    assertEquals(
+        ComparableRemainder.estimate(period, polls, references, POINT, coverage(), RULES),
+        ComparableRemainder.estimate(shared, period, references, coverage(), RULES));
+    final se.swedishpolls.estimation.JointUncertainty.FinalDay separate =
+        JointUncertainty.finalDay(period, polls, ELECTIONS, POINT, coverage(), RULES);
+    final se.swedishpolls.estimation.JointUncertainty.FinalDay sharedFinal =
+        JointUncertainty.finalDay(shared, period, POINT, RULES);
+    assertEquals(separate.day(), sharedFinal.day());
+    assertEquals(separate.reproduction(), sharedFinal.reproduction());
+    assertTrue(
+        JointUncertainty.reproduced(separate.draws(), sharedFinal.draws()).exact(),
+        separate.draws()::toString);
+    assertEquals(
+        HouseEffects.estimate(
+            period,
+            polls,
+            ELECTIONS,
+            POINT,
+            coverage(),
+            RULES.intervalLevels().getLast(),
+            RULES.draws(),
+            RULES.seed()),
+        HouseEffects.estimate(
+            shared,
+            period.id(),
+            ELECTIONS,
+            RULES.intervalLevels().getLast(),
+            RULES.draws(),
+            RULES.seed()));
+  }
+
+  /** An official result: the eight parties, then FI and the residual outside them. */
+  private static se.swedishpolls.estimation.ComparableRemainder.Reference reference(
+      LocalDate date, double fi, double residual) {
+    final java.util.LinkedHashMap<java.lang.String, java.lang.Double> shares =
+        new java.util.LinkedHashMap<String, Double>();
+    final double eight = (100 - fi - residual) / PollCsv.PARTIES.size();
+    for (java.lang.String party : PollCsv.PARTIES) shares.put(party, eight);
+    shares.put("FI", fi);
+    shares.put("RESIDUAL", residual);
+    return new se.swedishpolls.estimation.ComparableRemainder.Reference(date, shares);
+  }
+
   @Test
   void repeatedSeedsMoveTheEndpointsOnlyByMonteCarloError() {
     final se.swedishpolls.source.Roster.CoveragePeriod period =
