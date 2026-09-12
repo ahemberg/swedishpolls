@@ -4,8 +4,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.stereotype.Component;
 import se.swedishpolls.publication.ShareImages;
 import se.swedishpolls.publication.Translations;
@@ -1060,6 +1062,13 @@ public final class SiteHtml {
     html.append("</tr></thead><tbody>\n");
     boolean unmodeled = false;
     for (final JsonNode poll : table.get("polls")) {
+      // The bootstrap row carries which components sit outside its coverage period's roster; the
+      // classification is made once beside the rosters, not re-derived per rendering.
+      final Set<String> outside = new HashSet<>();
+      for (final JsonNode component : poll.get("unmodeled")) {
+        outside.add(component.asString());
+      }
+      unmodeled = unmodeled || !outside.isEmpty();
       html.append("<tr><th scope=\"row\">")
           .append(escape(sourceIdentity(poll, text)))
           .append("</th><td>");
@@ -1094,8 +1103,7 @@ public final class SiteHtml {
       html.append("</td>");
       for (final String component : components) {
         final JsonNode share = poll.get("shares").get(component);
-        final boolean flagged = !share.isNull() && outsideRoster(table, poll, component);
-        unmodeled = unmodeled || flagged;
+        final boolean flagged = outside.contains(component);
         html.append("<td class=\"num\">")
             .append(escape(sourceShare(share, language, text)))
             .append(flagged ? escape(mark) : "")
@@ -1183,31 +1191,6 @@ public final class SiteHtml {
     return value == null || value.isNull()
         ? text.text("polls.missing")
         : SiteFormat.date(LocalDate.parse(value.asString()), language);
-  }
-
-  /**
-   * Whether a reported share sits outside the modeled roster of its own coverage period.
-   *
-   * <p>The rule is applied against the rosters the page carries, the same way the mounted page
-   * applies it: the frozen poll response has no such field, so neither rendering can be handed the
-   * answer.
-   */
-  private static boolean outsideRoster(JsonNode table, JsonNode poll, String component) {
-    final JsonNode period = poll.get("coveragePeriod");
-    if (period.isNull()) {
-      return true;
-    }
-    for (final JsonNode entry : table.get("options").get("coveragePeriods")) {
-      if (period.asString().equals(entry.get("id").asString())) {
-        for (final JsonNode member : entry.get("roster")) {
-          if (component.equals(member.asString())) {
-            return false;
-          }
-        }
-        return true;
-      }
-    }
-    return true;
   }
 
   private static String pollCaption(SiteText text, JsonNode table) {

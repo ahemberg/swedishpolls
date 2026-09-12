@@ -21,13 +21,11 @@ public class PollQueryService {
     this.periods = periods;
   }
 
-  /** One poll request against the pinned snapshot, paged like the table shows it. */
-  public PollQuery.Result query(
-      long snapshotId, PollQuery.Filters filters, int page, int pageSize) {
-    return query(snapshotId, periods.periods(), filters, page, pageSize);
-  }
-
-  /** One poll request classified by the coverage periods stored with its publication. */
+  /**
+   * One poll request against the pinned snapshot, classified by the coverage periods the caller
+   * resolved. Passing the repository's current periods here would let a correction reclassify an
+   * already-published page, so callers always pass the periods their publication carries.
+   */
   public PollQuery.Result query(
       long snapshotId,
       List<Roster.CoveragePeriod> coverage,

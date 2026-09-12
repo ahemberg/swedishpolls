@@ -2,7 +2,6 @@ import type { JSX } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
 import { count, date } from "./format";
 import type { PollRow, PollTable } from "./poll-table";
-import { outsideRoster } from "./poll-table";
 
 /**
  * The rows of the poll table.
@@ -40,7 +39,10 @@ function sample(poll: PollRow, page: Bootstrap, t: Translate): string {
   return count(poll.sampleSize, page.locale);
 }
 
-function sourceIdentity(poll: PollRow): string {
+function sourceIdentity(poll: PollRow, t: Translate): string {
+  if (poll.institute === null) {
+    return t("polls.missing");
+  }
   if (poll.company === null || poll.company === poll.institute) {
     return poll.institute;
   }
@@ -49,7 +51,7 @@ function sourceIdentity(poll: PollRow): string {
 
 function method(poll: PollRow, t: Translate): string {
   const parts = [poll.methodEra, poll.surveyType].filter(
-    (value): value is string => value !== null && value !== "",
+    (value): value is string => value !== null && value.trim() !== "",
   );
   if (parts.length === 0) {
     return t("polls.missing");
@@ -116,18 +118,16 @@ function caption(table: PollTable, t: Translate): string {
 
 function Share({
   poll,
-  table,
   component,
   page,
   t,
 }: {
   readonly poll: PollRow;
-  readonly table: PollTable;
   readonly component: string;
   readonly page: Bootstrap;
   readonly t: Translate;
 }): JSX.Element {
-  const flagged = outsideRoster(poll, table.options, component);
+  const flagged = poll.unmodeled.includes(component);
   return (
     <td className="num">
       {source(poll.displayShares[component], page, t)}
@@ -166,20 +166,13 @@ function PollRows({ page, table, t }: Props): JSX.Element {
         <tbody>
           {table.polls.map((poll) => (
             <tr key={poll.pollId}>
-              <th scope="row">{sourceIdentity(poll)}</th>
+              <th scope="row">{sourceIdentity(poll, t)}</th>
               <td>{methodCell(poll, t)}</td>
               <td>{fieldwork(poll, page, t)}</td>
               <td>{published(poll, page, t)}</td>
               <td className="num">{sampleCell(poll, page, t)}</td>
               {table.columns.map((component) => (
-                <Share
-                  key={component}
-                  poll={poll}
-                  table={table}
-                  component={component}
-                  page={page}
-                  t={t}
-                />
+                <Share key={component} poll={poll} component={component} page={page} t={t} />
               ))}
               <td className="num">{source(poll.displayOther, page, t)}</td>
               <td>{poll.coveragePeriod ?? t("polls.noPeriod")}</td>

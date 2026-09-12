@@ -169,8 +169,9 @@ public final class SiteBootstrap {
     // The one query string every link on this page appends to. Building a second one is how a
     // next-page link starts selecting rows the download beside it does not.
     table.put("query", String.join("&", PollFilters.query(filters)));
+    final List<String> components = filters.selectedComponents();
     final ArrayNode columns = table.putArray("columns");
-    filters.selectedComponents().forEach(columns::add);
+    components.forEach(columns::add);
     declared(table.putObject("filters"), filters);
     final ArrayNode invalid = table.putArray("invalid");
     for (final PollFilters.Invalid rejected : request.invalid()) {
@@ -185,7 +186,7 @@ public final class SiteBootstrap {
     }
     final ArrayNode published = table.putArray("polls");
     for (final PollQuery.Row row : rows) {
-      published.add(pollRow(row));
+      published.add(pollRow(row, periods, components));
     }
   }
 
@@ -230,19 +231,21 @@ public final class SiteBootstrap {
     }
     final ArrayNode coveragePeriods = node.putArray("coveragePeriods");
     for (final Roster.CoveragePeriod period : periods) {
-      final ObjectNode entry = coveragePeriods.addObject();
-      entry.put("id", period.id());
-      // The roster travels with the period so the mounted page can mark an observation outside it
-      // without a second request: the frozen poll response carries no such field.
-      final ArrayNode roster = entry.putArray("roster");
-      period.roster().forEach(roster::add);
+      coveragePeriods.addObject().put("id", period.id());
     }
     final ArrayNode parties = node.putArray("parties");
     PollQuery.COMPONENTS.forEach(parties::add);
   }
 
-  /** One archived poll, at the precision the snapshot holds it. */
-  private static ObjectNode pollRow(PollQuery.Row row) {
+  /**
+   * One archived poll, at the precision the snapshot holds it.
+   *
+   * <p>The row also carries which of the displayed components sit outside the modeled roster of the
+   * row's own coverage period. The classification is made once here, beside the rosters, so both
+   * renderings read the same answer instead of each re-deriving it.
+   */
+  private static ObjectNode pollRow(
+      PollQuery.Row row, List<Roster.CoveragePeriod> periods, List<String> components) {
     final ObjectNode node = JSON.createObjectNode();
     node.put("pollId", row.pollId());
     node.put("institute", row.poll().institute());
@@ -261,6 +264,12 @@ public final class SiteBootstrap {
     }
     node.put("denominatorNote", row.poll().denominatorNote());
     node.put("coveragePeriod", row.coveragePeriod());
+    final ArrayNode unmodeled = node.putArray("unmodeled");
+    for (final String component : components) {
+      if (row.poll().shares().get(component) != null && outsideRoster(periods, row, component)) {
+        unmodeled.add(component);
+      }
+    }
     final ObjectNode shares = node.putObject("shares");
     final ObjectNode displayShares = node.putObject("displayShares");
     for (final String component : PollQuery.COMPONENTS) {
@@ -284,6 +293,23 @@ public final class SiteBootstrap {
     final ArrayNode reasons = node.putArray("exclusionReasons");
     row.poll().exclusionReasons().forEach(reasons::add);
     return node;
+  }
+
+  /**
+   * Whether a reported share sits outside the modeled roster of its own coverage period.
+   *
+   * <p>A row with no coverage period belongs to no modeled roster, so every reported component in
+   * it is an observation the published estimate does not contain.
+   */
+  private static boolean outsideRoster(
+      List<Roster.CoveragePeriod> periods, PollQuery.Row row, String component) {
+    final String periodId = row.coveragePeriod();
+    if (periodId == null) {
+      return true;
+    }
+    return periods.stream()
+        .filter(period -> period.id().equals(periodId))
+        .noneMatch(period -> period.roster().contains(component));
   }
 
   /** The shell every page carries: language, translated routes, wording and site identity. */

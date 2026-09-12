@@ -788,6 +788,19 @@ class PageIT {
         "and back on the same publication");
   }
 
+  /**
+   * A page number past the end lands on the last page rather than on an empty table, so the caption
+   * keeps saying which page is showing and "nothing matches" keeps meaning the filter matched
+   * nothing. The API answers the same number with the requested page beside an empty result; the
+   * difference is documented in docs/api-contract.md.
+   */
+  @Test
+  void aPageNumberPastTheEndLandsOnTheLastPage() {
+    final JsonNode table = bootstrap(get("/matningar?page=999999").body()).get("pollTable");
+    assertEquals(table.get("pages").asInt(), table.get("page").asInt());
+    assertTrue(table.get("polls").size() > 0, "the last page still shows rows");
+  }
+
   @Test
   void aPermanentPollsLinkCarriesItsPublicationThroughTheFormAndThePaging() {
     final String page = get("/matningar?publication=" + publicationId + "&institute=Novus").body();

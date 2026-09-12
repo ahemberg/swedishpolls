@@ -33,7 +33,7 @@ function beyondFirst(page: number): string | null {
 /** One archived poll row, at the precision the source published it. */
 export interface PollRow {
   readonly pollId: string;
-  readonly institute: string;
+  readonly institute: string | null;
   readonly company: string | null;
   readonly methodEra: string | null;
   readonly methodEvidence: string | null;
@@ -51,6 +51,12 @@ export interface PollRow {
   readonly displayOther: string | null;
   readonly eligible: boolean;
   readonly exclusionReasons: readonly string[];
+  /**
+   * The displayed components whose reported share sits outside the modeled roster of this row's
+   * coverage period, classified once on the server beside the rosters. A number named here is a
+   * real observation the published estimate does not contain.
+   */
+  readonly unmodeled: readonly string[];
 }
 
 /** The filter one poll request declares. An absent bound or an empty list is not a filter. */
@@ -74,7 +80,6 @@ export interface PollOptions {
   readonly institutes: readonly string[];
   readonly coveragePeriods: readonly {
     readonly id: string;
-    readonly roster: readonly string[];
   }[];
   readonly parties: readonly string[];
 }
@@ -117,22 +122,4 @@ export function pollQuery(filters: PollFilterState, page: number): URLSearchPara
     }
   }
   return parameters;
-}
-
-/**
- * Whether a reported share sits outside the modeled roster of its own coverage period.
- *
- * The frozen poll response carries no such field, so the rule is applied here against the rosters
- * the page was given. It is the same rule the server writes into its own markup: the number is a
- * real observation either way, and the page has to say which of the two it is.
- */
-export function outsideRoster(row: PollRow, options: PollOptions, component: string): boolean {
-  if (row.shares[component] === undefined || row.shares[component] === null) {
-    return false;
-  }
-  const period = options.coveragePeriods.find((entry) => entry.id === row.coveragePeriod);
-  if (period === undefined) {
-    return true;
-  }
-  return !period.roster.includes(component);
 }

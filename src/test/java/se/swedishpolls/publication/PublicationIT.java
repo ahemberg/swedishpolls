@@ -272,7 +272,7 @@ class PublicationIT {
     final PollQuery.Filters filters =
         new PollQuery.Filters(null, null, List.of("Novus"), List.of("S"), null, false);
     final PollQuery.Result before =
-        queries.query(snapshot, filters, 1, PollQuery.DEFAULT_PAGE_SIZE);
+        queries.query(snapshot, queries.periods(), filters, 1, PollQuery.DEFAULT_PAGE_SIZE);
     final String csv = PollQuery.csv(before, filters);
     assertTrue(before.total() > 0, "the fixture has Novus polls to pin");
 
@@ -282,7 +282,8 @@ class PublicationIT {
     final long corrected = store.header(second.publicationId()).orElseThrow().snapshotId();
     assertNotEquals(snapshot, corrected, "the correction is a different snapshot");
 
-    final PollQuery.Result after = queries.query(snapshot, filters, 1, PollQuery.DEFAULT_PAGE_SIZE);
+    final PollQuery.Result after =
+        queries.query(snapshot, queries.periods(), filters, 1, PollQuery.DEFAULT_PAGE_SIZE);
     assertEquals(before.total(), after.total());
     assertEquals(
         before.matching().stream().map(PollQuery.Row::pollId).toList(),
@@ -291,7 +292,9 @@ class PublicationIT {
     assertEquals(csv, PollQuery.csv(after, filters), "and the download is byte for byte the same");
     assertNotEquals(
         before.total(),
-        queries.query(corrected, filters, 1, PollQuery.DEFAULT_PAGE_SIZE).total(),
+        queries
+            .query(corrected, queries.periods(), filters, 1, PollQuery.DEFAULT_PAGE_SIZE)
+            .total(),
         "The correction really did change what an unpinned query would have counted");
   }
 

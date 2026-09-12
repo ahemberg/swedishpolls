@@ -3,7 +3,7 @@ import type { Bootstrap, Translate } from "./bootstrap";
 import { PollFilters } from "./poll-filters";
 import { PollRows } from "./poll-rows";
 import type { PollTable } from "./poll-table";
-import { outsideRoster, pollQuery } from "./poll-table";
+import { pollQuery } from "./poll-table";
 
 /**
  * The browsable poll table.
@@ -22,9 +22,7 @@ interface Props {
 
 /** Whether any cell on this page carries the marker, so the footnote appears only where it is. */
 function marked(table: PollTable): boolean {
-  return table.polls.some((poll) =>
-    table.columns.some((component) => outsideRoster(poll, table.options, component)),
-  );
+  return table.polls.some((poll) => poll.unmodeled.length > 0);
 }
 
 function Notice({
@@ -34,21 +32,25 @@ function Notice({
   readonly table: PollTable;
   readonly t: Translate;
 }): JSX.Element | null {
-  if (table.invalid.length > 0) {
-    return (
-      <p className="notice" role="alert">
-        {t("polls.invalid", { names: table.invalid.map((entry) => entry.name).join(", ") })}
-      </p>
-    );
+  if (table.invalid.length === 0 && table.polls.length > 0) {
+    return null;
   }
-  if (table.polls.length === 0) {
-    return (
-      <p className="notice" role="status">
-        {t("polls.empty")}
-      </p>
-    );
-  }
-  return null;
+  // Both notices render independently, the way the no-script markup renders them: a rejected
+  // filter and an empty result can both be true at once, and each says its own thing.
+  return (
+    <>
+      {table.invalid.length > 0 && (
+        <p className="notice" role="alert">
+          {t("polls.invalid", { names: table.invalid.map((entry) => entry.name).join(", ") })}
+        </p>
+      )}
+      {table.polls.length === 0 && (
+        <p className="notice" role="status">
+          {t("polls.empty")}
+        </p>
+      )}
+    </>
+  );
 }
 
 function Paging({
