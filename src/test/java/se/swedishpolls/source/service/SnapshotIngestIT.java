@@ -27,12 +27,12 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
-import se.swedishpolls.DailyStateSpace;
-import se.swedishpolls.PollObservations;
-import se.swedishpolls.TestDatabase;
+import se.swedishpolls.estimation.DailyStateSpace;
+import se.swedishpolls.estimation.PollObservations;
 import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.repository.CoveragePeriodRepository;
 import se.swedishpolls.testsupport.PollCsvFixtures;
+import se.swedishpolls.testsupport.TestDatabase;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.NONE,
@@ -241,13 +241,13 @@ class SnapshotIngestIT {
         db.sql("SELECT election_date FROM election_reference ORDER BY election_date")
             .query(java.time.LocalDate.class)
             .list();
-    final se.swedishpolls.PollObservations.Batch eight =
+    final se.swedishpolls.estimation.PollObservations.Batch eight =
         PollObservations.prepare(periods.getFirst(), development);
-    final se.swedishpolls.PollObservations.Batch fi =
+    final se.swedishpolls.estimation.PollObservations.Batch fi =
         PollObservations.prepare(periods.get(1), development);
     assertEquals(388, fi.observations().size());
     assertTrue(eight.observations().size() > fi.observations().size());
-    for (se.swedishpolls.PollObservations.Batch batch : java.util.List.of(eight, fi)) {
+    for (se.swedishpolls.estimation.PollObservations.Batch batch : java.util.List.of(eight, fi)) {
       assertEquals(development.size(), batch.observations().size() + batch.exclusions().size());
       assertTrue(
           batch.observations().stream()
@@ -258,7 +258,7 @@ class SnapshotIngestIT {
       assertTrue(
           batch.observations().stream()
               .allMatch(o -> !o.ilr().hasUncountable() && !o.covariance().hasUncountable()));
-      final se.swedishpolls.DailyStateSpace.Fit fit =
+      final se.swedishpolls.estimation.DailyStateSpace.Fit fit =
           DailyStateSpace.fit(batch, elections, new DailyStateSpace.Parameters(0.0001, 0.05, 1.5));
       assertTrue(Double.isFinite(fit.logLikelihood()));
       assertEquals(batch.period().effectiveFrom(), fit.days().getFirst().date());
@@ -285,7 +285,7 @@ class SnapshotIngestIT {
                           && !date.isAfter(fit.days().getLast().date()))
               .toList(),
           fit.cycles().stream().skip(1).map(DailyStateSpace.Cycle::start).toList());
-      for (se.swedishpolls.DailyStateSpace.Cycle cycle : fit.cycles()) {
+      for (se.swedishpolls.estimation.DailyStateSpace.Cycle cycle : fit.cycles()) {
         assertEquals(1, cycle.weights().stream().mapToDouble(Double::doubleValue).sum(), 1e-12);
         assertEquals(
             cycle.effects().size() * (batch.components().size() - 1),

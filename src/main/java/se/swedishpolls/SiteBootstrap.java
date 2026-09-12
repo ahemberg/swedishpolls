@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
+import se.swedishpolls.estimation.Coalitions;
 import se.swedishpolls.source.PollQuery;
 import se.swedishpolls.source.Roster;
 import se.swedishpolls.source.service.PollQueryService;

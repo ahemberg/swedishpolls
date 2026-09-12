@@ -17,6 +17,7 @@ import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.Roster;
 import se.swedishpolls.source.repository.CoveragePeriodRepository;
 import se.swedishpolls.testsupport.PollCsvFixtures;
+import se.swedishpolls.testsupport.TestDatabase;
 import tools.jackson.databind.JsonNode;
 
 /**

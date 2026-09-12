@@ -3,6 +3,9 @@ package se.swedishpolls;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import se.swedishpolls.estimation.Coalitions;
+import se.swedishpolls.estimation.NationalSeats;
+import se.swedishpolls.estimation.SeatOutcomes;
 
 /**
  * The translated labels of a published representation. Language is part of the representation, so a

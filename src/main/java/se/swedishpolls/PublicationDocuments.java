@@ -6,6 +6,15 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import se.swedishpolls.estimation.Coalitions;
+import se.swedishpolls.estimation.ComparableRemainder;
+import se.swedishpolls.estimation.EstimateHistory;
+import se.swedishpolls.estimation.HouseEffects;
+import se.swedishpolls.estimation.JointUncertainty;
+import se.swedishpolls.estimation.NationalSeats;
+import se.swedishpolls.estimation.SeatOutcomes;
+import se.swedishpolls.model.ElectionReference;
+import se.swedishpolls.model.NationalAllocationRule;
 import se.swedishpolls.source.PollQuery;
 import se.swedishpolls.source.Roster;
 import tools.jackson.databind.node.ArrayNode;
@@ -87,7 +96,7 @@ public final class PublicationDocuments {
       documents.add(new Document(HISTORY_SURFACE, language, history(identity, results, freeze)));
       documents.add(
           new Document(INSTITUTES_SURFACE, language, institutes(identity, results, freeze, text)));
-      for (final NationalSeats.Rules rules : results.allocationRules()) {
+      for (final NationalAllocationRule rules : results.allocationRules()) {
         final NationalSeats.SeatDraws drawn =
             NationalSeats.allocateDraws(results.headline().draws(), rules);
         documents.add(
@@ -377,7 +386,7 @@ public final class PublicationDocuments {
     final ObjectNode node = dependent(identity);
     node.put("note", text.text("elections.note"));
     final ArrayNode elections = node.putArray("elections");
-    for (final ElectionReferences.Election election : results.elections()) {
+    for (final ElectionReference election : results.elections()) {
       final ObjectNode entry = elections.addObject();
       entry.put("electionDate", election.electionDate().toString());
       entry.put("electionYear", election.electionYear());
@@ -397,7 +406,7 @@ public final class PublicationDocuments {
       other.add("RESIDUAL");
       grouping.put("comparableRemainder", text.text("remainder.definition"));
       final ObjectNode values = entry.putObject("results");
-      for (final ElectionReferences.Party party : election.results()) {
+      for (final ElectionReference.Party party : election.results()) {
         final ObjectNode value = values.putObject(party.component());
         value.put("votes", party.votes());
         value.put("officialSeats", party.officialSeats());
@@ -447,7 +456,7 @@ public final class PublicationDocuments {
     return node;
   }
 
-  private static ObjectNode allocationRule(NationalSeats.Rules rules, Translations text) {
+  private static ObjectNode allocationRule(NationalAllocationRule rules, Translations text) {
     final ObjectNode node = NODES.objectNode();
     node.put("electionYear", rules.electionYear());
     node.put("seats", rules.seats());

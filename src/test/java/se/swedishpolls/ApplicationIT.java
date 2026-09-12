@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import se.swedishpolls.testsupport.TestDatabase;
 
 class ApplicationIT {
   @Test

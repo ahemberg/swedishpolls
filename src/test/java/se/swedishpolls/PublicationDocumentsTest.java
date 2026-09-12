@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.estimation.SeatOutcomes;
 
 /** The published wording of a sensitivity movement, in the language of the document it sits in. */
 class PublicationDocumentsTest {

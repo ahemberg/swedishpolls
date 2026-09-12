@@ -25,8 +25,15 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
+import se.swedishpolls.estimation.JointUncertainty;
+import se.swedishpolls.estimation.NationalSeats;
+import se.swedishpolls.estimation.SeatOutcomes;
+import se.swedishpolls.model.NationalAllocationRule;
+import se.swedishpolls.source.service.ElectionReferenceService;
+import se.swedishpolls.source.service.NationalAllocationRuleService;
 import se.swedishpolls.source.service.PollQueryService;
 import se.swedishpolls.source.service.SnapshotIngest;
+import se.swedishpolls.testsupport.TestDatabase;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -61,6 +68,8 @@ class PublicationIT {
   @Autowired private Flyway flyway;
   @Autowired private SnapshotIngest ingest;
   @Autowired private PollQueryService queries;
+  @Autowired private ElectionReferenceService electionReferences;
+  @Autowired private NationalAllocationRuleService allocationRules;
   @Autowired private PublicationStore store;
   @Autowired private PlatformTransactionManager transactions;
   @InjectWireMock private WireMockServer wireMock;
@@ -80,7 +89,8 @@ class PublicationIT {
   }
 
   private Publisher publisher(PublicationStore target, ModelFreeze freeze) {
-    return new Publisher(dataSource, db, ingest, queries, target, freeze);
+    return new Publisher(
+        dataSource, db, ingest, queries, electionReferences, allocationRules, target, freeze);
   }
 
   @Test
@@ -282,9 +292,17 @@ class PublicationIT {
     ingest.check();
     final long snapshotId = ingest.activeSnapshot().orElseThrow().id();
     final ModelFreeze freeze = TestPublication.released(DRAWS);
+    final List<se.swedishpolls.source.PollCsv.Poll> polls = ingest.polls(snapshotId);
     final PublicationRun.Results results =
         PublicationRun.run(
-            db, freeze, snapshotId, "sha", ingest.polls(snapshotId), queries.periods());
+            freeze,
+            snapshotId,
+            "sha",
+            polls,
+            queries.periods(),
+            electionReferences.all(),
+            allocationRules.forDate(PublicationRun.lastFieldworkDate(polls)),
+            allocationRules.all());
 
     final PublicationRun.Alternative centering =
         results.alternatives().stream()
@@ -302,7 +320,7 @@ class PublicationIT {
 
     final PublicationDocuments.Identity identity =
         new PublicationDocuments.Identity("pub", "run", snapshotId);
-    final NationalSeats.Rules rules = results.allocationRule();
+    final NationalAllocationRule rules = results.allocationRule();
     final NationalSeats.SeatDraws drawn =
         NationalSeats.allocateDraws(results.headline().draws(), rules);
     final Translations english = Translations.of(Translations.ENGLISH);

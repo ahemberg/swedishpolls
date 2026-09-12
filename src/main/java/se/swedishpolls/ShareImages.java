@@ -17,6 +17,10 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import javax.imageio.ImageIO;
+import se.swedishpolls.estimation.Coalitions;
+import se.swedishpolls.estimation.EstimateHistory;
+import se.swedishpolls.estimation.JointUncertainty;
+import se.swedishpolls.estimation.NationalSeats;
 import se.swedishpolls.source.PollCsv;
 
 /**
