@@ -21,8 +21,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
+import se.swedishpolls.estimation.CoverageValidation;
+import se.swedishpolls.estimation.DailyStateSpace;
+import se.swedishpolls.estimation.EstimateHistory;
+import se.swedishpolls.estimation.JointUncertainty;
+import se.swedishpolls.estimation.NationalSeats;
+import se.swedishpolls.model.ElectionReference;
+import se.swedishpolls.model.NationalAllocationRule;
 import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.Snapshot;
+import se.swedishpolls.source.service.ElectionReferenceService;
+import se.swedishpolls.source.service.NationalAllocationRuleService;
 import se.swedishpolls.source.service.PollQueryService;
 import se.swedishpolls.source.service.SnapshotIngest;
 import tools.jackson.databind.json.JsonMapper;
@@ -74,6 +83,8 @@ public class Publisher {
   private final JdbcClient db;
   private final SnapshotIngest ingest;
   private final PollQueryService queries;
+  private final ElectionReferenceService electionReferences;
+  private final NationalAllocationRuleService allocationRules;
   private final PublicationStore store;
   private final ModelFreeze freeze;
 
@@ -83,8 +94,18 @@ public class Publisher {
       JdbcClient db,
       SnapshotIngest ingest,
       PollQueryService queries,
+      ElectionReferenceService electionReferences,
+      NationalAllocationRuleService allocationRules,
       PublicationStore store) {
-    this(dataSource, db, ingest, queries, store, ModelFreeze.load());
+    this(
+        dataSource,
+        db,
+        ingest,
+        queries,
+        electionReferences,
+        allocationRules,
+        store,
+        ModelFreeze.load());
   }
 
   Publisher(
@@ -92,12 +113,16 @@ public class Publisher {
       JdbcClient db,
       SnapshotIngest ingest,
       PollQueryService queries,
+      ElectionReferenceService electionReferences,
+      NationalAllocationRuleService allocationRules,
       PublicationStore store,
       ModelFreeze freeze) {
     this.dataSource = dataSource;
     this.db = db;
     this.ingest = ingest;
     this.queries = queries;
+    this.electionReferences = electionReferences;
+    this.allocationRules = allocationRules;
     this.store = store;
     this.freeze = freeze;
   }
@@ -183,8 +208,18 @@ public class Publisher {
   private Attempt run(Snapshot snapshot, Instant sourceCheckedAt) {
     ShareImages.checkFonts();
     final List<PollCsv.Poll> polls = ingest.polls(snapshot.id());
+    final List<ElectionReference> elections = electionReferences.all();
+    final LocalDate lastFieldworkDate = PublicationRun.lastFieldworkDate(polls);
     final PublicationRun.Results results =
-        PublicationRun.run(db, freeze, snapshot.id(), snapshot.sha256(), polls, queries.periods());
+        PublicationRun.run(
+            freeze,
+            snapshot.id(),
+            snapshot.sha256(),
+            polls,
+            queries.periods(),
+            elections,
+            allocationRules.forDate(lastFieldworkDate),
+            allocationRules.all());
     checkInvariants(results);
     checkReproduction(results, polls);
     checkDrift(results);
@@ -263,7 +298,7 @@ public class Publisher {
           }
         }
       }
-      for (final NationalSeats.Rules rules : results.allocationRules()) {
+      for (final NationalAllocationRule rules : results.allocationRules()) {
         final NationalSeats.Summary seats =
             NationalSeats.summarize(
                 NationalSeats.allocateDraws(period.draws(), rules), results.intervalLevel());
@@ -285,8 +320,7 @@ public class Publisher {
   /** The retained draws must come back unchanged at the same seed, from the archived input. */
   private void checkReproduction(PublicationRun.Results results, List<PollCsv.Poll> polls) {
     final List<LocalDate> elections =
-        new ElectionReferences(db)
-            .all().stream().map(ElectionReferences.Election::electionDate).toList();
+        results.elections().stream().map(ElectionReference::electionDate).toList();
     final CoverageValidation.Rules coverage = freeze.coverageThrough(results.lastFieldworkDate());
     for (final PublicationRun.Period period : results.periods()) {
       final JointUncertainty.Draws repeated =

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import se.swedishpolls.estimation.Coalitions;
 import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.PollQuery;
 import se.swedishpolls.source.service.PollQueryService;

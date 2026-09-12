@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.estimation.EstimateHistory;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.JsonNodeFactory;

@@ -8,6 +8,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import se.swedishpolls.estimation.CoverageValidation;
+import se.swedishpolls.estimation.DailyStateSpace;
+import se.swedishpolls.estimation.EstimateHistory;
+import se.swedishpolls.estimation.JointUncertainty;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 

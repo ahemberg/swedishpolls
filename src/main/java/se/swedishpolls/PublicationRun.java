@@ -4,7 +4,15 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.springframework.jdbc.core.simple.JdbcClient;
+import se.swedishpolls.estimation.ComparableRemainder;
+import se.swedishpolls.estimation.CoverageValidation;
+import se.swedishpolls.estimation.DailyStateSpace;
+import se.swedishpolls.estimation.EstimateHistory;
+import se.swedishpolls.estimation.HouseEffects;
+import se.swedishpolls.estimation.JointUncertainty;
+import se.swedishpolls.estimation.SeatOutcomes;
+import se.swedishpolls.model.ElectionReference;
+import se.swedishpolls.model.NationalAllocationRule;
 import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.PollQuery;
 import se.swedishpolls.source.Roster;
@@ -51,9 +59,9 @@ public final class PublicationRun {
       List<Period> periods,
       Period headline,
       List<Alternative> alternatives,
-      NationalSeats.Rules allocationRule,
-      List<NationalSeats.Rules> allocationRules,
-      List<ElectionReferences.Election> elections,
+      NationalAllocationRule allocationRule,
+      List<NationalAllocationRule> allocationRules,
+      List<ElectionReference> elections,
       Map<String, PollQuery.Institute> institutes) {
     public Results {
       coveragePeriods = List.copyOf(coveragePeriods);
@@ -71,30 +79,20 @@ public final class PublicationRun {
    * fieldwork date at the same frozen parameters.
    */
   public static Results run(
-      JdbcClient db,
       ModelFreeze freeze,
       long snapshotId,
       String snapshotSha256,
       List<PollCsv.Poll> polls,
-      List<Roster.CoveragePeriod> coveragePeriods) {
-    final List<ElectionReferences.Election> elections = new ElectionReferences(db).all();
+      List<Roster.CoveragePeriod> coveragePeriods,
+      List<ElectionReference> elections,
+      NationalAllocationRule allocation,
+      List<NationalAllocationRule> allocationRules) {
     final List<ComparableRemainder.Reference> references =
-        elections.stream().map(ElectionReferences.Election::reference).toList();
+        elections.stream().map(ComparableRemainder::reference).toList();
     final List<LocalDate> electionDates =
-        elections.stream().map(ElectionReferences.Election::electionDate).toList();
+        elections.stream().map(ElectionReference::electionDate).toList();
     final LocalDate lastFieldworkDate = lastFieldworkDate(polls);
     final CoverageValidation.Rules coverage = freeze.coverageThrough(lastFieldworkDate);
-    final NationalSeats seatRules = new NationalSeats(db);
-    final NationalSeats.Rules allocation =
-        seatRules.rules(approximatedElection(db, lastFieldworkDate));
-    final List<NationalSeats.Rules> allocationRules =
-        db
-            .sql("SELECT election_year FROM national_allocation_rule ORDER BY election_year")
-            .query(Integer.class)
-            .list()
-            .stream()
-            .map(seatRules::rules)
-            .toList();
     final double level = freeze.intervalLevel();
 
     final List<Period> periods = new ArrayList<>();
@@ -113,18 +111,18 @@ public final class PublicationRun {
           JointUncertainty.finalDay(
                   period, polls, electionDates, parameters, coverage, freeze.uncertainty())
               .draws();
-      final EstimateHistory.Fitted fitted =
-          EstimateHistory.fitted(period, polls, electionDates, parameters, coverage);
       periods.add(
           new Period(
               period,
               history,
               remainder,
               drawn,
-              HouseEffects.of(
-                  fitted.spans().getLast().fit(),
-                  period.id(),
+              HouseEffects.estimate(
+                  period,
+                  polls,
                   electionDates,
+                  parameters,
+                  coverage,
                   level,
                   freeze.uncertainty().draws(),
                   freeze.uncertainty().seed())));
@@ -195,20 +193,5 @@ public final class PublicationRun {
                     || !period.period().effectiveTo().isBefore(lastFieldworkDate))
         .reduce((first, second) -> second)
         .orElse(periods.getLast());
-  }
-
-  /** The election this allocation approximates: the next one the stored rules reach. */
-  private static int approximatedElection(JdbcClient db, LocalDate lastFieldworkDate) {
-    return db.sql(
-            "SELECT election_year FROM national_allocation_rule WHERE election_year >= ?"
-                + " ORDER BY election_year LIMIT 1")
-        .param(lastFieldworkDate.getYear())
-        .query(Integer.class)
-        .optional()
-        .orElseGet(
-            () ->
-                db.sql("SELECT max(election_year) FROM national_allocation_rule")
-                    .query(Integer.class)
-                    .single());
   }
 }

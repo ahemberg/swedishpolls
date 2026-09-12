@@ -8,10 +8,10 @@ import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import se.swedishpolls.TestDatabase;
 import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.Roster;
 import se.swedishpolls.testsupport.PollCsvFixtures;
+import se.swedishpolls.testsupport.TestDatabase;
 
 class CoveragePeriodIT {
   @Test

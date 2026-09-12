@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.awt.Font;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.estimation.Coalitions;
 
 class TranslationsTest {
   private static final List<String> KEYS =

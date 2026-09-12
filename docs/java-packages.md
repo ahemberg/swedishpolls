@@ -12,24 +12,26 @@ not required: a role subpackage appears when the responsibility has that role.
 ```
 se.swedishpolls
 ├── Application, ImageSmokeCheck     root: boot entry and image-smoke launcher only
-├── source                           reading polls into the system
-│   ├── (root)                       plain classes: PollCsv, PollObservations, PollQuery, WindowFilter,
-│   │                                Roster grouping and the Snapshot value
+├── source                           reading polls and stored reference inputs into the system
+│   ├── (root)                       plain classes: PollCsv, PollQuery, Roster and Snapshot
 │   ├── source.service               use cases: SnapshotIngest and its PollSourceClient @HttpExchange
-│   │                                interface, PollQueryService, SourceHttpConfig
-│   ├── source.repository            JDBC lookups: snapshot rows, coverage periods, election references
+│   │                                interface, PollQueryService, election and allocation lookups,
+│   │                                SourceHttpConfig
+│   ├── source.repository            JDBC lookups: snapshots, coverage periods, election references,
+│   │                                national allocation rules
 │   └── source                       scheduled entry points live beside the service they call
 ├── estimation                       the estimator and its model, all plain Java
-│   └── (root)                       DailyStateSpace, HouseEffects, RecencyBaseline, JointUncertainty,
-│                                    PredictiveComparison, CoverageValidation, Development*,
-│                                    and seat allocation mathematics
+│   └── (root)                       PollObservations, WindowFilter, DailyStateSpace, EstimateHistory,
+│                                    HouseEffects, RecencyBaseline, JointUncertainty, Coalitions,
+│                                    ComparableRemainder, SeatOutcomes, PredictiveComparison,
+│                                    CoverageValidation, Development*, ReleaseAudit and national
+│                                    seat allocation mathematics
 ├── publication                      rendering and storing published documents
 │   ├── (root)                       plain classes: PublicationDocuments, ShareImages, PublicationRun
 │   ├── publication.service          the publish use case: Publisher
 │   └── publication.repository       document rows, asset links: PublicationStore
 ├── model                            shared immutable values used by more than one responsibility
-│   └── (root)                       Translations, Coalitions, ComparableRemainder, SeatOutcomes,
-│                                    ModelFreeze and other frozen values (ADR 0003, ADR 0007)
+│   └── (root)                       ElectionReference and NationalAllocationRule
 └── web                              the HTTP surface and the server-rendered site
     ├── (root)                       plain site-rendering classes: PublicSite, SiteHtml, SiteText,
     │                                SiteFormat, SiteAssets, SiteRoutes, SiteBootstrap
@@ -160,22 +162,23 @@ that implement the migration decide on the tool.
 This section describes the tree and is updated as migration tickets land, unlike the rest of this
 guide, which states the target.
 
-`source` is organized per this convention as of #116: `source` (root) holds the plain parsing,
-query and roster-grouping classes (`PollCsv`, `PollQuery`, `Roster`) and the
-`SnapshotIngestScheduler` entry point; `source.service` holds `SnapshotIngest` (with its
-`PollSourceClient` HTTP exchange interface), `PollQueryService`, and the `SourceHttpConfig` that
-registers the poll-source HTTP client; `source.repository` holds `SnapshotRepository` and
-`CoveragePeriodRepository`; the shared `Snapshot` value sits in `source` (root). Tests moved with
-their classes, and the shared CSV fixtures live in `se.swedishpolls.testsupport`.
+`source` is organized per this convention as of #117: `source` (root) holds `PollCsv`, `PollQuery`,
+`Roster`, `Snapshot` and the `SnapshotIngestScheduler` entry point. `source.service` holds ingestion,
+poll-query, election-reference and allocation-rule operations. `source.repository` holds their JDBC
+lookups. The shared `Snapshot` value stays in `source`; `ElectionReference` and
+`NationalAllocationRule` sit in `model` because repositories, services, estimation and publication
+use them. Tests moved with their classes, and the shared CSV fixtures live in
+`se.swedishpolls.testsupport`.
 
-Two classes named in the map above, `PollObservations` and `WindowFilter`, still sit in
-`se.swedishpolls`; #116 left them behind and they move to `source` (root) in a follow-up. The
-site-rendering cluster (`PublicSite`, `SiteHtml`, `SiteText`, `SiteFormat`, `SiteAssets`,
-`SiteRoutes`, `SiteBootstrap`) and `PageController` move to `web` under #118.
+The numerical and validation cluster is organized in `estimation` as of #117. Its plain classes and
+matching tests moved together, including `PollObservations` and `WindowFilter`, so their
+package-private numerical cooperation remains local. Publication now calls a public house-effect
+calculation instead of accessing fitting spans.
 
-Everything else still lives in `se.swedishpolls` and this guide describes the target for it, not
-the tree. Estimation, publication and web classes move in the tickets that own those migrations
-(#117, #118, #119). [ADR 0003](adr/0003-immutable-model-values.md) (immutable model values),
+The site-rendering cluster (`PublicSite`, `SiteHtml`, `SiteText`, `SiteFormat`, `SiteAssets`,
+`SiteRoutes`, `SiteBootstrap`) and `PageController` move to `web` under #118. Publication and web
+classes otherwise remain in `se.swedishpolls` until #118; #119 adds the compiled dependency checks.
+[ADR 0003](adr/0003-immutable-model-values.md) (immutable model values),
 [ADR 0004](adr/0004-spring-infrastructure-and-integration-tests.md) (Spring infrastructure and
 integration tests), and [ADR 0007](adr/0007-publications-are-immutable-documents.md) (publications
 are immutable documents) are unaffected by this

@@ -24,9 +24,13 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
+import se.swedishpolls.estimation.Coalitions;
 import se.swedishpolls.source.PollQuery;
+import se.swedishpolls.source.service.ElectionReferenceService;
+import se.swedishpolls.source.service.NationalAllocationRuleService;
 import se.swedishpolls.source.service.PollQueryService;
 import se.swedishpolls.source.service.SnapshotIngest;
+import se.swedishpolls.testsupport.TestDatabase;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -60,8 +64,18 @@ class ApiV1IT {
         JdbcClient db,
         SnapshotIngest ingest,
         PollQueryService queries,
+        ElectionReferenceService electionReferences,
+        NationalAllocationRuleService allocationRules,
         PublicationStore store) {
-      return new Publisher(dataSource, db, ingest, queries, store, TestPublication.released(DRAWS));
+      return new Publisher(
+          dataSource,
+          db,
+          ingest,
+          queries,
+          electionReferences,
+          allocationRules,
+          store,
+          TestPublication.released(DRAWS));
     }
 
     @Bean
