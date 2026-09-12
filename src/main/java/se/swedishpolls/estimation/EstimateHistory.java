@@ -338,10 +338,7 @@ public final class EstimateHistory {
     return estimate(fitted(period, polls, elections, parameters, rules), period, rules, draws);
   }
 
-  /**
-   * The same estimate over a fit already taken by the publication, so its history, remainder,
-   * final-day draws and house effects all read one run rather than four refits.
-   */
+  /** The same estimate over a fit the publication already took. */
   public static Estimated estimate(
       Fitted fitted,
       Roster.CoveragePeriod period,

@@ -1,7 +1,9 @@
 package se.swedishpolls.source.service;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 import org.springframework.stereotype.Component;
 import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.PollQuery;
@@ -15,15 +17,37 @@ import se.swedishpolls.source.repository.SnapshotRepository;
  */
 @Component
 public class PollQueryService {
+  /** How many snapshots' parsed rows the cache keeps: the current pin and a few recent ones. */
+  static final int CACHED_SNAPSHOTS = 8;
+
   private final SnapshotRepository snapshots;
   private final CoveragePeriodRepository periods;
 
   /**
-   * The pinned snapshot is immutable, so its parsed rows are cached for the life of whatever
-   * publication pins it. A request pinned to an older publication still names that publication's
-   * own snapshot id, and a cache miss re-reads it.
+   * The pinned snapshot is immutable, so its parsed rows are reused across requests. Retention is
+   * bounded and least-recently-requested first: snapshot ids only grow and nothing evicts itself,
+   * so an unbounded cache would accumulate every snapshot the server ever served. A request pinned
+   * to a dropped snapshot re-reads its own snapshot, and a cold parse holds the cache lock while it
+   * reads.
    */
-  private final ConcurrentHashMap<Long, List<PollCsv.Poll>> parsedPolls = new ConcurrentHashMap<>();
+  private final Map<Long, List<PollCsv.Poll>> parsedPolls =
+      Collections.synchronizedMap(new BoundedPollCache());
+
+  /**
+   * An access-ordered poll-row cache that drops its eldest entry beyond {@link CACHED_SNAPSHOTS}.
+   */
+  private static final class BoundedPollCache extends LinkedHashMap<Long, List<PollCsv.Poll>> {
+    private static final long serialVersionUID = 1L;
+
+    private BoundedPollCache() {
+      super(16, 0.75f, true);
+    }
+
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<Long, List<PollCsv.Poll>> eldest) {
+      return size() > CACHED_SNAPSHOTS;
+    }
+  }
 
   public PollQueryService(SnapshotRepository snapshots, CoveragePeriodRepository periods) {
     this.snapshots = snapshots;

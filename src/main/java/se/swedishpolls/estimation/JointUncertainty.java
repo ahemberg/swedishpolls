@@ -360,10 +360,7 @@ public final class JointUncertainty {
         rules);
   }
 
-  /**
-   * The same final day over a fit the publication already took: the history, the remainder, these
-   * draws and the house effects all read one run rather than four refits.
-   */
+  /** The same final day over a fit the publication already took. */
   public static FinalDay finalDay(
       EstimateHistory.Fitted fitted,
       Roster.CoveragePeriod period,

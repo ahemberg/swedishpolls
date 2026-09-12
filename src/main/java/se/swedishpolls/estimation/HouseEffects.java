@@ -93,10 +93,7 @@ public final class HouseEffects {
         seed);
   }
 
-  /**
-   * The same effects over a fit the publication already took: the history, the remainder, the
-   * final-day draws and these house effects all read one run rather than four refits.
-   */
+  /** The same effects over a fit the publication already took. */
   public static List<Effect> estimate(
       EstimateHistory.Fitted fitted,
       String periodId,

@@ -191,10 +191,7 @@ public final class ComparableRemainder {
         rules);
   }
 
-  /**
-   * The same remainder over a fit the publication already took, so one fit serves the history, the
-   * remainder, the final-day draws and the house effects instead of being recomputed four times.
-   */
+  /** The same remainder over a fit the publication already took. */
   public static Estimated estimate(
       EstimateHistory.Fitted fitted,
       Roster.CoveragePeriod period,

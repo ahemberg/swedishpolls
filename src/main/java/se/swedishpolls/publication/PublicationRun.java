@@ -101,8 +101,8 @@ public final class PublicationRun {
         continue;
       }
       final DailyStateSpace.Parameters parameters = freeze.period(period.id()).parameters();
-      // One fit serves the history, the remainder, the final-day draws and the house effects; the
-      // seeded reproduction check refits independently, because reproducing the input is its point.
+      // One fit serves this period's four summarizers; the seeded reproduction check refits
+      // independently, because reproducing the input is its point.
       final EstimateHistory.Fitted fitted =
           EstimateHistory.fitted(period, polls, electionDates, parameters, coverage);
       final EstimateHistory.Estimated history =
