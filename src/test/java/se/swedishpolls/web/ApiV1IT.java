@@ -43,7 +43,10 @@ import se.swedishpolls.web.controller.ApiErrors;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-/** The frozen v1 surface, served from one published publication. */
+/**
+ * The frozen v1 surface, served from one real published publication. These checks keep the
+ * publication-to-HTTP wiring; request errors and cache policy live in {@code ApiV1ControllerTest}.
+ */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = {
@@ -135,16 +138,6 @@ class ApiV1IT {
                 .startsWith("/assets/" + publicationId));
       }
     }
-  }
-
-  @Test
-  void aCurrentResponseCachesBrieflyAndAPermanentOneForAYear() {
-    final HttpResponse<String> current = get("/api/v1/publication");
-    assertEquals(200, current.statusCode());
-    assertTrue(header(current, "Cache-Control").contains("max-age=300"));
-    final HttpResponse<String> permanent = get("/api/v1/publications/" + publicationId);
-    assertTrue(header(permanent, "Cache-Control").contains("max-age=31536000"));
-    assertTrue(header(permanent, "Cache-Control").contains("immutable"));
   }
 
   @Test
@@ -306,28 +299,6 @@ class ApiV1IT {
         get("/api/v1/estimates/latest?publication=pub_00000000T000000Z");
     assertEquals(404, unknown.statusCode());
     assertEquals(ApiErrors.UNKNOWN_PUBLICATION, code(unknown));
-  }
-
-  @Test
-  void unknownVersionsRoutesAndFiltersUseTheirOwnCodes() {
-    final HttpResponse<String> version = get("/api/v2/estimates/latest");
-    assertEquals(404, version.statusCode());
-    assertEquals(ApiErrors.UNKNOWN_VERSION, code(version));
-
-    final HttpResponse<String> route = get("/api/v1/estimates/trend");
-    assertEquals(404, route.statusCode());
-    assertEquals(ApiErrors.UNKNOWN_ROUTE, code(route));
-
-    final HttpResponse<String> filter = get("/api/v1/estimates/history?from=2026-13-01&step=5");
-    assertEquals(400, filter.statusCode());
-    assertEquals(ApiErrors.INVALID_FILTER, code(filter));
-    final JsonNode invalid = JSON.readTree(filter.body()).get("invalid");
-    assertEquals(2, invalid.size());
-    assertEquals("not_a_date", invalid.get(0).get("reason").asString());
-    assertEquals("unsupported_step", invalid.get(1).get("reason").asString());
-    assertEquals(3, invalid.get(1).get("allowed").size());
-
-    assertEquals(400, get("/api/v1/estimates/latest?language=de").statusCode());
   }
 
   @Test

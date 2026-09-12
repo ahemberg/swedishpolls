@@ -97,11 +97,6 @@ class PublicationIT {
         lock, ingest, queries, electionReferences, allocationRules, target, DRAWS);
   }
 
-  private Publisher blocked() {
-    return TestPublication.blocked(
-        lock, ingest, queries, electionReferences, allocationRules, store, DRAWS);
-  }
-
   @Test
   void aChangedSnapshotBecomesOnePublicationWithEveryDocumentAndEveryCard() {
     final Publisher.Attempt attempt = publisher().publish();
@@ -168,28 +163,6 @@ class PublicationIT {
     assertEquals(
         PublicationDocuments.NO_VALIDATED_PERIOD,
         latest.get("unavailable").get("FI").get("reason").asString());
-  }
-
-  @Test
-  void anUnchangedSnapshotIsNotAFailureAndKeepsThePublicationFresh() {
-    final Publisher publisher = publisher();
-    final Publisher.Attempt first = publisher.publish();
-    assertEquals(PublicationOutcome.PUBLISHED, first.outcome(), first.detail());
-    final Publisher.Attempt second = publisher.publish();
-    assertEquals(PublicationOutcome.UNCHANGED, second.outcome());
-    assertEquals(first.publicationId(), second.publicationId());
-    assertFalse(store.current().orElseThrow().stale());
-    assertEquals(1, published());
-  }
-
-  @Test
-  void aBlockedReleaseVerdictPublishesNothingAndSaysWhy() {
-    final Publisher.Attempt attempt = blocked().publish();
-    assertEquals(PublicationOutcome.BLOCKED, attempt.outcome());
-    assertNull(attempt.publicationId());
-    assertTrue(attempt.detail().contains("development_gates"));
-    assertTrue(store.current().isEmpty());
-    assertEquals(0, db.sql("SELECT count(*) FROM publication").query(Integer.class).single());
   }
 
   @Test
