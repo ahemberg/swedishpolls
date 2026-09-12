@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,7 +104,7 @@ class PageIT {
 
   @LocalServerPort private int port;
   @Autowired private Publisher publisher;
-  @Autowired private org.flywaydb.core.Flyway flyway;
+  @Autowired private Flyway flyway;
   @InjectWireMock private WireMockServer wireMock;
 
   @BeforeEach

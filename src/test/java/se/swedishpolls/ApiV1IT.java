@@ -10,6 +10,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,7 +95,7 @@ class ApiV1IT {
   @org.springframework.boot.test.web.server.LocalServerPort private int port;
   @Autowired private Publisher publisher;
   @Autowired private PublicationStore store;
-  @Autowired private org.flywaydb.core.Flyway flyway;
+  @Autowired private Flyway flyway;
   @InjectWireMock private WireMockServer wireMock;
 
   @BeforeEach
