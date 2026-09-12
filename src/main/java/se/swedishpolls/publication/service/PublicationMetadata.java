@@ -20,12 +20,12 @@ import tools.jackson.databind.node.ObjectNode;
  * <p>The API surface and the rendered page read this through one builder, so a page and the
  * requests it makes can never disagree about which publication they are showing.
  */
-public final class PublicationMetadata {
+final class PublicationMetadata {
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
   private PublicationMetadata() {}
 
-  public static ObjectNode of(PublicationStore store, PublicationHeader header, Translations text) {
+  static ObjectNode of(PublicationStore store, PublicationHeader header, Translations text) {
     final ModelRun run = store.run(header.runId());
     final PinnedSnapshot snapshot = store.snapshot(header.snapshotId());
     final Optional<CurrentPublication> current = store.current();

@@ -3,8 +3,8 @@ package se.swedishpolls.publication.service;
 import java.time.Instant;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
-import se.swedishpolls.publication.CurrentPublication;
 import se.swedishpolls.publication.PublicationAsset;
+import se.swedishpolls.publication.PublicationDocuments;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.repository.PublicationStore;
@@ -17,30 +17,53 @@ import tools.jackson.databind.node.ObjectNode;
  */
 @Component
 public class Publications {
+  /** One publication selected for a request, and whether the caller pinned it. */
+  public record Resolved(PublicationHeader header, boolean permanent) {
+    public String publicationId() {
+      return header.publicationId();
+    }
+  }
+
   private final PublicationStore store;
 
   public Publications(PublicationStore store) {
     this.store = store;
   }
 
-  /** The publication pinned by identifier, or empty when no published one carries it. */
-  public Optional<PublicationHeader> header(String publicationId) {
-    return store.header(publicationId);
+  /** The pinned publication when named, otherwise the current publication. */
+  public Optional<Resolved> resolve(String publicationId) {
+    if (publicationId != null) {
+      return store.header(publicationId).map(header -> new Resolved(header, true));
+    }
+    return store
+        .current()
+        .flatMap(current -> store.header(current.publicationId()))
+        .map(header -> new Resolved(header, false));
   }
 
-  /** The publication a request without a pin reads, and whether a failed update kept it. */
-  public Optional<CurrentPublication> current() {
-    return store.current();
+  public Optional<String> latest(PublicationHeader publication, String period, String language) {
+    return document(publication, PublicationDocuments.latestSurface(period), language);
   }
 
-  /** The header of the publication a request without a pin reads. */
-  public Optional<PublicationHeader> currentHeader() {
-    return store.current().flatMap(current -> store.header(current.publicationId()));
+  public Optional<String> history(PublicationHeader publication, String language) {
+    return document(publication, PublicationDocuments.HISTORY_SURFACE, language);
   }
 
-  /** One stored document of one publication, in one language. */
-  public Optional<String> document(String publicationId, String surface, String language) {
-    return store.document(publicationId, surface, language);
+  public Optional<String> institutes(PublicationHeader publication, String language) {
+    return document(publication, PublicationDocuments.INSTITUTES_SURFACE, language);
+  }
+
+  public Optional<String> elections(PublicationHeader publication, String period, String language) {
+    return document(publication, PublicationDocuments.electionsSurface(period), language);
+  }
+
+  public Optional<String> seats(PublicationHeader publication, int electionYear, String language) {
+    return document(publication, PublicationDocuments.seatsSurface(electionYear), language);
+  }
+
+  public Optional<String> coalitions(
+      PublicationHeader publication, int electionYear, String language) {
+    return document(publication, PublicationDocuments.coalitionsSurface(electionYear), language);
   }
 
   /** When the source was last read successfully, whether or not a publication followed. */
@@ -62,5 +85,10 @@ public class Publications {
   /** The identity a publication is published under, composed for the surfaces that show it. */
   public ObjectNode metadata(PublicationHeader header, Translations text) {
     return PublicationMetadata.of(store, header, text);
+  }
+
+  private Optional<String> document(
+      PublicationHeader publication, String surface, String language) {
+    return store.document(publication.publicationId(), surface, language);
   }
 }

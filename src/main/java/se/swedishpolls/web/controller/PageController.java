@@ -10,7 +10,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
-import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.service.Publications;
 import se.swedishpolls.web.SiteBootstrap;
 import se.swedishpolls.web.SiteHtml;
@@ -64,27 +63,26 @@ public class PageController {
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final SiteRoutes.Route route =
         SiteRoutes.resolve(request.getRequestURI()).orElseThrow(ApiErrors::unknownRoute);
-    final boolean permanent = publication != null;
-    final Optional<PublicationHeader> header = resolve(publication);
+    final Optional<Publications.Resolved> resolved = resolve(publication);
     final ObjectNode page =
-        header
-            .map(resolved -> bootstrap.page(route, resolved, permanent))
+        resolved
+            .map(selected -> bootstrap.page(route, selected))
             .orElseGet(
                 () ->
                     bootstrap.unavailable(route, publications.lastSuccessfulCheck().orElse(null)));
     return Responses.respond(
         html.page(page).getBytes(StandardCharsets.UTF_8),
         new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8),
-        permanent && header.isPresent(),
+        resolved.map(Publications.Resolved::permanent).orElse(false),
         ifNoneMatch);
   }
 
   /** The pinned permanent publication, the current one, or nothing published yet. */
-  private Optional<PublicationHeader> resolve(String publication) {
-    if (publication != null) {
-      return Optional.of(
-          publications.header(publication).orElseThrow(ApiErrors::unknownPublication));
+  private Optional<Publications.Resolved> resolve(String publication) {
+    final Optional<Publications.Resolved> resolved = publications.resolve(publication);
+    if (publication != null && resolved.isEmpty()) {
+      throw ApiErrors.unknownPublication();
     }
-    return publications.currentHeader();
+    return resolved;
   }
 }

@@ -16,9 +16,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import se.swedishpolls.estimation.Coalitions;
-import se.swedishpolls.publication.CurrentPublication;
-import se.swedishpolls.publication.PublicationDocuments;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.service.Publications;
@@ -49,14 +46,11 @@ public class ApiV1Controller {
     this.queries = queries;
   }
 
-  /** A resolved publication: which one, and whether the caller pinned it permanently. */
-  private record Resolved(String publicationId, boolean permanent) {}
-
   @GetMapping("/publication")
   public ResponseEntity<byte[]> publication(
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
-    final Resolved resolved = resolve(null, language);
+    final Publications.Resolved resolved = resolve(null, language);
     return json(publicationBody(resolved, Translations.of(language)), resolved, ifNoneMatch);
   }
 
@@ -65,7 +59,7 @@ public class ApiV1Controller {
       @PathVariable String publicationId,
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
-    final Resolved resolved = resolve(publicationId, language);
+    final Publications.Resolved resolved = resolve(publicationId, language);
     return json(publicationBody(resolved, Translations.of(language)), resolved, ifNoneMatch);
   }
 
@@ -75,11 +69,11 @@ public class ApiV1Controller {
       @RequestParam(required = false) String coveragePeriod,
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
-    final Resolved resolved = resolve(publication, language);
+    final Publications.Resolved resolved = resolve(publication, language);
     final String period =
-        coveragePeriod == null ? header(resolved).headlinePeriod() : coveragePeriod;
+        coveragePeriod == null ? resolved.header().headlinePeriod() : coveragePeriod;
     return json(
-        document(resolved, PublicationDocuments.latestSurface(period), language, "coveragePeriod"),
+        document(publications.latest(resolved.header(), period, language), "coveragePeriod"),
         resolved,
         ifNoneMatch);
   }
@@ -93,13 +87,13 @@ public class ApiV1Controller {
       @RequestParam(required = false) String coveragePeriod,
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
-    final Resolved resolved = resolve(publication, language);
+    final Publications.Resolved resolved = resolve(publication, language);
     final List<ApiErrors.Invalid> invalid = new ArrayList<>();
     final LocalDate fromDate = date(from, "from", invalid);
     final LocalDate toDate = date(to, "to", invalid);
     final int stepDays = step(step, invalid);
     final ObjectNode stored =
-        document(resolved, PublicationDocuments.HISTORY_SURFACE, language, "publication");
+        document(publications.history(resolved.header(), language), "publication");
     if (coveragePeriod != null && !knownPeriod(stored, coveragePeriod)) {
       invalid.add(new ApiErrors.Invalid("coveragePeriod", "unknown_coverage_period"));
     }
@@ -122,9 +116,9 @@ public class ApiV1Controller {
       @RequestParam(required = false) String electionCycle,
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
-    final Resolved resolved = resolve(publication, language);
+    final Publications.Resolved resolved = resolve(publication, language);
     final ObjectNode stored =
-        document(resolved, PublicationDocuments.INSTITUTES_SURFACE, language, "publication");
+        document(publications.institutes(resolved.header(), language), "publication");
     final List<String> cycles = new ArrayList<>();
     for (final JsonNode cycle : stored.get("electionCycles")) {
       cycles.add(cycle.asString());
@@ -160,12 +154,11 @@ public class ApiV1Controller {
       @RequestParam(required = false) String coveragePeriod,
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
-    final Resolved resolved = resolve(publication, language);
+    final Publications.Resolved resolved = resolve(publication, language);
     final String period =
-        coveragePeriod == null ? header(resolved).headlinePeriod() : coveragePeriod;
+        coveragePeriod == null ? resolved.header().headlinePeriod() : coveragePeriod;
     return json(
-        document(
-            resolved, PublicationDocuments.electionsSurface(period), language, "coveragePeriod"),
+        document(publications.elections(resolved.header(), period, language), "coveragePeriod"),
         resolved,
         ifNoneMatch);
   }
@@ -176,11 +169,11 @@ public class ApiV1Controller {
       @RequestParam(required = false) String election,
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
-    final Resolved resolved = resolve(publication, language);
+    final Publications.Resolved resolved = resolve(publication, language);
     final int electionYear =
-        election == null ? header(resolved).approximatedElection() : year(election);
+        election == null ? resolved.header().approximatedElection() : year(election);
     return json(
-        document(resolved, PublicationDocuments.seatsSurface(electionYear), language, "election"),
+        document(publications.seats(resolved.header(), electionYear, language), "election"),
         resolved,
         ifNoneMatch);
   }
@@ -192,17 +185,16 @@ public class ApiV1Controller {
       @RequestParam(required = false) String coalition,
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
-    final Resolved resolved = resolve(publication, language);
+    final Publications.Resolved resolved = resolve(publication, language);
     final int electionYear =
-        election == null ? header(resolved).approximatedElection() : year(election);
+        election == null ? resolved.header().approximatedElection() : year(election);
     final ObjectNode stored =
-        document(
-            resolved, PublicationDocuments.coalitionsSurface(electionYear), language, "election");
+        document(publications.coalitions(resolved.header(), electionYear, language), "election");
     if (coalition == null) {
       return json(stored, resolved, ifNoneMatch);
     }
     final List<String> requested = List.of(coalition.split(",", -1));
-    final List<String> known = Coalitions.PRESETS.stream().map(Coalitions.Preset::id).toList();
+    final List<String> known = Translations.COALITION_IDS;
     final List<ApiErrors.Invalid> invalid = new ArrayList<>();
     for (final String id : requested) {
       if (!known.contains(id)) {
@@ -236,7 +228,7 @@ public class ApiV1Controller {
       @RequestParam(required = false) String pageSize,
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
-    final Resolved resolved = resolve(publication, language);
+    final Publications.Resolved resolved = resolve(publication, language);
     final List<ApiErrors.Invalid> invalid = new ArrayList<>();
     final PollQuery.Filters filters =
         filters(from, to, institute, party, coveragePeriod, includeExcluded, invalid);
@@ -247,7 +239,7 @@ public class ApiV1Controller {
     if (!invalid.isEmpty()) {
       throw ApiErrors.invalidFilter(invalid);
     }
-    final PublicationHeader header = header(resolved);
+    final PublicationHeader header = resolved.header();
     final PollQuery.Result result =
         queries.query(header.snapshotId(), filters, requestedPage, size);
     return json(
@@ -267,14 +259,14 @@ public class ApiV1Controller {
       @RequestParam(required = false) String includeExcluded,
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
-    final Resolved resolved = resolve(publication, language);
+    final Publications.Resolved resolved = resolve(publication, language);
     final List<ApiErrors.Invalid> invalid = new ArrayList<>();
     final PollQuery.Filters filters =
         filters(from, to, institute, party, coveragePeriod, includeExcluded, invalid);
     if (!invalid.isEmpty()) {
       throw ApiErrors.invalidFilter(invalid);
     }
-    final PublicationHeader header = header(resolved);
+    final PublicationHeader header = resolved.header();
     final PollQuery.Result result =
         queries.query(header.snapshotId(), filters, 1, PollQuery.MAX_PAGE_SIZE);
     final byte[] body = PollQuery.csv(result, filters).getBytes(StandardCharsets.UTF_8);
@@ -287,15 +279,15 @@ public class ApiV1Controller {
 
   // Publication metadata, composed from the immutable rows and the current pointer.
 
-  private ObjectNode publicationBody(Resolved resolved, Translations text) {
-    return publications.metadata(header(resolved), text);
+  private ObjectNode publicationBody(Publications.Resolved resolved, Translations text) {
+    return publications.metadata(resolved.header(), text);
   }
 
   private ObjectNode pollsBody(
       PublicationHeader header,
       PollQuery.Result result,
       PollQuery.Filters filters,
-      Resolved resolved,
+      Publications.Resolved resolved,
       Translations text) {
     final ObjectNode node = JSON.createObjectNode();
     final ObjectNode identity = node.putObject("publication");
@@ -382,7 +374,7 @@ public class ApiV1Controller {
     return node;
   }
 
-  private String csvLink(Resolved resolved, PollQuery.Filters filters) {
+  private String csvLink(Publications.Resolved resolved, PollQuery.Filters filters) {
     final StringBuilder link =
         new StringBuilder("/api/v1/polls.csv?publication=").append(resolved.publicationId());
     if (filters.from() != null) {
@@ -506,36 +498,22 @@ public class ApiV1Controller {
     }
   }
 
-  private Resolved resolve(String publicationId, String language) {
+  private Publications.Resolved resolve(String publicationId, String language) {
     if (!Translations.supported(language)) {
       throw ApiErrors.invalidFilter(
           List.of(new ApiErrors.Invalid("language", "unsupported_language")));
     }
-    if (publicationId != null) {
-      if (publications.header(publicationId).isEmpty()) {
-        throw ApiErrors.unknownPublication();
-      }
-      return new Resolved(publicationId, true);
+    final Optional<Publications.Resolved> resolved = publications.resolve(publicationId);
+    if (resolved.isPresent()) {
+      return resolved.get();
     }
-    return new Resolved(
-        publications
-            .current()
-            .map(CurrentPublication::publicationId)
-            .orElseThrow(
-                () ->
-                    ApiErrors.estimatesUnavailable(
-                        publications.lastSuccessfulCheck().orElse(null))),
-        false);
+    if (publicationId != null) {
+      throw ApiErrors.unknownPublication();
+    }
+    throw ApiErrors.estimatesUnavailable(publications.lastSuccessfulCheck().orElse(null));
   }
 
-  private PublicationHeader header(Resolved resolved) {
-    return publications.header(resolved.publicationId()).orElseThrow(ApiErrors::unknownPublication);
-  }
-
-  private ObjectNode document(
-      Resolved resolved, String surface, String language, String parameterName) {
-    final Optional<String> body =
-        publications.document(resolved.publicationId(), surface, language);
+  private static ObjectNode document(Optional<String> body, String parameterName) {
     if (body.isEmpty()) {
       throw ApiErrors.invalidFilter(
           List.of(new ApiErrors.Invalid(parameterName, "unavailable_for_this_publication")));
@@ -554,7 +532,8 @@ public class ApiV1Controller {
 
   // Response shaping: content ETags and the two cache classes.
 
-  private ResponseEntity<byte[]> json(ObjectNode body, Resolved resolved, String ifNoneMatch) {
+  private ResponseEntity<byte[]> json(
+      ObjectNode body, Publications.Resolved resolved, String ifNoneMatch) {
     return Responses.respond(
         JSON.writeValueAsBytes(body),
         MediaType.APPLICATION_JSON,

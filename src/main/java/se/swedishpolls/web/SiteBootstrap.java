@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
-import se.swedishpolls.estimation.Coalitions;
-import se.swedishpolls.publication.PublicationDocuments;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.service.Publications;
@@ -79,9 +77,10 @@ public final class SiteBootstrap {
    * One page, resolved against one publication: the shell, that publication's identity, and the
    * documents its family reads. Everything the page shows comes from this one object.
    */
-  public ObjectNode page(SiteRoutes.Route route, PublicationHeader header, boolean permanent) {
+  public ObjectNode page(SiteRoutes.Route route, Publications.Resolved resolved) {
+    final PublicationHeader header = resolved.header();
     final ObjectNode page = shell(route);
-    publication(page, header, permanent);
+    publication(page, header, resolved.permanent());
     // Exhaustive on purpose: a new family has to say which documents it reads, rather than
     // inheriting an empty page from a default arm and rendering a heading with no numbers.
     switch (route.family()) {
@@ -103,19 +102,12 @@ public final class SiteBootstrap {
   private void chamber(ObjectNode page, PublicationHeader header) {
     final String language = page.get("language").asString();
     final ObjectNode data = page.putObject("data");
+    data.set("latest", document(publications.latest(header, header.headlinePeriod(), language)));
     data.set(
-        "latest",
-        document(header, PublicationDocuments.latestSurface(header.headlinePeriod()), language));
-    data.set(
-        "seats",
-        document(
-            header, PublicationDocuments.seatsSurface(header.approximatedElection()), language));
+        "seats", document(publications.seats(header, header.approximatedElection(), language)));
     data.set(
         "coalitions",
-        document(
-            header,
-            PublicationDocuments.coalitionsSurface(header.approximatedElection()),
-            language));
+        document(publications.coalitions(header, header.approximatedElection(), language)));
     page.put("headlineDate", data.get("latest").get("lastFieldworkDate").asString());
   }
 
@@ -163,8 +155,8 @@ public final class SiteBootstrap {
     for (final String component : LABELLED) {
       components.put(component, labels.component(component));
     }
-    for (final Coalitions.Preset preset : Coalitions.PRESETS) {
-      components.put("coalition." + preset.id(), labels.coalition(preset.id()));
+    for (final String id : Translations.COALITION_IDS) {
+      components.put("coalition." + id, labels.coalition(id));
     }
     final ObjectNode partyPaths = node.putObject("partyPaths");
     for (final String component : SiteRoutes.PARTIES) {
@@ -191,29 +183,21 @@ public final class SiteBootstrap {
     final Translations labels = Translations.of(language);
 
     final ObjectNode data = page.putObject("data");
+    data.set("latest", document(publications.latest(header, header.headlinePeriod(), language)));
     data.set(
-        "latest",
-        document(header, PublicationDocuments.latestSurface(header.headlinePeriod()), language));
-    data.set(
-        "seats",
-        document(
-            header, PublicationDocuments.seatsSurface(header.approximatedElection()), language));
+        "seats", document(publications.seats(header, header.approximatedElection(), language)));
     data.set(
         "coalitions",
-        document(
-            header,
-            PublicationDocuments.coalitionsSurface(header.approximatedElection()),
-            language));
+        document(publications.coalitions(header, header.approximatedElection(), language)));
     data.set(
-        "elections",
-        document(header, PublicationDocuments.electionsSurface(header.headlinePeriod()), language));
+        "elections", document(publications.elections(header, header.headlinePeriod(), language)));
 
     // The headline is dated at the estimate's own last day, not at the snapshot's last fieldwork
     // date: the two differ whenever the newest poll's midpoint falls before its final day, and the
     // page must not claim an estimate for a day the model did not estimate.
     page.put("headlineDate", data.get("latest").get("lastFieldworkDate").asString());
 
-    final ObjectNode history = document(header, PublicationDocuments.HISTORY_SURFACE, language);
+    final ObjectNode history = document(publications.history(header, language));
     final List<LocalDate> dates = historyDates(history);
     final ArrayNode ranges = page.putArray("ranges");
     final LocalDate last = header.lastFieldworkDate();
@@ -344,8 +328,7 @@ public final class SiteBootstrap {
 
   /** The selected party's effects in the latest published election cycle. */
   private ObjectNode houseEffects(PublicationHeader header, String language, String component) {
-    final ObjectNode institutes =
-        document(header, PublicationDocuments.INSTITUTES_SURFACE, language);
+    final ObjectNode institutes = document(publications.institutes(header, language));
     final ObjectNode result = JSON.createObjectNode();
     result.set("reference", institutes.get("reference").deepCopy());
     final JsonNode cycles = institutes.get("electionCycles");
@@ -451,11 +434,9 @@ public final class SiteBootstrap {
     }
   }
 
-  private ObjectNode document(PublicationHeader header, String surface, String language) {
-    final Optional<String> body = publications.document(header.publicationId(), surface, language);
+  private static ObjectNode document(Optional<String> body) {
     if (body.isEmpty()) {
-      throw new IllegalStateException(
-          header.publicationId() + " has no " + surface + " in " + language);
+      throw new IllegalStateException("Stored publication document is unavailable");
     }
     return (ObjectNode) JSON.readTree(body.get());
   }

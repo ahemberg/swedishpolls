@@ -15,6 +15,8 @@ public final class Translations {
   public static final String SWEDISH = "sv";
   public static final String ENGLISH = "en";
   public static final List<String> LANGUAGES = List.of(SWEDISH, ENGLISH);
+  public static final List<String> COALITION_IDS =
+      Coalitions.PRESETS.stream().map(Coalitions.Preset::id).toList();
 
   private static final Map<String, String> SV = swedish();
   private static final Map<String, String> EN = english();
