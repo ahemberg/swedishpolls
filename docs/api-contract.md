@@ -79,6 +79,15 @@ neither is filled with zero. `other` is the eight-party remainder, which already
 contains FI. Excluded rows appear only with `includeExcluded=true` and carry their
 exclusion reasons.
 
+The `/matningar` and `/en/polls` pages read the same filters out of their own query
+string, through the same parser, and render one page of the result before any script
+runs. The page rejects nothing: an unreadable filter is named on the page and left
+unapplied, while the API answers the same parameter with `invalid_filter` and 400.
+Both keep every dependent link on the publication the request resolved. A page
+number past the end is also not an error on either surface, but they answer it
+differently: the API echoes the requested page beside an empty result, while the
+page settles on its last page.
+
 ## Seats, coalitions and elections
 
 Seat responses keep the integer point allocation separate from posterior mean seats

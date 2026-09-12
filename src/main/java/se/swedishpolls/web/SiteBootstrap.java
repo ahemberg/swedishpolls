@@ -74,10 +74,32 @@ public final class SiteBootstrap {
   }
 
   /**
+   * The filter state one polls request declares: what it asked for, which page of it, and the
+   * parameters that were rejected. A rejected parameter is carried rather than thrown, so the page
+   * can say which filter it ignored instead of answering a reader's link with an error.
+   */
+  public record PollRequest(
+      PollQuery.Filters filters, int page, List<PollFilters.Invalid> invalid) {
+    public PollRequest {
+      invalid = List.copyOf(invalid);
+    }
+
+    public static PollRequest unfiltered() {
+      return new PollRequest(PollQuery.Filters.none(), 1, List.of());
+    }
+  }
+
+  /**
    * One page, resolved against one publication: the shell, that publication's identity, and the
    * documents its family reads. Everything the page shows comes from this one object.
    */
   public ObjectNode page(SiteRoutes.Route route, Publications.Resolved resolved) {
+    return page(route, resolved, PollRequest.unfiltered());
+  }
+
+  /** The same page, with the filter state a polls request declared. Other families ignore it. */
+  public ObjectNode page(
+      SiteRoutes.Route route, Publications.Resolved resolved, PollRequest polls) {
     final PublicationHeader header = resolved.header();
     final ObjectNode page = shell(route);
     publication(page, header, resolved.permanent());
@@ -86,7 +108,8 @@ public final class SiteBootstrap {
     switch (route.family()) {
       case OVERVIEW, PARTY -> overview(page, header);
       case SEATS, COALITIONS -> chamber(page, header);
-      case POLLSTERS, POLLS, METHOD -> {}
+      case POLLS -> pollTable(page, header, polls);
+      case POLLSTERS, METHOD -> {}
     }
     if (route.family() == SiteRoutes.Family.PARTY) {
       party(page, header, route.parameter());
@@ -109,6 +132,184 @@ public final class SiteBootstrap {
         "coalitions",
         document(publications.coalitions(header, header.approximatedElection(), language)));
     page.put("headlineDate", data.get("latest").get("lastFieldworkDate").asString());
+  }
+
+  /**
+   * The browsable poll table: one filtered page of the pinned snapshot, the filter state that
+   * produced it, and the download of exactly the same rows.
+   *
+   * <p>This is source data, not model output. The archived share is written through unrounded and a
+   * share the source never reported stays absent, so the table says what the institute published
+   * rather than what the estimator made of it. Where a reported party is outside the modeled roster
+   * of the row's coverage period, the row names it: the number is a real observation, and it is not
+   * one the published estimate contains.
+   */
+  private void pollTable(ObjectNode page, PublicationHeader header, PollRequest request) {
+    final String language = page.get("language").asString();
+    final Translations labels = Translations.of(language);
+    final List<Roster.CoveragePeriod> periods = periods(header, language);
+    final PollQuery.Filters filters = request.filters();
+    final PollQuery.Result result =
+        queries.query(
+            header.snapshotId(), periods, filters, request.page(), PollQuery.DEFAULT_PAGE_SIZE);
+
+    final int pages = pages(result);
+    // A page number past the end lands on the last page rather than on an empty table: the caption
+    // then says which page is showing, and "nothing matches" keeps meaning the filter matched
+    // nothing.
+    final int number = Math.min(result.page1(), pages);
+    final List<PollQuery.Row> rows = slice(result, number);
+
+    final ObjectNode table = page.putObject("pollTable");
+    table.put("total", result.total());
+    table.put("page", number);
+    table.put("pageSize", result.pageSize());
+    table.put("pages", pages);
+    table.put("csv", PollFilters.csvLink(header.publicationId(), filters));
+    // The one query string every link on this page appends to. Building a second one is how a
+    // next-page link starts selecting rows the download beside it does not.
+    table.put("query", String.join("&", PollFilters.query(filters)));
+    final List<String> components = filters.selectedComponents();
+    final ArrayNode columns = table.putArray("columns");
+    components.forEach(columns::add);
+    declared(table.putObject("filters"), filters);
+    final ArrayNode invalid = table.putArray("invalid");
+    for (final PollFilters.Invalid rejected : request.invalid()) {
+      final ObjectNode entry = invalid.addObject();
+      entry.put("name", rejected.name());
+      entry.put("reason", rejected.reason());
+    }
+    options(table.putObject("options"), header, periods, language);
+    final ObjectNode names = table.putObject("labels");
+    for (final String component : PollQuery.COMPONENTS) {
+      names.put(component, labels.component(component));
+    }
+    final ArrayNode published = table.putArray("polls");
+    for (final PollQuery.Row row : rows) {
+      published.add(pollRow(row, periods, components));
+    }
+  }
+
+  /** One page of the matching rows, counted from the page the request settled on. */
+  private static List<PollQuery.Row> slice(PollQuery.Result result, int page) {
+    final int from = (int) Math.min((long) (page - 1) * result.pageSize(), result.total());
+    final int to = (int) Math.min((long) from + result.pageSize(), result.total());
+    return result.matching().subList(from, to);
+  }
+
+  /** How many pages the filtered result has. An empty result is still one page, not none. */
+  private static int pages(PollQuery.Result result) {
+    return Math.max(1, (int) ((result.total() + (long) result.pageSize() - 1) / result.pageSize()));
+  }
+
+  /** What the request asked for, echoed back so the controls and the download cannot disagree. */
+  private static void declared(ObjectNode node, PollQuery.Filters filters) {
+    put(node, "from", filters.from());
+    put(node, "to", filters.to());
+    final ArrayNode institutes = node.putArray("institute");
+    filters.institutes().forEach(institutes::add);
+    final ArrayNode parties = node.putArray("party");
+    filters.parties().forEach(parties::add);
+    if (filters.coveragePeriod() == null) {
+      node.putNull("coveragePeriod");
+    } else {
+      node.put("coveragePeriod", filters.coveragePeriod());
+    }
+    node.put("includeExcluded", filters.includeExcluded());
+  }
+
+  /** What the controls may offer, taken from the pinned publication rather than from live data. */
+  private void options(
+      ObjectNode node,
+      PublicationHeader header,
+      List<Roster.CoveragePeriod> periods,
+      String language) {
+    final ArrayNode institutes = node.putArray("institutes");
+    for (final JsonNode institute :
+        document(publications.institutes(header, language)).get("institutes")) {
+      institutes.add(institute.get("institute").asString());
+    }
+    final ArrayNode coveragePeriods = node.putArray("coveragePeriods");
+    for (final Roster.CoveragePeriod period : periods) {
+      coveragePeriods.addObject().put("id", period.id());
+    }
+    final ArrayNode parties = node.putArray("parties");
+    PollQuery.COMPONENTS.forEach(parties::add);
+  }
+
+  /**
+   * One archived poll, at the precision the snapshot holds it.
+   *
+   * <p>The row also carries which of the displayed components sit outside the modeled roster of the
+   * row's own coverage period. The classification is made once here, beside the rosters, so both
+   * renderings read the same answer instead of each re-deriving it.
+   */
+  private static ObjectNode pollRow(
+      PollQuery.Row row, List<Roster.CoveragePeriod> periods, List<String> components) {
+    final ObjectNode node = JSON.createObjectNode();
+    node.put("pollId", row.pollId());
+    node.put("institute", row.poll().institute());
+    node.put("company", row.poll().company());
+    node.put("methodEra", row.poll().methodEra());
+    node.put("methodEvidence", row.poll().methodEvidence());
+    node.put("surveyType", row.poll().surveyType());
+    put(node, "publicationDate", row.poll().publicationDate());
+    put(node, "collectionFrom", row.poll().collectionFrom());
+    put(node, "collectionTo", row.poll().collectionTo());
+    node.put("approximatePeriod", row.approximatePeriod());
+    if (row.poll().sampleSize() == null) {
+      node.putNull("sampleSize");
+    } else {
+      node.put("sampleSize", row.poll().sampleSize());
+    }
+    node.put("denominatorNote", row.poll().denominatorNote());
+    node.put("coveragePeriod", row.coveragePeriod());
+    final ArrayNode unmodeled = node.putArray("unmodeled");
+    for (final String component : components) {
+      if (row.poll().shares().get(component) != null && outsideRoster(periods, row, component)) {
+        unmodeled.add(component);
+      }
+    }
+    final ObjectNode shares = node.putObject("shares");
+    final ObjectNode displayShares = node.putObject("displayShares");
+    for (final String component : PollQuery.COMPONENTS) {
+      final BigDecimal share = row.poll().shares().get(component);
+      if (share == null) {
+        shares.putNull(component);
+        displayShares.putNull(component);
+      } else {
+        shares.put(component, share);
+        displayShares.put(component, share.toPlainString());
+      }
+    }
+    if (row.poll().remainder() == null) {
+      node.putNull("other");
+      node.putNull("displayOther");
+    } else {
+      node.put("other", row.poll().remainder());
+      node.put("displayOther", row.poll().remainder().toPlainString());
+    }
+    node.put("eligible", row.poll().eligible());
+    final ArrayNode reasons = node.putArray("exclusionReasons");
+    row.poll().exclusionReasons().forEach(reasons::add);
+    return node;
+  }
+
+  /**
+   * Whether a reported share sits outside the modeled roster of its own coverage period.
+   *
+   * <p>A row with no coverage period belongs to no modeled roster, so every reported component in
+   * it is an observation the published estimate does not contain.
+   */
+  private static boolean outsideRoster(
+      List<Roster.CoveragePeriod> periods, PollQuery.Row row, String component) {
+    final String periodId = row.coveragePeriod();
+    if (periodId == null) {
+      return true;
+    }
+    return periods.stream()
+        .filter(period -> period.id().equals(periodId))
+        .noneMatch(period -> period.roster().contains(component));
   }
 
   /** The shell every page carries: language, translated routes, wording and site identity. */
@@ -243,7 +444,7 @@ public final class SiteBootstrap {
       party.set("pointSeats", seats.get("pointSeats").deepCopy());
     }
 
-    final ArrayNode observations = observations(header, component);
+    final ArrayNode observations = observations(header, page.get("language").asString(), component);
     party.set("observations", observations);
     if (current == null) {
       final LocalDate lastObservation = lastObservation(observations);
@@ -264,12 +465,12 @@ public final class SiteBootstrap {
   }
 
   /** Every dated source observation of the party, including rows outside modeled support. */
-  private ArrayNode observations(PublicationHeader header, String component) {
-    final List<Roster.CoveragePeriod> periods = queries.periods();
+  private ArrayNode observations(PublicationHeader header, String language, String component) {
+    final List<Roster.CoveragePeriod> periods = periods(header, language);
     final PollQuery.Filters filters =
         new PollQuery.Filters(null, null, List.of(), List.of(component), null, true);
     final PollQuery.Result result =
-        queries.query(header.snapshotId(), filters, 1, Integer.MAX_VALUE);
+        queries.query(header.snapshotId(), periods, filters, 1, Integer.MAX_VALUE);
     final ArrayNode observations = JSON.createArrayNode();
     for (final PollQuery.Row row : result.matching()) {
       final BigDecimal share = row.poll().shares().get(component);
@@ -387,7 +588,9 @@ public final class SiteBootstrap {
   /** The most recently published polls of the pinned snapshot, in the poll table's own shape. */
   private ObjectNode polls(PublicationHeader header, Translations labels) {
     final PollQuery.Filters filters = PollQuery.Filters.none();
-    final PollQuery.Result result = queries.query(header.snapshotId(), filters, 1, LATEST_POLLS);
+    final PollQuery.Result result =
+        queries.query(
+            header.snapshotId(), periods(header, labels.language()), filters, 1, LATEST_POLLS);
     final ObjectNode node = JSON.createObjectNode();
     node.put("total", result.total());
     final ArrayNode rows = node.putArray("polls");
@@ -439,6 +642,16 @@ public final class SiteBootstrap {
       throw new IllegalStateException("Stored publication document is unavailable");
     }
     return (ObjectNode) JSON.readTree(body.get());
+  }
+
+  /** Coverage classification stored with this publication, never the repository's current rows. */
+  private List<Roster.CoveragePeriod> periods(PublicationHeader header, String language) {
+    return PublicationCoverage.from(
+        document(publications.latest(header, header.headlinePeriod(), language)));
+  }
+
+  public boolean knownPeriod(PublicationHeader header, String language, String period) {
+    return periods(header, language).stream().anyMatch(candidate -> candidate.id().equals(period));
   }
 
   private static List<LocalDate> historyDates(ObjectNode history) {

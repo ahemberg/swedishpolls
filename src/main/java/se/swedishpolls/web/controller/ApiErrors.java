@@ -3,6 +3,7 @@ package se.swedishpolls.web.controller;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import se.swedishpolls.web.PollFilters;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
@@ -18,22 +19,6 @@ public final class ApiErrors {
   public static final String ESTIMATES_UNAVAILABLE = "estimates_unavailable";
 
   private static final JsonNodeFactory NODES = JsonNodeFactory.instance;
-
-  /** One rejected query parameter and why it was rejected. */
-  public record Invalid(String name, String reason, List<Integer> allowed) {
-    public Invalid {
-      allowed = List.copyOf(allowed);
-    }
-
-    public Invalid(String name, String reason) {
-      this(name, reason, List.of());
-    }
-
-    @Override
-    public List<Integer> allowed() {
-      return List.copyOf(allowed);
-    }
-  }
 
   /** An error response carrying its own status and body. */
   public static final class ApiException extends RuntimeException {
@@ -82,12 +67,12 @@ public final class ApiErrors {
     return new ApiException(HttpStatus.NOT_FOUND, body);
   }
 
-  public static ApiException invalidFilter(List<Invalid> invalid) {
+  public static ApiException invalidFilter(List<PollFilters.Invalid> invalid) {
     final ObjectNode body = NODES.objectNode();
     body.put("code", INVALID_FILTER);
     body.put("message", "Invalid query parameters.");
     final ArrayNode entries = body.putArray("invalid");
-    for (final Invalid entry : invalid) {
+    for (final PollFilters.Invalid entry : invalid) {
       final ObjectNode node = entries.addObject();
       node.put("name", entry.name());
       node.put("reason", entry.reason());

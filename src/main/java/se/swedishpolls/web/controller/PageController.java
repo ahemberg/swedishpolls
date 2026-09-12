@@ -2,6 +2,8 @@ package se.swedishpolls.web.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import se.swedishpolls.publication.service.Publications;
+import se.swedishpolls.web.PollFilters;
 import se.swedishpolls.web.SiteBootstrap;
 import se.swedishpolls.web.SiteHtml;
 import se.swedishpolls.web.SiteRoutes;
@@ -52,8 +55,6 @@ public class PageController {
     "/en/coalitions",
     "/institut",
     "/en/pollsters",
-    "/matningar",
-    "/en/polls",
     "/metod",
     "/en/method"
   })
@@ -74,6 +75,60 @@ public class PageController {
         html.page(page).getBytes(StandardCharsets.UTF_8),
         new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8),
         resolved.map(Publications.Resolved::permanent).orElse(false),
+        ifNoneMatch);
+  }
+
+  /**
+   * The browsable poll table, which is the one page family whose own query string selects rows.
+   *
+   * <p>The filters are read here rather than in the browser, so a filtered link is a complete page
+   * before any script runs and a reader who shares one shares what they were looking at. A rejected
+   * parameter does not fail the request: the page keeps the filters it understood and says which
+   * ones it ignored, because a reader following a stale link is better served by the table than by
+   * an error.
+   */
+  @GetMapping({"/matningar", "/en/polls"})
+  public ResponseEntity<byte[]> pollsPage(
+      HttpServletRequest request,
+      @RequestParam(required = false) String publication,
+      @RequestParam(required = false) String from,
+      @RequestParam(required = false) String to,
+      @RequestParam(required = false) String institute,
+      @RequestParam(required = false) String party,
+      @RequestParam(required = false) String coveragePeriod,
+      @RequestParam(required = false) String includeExcluded,
+      @RequestParam(required = false) String page,
+      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+    final SiteRoutes.Route route =
+        SiteRoutes.resolve(request.getRequestURI()).orElseThrow(ApiErrors::unknownRoute);
+    final Optional<Publications.Resolved> resolved = resolve(publication);
+    if (resolved.isEmpty()) {
+      final byte[] body =
+          html.page(bootstrap.unavailable(route, publications.lastSuccessfulCheck().orElse(null)))
+              .getBytes(StandardCharsets.UTF_8);
+      return Responses.respond(
+          body, new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8), false, ifNoneMatch);
+    }
+    final Publications.Resolved selected = resolved.orElseThrow();
+    final PollFilters.Parsed parsed =
+        PollFilters.parse(
+            from,
+            to,
+            institute,
+            party,
+            coveragePeriod,
+            includeExcluded,
+            period -> bootstrap.knownPeriod(selected.header(), route.language(), period));
+    final List<PollFilters.Invalid> invalid = new ArrayList<>(parsed.invalid());
+    final SiteBootstrap.PollRequest polls =
+        new SiteBootstrap.PollRequest(
+            parsed.filters(),
+            PollFilters.positive(page, "page", 1, Integer.MAX_VALUE, invalid),
+            invalid);
+    return Responses.respond(
+        html.page(bootstrap.page(route, selected, polls)).getBytes(StandardCharsets.UTF_8),
+        new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8),
+        selected.permanent(),
         ifNoneMatch);
   }
 

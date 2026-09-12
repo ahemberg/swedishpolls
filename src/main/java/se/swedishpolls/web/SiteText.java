@@ -108,6 +108,10 @@ public final class SiteText {
         "Approximerad nationell mandatfördelning per {date}: heltalsmandat, väntevärden och"
             + " intervall. Inte en valprognos.");
     text.put(
+        "head.description.polls",
+        "Publicerade mätningar till och med {date}: institut, fältarbete, urval och redovisade"
+            + " andelar, med källans precision. Inte en valprognos.");
+    text.put(
         "head.description.coalitions",
         "Tio regeringsunderlag per {date}: mandatintervall, sannolikhet för egen majoritet och"
             + " jämförelser mellan dem. Inte en valprognos.");
@@ -228,13 +232,66 @@ public final class SiteText {
 
     text.put("polls.title", "Senaste mätningar");
     text.put("polls.column.institute", "Institut");
+    text.put("polls.column.method", "Metod");
     text.put("polls.column.fieldwork", "Fältarbete");
+    text.put("polls.column.published", "Publicerad");
     text.put("polls.column.sample", "Urval");
     text.put("polls.approximate", "Ungefärlig period");
     text.put("polls.missing", "Saknas");
     text.put("polls.all", "Alla mätningar");
     text.put(
         "polls.caption", "De senast publicerade mätningarna i den fastnålade ögonblicksbilden.");
+
+    text.put(
+        "polls.lead",
+        "Källobservationer ur den fastnålade ögonblicksbilden: vad instituten själva publicerat,"
+            + " inte modellens skattningar.");
+    text.put(
+        "polls.sourceNote",
+        "Andelarna är källans egna, oavrundade. En andel som källan inte redovisat lämnas tom och"
+            + " fylls aldrig med en nolla.");
+    text.put("polls.filters", "Filtrera");
+    text.put("polls.filter.from", "Från och med");
+    text.put("polls.filter.to", "Till och med");
+    text.put("polls.filter.institute", "Institut");
+    text.put("polls.filter.anyInstitute", "Alla institut");
+    text.put("polls.filter.coveragePeriod", "Täckningsperiod");
+    text.put("polls.filter.anyPeriod", "Alla perioder");
+    text.put("polls.filter.party", "Parti");
+    text.put("polls.filter.allParties", "Alla partier");
+    text.put("polls.filter.includeExcluded", "Visa även mätningar som modellen uteslutit");
+    text.put("polls.filter.apply", "Filtrera");
+    text.put("polls.filter.clear", "Rensa filtret");
+    text.put("polls.filter.dateHint", "Datumgränserna är inklusive och matchar fältarbetet.");
+    text.put(
+        "polls.invalid",
+        "Filtret {names} kunde inte läsas och användes inte. Tabellen visar de filter som gick att"
+            + " läsa.");
+    text.put("polls.empty", "Ingen mätning matchar filtret. Ändra eller rensa det.");
+    text.put(
+        "polls.tableCaption",
+        "Mätning {first} till {last} av {total}, sida {page} av {pages}, i den fastnålade"
+            + " ögonblicksbilden.");
+    text.put("polls.column.period", "Täckningsperiod");
+    text.put("polls.column.other", "Övriga");
+    text.put("polls.column.eligibility", "Med i modellen");
+    text.put("polls.eligible", "Ja");
+    text.put("polls.excluded", "Nej: {reasons}");
+    text.put("polls.noPeriod", "Utanför validerad period");
+    text.put("polls.unmodeledMark", "†");
+    text.put(
+        "polls.unmodeled",
+        "† Källan redovisar partiet, men det ingår inte i de modellerade komponenterna för"
+            + " mätningens täckningsperiod. Talet är en observation, inte en skattning. Det gäller"
+            + " Feministiskt initiativ utanför de perioder som har en egen FI-skattning.");
+    text.put("polls.previous", "Föregående sida");
+    text.put("polls.next", "Nästa sida");
+    text.put("polls.pageOf", "Sida {page} av {pages}");
+    text.put("polls.download", "Filtrerade mätningar (CSV)");
+    text.put(
+        "polls.downloadNote",
+        "CSV-filen innehåller exakt de filtrerade raderna ur samma publicering och samma"
+            + " ögonblicksbild som tabellen, med källans precision bevarad.");
 
     text.put("downloads.title", "För journalister");
     text.put("downloads.polls", "Mätningar (CSV)");
@@ -380,6 +437,10 @@ public final class SiteText {
         "National seat approximation as of {date}: integer seats, posterior means and intervals."
             + " Not an election forecast.");
     text.put(
+        "head.description.polls",
+        "Published polls up to {date}: pollster, fieldwork, sample and reported shares, at the"
+            + " source's own precision. Not an election forecast.");
+    text.put(
         "head.description.coalitions",
         "Ten coalitions as of {date}: seat intervals, majority probabilities and comparisons"
             + " between them. Not an election forecast.");
@@ -500,12 +561,65 @@ public final class SiteText {
 
     text.put("polls.title", "Latest polls");
     text.put("polls.column.institute", "Pollster");
+    text.put("polls.column.method", "Method");
     text.put("polls.column.fieldwork", "Fieldwork");
+    text.put("polls.column.published", "Published");
     text.put("polls.column.sample", "Sample");
     text.put("polls.approximate", "Approximate period");
     text.put("polls.missing", "Missing");
     text.put("polls.all", "All polls");
     text.put("polls.caption", "The most recently published polls in the pinned snapshot.");
+
+    text.put(
+        "polls.lead",
+        "Source observations from the pinned snapshot: what the pollsters published themselves,"
+            + " not the model's estimates.");
+    text.put(
+        "polls.sourceNote",
+        "Shares are the source's own, unrounded. A share the source did not report is left empty"
+            + " and is never filled with a zero.");
+    text.put("polls.filters", "Filter");
+    text.put("polls.filter.from", "From");
+    text.put("polls.filter.to", "To");
+    text.put("polls.filter.institute", "Pollster");
+    text.put("polls.filter.anyInstitute", "All pollsters");
+    text.put("polls.filter.coveragePeriod", "Coverage period");
+    text.put("polls.filter.anyPeriod", "All periods");
+    text.put("polls.filter.party", "Party");
+    text.put("polls.filter.allParties", "All parties");
+    text.put("polls.filter.includeExcluded", "Also show polls the model excluded");
+    text.put("polls.filter.apply", "Filter");
+    text.put("polls.filter.clear", "Clear the filter");
+    text.put("polls.filter.dateHint", "Both bounds are inclusive and match the fieldwork period.");
+    text.put(
+        "polls.invalid",
+        "The {names} filter could not be read and was not applied. The table shows the filters"
+            + " that could be read.");
+    text.put("polls.empty", "No poll matches this filter. Change or clear it.");
+    text.put(
+        "polls.tableCaption",
+        "Poll {first} to {last} of {total}, page {page} of {pages}, in the pinned snapshot.");
+    text.put("polls.column.period", "Coverage period");
+    text.put("polls.column.other", "Other");
+    text.put("polls.column.eligibility", "In the model");
+    text.put("polls.eligible", "Yes");
+    text.put("polls.excluded", "No: {reasons}");
+    text.put("polls.noPeriod", "Outside any validated period");
+    text.put("polls.unmodeledMark", "\u2020");
+    text.put(
+        "polls.unmodeled",
+        "\u2020 The source reports this party, but it is not one of the modeled components of the"
+            + " poll's coverage period. The number is an observation, not an estimate. This"
+            + " applies to the Feminist Initiative outside the periods that carry an individual FI"
+            + " estimate.");
+    text.put("polls.previous", "Previous page");
+    text.put("polls.next", "Next page");
+    text.put("polls.pageOf", "Page {page} of {pages}");
+    text.put("polls.download", "Filtered polls (CSV)");
+    text.put(
+        "polls.downloadNote",
+        "The CSV holds exactly the filtered rows, from the same publication and the same snapshot"
+            + " as the table, with the source's precision preserved.");
 
     text.put("downloads.title", "For journalists");
     text.put("downloads.polls", "Polls (CSV)");
