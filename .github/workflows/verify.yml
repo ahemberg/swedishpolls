@@ -62,7 +62,7 @@ jobs:
           required=true
           if [ -n "$BASE" ] && git rev-parse --verify --quiet "$BASE^{commit}"; then
             changed=$(git diff --name-only "$BASE" HEAD) || { echo "required=true" >>"$GITHUB_OUTPUT"; exit 0; }
-            model_pattern='^src/main/java/se/swedishpolls/(estimation|source)/|^src/test/java/se/swedishpolls/(estimation|source|testsupport)/|^src/main/resources/|^docs/validation/|\.github/workflows/verify\.yml|^pom\.xml$'
+            model_pattern='^src/main/java/se/swedishpolls/(estimation|model|source)/|^src/test/java/se/swedishpolls/(estimation|source|testsupport)/|^src/main/resources/|^docs/validation/|\.github/workflows/verify\.yml|^pom\.xml$'
             if ! printf '%s\n' "$changed" | grep -E "$model_pattern" >/dev/null; then
               required=false
             fi

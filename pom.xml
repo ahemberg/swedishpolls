@@ -316,9 +316,22 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
-            <configuration>
-              <excludes combine.self="override"/>
-            </configuration>
+            <executions>
+              <execution>
+                <id>model-validation</id>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+                <configuration>
+                  <includes>
+                    <include>se/swedishpolls/estimation/**</include>
+                  </includes>
+                  <excludes combine.self="override"/>
+                  <failIfNoTests>true</failIfNoTests>
+                </configuration>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
