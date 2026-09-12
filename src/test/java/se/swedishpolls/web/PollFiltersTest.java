@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import se.swedishpolls.ApiErrors;
 import se.swedishpolls.source.PollQuery;
 
 /**
@@ -48,7 +47,7 @@ class PollFiltersTest {
         parse("yesterday", "2024-13-40", null, "XX", "1066-1067", "perhaps");
     assertEquals(
         List.of("coveragePeriod", "from", "to", "party", "includeExcluded"),
-        parsed.invalid().stream().map(ApiErrors.Invalid::name).toList(),
+        parsed.invalid().stream().map(PollFilters.Invalid::name).toList(),
         parsed.invalid().toString());
   }
 

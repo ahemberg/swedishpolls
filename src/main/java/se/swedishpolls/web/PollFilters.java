@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import se.swedishpolls.ApiErrors;
 import se.swedishpolls.source.PollQuery;
 
 /**
@@ -23,8 +22,24 @@ import se.swedishpolls.source.PollQuery;
 public final class PollFilters {
   private PollFilters() {}
 
+  /** One rejected query parameter and why it was rejected. */
+  public record Invalid(String name, String reason, List<Integer> allowed) {
+    public Invalid {
+      allowed = List.copyOf(allowed);
+    }
+
+    public Invalid(String name, String reason) {
+      this(name, reason, List.of());
+    }
+
+    @Override
+    public List<Integer> allowed() {
+      return List.copyOf(allowed);
+    }
+  }
+
   /** A parsed query: the filters that were understood, and every parameter that was not. */
-  public record Parsed(PollQuery.Filters filters, List<ApiErrors.Invalid> invalid) {
+  public record Parsed(PollQuery.Filters filters, List<Invalid> invalid) {
     public Parsed {
       invalid = List.copyOf(invalid);
     }
@@ -43,18 +58,18 @@ public final class PollFilters {
       String coveragePeriod,
       String includeExcluded,
       Predicate<String> knownPeriod) {
-    final List<ApiErrors.Invalid> invalid = new ArrayList<>();
+    final List<Invalid> invalid = new ArrayList<>();
     final String requestedPeriod =
         coveragePeriod == null || coveragePeriod.isBlank() ? null : coveragePeriod;
     final boolean validPeriod = requestedPeriod == null || knownPeriod.test(requestedPeriod);
     if (!validPeriod) {
-      invalid.add(new ApiErrors.Invalid("coveragePeriod", "unknown_coverage_period"));
+      invalid.add(new Invalid("coveragePeriod", "unknown_coverage_period"));
     }
     final LocalDate fromDate = date(from, "from", invalid);
     final LocalDate requestedToDate = date(to, "to", invalid);
     final LocalDate toDate;
     if (fromDate != null && requestedToDate != null && fromDate.isAfter(requestedToDate)) {
-      invalid.add(new ApiErrors.Invalid("to", "before_from"));
+      invalid.add(new Invalid("to", "before_from"));
       toDate = null;
     } else {
       toDate = requestedToDate;
@@ -62,7 +77,7 @@ public final class PollFilters {
     final List<String> parties = list(party);
     for (final String component : parties) {
       if (!PollQuery.COMPONENTS.contains(component)) {
-        invalid.add(new ApiErrors.Invalid("party", "unknown_component"));
+        invalid.add(new Invalid("party", "unknown_component"));
       }
     }
     final List<String> knownParties =
@@ -70,7 +85,7 @@ public final class PollFilters {
     boolean excluded = false;
     if (includeExcluded != null && !includeExcluded.isBlank()) {
       if (!"true".equals(includeExcluded) && !"false".equals(includeExcluded)) {
-        invalid.add(new ApiErrors.Invalid("includeExcluded", "not_a_boolean"));
+        invalid.add(new Invalid("includeExcluded", "not_a_boolean"));
       }
       excluded = "true".equals(includeExcluded);
     }
@@ -137,32 +152,32 @@ public final class PollFilters {
    * bounds is rejected by name and falls back rather than silently clamping.
    */
   public static int positive(
-      String value, String name, int fallback, int max, List<ApiErrors.Invalid> invalid) {
+      String value, String name, int fallback, int max, List<Invalid> invalid) {
     if (value == null || value.isBlank()) {
       return fallback;
     }
     try {
       final int parsed = Integer.parseInt(value);
       if (parsed < 1 || parsed > max) {
-        invalid.add(new ApiErrors.Invalid(name, "out_of_range"));
+        invalid.add(new Invalid(name, "out_of_range"));
         return fallback;
       }
       return parsed;
     } catch (NumberFormatException e) {
-      invalid.add(new ApiErrors.Invalid(name, "not_an_integer"));
+      invalid.add(new Invalid(name, "not_an_integer"));
       return fallback;
     }
   }
 
   /** One ISO date bound, or null when the parameter is absent or was not a date. */
-  public static LocalDate date(String value, String name, List<ApiErrors.Invalid> invalid) {
+  public static LocalDate date(String value, String name, List<Invalid> invalid) {
     if (value == null || value.isBlank()) {
       return null;
     }
     try {
       return LocalDate.parse(value);
     } catch (DateTimeParseException e) {
-      invalid.add(new ApiErrors.Invalid(name, "not_a_date"));
+      invalid.add(new Invalid(name, "not_a_date"));
       return null;
     }
   }
