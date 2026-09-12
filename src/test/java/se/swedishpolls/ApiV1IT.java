@@ -42,7 +42,8 @@ import tools.jackson.databind.json.JsonMapper;
       "polls.ingest.enabled=false",
       "publication.enabled=false",
       "polls.source-url=${wiremock.server.baseUrl}/polls.csv",
-      "spring.docker.compose.enabled=false"
+      "spring.docker.compose.enabled=false",
+      "spring.flyway.clean-disabled=false"
     })
 @Import({TestDatabase.Configuration.class, ApiV1IT.Fixture.class})
 @EnableWireMock
@@ -93,11 +94,14 @@ class ApiV1IT {
   @org.springframework.boot.test.web.server.LocalServerPort private int port;
   @Autowired private Publisher publisher;
   @Autowired private PublicationStore store;
+  @Autowired private org.flywaydb.core.Flyway flyway;
   @InjectWireMock private WireMockServer wireMock;
 
   @BeforeEach
   void publishOnce() {
     if (publicationId == null) {
+      flyway.clean();
+      flyway.migrate();
       TestPublication.serve(wireMock, TestPublication.polls(TestPublication.FROM));
       final Publisher.Attempt attempt = publisher.publish();
       assertEquals(Publisher.Outcome.PUBLISHED, attempt.outcome(), attempt.detail());

@@ -18,6 +18,7 @@ import se.swedishpolls.testsupport.TestDatabase;
       "logging.level.WireMock=warn",
       "polls.ingest.enabled=true",
       "polls.ingest.interval=1h",
+      "publication.enabled=false",
       "polls.source-url=${wiremock.server.baseUrl}/polls.csv",
       "spring.docker.compose.enabled=false"
     })

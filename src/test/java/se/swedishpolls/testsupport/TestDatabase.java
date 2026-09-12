@@ -10,10 +10,10 @@ import org.testcontainers.utility.DockerImageName;
 public final class TestDatabase {
   @TestConfiguration(proxyBeanMethods = false)
   public static class Configuration {
-    @Bean
+    @Bean(destroyMethod = "")
     @ServiceConnection
     PostgreSQLContainer postgres() {
-      return newContainer();
+      return Shared.POSTGRESQL;
     }
   }
 
