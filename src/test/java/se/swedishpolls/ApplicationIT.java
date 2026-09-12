@@ -23,6 +23,10 @@ class ApplicationIT {
     final java.io.File log = Path.of("target", "application-integration.log").toFile();
     final org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
         TestDatabase.dataSource();
+    final org.flywaydb.core.Flyway flyway =
+        org.flywaydb.core.Flyway.configure().cleanDisabled(false).dataSource(dataSource).load();
+    flyway.clean();
+    flyway.migrate();
     final java.lang.Process process =
         TestDatabase.configure(
                 new ProcessBuilder(

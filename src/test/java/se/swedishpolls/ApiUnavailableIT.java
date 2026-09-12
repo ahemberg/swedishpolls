@@ -9,7 +9,10 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -30,9 +33,17 @@ class ApiUnavailableIT {
     registry.add("publication.root", () -> root.toString());
     registry.add("polls.ingest.enabled", () -> "false");
     registry.add("publication.enabled", () -> "false");
+    registry.add("spring.flyway.clean-disabled", () -> "false");
   }
 
   @org.springframework.boot.test.web.server.LocalServerPort private int port;
+  @Autowired private Flyway flyway;
+
+  @BeforeEach
+  void emptyDatabase() {
+    flyway.clean();
+    flyway.migrate();
+  }
 
   @Test
   void everySurfaceThatNeedsAPublicationReturnsExplicitUnavailability() throws Exception {
