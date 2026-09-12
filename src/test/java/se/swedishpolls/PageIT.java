@@ -774,11 +774,11 @@ class PageIT {
         continue;
       }
       reported = true;
-      assertTrue(poll.get("unmodelled").toString().contains("FI"), poll.get("pollId").asString());
+      assertTrue(poll.get("unmodeled").toString().contains("FI"), poll.get("pollId").asString());
     }
     assertTrue(reported, "the fixture reports FI shares");
-    assertTrue(table(page, "polls").contains(text.text("polls.unmodelledMark")), "the marker");
-    assertTrue(page.contains(SiteHtml.escape(text.text("polls.unmodelled"))), "and its footnote");
+    assertTrue(table(page, "polls").contains(text.text("polls.unmodeledMark")), "the marker");
+    assertTrue(page.contains(SiteHtml.escape(text.text("polls.unmodeled"))), "and its footnote");
   }
 
   @Test

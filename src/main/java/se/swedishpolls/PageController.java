@@ -115,27 +115,12 @@ public class PageController {
             from, to, institute, party, coveragePeriod, includeExcluded, queries::knownPeriod);
     final List<ApiErrors.Invalid> invalid = new ArrayList<>(parsed.invalid());
     final SiteBootstrap.PollRequest polls =
-        new SiteBootstrap.PollRequest(parsed.filters(), pageNumber(page, invalid), invalid);
+        new SiteBootstrap.PollRequest(
+            parsed.filters(),
+            PollFilters.positive(page, "page", 1, Integer.MAX_VALUE, invalid),
+            invalid);
     return respond(
         html.page(bootstrap.page(route, header.get(), permanent, polls)), permanent, ifNoneMatch);
-  }
-
-  /** The requested page of the table, falling back to the first one when the number is not one. */
-  private static int pageNumber(String value, List<ApiErrors.Invalid> invalid) {
-    if (value == null || value.isBlank()) {
-      return 1;
-    }
-    try {
-      final int parsed = Integer.parseInt(value);
-      if (parsed < 1) {
-        invalid.add(new ApiErrors.Invalid("page", "out_of_range"));
-        return 1;
-      }
-      return parsed;
-    } catch (NumberFormatException e) {
-      invalid.add(new ApiErrors.Invalid("page", "not_an_integer"));
-      return 1;
-    }
   }
 
   /** The pinned permanent publication, the current one, or nothing published yet. */

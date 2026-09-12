@@ -13,7 +13,7 @@ class SiteTextTest {
    * a typographic symbol rather than a word. Nothing else may read the same in both.
    */
   private static final Set<String> SHARED =
-      Set.of("language.short.sv", "language.short.en", "polls.unmodelledMark");
+      Set.of("language.short.sv", "language.short.en", "polls.unmodeledMark");
 
   @Test
   void bothLanguagesCarryTheSameKeys() {

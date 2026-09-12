@@ -1,8 +1,6 @@
 package se.swedishpolls;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -1024,13 +1022,17 @@ public final class SiteHtml {
     for (final JsonNode component : table.get("columns")) {
       components.add(component.asString());
     }
-    final String mark = text.text("polls.unmodelledMark");
+    final String mark = text.text("polls.unmodeledMark");
     html.append("<div class=\"scroll\">\n<table class=\"polls\">\n<caption>")
         .append(escape(pollCaption(text, table)))
         .append("</caption><thead><tr><th scope=\"col\">")
         .append(escape(text.text("polls.column.institute")))
         .append("</th><th scope=\"col\">")
+        .append(escape(text.text("polls.column.method")))
+        .append("</th><th scope=\"col\">")
         .append(escape(text.text("polls.column.fieldwork")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("polls.column.published")))
         .append("</th><th scope=\"col\" class=\"num\">")
         .append(escape(text.text("polls.column.sample")))
         .append("</th>");
@@ -1052,23 +1054,23 @@ public final class SiteHtml {
           .append("</th>");
     }
     html.append("</tr></thead><tbody>\n");
-    boolean unmodelled = false;
+    boolean unmodeled = false;
     for (final JsonNode poll : table.get("polls")) {
       html.append("<tr><th scope=\"row\">")
-          .append(escape(poll.get("institute").asString()))
+          .append(escape(sourceIdentity(poll, text)))
           .append("</th><td>")
+          .append(escape(method(poll, text)))
+          .append("</td><td>")
           .append(escape(fieldwork(poll, language, text)))
+          .append("</td><td>")
+          .append(escape(published(poll, language, text)))
           .append("</td><td class=\"num\">")
           .append(escape(sampleSize(poll.get("sampleSize"), language, text)))
           .append("</td>");
-      final List<String> outside = new ArrayList<>();
-      for (final JsonNode component : poll.get("unmodelled")) {
-        outside.add(component.asString());
-      }
       for (final String component : components) {
         final JsonNode share = poll.get("shares").get(component);
-        final boolean flagged = !share.isNull() && outside.contains(component);
-        unmodelled = unmodelled || flagged;
+        final boolean flagged = !share.isNull() && outsideRoster(table, poll, component);
+        unmodeled = unmodeled || flagged;
         html.append("<td class=\"num\">")
             .append(escape(sourceShare(share, language, text)))
             .append(flagged ? escape(mark) : "")
@@ -1092,9 +1094,9 @@ public final class SiteHtml {
     html.append("<p class=\"footnote\">")
         .append(escape(text.text("polls.sourceNote")))
         .append("</p>\n");
-    if (unmodelled) {
+    if (unmodeled) {
       html.append("<p class=\"footnote\">")
-          .append(escape(text.text("polls.unmodelled")))
+          .append(escape(text.text("polls.unmodeled")))
           .append("</p>\n");
     }
   }
@@ -1103,12 +1105,16 @@ public final class SiteHtml {
    * An archived share, written with the digits the source published rather than rounded to the
    * estimate's display precision. A share the source never reported reads as missing, never as
    * zero.
+   *
+   * <p>Trailing zeros are dropped because the browser cannot keep them: the same value reaches the
+   * script as a JSON number, and 17.0 parses to 17 there. Both renderings therefore write 17, and
+   * neither invents a digit. The download is the record that keeps the archived scale.
    */
   private static String sourceShare(JsonNode value, String language, SiteText text) {
     if (value == null || value.isNull()) {
       return text.text("polls.missing");
     }
-    final String plain = value.decimalValue().toPlainString();
+    final String plain = value.decimalValue().stripTrailingZeros().toPlainString();
     return Translations.SWEDISH.equals(language) ? plain.replace('.', ',') : plain;
   }
 
@@ -1117,6 +1123,67 @@ public final class SiteHtml {
     return value == null || value.isNull()
         ? text.text("polls.missing")
         : SiteFormat.count(value.asInt(), language);
+  }
+
+  /**
+   * Who published the poll: the institute, and the company behind it when the two differ. A brand
+   * rename is not a method change, so the page names both rather than collapsing them.
+   */
+  private static String sourceIdentity(JsonNode poll, SiteText text) {
+    final JsonNode institute = poll.get("institute");
+    final JsonNode company = poll.get("company");
+    if (institute.isNull()) {
+      return text.text("polls.missing");
+    }
+    if (company.isNull() || company.asString().equals(institute.asString())) {
+      return institute.asString();
+    }
+    return institute.asString() + " (" + company.asString() + ")";
+  }
+
+  /** The documented method era of the series, with the survey type the source recorded. */
+  private static String method(JsonNode poll, SiteText text) {
+    final List<String> parts = new ArrayList<>();
+    for (final String field : List.of("methodEra", "surveyType")) {
+      final JsonNode value = poll.get(field);
+      if (value != null && !value.isNull() && !value.asString().isBlank()) {
+        parts.add(value.asString());
+      }
+    }
+    return parts.isEmpty() ? text.text("polls.missing") : String.join(", ", parts);
+  }
+
+  /** The day the institute published the poll, which is not the day it collected it. */
+  private static String published(JsonNode poll, String language, SiteText text) {
+    final JsonNode value = poll.get("publicationDate");
+    return value == null || value.isNull()
+        ? text.text("polls.missing")
+        : SiteFormat.date(LocalDate.parse(value.asString()), language);
+  }
+
+  /**
+   * Whether a reported share sits outside the modeled roster of its own coverage period.
+   *
+   * <p>The rule is applied against the rosters the page carries, the same way the mounted page
+   * applies it: the frozen poll response has no such field, so neither rendering can be handed the
+   * answer.
+   */
+  private static boolean outsideRoster(JsonNode table, JsonNode poll, String component) {
+    final JsonNode period = poll.get("coveragePeriod");
+    if (period.isNull()) {
+      return true;
+    }
+    for (final JsonNode entry : table.get("options").get("coveragePeriods")) {
+      if (period.asString().equals(entry.get("id").asString())) {
+        for (final JsonNode member : entry.get("roster")) {
+          if (component.equals(member.asString())) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+    return true;
   }
 
   private static String pollCaption(SiteText text, JsonNode table) {
@@ -1175,36 +1242,16 @@ public final class SiteHtml {
 
   /** This page's own path with the declared filters and one page number on it. */
   private static String pollPageLink(ObjectNode bootstrap, JsonNode table, int page) {
-    final JsonNode filters = table.get("filters");
-    final StringBuilder link = new StringBuilder(bootstrap.get("route").get("path").asString());
     final List<String> query = new ArrayList<>();
     if (bootstrap.get("permanent").asBoolean()) {
       query.add("publication=" + bootstrap.get("api").get("publication").asString());
     }
-    if (!filters.get("from").isNull()) {
-      query.add("from=" + filters.get("from").asString());
-    }
-    if (!filters.get("to").isNull()) {
-      query.add("to=" + filters.get("to").asString());
-    }
-    if (!filters.get("institute").isEmpty()) {
-      query.add("institute=" + encode(first(filters.get("institute"))));
-    }
-    if (!filters.get("party").isEmpty()) {
-      query.add("party=" + encode(first(filters.get("party"))));
-    }
-    if (!filters.get("coveragePeriod").isNull()) {
-      query.add("coveragePeriod=" + encode(filters.get("coveragePeriod").asString()));
-    }
-    if (filters.get("includeExcluded").asBoolean()) {
-      query.add("includeExcluded=true");
+    final String declared = table.get("query").asString();
+    if (!declared.isEmpty()) {
+      query.add(declared);
     }
     query.add("page=" + page);
-    return link.append("?").append(String.join("&", query)).toString();
-  }
-
-  private static String encode(String value) {
-    return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    return bootstrap.get("route").get("path").asString() + "?" + String.join("&", query);
   }
 
   /** The download of exactly these rows, from exactly this publication. */

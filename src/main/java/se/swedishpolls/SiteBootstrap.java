@@ -171,6 +171,9 @@ public final class SiteBootstrap {
     table.put("pageSize", result.pageSize());
     table.put("pages", pages);
     table.put("csv", PollFilters.csvLink(header.publicationId(), filters));
+    // The one query string every link on this page appends to. Building a second one is how a
+    // next-page link starts selecting rows the download beside it does not.
+    table.put("query", String.join("&", PollFilters.query(filters)));
     final ArrayNode columns = table.putArray("columns");
     filters.selectedComponents().forEach(columns::add);
     declared(table.putObject("filters"), filters);
@@ -187,7 +190,7 @@ public final class SiteBootstrap {
     }
     final ArrayNode published = table.putArray("polls");
     for (final PollQuery.Row row : rows) {
-      published.add(pollRow(row, periods));
+      published.add(pollRow(row));
     }
   }
 
@@ -247,7 +250,7 @@ public final class SiteBootstrap {
   }
 
   /** One archived poll, at the precision the snapshot holds it. */
-  private static ObjectNode pollRow(PollQuery.Row row, List<Roster.CoveragePeriod> periods) {
+  private static ObjectNode pollRow(PollQuery.Row row) {
     final ObjectNode node = JSON.createObjectNode();
     node.put("pollId", row.pollId());
     node.put("institute", row.poll().institute());
@@ -266,16 +269,12 @@ public final class SiteBootstrap {
     node.put("denominatorNote", row.poll().denominatorNote());
     node.put("coveragePeriod", row.coveragePeriod());
     final ObjectNode shares = node.putObject("shares");
-    final ArrayNode unmodelled = JSON.createArrayNode();
     for (final String component : PollQuery.COMPONENTS) {
       final BigDecimal share = row.poll().shares().get(component);
       if (share == null) {
         shares.putNull(component);
-        continue;
-      }
-      shares.put(component, share);
-      if (!modeled(periods, row.coveragePeriod(), component)) {
-        unmodelled.add(component);
+      } else {
+        shares.put(component, share);
       }
     }
     if (row.poll().remainder() == null) {
@@ -291,7 +290,6 @@ public final class SiteBootstrap {
     node.put("eligible", row.poll().eligible());
     final ArrayNode reasons = node.putArray("exclusionReasons");
     row.poll().exclusionReasons().forEach(reasons::add);
-    node.set("unmodelled", unmodelled);
     return node;
   }
 

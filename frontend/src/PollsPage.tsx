@@ -191,7 +191,7 @@ function PollsPage({ page, table: initial, t }: Props): JSX.Element {
         <>
           <PollRows page={page} table={table} t={t} />
           <p className="footnote">{t("polls.sourceNote")}</p>
-          {marked(table) && <p className="footnote">{t("polls.unmodelled")}</p>}
+          {marked(table) && <p className="footnote">{t("polls.unmodeled")}</p>}
           <Paging table={table} onPage={repage} t={t} />
         </>
       )}

@@ -91,7 +91,7 @@ function Share({
   return (
     <td className="num">
       {source(poll.shares[component], page, t)}
-      {flagged && <abbr title={t("polls.unmodelled")}>{t("polls.unmodelledMark")}</abbr>}
+      {flagged && <abbr title={t("polls.unmodeled")}>{t("polls.unmodeledMark")}</abbr>}
     </td>
   );
 }

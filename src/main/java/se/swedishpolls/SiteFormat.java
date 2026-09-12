@@ -1,5 +1,6 @@
 package se.swedishpolls;
 
+import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -55,7 +56,7 @@ public final class SiteFormat {
 
   /** A sample size or other count, grouped the way the language groups thousands. */
   public static String count(int value, String language) {
-    return java.text.NumberFormat.getIntegerInstance(localeOf(language)).format(value);
+    return NumberFormat.getIntegerInstance(localeOf(language)).format(value);
   }
 
   /**

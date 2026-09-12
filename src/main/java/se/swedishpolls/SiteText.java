@@ -271,23 +271,21 @@ public final class SiteText {
         "polls.tableCaption",
         "Mätning {first} till {last} av {total}, sida {page} av {pages}, i den fastnålade"
             + " ögonblicksbilden.");
-    text.put("polls.column.published", "Publicerad");
     text.put("polls.column.period", "Täckningsperiod");
     text.put("polls.column.other", "Övriga");
     text.put("polls.column.eligibility", "Med i modellen");
     text.put("polls.eligible", "Ja");
     text.put("polls.excluded", "Nej: {reasons}");
     text.put("polls.noPeriod", "Utanför validerad period");
-    text.put("polls.unmodelledMark", "†");
+    text.put("polls.unmodeledMark", "†");
     text.put(
-        "polls.unmodelled",
+        "polls.unmodeled",
         "† Källan redovisar partiet, men det ingår inte i de modellerade komponenterna för"
             + " mätningens täckningsperiod. Talet är en observation, inte en skattning. Det gäller"
             + " Feministiskt initiativ utanför de perioder som har en egen FI-skattning.");
     text.put("polls.previous", "Föregående sida");
     text.put("polls.next", "Nästa sida");
     text.put("polls.pageOf", "Sida {page} av {pages}");
-    text.put("polls.total", "{total} mätningar matchar filtret.");
     text.put("polls.download", "Filtrerade mätningar (CSV)");
     text.put(
         "polls.downloadNote",
@@ -600,16 +598,15 @@ public final class SiteText {
     text.put(
         "polls.tableCaption",
         "Poll {first} to {last} of {total}, page {page} of {pages}, in the pinned snapshot.");
-    text.put("polls.column.published", "Published");
     text.put("polls.column.period", "Coverage period");
     text.put("polls.column.other", "Other");
     text.put("polls.column.eligibility", "In the model");
     text.put("polls.eligible", "Yes");
     text.put("polls.excluded", "No: {reasons}");
     text.put("polls.noPeriod", "Outside any validated period");
-    text.put("polls.unmodelledMark", "\u2020");
+    text.put("polls.unmodeledMark", "\u2020");
     text.put(
-        "polls.unmodelled",
+        "polls.unmodeled",
         "\u2020 The source reports this party, but it is not one of the modeled components of the"
             + " poll's coverage period. The number is an observation, not an estimate. This"
             + " applies to the Feminist Initiative outside the periods that carry an individual FI"
@@ -617,7 +614,6 @@ public final class SiteText {
     text.put("polls.previous", "Previous page");
     text.put("polls.next", "Next page");
     text.put("polls.pageOf", "Page {page} of {pages}");
-    text.put("polls.total", "{total} polls match this filter.");
     text.put("polls.download", "Filtered polls (CSV)");
     text.put(
         "polls.downloadNote",

@@ -236,12 +236,13 @@ public class ApiV1Controller {
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Resolved resolved = resolve(publication, language);
     final PollFilters.Parsed parsed =
-        filters(from, to, institute, party, coveragePeriod, includeExcluded);
+        PollFilters.parse(
+            from, to, institute, party, coveragePeriod, includeExcluded, queries::knownPeriod);
     final List<ApiErrors.Invalid> invalid = new ArrayList<>(parsed.invalid());
     final PollQuery.Filters filters = parsed.filters();
-    final int requestedPage = positive(page, "page", 1, Integer.MAX_VALUE, invalid);
+    final int requestedPage = PollFilters.positive(page, "page", 1, Integer.MAX_VALUE, invalid);
     final int size =
-        positive(
+        PollFilters.positive(
             pageSize, "pageSize", PollQuery.DEFAULT_PAGE_SIZE, PollQuery.MAX_PAGE_SIZE, invalid);
     if (!invalid.isEmpty()) {
       throw ApiErrors.invalidFilter(invalid);
@@ -268,7 +269,8 @@ public class ApiV1Controller {
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Resolved resolved = resolve(publication, language);
     final PollFilters.Parsed parsed =
-        filters(from, to, institute, party, coveragePeriod, includeExcluded);
+        PollFilters.parse(
+            from, to, institute, party, coveragePeriod, includeExcluded, queries::knownPeriod);
     if (!parsed.valid()) {
       throw ApiErrors.invalidFilter(parsed.invalid());
     }
@@ -383,17 +385,6 @@ public class ApiV1Controller {
 
   // Request parsing and publication resolution.
 
-  private PollFilters.Parsed filters(
-      String from,
-      String to,
-      String institute,
-      String party,
-      String coveragePeriod,
-      String includeExcluded) {
-    return PollFilters.parse(
-        from, to, institute, party, coveragePeriod, includeExcluded, queries::knownPeriod);
-  }
-
   private static int step(String value, List<ApiErrors.Invalid> invalid) {
     if (value == null || value.isBlank()) {
       return 1;
@@ -408,24 +399,6 @@ public class ApiV1Controller {
     } catch (NumberFormatException e) {
       invalid.add(new ApiErrors.Invalid("step", "unsupported_step", EstimateQuery.STEPS));
       return 1;
-    }
-  }
-
-  private static int positive(
-      String value, String name, int fallback, int max, List<ApiErrors.Invalid> invalid) {
-    if (value == null || value.isBlank()) {
-      return fallback;
-    }
-    try {
-      final int parsed = Integer.parseInt(value);
-      if (parsed < 1 || parsed > max) {
-        invalid.add(new ApiErrors.Invalid(name, "out_of_range"));
-        return fallback;
-      }
-      return parsed;
-    } catch (NumberFormatException e) {
-      invalid.add(new ApiErrors.Invalid(name, "not_an_integer"));
-      return fallback;
     }
   }
 
