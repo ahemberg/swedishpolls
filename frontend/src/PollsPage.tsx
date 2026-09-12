@@ -25,31 +25,41 @@ function marked(table: PollTable): boolean {
   return table.polls.some((poll) => poll.unmodeled.length > 0);
 }
 
-function Notice({
+/**
+ * The two notices render independently, the way the no-script markup renders them: a rejected
+ * filter and an empty result can both be true at once, and each says its own thing.
+ */
+function InvalidNotice({
   table,
   t,
 }: {
   readonly table: PollTable;
   readonly t: Translate;
 }): JSX.Element | null {
-  if (table.invalid.length === 0 && table.polls.length > 0) {
+  if (table.invalid.length === 0) {
     return null;
   }
-  // Both notices render independently, the way the no-script markup renders them: a rejected
-  // filter and an empty result can both be true at once, and each says its own thing.
   return (
-    <>
-      {table.invalid.length > 0 && (
-        <p className="notice" role="alert">
-          {t("polls.invalid", { names: table.invalid.map((entry) => entry.name).join(", ") })}
-        </p>
-      )}
-      {table.polls.length === 0 && (
-        <p className="notice" role="status">
-          {t("polls.empty")}
-        </p>
-      )}
-    </>
+    <p className="notice" role="alert">
+      {t("polls.invalid", { names: table.invalid.map((entry) => entry.name).join(", ") })}
+    </p>
+  );
+}
+
+function EmptyNotice({
+  table,
+  t,
+}: {
+  readonly table: PollTable;
+  readonly t: Translate;
+}): JSX.Element | null {
+  if (table.polls.length > 0) {
+    return null;
+  }
+  return (
+    <p className="notice" role="status">
+      {t("polls.empty")}
+    </p>
   );
 }
 
@@ -137,7 +147,8 @@ function PollsPage({ page, table, t }: Props): JSX.Element {
       <h1>{t("head.title.polls")}</h1>
       <p className="meta">{t("polls.lead")}</p>
       <PollFilters page={page} options={table.options} filters={table.filters} t={t} />
-      <Notice table={table} t={t} />
+      <InvalidNotice table={table} t={t} />
+      <EmptyNotice table={table} t={t} />
       {table.polls.length > 0 && (
         <>
           <PollRows page={page} table={table} t={t} />
