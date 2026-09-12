@@ -214,6 +214,9 @@
         <artifactId>maven-failsafe-plugin</artifactId>
         <configuration>
           <failIfNoTests>true</failIfNoTests>
+          <excludes>
+            <exclude>se/swedishpolls/estimation/**</exclude>
+          </excludes>
         </configuration>
         <executions>
           <execution>
@@ -306,6 +309,20 @@
     </plugins>
   </build>
   <profiles>
+    <profile>
+      <id>model-validation</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <excludes combine.self="override"/>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <profile>
       <id>docker</id>
       <properties>
