@@ -27,16 +27,25 @@ se.swedishpolls
 │                                    CoverageValidation, Development*, ReleaseAudit and national
 │                                    seat allocation mathematics
 ├── publication                      rendering and storing published documents
-│   ├── (root)                       plain classes: PublicationDocuments, ShareImages, PublicationRun
-│   ├── publication.service          the publish use case: Publisher
-│   └── publication.repository       document rows, asset links: PublicationStore
+│   ├── (root)                       plain classes: PublicationDocuments, ShareImages, PublicationRun,
+│   │                                ModelFreeze, Translations, the values a publication is read
+│   │                                through (PublicationHeader, CurrentPublication,
+│   │                                PublicationAsset, ModelRun, PinnedSnapshot,
+│   │                                PublicationOutcome) and the Digest their bytes are recorded
+│   │                                under
+│   ├── publication.service          the publish use case: Publisher; the read use case:
+│   │                                Publications and PublicationMetadata
+│   ├── publication.repository       document rows, asset links: PublicationStore; the worker's
+│   │                                advisory lock: PublicationLock
+│   └── publication                  scheduled entry points live beside the service they call
 ├── model                            shared immutable values used by more than one responsibility
 │   └── (root)                       ElectionReference and NationalAllocationRule
 └── web                              the HTTP surface and the server-rendered site
     ├── (root)                       plain site-rendering classes: PublicSite, SiteHtml, SiteText,
-    │                                SiteFormat, SiteAssets, SiteRoutes, SiteBootstrap
+    │                                SiteFormat, SiteAssets, SiteRoutes, SiteBootstrap, and the
+    │                                stored-history request sampling: EstimateQuery
     └── web.controller               PageController, ApiV1Controller, AssetController,
-                                     ApiExceptionHandler, ApiErrors
+                                     ApiExceptionHandler, ApiErrors, Responses
 ```
 
 Values needed by a single responsibility stay in that responsibility. A value moves to `model`
@@ -87,8 +96,9 @@ model ──▶ (nothing)
 ```
 
 No package imports upward from this order. The public surface of a responsibility for callers in
-other packages is its service classes: `source.service.SnapshotIngest` for ingestion and
-`publication.service.Publisher` for publishing. Everything else defaults to package-private or
+other packages is its service classes: `source.service.SnapshotIngest` for ingestion,
+`publication.service.Publisher` for publishing and `publication.service.Publications` for reading
+what was published. Everything else defaults to package-private or
 stays inside its responsibility. Internal classes that only serve one responsibility are not opened
 up to serve another.
 
@@ -132,9 +142,14 @@ publication surface needs it, `publication.service` calls it; the web layer neve
 - Test packages mirror production packages: a class in `estimation` is tested from
   `se.swedishpolls.estimation`.
 - Package-private access is the default for internals; tests in the same package use it directly.
-- Shared test-only fixtures (`TestDatabase`, `TestPublication`) live in a test-support package
-  under the test sourceset (`se.swedishpolls.testsupport`), not inside responsibility packages, so
-  no production package ever imports a test helper.
+- Shared test-only fixtures that belong to no responsibility (`TestDatabase`, `PollCsvFixtures`)
+  live in a test-support package under the test sourceset (`se.swedishpolls.testsupport`), so no
+  production package ever imports a test helper.
+- A fixture that needs a responsibility's package-private seam stays in that responsibility's test
+  package and is public only to the extent another package's tests need it. `publication.TestFreeze`
+  builds an adjusted freeze through package-private parsing, and
+  `publication.service.TestPublication` builds a worker through the package-private constructor, so
+  a web test asks publication for a publication instead of widening a production seam.
 - Production Spring wiring is verified by `@SpringBootTest` integration tests per [ADR 0004](adr/0004-spring-infrastructure-and-integration-tests.md): each
   responsibility keeps integration coverage that starts the real Spring context instead of
   constructing production components manually.
@@ -175,9 +190,29 @@ matching tests moved together, including `PollObservations` and `WindowFilter`, 
 package-private numerical cooperation remains local. Publication now calls a public house-effect
 calculation instead of accessing fitting spans.
 
-The site-rendering cluster (`PublicSite`, `SiteHtml`, `SiteText`, `SiteFormat`, `SiteAssets`,
-`SiteRoutes`, `SiteBootstrap`) and `PageController` move to `web` under #118. Publication and web
-classes otherwise remain in `se.swedishpolls` until #118; #119 adds the compiled dependency checks.
+`publication` and `web` are organized per this convention as of #118, so only `Application` and
+`ImageSmokeCheck` remain directly in `se.swedishpolls`. `publication` (root) holds `ModelFreeze`,
+`PublicationRun`, `PublicationDocuments`, `ShareImages`, `Translations`, the `PublisherScheduler`
+entry point, and the values a publication is read through: `PublicationHeader`,
+`CurrentPublication`, `PublicationAsset`, `ModelRun`, `PinnedSnapshot`, `PublicationOutcome` and
+the `Digest` operation their stored bytes are recorded under. `publication.service` holds
+`Publisher`, the `Publications` read service and `PublicationMetadata`; `publication.repository`
+holds `PublicationStore` and the `PublicationLock` advisory lock. `web` (root) holds the
+site-rendering cluster and `EstimateQuery`; `web.controller` holds `PageController`,
+`ApiV1Controller`, `AssetController`, `ApiExceptionHandler`, `ApiErrors` and the shared `Responses`
+cache and ETag helper.
+
+Three couplings were resolved rather than carried across the new boundary. The publication values
+left `PublicationStore`, so `web.controller` names them without importing a repository, and storage
+records an attempt against `PublicationOutcome` rather than a type the worker owns. The worker's
+own SQL moved to the repository: the run identifier to `PublicationStore.nextRunId`, the advisory
+lock to `PublicationLock.whileHeld`, which holds it for exactly one attempt. `web.controller`
+computes its response ETag with the JDK digest instead of the publication's, `PublicationDocuments`
+words its own movement figure instead of borrowing the site's, and `ShareImages` renders a card per
+`PollQuery.COMPONENTS`; `SiteRoutesTest` fails if the party pages and the poll components ever
+disagree.
+
+#119 adds the compiled dependency checks.
 [ADR 0003](adr/0003-immutable-model-values.md) (immutable model values),
 [ADR 0004](adr/0004-spring-infrastructure-and-integration-tests.md) (Spring infrastructure and
 integration tests), and [ADR 0007](adr/0007-publications-are-immutable-documents.md) (publications
