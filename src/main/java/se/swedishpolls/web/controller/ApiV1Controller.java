@@ -3,7 +3,6 @@ package se.swedishpolls.web.controller;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,8 +20,11 @@ import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.service.Publications;
 import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.PollQuery;
+import se.swedishpolls.source.Roster;
 import se.swedishpolls.source.service.PollQueryService;
 import se.swedishpolls.web.EstimateQuery;
+import se.swedishpolls.web.PollFilters;
+import se.swedishpolls.web.PublicationCoverage;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -88,17 +90,17 @@ public class ApiV1Controller {
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Publications.Resolved resolved = resolve(publication, language);
-    final List<ApiErrors.Invalid> invalid = new ArrayList<>();
-    final LocalDate fromDate = date(from, "from", invalid);
-    final LocalDate toDate = date(to, "to", invalid);
+    final List<PollFilters.Invalid> invalid = new ArrayList<>();
+    final LocalDate fromDate = PollFilters.date(from, "from", invalid);
+    final LocalDate toDate = PollFilters.date(to, "to", invalid);
     final int stepDays = step(step, invalid);
     final ObjectNode stored =
         document(publications.history(resolved.header(), language), "publication");
     if (coveragePeriod != null && !knownPeriod(stored, coveragePeriod)) {
-      invalid.add(new ApiErrors.Invalid("coveragePeriod", "unknown_coverage_period"));
+      invalid.add(new PollFilters.Invalid("coveragePeriod", "unknown_coverage_period"));
     }
     if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
-      invalid.add(new ApiErrors.Invalid("to", "before_from"));
+      invalid.add(new PollFilters.Invalid("to", "before_from"));
     }
     if (!invalid.isEmpty()) {
       throw ApiErrors.invalidFilter(invalid);
@@ -125,7 +127,7 @@ public class ApiV1Controller {
     }
     if (electionCycle != null && !cycles.contains(electionCycle)) {
       throw ApiErrors.invalidFilter(
-          List.of(new ApiErrors.Invalid("electionCycle", "unknown_election_cycle")));
+          List.of(new PollFilters.Invalid("electionCycle", "unknown_election_cycle")));
     }
     final String selected =
         electionCycle == null ? (cycles.isEmpty() ? null : cycles.getLast()) : electionCycle;
@@ -195,10 +197,10 @@ public class ApiV1Controller {
     }
     final List<String> requested = List.of(coalition.split(",", -1));
     final List<String> known = Translations.COALITION_IDS;
-    final List<ApiErrors.Invalid> invalid = new ArrayList<>();
+    final List<PollFilters.Invalid> invalid = new ArrayList<>();
     for (final String id : requested) {
       if (!known.contains(id)) {
-        invalid.add(new ApiErrors.Invalid("coalition", "unknown_coalition"));
+        invalid.add(new PollFilters.Invalid("coalition", "unknown_coalition"));
       }
     }
     if (!invalid.isEmpty()) {
@@ -229,19 +231,28 @@ public class ApiV1Controller {
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Publications.Resolved resolved = resolve(publication, language);
-    final List<ApiErrors.Invalid> invalid = new ArrayList<>();
-    final PollQuery.Filters filters =
-        filters(from, to, institute, party, coveragePeriod, includeExcluded, invalid);
-    final int requestedPage = positive(page, "page", 1, Integer.MAX_VALUE, invalid);
+    final PublicationHeader header = resolved.header();
+    final List<Roster.CoveragePeriod> periods = coverage(header, language);
+    final PollFilters.Parsed parsed =
+        PollFilters.parse(
+            from,
+            to,
+            institute,
+            party,
+            coveragePeriod,
+            includeExcluded,
+            period -> periods.stream().anyMatch(candidate -> candidate.id().equals(period)));
+    final List<PollFilters.Invalid> invalid = new ArrayList<>(parsed.invalid());
+    final PollQuery.Filters filters = parsed.filters();
+    final int requestedPage = PollFilters.positive(page, "page", 1, Integer.MAX_VALUE, invalid);
     final int size =
-        positive(
+        PollFilters.positive(
             pageSize, "pageSize", PollQuery.DEFAULT_PAGE_SIZE, PollQuery.MAX_PAGE_SIZE, invalid);
     if (!invalid.isEmpty()) {
       throw ApiErrors.invalidFilter(invalid);
     }
-    final PublicationHeader header = resolved.header();
     final PollQuery.Result result =
-        queries.query(header.snapshotId(), filters, requestedPage, size);
+        queries.query(header.snapshotId(), periods, filters, requestedPage, size);
     return json(
         pollsBody(header, result, filters, resolved, Translations.of(language)),
         resolved,
@@ -260,15 +271,23 @@ public class ApiV1Controller {
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Publications.Resolved resolved = resolve(publication, language);
-    final List<ApiErrors.Invalid> invalid = new ArrayList<>();
-    final PollQuery.Filters filters =
-        filters(from, to, institute, party, coveragePeriod, includeExcluded, invalid);
-    if (!invalid.isEmpty()) {
-      throw ApiErrors.invalidFilter(invalid);
-    }
     final PublicationHeader header = resolved.header();
+    final List<Roster.CoveragePeriod> periods = coverage(header, language);
+    final PollFilters.Parsed parsed =
+        PollFilters.parse(
+            from,
+            to,
+            institute,
+            party,
+            coveragePeriod,
+            includeExcluded,
+            period -> periods.stream().anyMatch(candidate -> candidate.id().equals(period)));
+    if (!parsed.valid()) {
+      throw ApiErrors.invalidFilter(parsed.invalid());
+    }
+    final PollQuery.Filters filters = parsed.filters();
     final PollQuery.Result result =
-        queries.query(header.snapshotId(), filters, 1, PollQuery.MAX_PAGE_SIZE);
+        queries.query(header.snapshotId(), periods, filters, 1, PollQuery.MAX_PAGE_SIZE);
     final byte[] body = PollQuery.csv(result, filters).getBytes(StandardCharsets.UTF_8);
     return Responses.respond(
         body,
@@ -323,7 +342,7 @@ public class ApiV1Controller {
     node.put("total", result.total());
     node.put("page", result.page1());
     node.put("pageSize", result.pageSize());
-    node.put("csv", csvLink(resolved, filters));
+    node.put("csv", PollFilters.csvLink(resolved.publicationId(), filters));
     final ObjectNode labels = node.putObject("labels");
     for (final String component : filters.selectedComponents()) {
       labels.put(component, text.component(component));
@@ -374,119 +393,22 @@ public class ApiV1Controller {
     return node;
   }
 
-  private String csvLink(Publications.Resolved resolved, PollQuery.Filters filters) {
-    final StringBuilder link =
-        new StringBuilder("/api/v1/polls.csv?publication=").append(resolved.publicationId());
-    if (filters.from() != null) {
-      link.append("&from=").append(filters.from());
-    }
-    if (filters.to() != null) {
-      link.append("&to=").append(filters.to());
-    }
-    if (!filters.institutes().isEmpty()) {
-      link.append("&institute=").append(String.join(",", filters.institutes()));
-    }
-    if (!filters.parties().isEmpty()) {
-      link.append("&party=").append(String.join(",", filters.parties()));
-    }
-    if (filters.coveragePeriod() != null) {
-      link.append("&coveragePeriod=").append(filters.coveragePeriod());
-    }
-    if (filters.includeExcluded()) {
-      link.append("&includeExcluded=true");
-    }
-    return link.toString();
-  }
-
   // Request parsing and publication resolution.
 
-  private PollQuery.Filters filters(
-      String from,
-      String to,
-      String institute,
-      String party,
-      String coveragePeriod,
-      String includeExcluded,
-      List<ApiErrors.Invalid> invalid) {
-    if (coveragePeriod != null && !queries.knownPeriod(coveragePeriod)) {
-      invalid.add(new ApiErrors.Invalid("coveragePeriod", "unknown_coverage_period"));
-    }
-    final LocalDate fromDate = date(from, "from", invalid);
-    final LocalDate toDate = date(to, "to", invalid);
-    if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
-      invalid.add(new ApiErrors.Invalid("to", "before_from"));
-    }
-    final List<String> parties = list(party);
-    for (final String component : parties) {
-      if (!PollQuery.COMPONENTS.contains(component)) {
-        invalid.add(new ApiErrors.Invalid("party", "unknown_component"));
-      }
-    }
-    boolean excluded = false;
-    if (includeExcluded != null) {
-      if (!"true".equals(includeExcluded) && !"false".equals(includeExcluded)) {
-        invalid.add(new ApiErrors.Invalid("includeExcluded", "not_a_boolean"));
-      }
-      excluded = "true".equals(includeExcluded);
-    }
-    return new PollQuery.Filters(
-        fromDate, toDate, list(institute), parties, coveragePeriod, excluded);
-  }
-
-  private static List<String> list(String value) {
-    if (value == null || value.isBlank()) {
-      return List.of();
-    }
-    return List.of(value.split(",", -1)).stream()
-        .map(String::trim)
-        .filter(entry -> !entry.isEmpty())
-        .toList();
-  }
-
-  private static LocalDate date(String value, String name, List<ApiErrors.Invalid> invalid) {
-    if (value == null || value.isBlank()) {
-      return null;
-    }
-    try {
-      return LocalDate.parse(value);
-    } catch (DateTimeParseException e) {
-      invalid.add(new ApiErrors.Invalid(name, "not_a_date"));
-      return null;
-    }
-  }
-
-  private static int step(String value, List<ApiErrors.Invalid> invalid) {
+  private static int step(String value, List<PollFilters.Invalid> invalid) {
     if (value == null || value.isBlank()) {
       return 1;
     }
     try {
       final int step = Integer.parseInt(value);
       if (!EstimateQuery.STEPS.contains(step)) {
-        invalid.add(new ApiErrors.Invalid("step", "unsupported_step", EstimateQuery.STEPS));
+        invalid.add(new PollFilters.Invalid("step", "unsupported_step", EstimateQuery.STEPS));
         return 1;
       }
       return step;
     } catch (NumberFormatException e) {
-      invalid.add(new ApiErrors.Invalid("step", "unsupported_step", EstimateQuery.STEPS));
+      invalid.add(new PollFilters.Invalid("step", "unsupported_step", EstimateQuery.STEPS));
       return 1;
-    }
-  }
-
-  private static int positive(
-      String value, String name, int fallback, int max, List<ApiErrors.Invalid> invalid) {
-    if (value == null || value.isBlank()) {
-      return fallback;
-    }
-    try {
-      final int parsed = Integer.parseInt(value);
-      if (parsed < 1 || parsed > max) {
-        invalid.add(new ApiErrors.Invalid(name, "out_of_range"));
-        return fallback;
-      }
-      return parsed;
-    } catch (NumberFormatException e) {
-      invalid.add(new ApiErrors.Invalid(name, "not_an_integer"));
-      return fallback;
     }
   }
 
@@ -494,14 +416,14 @@ public class ApiV1Controller {
     try {
       return Integer.parseInt(value);
     } catch (NumberFormatException e) {
-      throw ApiErrors.invalidFilter(List.of(new ApiErrors.Invalid("election", "not_an_integer")));
+      throw ApiErrors.invalidFilter(List.of(new PollFilters.Invalid("election", "not_an_integer")));
     }
   }
 
   private Publications.Resolved resolve(String publicationId, String language) {
     if (!Translations.supported(language)) {
       throw ApiErrors.invalidFilter(
-          List.of(new ApiErrors.Invalid("language", "unsupported_language")));
+          List.of(new PollFilters.Invalid("language", "unsupported_language")));
     }
     final Optional<Publications.Resolved> resolved = publications.resolve(publicationId);
     if (resolved.isPresent()) {
@@ -513,10 +435,15 @@ public class ApiV1Controller {
     throw ApiErrors.estimatesUnavailable(publications.lastSuccessfulCheck().orElse(null));
   }
 
+  private List<Roster.CoveragePeriod> coverage(PublicationHeader header, String language) {
+    return PublicationCoverage.from(
+        document(publications.latest(header, header.headlinePeriod(), language), "publication"));
+  }
+
   private static ObjectNode document(Optional<String> body, String parameterName) {
     if (body.isEmpty()) {
       throw ApiErrors.invalidFilter(
-          List.of(new ApiErrors.Invalid(parameterName, "unavailable_for_this_publication")));
+          List.of(new PollFilters.Invalid(parameterName, "unavailable_for_this_publication")));
     }
     return (ObjectNode) JSON.readTree(body.get());
   }

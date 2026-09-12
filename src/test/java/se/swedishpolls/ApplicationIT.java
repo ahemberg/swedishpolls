@@ -70,6 +70,18 @@ class ApplicationIT {
               .contains(
                   SiteHtml.escape(SiteText.of(Translations.SWEDISH).text("unavailable.title"))),
           "No publication exists in this run, so the page says so rather than showing zeros");
+      final java.net.http.HttpResponse<java.lang.String> polls =
+          http.send(
+              HttpRequest.newBuilder(root.resolve("/matningar")).build(),
+              HttpResponse.BodyHandlers.ofString());
+      assertEquals(200, polls.statusCode());
+      assertTrue(
+          polls
+              .body()
+              .contains(
+                  SiteHtml.escape(SiteText.of(Translations.SWEDISH).text("unavailable.title"))),
+          "The poll table needs a publication too, and says so rather than filtering nothing");
+
       final java.util.regex.Matcher asset =
           Pattern.compile("src=\"(/assets/[^\"]+\\.js)\"").matcher(response.body());
       assertTrue(asset.find(), "HTML must reference compiled JavaScript");

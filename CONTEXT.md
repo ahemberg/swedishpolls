@@ -95,6 +95,13 @@ One approved page of the site, named independently of the path that reaches it. 
 translated path per language, so a language switch maps an equivalent page rather than prefixing the
 current path.
 
+**Filtered poll view**:
+One page of a publication's pinned source snapshot, selected by the filter a request declares. The
+table, its paging and its download resolve the same filter against the same snapshot, so a
+correction that publishes mid-visit cannot change the rows being counted or the file about to be
+saved. A filter a request declares but the page cannot read is named and left unapplied, never
+guessed.
+
 **Headline date**:
 The last day the published estimate covers. It comes from the estimate rather than from the
 snapshot, so it can fall before the snapshot's last fieldwork date when the newest poll's midpoint

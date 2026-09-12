@@ -28,26 +28,21 @@ class PollQueryServiceTest {
             return List.of();
           }
         };
-    final CoveragePeriodRepository periods =
-        new CoveragePeriodRepository(null) {
-          @Override
-          public List<Roster.CoveragePeriod> periods() {
-            return List.of();
-          }
-        };
-    final PollQueryService service = new PollQueryService(snapshots, periods);
+    final PollQueryService service =
+        new PollQueryService(snapshots, new CoveragePeriodRepository(null));
     final PollQuery.Filters none = PollQuery.Filters.none();
+    final List<Roster.CoveragePeriod> noCoverage = List.of();
 
-    service.query(7, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
-    service.query(7, none, 2, PollQuery.DEFAULT_PAGE_SIZE);
+    service.query(7, noCoverage, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
+    service.query(7, noCoverage, none, 2, PollQuery.DEFAULT_PAGE_SIZE);
     assertEquals(1, reads.get(), "A second request against one snapshot parses no rows again");
 
-    service.query(8, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
+    service.query(8, noCoverage, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
     assertEquals(
         2,
         reads.get(),
         "A request pinned to an older publication reads that publication's own snapshot");
-    service.query(8, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
+    service.query(8, noCoverage, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
     assertEquals(2, reads.get());
   }
 
@@ -67,29 +62,24 @@ class PollQueryServiceTest {
             return List.of();
           }
         };
-    final CoveragePeriodRepository periods =
-        new CoveragePeriodRepository(null) {
-          @Override
-          public List<Roster.CoveragePeriod> periods() {
-            return List.of();
-          }
-        };
-    final PollQueryService service = new PollQueryService(snapshots, periods);
+    final PollQueryService service =
+        new PollQueryService(snapshots, new CoveragePeriodRepository(null));
     final PollQuery.Filters none = PollQuery.Filters.none();
+    final List<Roster.CoveragePeriod> noCoverage = List.of();
     final int bound = PollQueryService.CACHED_SNAPSHOTS;
 
     for (long snapshotId = 1; snapshotId <= bound; snapshotId++) {
-      service.query(snapshotId, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
+      service.query(snapshotId, noCoverage, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
     }
     assertEquals(bound, reads.get());
-    service.query(1, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
+    service.query(1, noCoverage, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
     assertEquals(bound, reads.get(), "A snapshot still cached is read once");
 
     for (long snapshotId = bound + 1; snapshotId <= 2 * bound; snapshotId++) {
-      service.query(snapshotId, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
+      service.query(snapshotId, noCoverage, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
     }
     assertEquals(2 * bound, reads.get());
-    service.query(1, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
+    service.query(1, noCoverage, none, 1, PollQuery.DEFAULT_PAGE_SIZE);
     assertEquals(2 * bound + 1, reads.get(), "A snapshot pushed out of the cache is read again");
   }
 }

@@ -46,6 +46,39 @@ jobs:
           path: target/classes/
           if-no-files-found: error
           retention-days: 1
+  model-validation:
+    name: Model validation
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check whether model validation is required
+        id: required
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || '' }}
+        run: |
+          required=true
+          if [ -n "$BASE" ] && git rev-parse --verify --quiet "$BASE^{commit}"; then
+            changed=$(git diff --name-only "$BASE" HEAD) || { echo "required=true" >>"$GITHUB_OUTPUT"; exit 0; }
+            model_pattern='^src/main/java/se/swedishpolls/(estimation|model|source)/|^src/test/java/se/swedishpolls/(estimation|source|testsupport)/|^src/main/resources/|^docs/validation/|\.github/workflows/verify\.yml|^pom\.xml$'
+            if ! printf '%s\n' "$changed" | grep -E "$model_pattern" >/dev/null; then
+              required=false
+            fi
+          fi
+          echo "required=$required" >>"$GITHUB_OUTPUT"
+      - name: Set up Java
+        if: steps.required.outputs.required == 'true'
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: '25.0.4+7.0.LTS'
+          cache: maven
+          cache-dependency-path: pom.xml
+      - name: Run model validation
+        if: steps.required.outputs.required == 'true'
+        run: ./mvnw --batch-mode --no-transfer-progress -Pmodel-validation verify
   fallow:
     name: Fallow
     runs-on: ubuntu-24.04
@@ -87,7 +120,7 @@ jobs:
   images:
     name: Build, verify and publish images
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build, fallow]
+    needs: [build, fallow, model-validation]
     runs-on: ubuntu-24.04
     permissions:
       contents: read

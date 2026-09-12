@@ -54,20 +54,23 @@ public class PollQueryService {
     this.periods = periods;
   }
 
-  /** One poll request against the pinned snapshot, paged like the table shows it. */
+  /**
+   * One poll request against the pinned snapshot, classified by the coverage periods the caller
+   * resolved. Passing the repository's current periods here would let a correction reclassify an
+   * already-published page, so callers always pass the periods their publication carries.
+   */
   public PollQuery.Result query(
-      long snapshotId, PollQuery.Filters filters, int page, int pageSize) {
+      long snapshotId,
+      List<Roster.CoveragePeriod> coverage,
+      PollQuery.Filters filters,
+      int page,
+      int pageSize) {
     final List<PollCsv.Poll> polls = parsedPolls.computeIfAbsent(snapshotId, snapshots::polls);
-    return PollQuery.filter(snapshotId, polls, periods.periods(), filters, page, pageSize);
+    return PollQuery.filter(snapshotId, polls, coverage, filters, page, pageSize);
   }
 
   /** Every coverage period, for requests that name one. */
   public List<Roster.CoveragePeriod> periods() {
     return periods.periods();
-  }
-
-  /** Whether a request's coverage period names a real one. */
-  public boolean knownPeriod(String coveragePeriod) {
-    return periods.periods().stream().anyMatch(period -> period.id().equals(coveragePeriod));
   }
 }

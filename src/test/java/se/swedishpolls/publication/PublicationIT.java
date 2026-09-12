@@ -32,6 +32,7 @@ import se.swedishpolls.publication.repository.PublicationLock;
 import se.swedishpolls.publication.repository.PublicationStore;
 import se.swedishpolls.publication.service.Publisher;
 import se.swedishpolls.publication.service.TestPublication;
+import se.swedishpolls.source.PollQuery;
 import se.swedishpolls.source.service.ElectionReferenceService;
 import se.swedishpolls.source.service.NationalAllocationRuleService;
 import se.swedishpolls.source.service.PollQueryService;
@@ -255,6 +256,46 @@ class PublicationIT {
     assertTrue(restarted.header(first.publicationId()).isPresent());
     assertTrue(restarted.header("pub_00000000T000000Z").isEmpty());
     assertEquals(second.publicationId(), restarted.current().orElseThrow().publicationId());
+  }
+
+  /**
+   * What the poll page and its download promise: a publication pins a snapshot, so a correction
+   * that publishes while a reader is filtering cannot change the rows they are counting or the file
+   * they are about to save.
+   */
+  @Test
+  void aCorrectedSnapshotLeavesAPinnedPollQueryAndItsCsvExactlyAsTheyWere() {
+    final Publisher publisher = publisher();
+    final Publisher.Attempt first = publisher.publish();
+    assertEquals(PublicationOutcome.PUBLISHED, first.outcome(), first.detail());
+    final long snapshot = store.header(first.publicationId()).orElseThrow().snapshotId();
+    final PollQuery.Filters filters =
+        new PollQuery.Filters(null, null, List.of("Novus"), List.of("S"), null, false);
+    final PollQuery.Result before =
+        queries.query(snapshot, queries.periods(), filters, 1, PollQuery.DEFAULT_PAGE_SIZE);
+    final String csv = PollQuery.csv(before, filters);
+    assertTrue(before.total() > 0, "the fixture has Novus polls to pin");
+
+    TestPublication.serve(wireMock, TestPublication.polls("2019-06-01"));
+    final Publisher.Attempt second = publisher.publish();
+    assertEquals(PublicationOutcome.PUBLISHED, second.outcome(), second.detail());
+    final long corrected = store.header(second.publicationId()).orElseThrow().snapshotId();
+    assertNotEquals(snapshot, corrected, "the correction is a different snapshot");
+
+    final PollQuery.Result after =
+        queries.query(snapshot, queries.periods(), filters, 1, PollQuery.DEFAULT_PAGE_SIZE);
+    assertEquals(before.total(), after.total());
+    assertEquals(
+        before.matching().stream().map(PollQuery.Row::pollId).toList(),
+        after.matching().stream().map(PollQuery.Row::pollId).toList(),
+        "The pinned snapshot selects the same rows, in the same order");
+    assertEquals(csv, PollQuery.csv(after, filters), "and the download is byte for byte the same");
+    assertNotEquals(
+        before.total(),
+        queries
+            .query(corrected, queries.periods(), filters, 1, PollQuery.DEFAULT_PAGE_SIZE)
+            .total(),
+        "The correction really did change what an unpinned query would have counted");
   }
 
   @Test
