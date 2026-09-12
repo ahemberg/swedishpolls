@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -94,8 +93,8 @@ public class ApiV1Controller {
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Resolved resolved = resolve(publication, language);
     final List<ApiErrors.Invalid> invalid = new ArrayList<>();
-    final LocalDate fromDate = date(from, "from", invalid);
-    final LocalDate toDate = date(to, "to", invalid);
+    final LocalDate fromDate = PollFilters.date(from, "from", invalid);
+    final LocalDate toDate = PollFilters.date(to, "to", invalid);
     final int stepDays = step(step, invalid);
     final ObjectNode stored =
         document(resolved, PublicationDocuments.HISTORY_SURFACE, language, "publication");
@@ -236,9 +235,10 @@ public class ApiV1Controller {
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Resolved resolved = resolve(publication, language);
-    final List<ApiErrors.Invalid> invalid = new ArrayList<>();
-    final PollQuery.Filters filters =
-        filters(from, to, institute, party, coveragePeriod, includeExcluded, invalid);
+    final PollFilters.Parsed parsed =
+        filters(from, to, institute, party, coveragePeriod, includeExcluded);
+    final List<ApiErrors.Invalid> invalid = new ArrayList<>(parsed.invalid());
+    final PollQuery.Filters filters = parsed.filters();
     final int requestedPage = positive(page, "page", 1, Integer.MAX_VALUE, invalid);
     final int size =
         positive(
@@ -267,12 +267,12 @@ public class ApiV1Controller {
       @RequestParam(defaultValue = Translations.SWEDISH) String language,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final Resolved resolved = resolve(publication, language);
-    final List<ApiErrors.Invalid> invalid = new ArrayList<>();
-    final PollQuery.Filters filters =
-        filters(from, to, institute, party, coveragePeriod, includeExcluded, invalid);
-    if (!invalid.isEmpty()) {
-      throw ApiErrors.invalidFilter(invalid);
+    final PollFilters.Parsed parsed =
+        filters(from, to, institute, party, coveragePeriod, includeExcluded);
+    if (!parsed.valid()) {
+      throw ApiErrors.invalidFilter(parsed.invalid());
     }
+    final PollQuery.Filters filters = parsed.filters();
     final PublicationStore.Header header = header(resolved);
     final PollQuery.Result result =
         queries.query(header.snapshotId(), filters, 1, PollQuery.MAX_PAGE_SIZE);
@@ -330,7 +330,7 @@ public class ApiV1Controller {
     node.put("total", result.total());
     node.put("page", result.page1());
     node.put("pageSize", result.pageSize());
-    node.put("csv", csvLink(resolved, filters));
+    node.put("csv", PollFilters.csvLink(resolved.publicationId(), filters));
     final ObjectNode labels = node.putObject("labels");
     for (final String component : filters.selectedComponents()) {
       labels.put(component, text.component(component));
@@ -381,85 +381,17 @@ public class ApiV1Controller {
     return node;
   }
 
-  private String csvLink(Resolved resolved, PollQuery.Filters filters) {
-    final StringBuilder link =
-        new StringBuilder("/api/v1/polls.csv?publication=").append(resolved.publicationId());
-    if (filters.from() != null) {
-      link.append("&from=").append(filters.from());
-    }
-    if (filters.to() != null) {
-      link.append("&to=").append(filters.to());
-    }
-    if (!filters.institutes().isEmpty()) {
-      link.append("&institute=").append(String.join(",", filters.institutes()));
-    }
-    if (!filters.parties().isEmpty()) {
-      link.append("&party=").append(String.join(",", filters.parties()));
-    }
-    if (filters.coveragePeriod() != null) {
-      link.append("&coveragePeriod=").append(filters.coveragePeriod());
-    }
-    if (filters.includeExcluded()) {
-      link.append("&includeExcluded=true");
-    }
-    return link.toString();
-  }
-
   // Request parsing and publication resolution.
 
-  private PollQuery.Filters filters(
+  private PollFilters.Parsed filters(
       String from,
       String to,
       String institute,
       String party,
       String coveragePeriod,
-      String includeExcluded,
-      List<ApiErrors.Invalid> invalid) {
-    if (coveragePeriod != null && !queries.knownPeriod(coveragePeriod)) {
-      invalid.add(new ApiErrors.Invalid("coveragePeriod", "unknown_coverage_period"));
-    }
-    final LocalDate fromDate = date(from, "from", invalid);
-    final LocalDate toDate = date(to, "to", invalid);
-    if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
-      invalid.add(new ApiErrors.Invalid("to", "before_from"));
-    }
-    final List<String> parties = list(party);
-    for (final String component : parties) {
-      if (!PollQuery.COMPONENTS.contains(component)) {
-        invalid.add(new ApiErrors.Invalid("party", "unknown_component"));
-      }
-    }
-    boolean excluded = false;
-    if (includeExcluded != null) {
-      if (!"true".equals(includeExcluded) && !"false".equals(includeExcluded)) {
-        invalid.add(new ApiErrors.Invalid("includeExcluded", "not_a_boolean"));
-      }
-      excluded = "true".equals(includeExcluded);
-    }
-    return new PollQuery.Filters(
-        fromDate, toDate, list(institute), parties, coveragePeriod, excluded);
-  }
-
-  private static List<String> list(String value) {
-    if (value == null || value.isBlank()) {
-      return List.of();
-    }
-    return List.of(value.split(",", -1)).stream()
-        .map(String::trim)
-        .filter(entry -> !entry.isEmpty())
-        .toList();
-  }
-
-  private static LocalDate date(String value, String name, List<ApiErrors.Invalid> invalid) {
-    if (value == null || value.isBlank()) {
-      return null;
-    }
-    try {
-      return LocalDate.parse(value);
-    } catch (DateTimeParseException e) {
-      invalid.add(new ApiErrors.Invalid(name, "not_a_date"));
-      return null;
-    }
+      String includeExcluded) {
+    return PollFilters.parse(
+        from, to, institute, party, coveragePeriod, includeExcluded, queries::knownPeriod);
   }
 
   private static int step(String value, List<ApiErrors.Invalid> invalid) {

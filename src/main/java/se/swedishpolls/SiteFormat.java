@@ -53,6 +53,11 @@ public final class SiteFormat {
     return Translations.SWEDISH.equals(language) ? plain.replace('.', ',') : plain;
   }
 
+  /** A sample size or other count, grouped the way the language groups thousands. */
+  public static String count(int value, String language) {
+    return java.text.NumberFormat.getIntegerInstance(localeOf(language)).format(value);
+  }
+
   /**
    * A probability as whole percent. It never reads as 0 % or 100 %: a Monte Carlo estimate of zero
    * draws is not proof of impossibility, so the display says less than or greater than, the same

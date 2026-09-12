@@ -3,6 +3,8 @@ package se.swedishpolls;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
+import se.swedishpolls.source.service.PollQueryService;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
@@ -31,11 +34,14 @@ public class PageController {
   private final SiteBootstrap bootstrap;
   private final SiteHtml html;
   private final PublicationStore store;
+  private final PollQueryService queries;
 
-  public PageController(SiteBootstrap bootstrap, SiteHtml html, PublicationStore store) {
+  public PageController(
+      SiteBootstrap bootstrap, SiteHtml html, PublicationStore store, PollQueryService queries) {
     this.bootstrap = bootstrap;
     this.html = html;
     this.store = store;
+    this.queries = queries;
   }
 
   /**
@@ -54,8 +60,6 @@ public class PageController {
     "/en/coalitions",
     "/institut",
     "/en/pollsters",
-    "/matningar",
-    "/en/polls",
     "/metod",
     "/en/method"
   })
@@ -73,6 +77,65 @@ public class PageController {
             .orElseGet(
                 () -> bootstrap.unavailable(route, store.lastSuccessfulCheck().orElse(null)));
     return respond(html.page(page), permanent && header.isPresent(), ifNoneMatch);
+  }
+
+  /**
+   * The browsable poll table, which is the one page family whose own query string selects rows.
+   *
+   * <p>The filters are read here rather than in the browser, so a filtered link is a complete page
+   * before any script runs and a reader who shares one shares what they were looking at. A rejected
+   * parameter does not fail the request: the page keeps the filters it understood and says which
+   * ones it ignored, because a reader following a stale link is better served by the table than by
+   * an error.
+   */
+  @GetMapping({"/matningar", "/en/polls"})
+  public ResponseEntity<byte[]> pollsPage(
+      HttpServletRequest request,
+      @RequestParam(required = false) String publication,
+      @RequestParam(required = false) String from,
+      @RequestParam(required = false) String to,
+      @RequestParam(required = false) String institute,
+      @RequestParam(required = false) String party,
+      @RequestParam(required = false) String coveragePeriod,
+      @RequestParam(required = false) String includeExcluded,
+      @RequestParam(required = false) String page,
+      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+    final SiteRoutes.Route route =
+        SiteRoutes.resolve(request.getRequestURI()).orElseThrow(ApiErrors::unknownRoute);
+    final boolean permanent = publication != null;
+    final Optional<PublicationStore.Header> header = resolve(publication);
+    if (header.isEmpty()) {
+      return respond(
+          html.page(bootstrap.unavailable(route, store.lastSuccessfulCheck().orElse(null))),
+          false,
+          ifNoneMatch);
+    }
+    final PollFilters.Parsed parsed =
+        PollFilters.parse(
+            from, to, institute, party, coveragePeriod, includeExcluded, queries::knownPeriod);
+    final List<ApiErrors.Invalid> invalid = new ArrayList<>(parsed.invalid());
+    final SiteBootstrap.PollRequest polls =
+        new SiteBootstrap.PollRequest(parsed.filters(), pageNumber(page, invalid), invalid);
+    return respond(
+        html.page(bootstrap.page(route, header.get(), permanent, polls)), permanent, ifNoneMatch);
+  }
+
+  /** The requested page of the table, falling back to the first one when the number is not one. */
+  private static int pageNumber(String value, List<ApiErrors.Invalid> invalid) {
+    if (value == null || value.isBlank()) {
+      return 1;
+    }
+    try {
+      final int parsed = Integer.parseInt(value);
+      if (parsed < 1) {
+        invalid.add(new ApiErrors.Invalid("page", "out_of_range"));
+        return 1;
+      }
+      return parsed;
+    } catch (NumberFormatException e) {
+      invalid.add(new ApiErrors.Invalid("page", "not_an_integer"));
+      return 1;
+    }
   }
 
   /** The pinned permanent publication, the current one, or nothing published yet. */
