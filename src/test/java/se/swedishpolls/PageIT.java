@@ -32,6 +32,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
 import se.swedishpolls.estimation.Coalitions;
+import se.swedishpolls.source.PollQuery;
 import se.swedishpolls.source.service.ElectionReferenceService;
 import se.swedishpolls.source.service.NationalAllocationRuleService;
 import se.swedishpolls.source.service.PollQueryService;
@@ -620,6 +621,268 @@ class PageIT {
             path + " does not offer " + surface + " pinned to its own publication");
       }
     }
+  }
+
+  // The poll table: archived source observations, filtered, paged and downloadable as they stand.
+
+  @Test
+  void thePollsPageListsArchivedObservationsBeforeAnyScriptRuns() {
+    final String page = get("/matningar").body();
+    final JsonNode table = bootstrap(page).get("pollTable");
+    final SiteText text = SiteText.of(Translations.SWEDISH);
+    assertTrue(
+        page.contains("<div class=\"scroll\">\n<table class=\"polls\">"),
+        "the poll table is not inside a scroll container");
+    assertTrue(page.contains(SiteHtml.escape(text.text("head.title.polls"))), "the heading");
+    assertTrue(page.contains(SiteHtml.escape(text.text("polls.lead"))), "the lead");
+    assertTrue(table.get("total").asInt() > PollQuery.DEFAULT_PAGE_SIZE, "more than one page");
+    assertEquals(PollQuery.DEFAULT_PAGE_SIZE, table.get("polls").size());
+    final String rendered = table(page, "polls");
+    boolean methodEvidence = false;
+    boolean denominatorNote = false;
+    for (final JsonNode poll : table.get("polls")) {
+      assertTrue(
+          rendered.contains(SiteHtml.escape(poll.get("institute").asString())),
+          poll.get("pollId").asString());
+      if (!poll.get("methodEvidence").isNull()) {
+        methodEvidence = true;
+        assertTrue(
+            rendered.contains("href=\"" + SiteHtml.escape(poll.get("methodEvidence").asString())),
+            "method evidence");
+      }
+      if (!poll.get("denominatorNote").isNull()) {
+        denominatorNote = true;
+        assertTrue(
+            rendered.contains("title=\"" + SiteHtml.escape(poll.get("denominatorNote").asString())),
+            "sample denominator");
+      }
+    }
+    assertTrue(methodEvidence, "the fixture includes method provenance");
+    assertTrue(denominatorNote, "the fixture includes denominator provenance");
+  }
+
+  /**
+   * The table shows the source's own digits. Rounding them to the estimate's display precision
+   * would publish a number no institute ever reported.
+   */
+  @Test
+  void aReportedShareKeepsTheSourcePrecisionAndAnAbsentOneStaysMissing() {
+    final String page = get("/en/polls").body();
+    final String rendered = table(page, "polls");
+    final JsonNode table = bootstrap(page).get("pollTable");
+    int missing = 0;
+    for (final JsonNode poll : table.get("polls")) {
+      for (final JsonNode column : table.get("columns")) {
+        final JsonNode share = poll.get("shares").get(column.asString());
+        if (share.isNull()) {
+          missing++;
+          continue;
+        }
+        final String display = poll.get("displayShares").get(column.asString()).asString();
+        assertEquals(share.decimalValue().toPlainString(), display, poll.get("pollId").asString());
+        assertTrue(
+            rendered.contains(">" + display),
+            poll.get("pollId").asString() + " " + column.asString());
+      }
+    }
+    if (missing > 0) {
+      assertTrue(
+          rendered.contains(
+              SiteHtml.escape(SiteText.of(Translations.ENGLISH).text("polls.missing"))),
+          "a share the source never reported reads as missing, not as zero");
+    }
+  }
+
+  /**
+   * The download is the table's own rows. Anything else would hand a reader a file that does not
+   * match what they were looking at, which is the whole point of pinning the publication.
+   */
+  @Test
+  void theDownloadSelectsExactlyTheRowsTheFilteredTableCounted() {
+    final String query = "?institute=Novus&from=2015-01-01&to=2019-12-31";
+    final String page = get("/matningar" + query).body();
+    final JsonNode table = bootstrap(page).get("pollTable");
+    assertTrue(table.get("total").asInt() > 0, "the fixture has Novus polls in this range");
+    final String csv = table.get("csv").asString();
+    assertTrue(csv.contains("publication=" + publicationId), csv);
+    assertTrue(csv.contains("institute=Novus"), csv);
+    assertTrue(csv.contains("from=2015-01-01") && csv.contains("to=2019-12-31"), csv);
+
+    final HttpResponse<String> download = get(csv);
+    assertEquals(200, download.statusCode(), csv);
+    final long rows = download.body().lines().filter(line -> !line.isBlank()).count() - 1;
+    assertEquals(table.get("total").asInt(), rows, "the CSV holds every counted row, once");
+    assertTrue(page.contains(SiteHtml.escape(csv + "&language=sv")), "the page offers that file");
+  }
+
+  @Test
+  void aPartyFilterNarrowsTheTableColumnsAndTheDownloadTogether() {
+    final String page = get("/en/polls?party=S").body();
+    final JsonNode table = bootstrap(page).get("pollTable");
+    assertEquals(List.of("S"), columns(table));
+    final String rendered = table(page, "polls");
+    assertFalse(rendered.contains("\">SD</th>"), "a narrowed table has no other party column");
+    final String csv = table.get("csv").asString();
+    assertTrue(csv.contains("party=S"), csv);
+    final String header = get(csv).body().lines().findFirst().orElseThrow();
+    assertTrue(header.contains(",S,"), header);
+    assertFalse(header.contains(",SD,"), header);
+  }
+
+  @Test
+  void anEmptyResultSaysSoRatherThanRenderingAnEmptyTable() {
+    final String page = get("/matningar?from=1900-01-01&to=1900-12-31").body();
+    final SiteText text = SiteText.of(Translations.SWEDISH);
+    assertEquals(0, bootstrap(page).get("pollTable").get("total").asInt());
+    assertTrue(page.contains(SiteHtml.escape(text.text("polls.empty"))), "the empty notice");
+    assertFalse(page.contains("<table class=\"polls\">"), "no header row over nothing");
+  }
+
+  /**
+   * A reader following a stale or hand-edited link is better served by the table than by an error,
+   * so the page names the filter it could not read and shows the ones it could.
+   */
+  @Test
+  void anInvalidFilterIsNamedAndIgnoredRatherThanFailingTheRequest() {
+    final HttpResponse<String> response = get("/matningar?from=yesterday&institute=Novus");
+    assertEquals(200, response.statusCode());
+    final JsonNode table = bootstrap(response.body()).get("pollTable");
+    assertEquals(1, table.get("invalid").size());
+    assertEquals("from", table.get("invalid").get(0).get("name").asString());
+    assertEquals("not_a_date", table.get("invalid").get(0).get("reason").asString());
+    assertTrue(table.get("filters").get("from").isNull(), "the unreadable bound is not guessed");
+    assertEquals("Novus", table.get("filters").get("institute").get(0).asString());
+    assertTrue(
+        response.body().contains("role=\"alert\""),
+        "the rejected filter is announced, not swallowed");
+  }
+
+  @Test
+  void anUnknownCoveragePeriodIsRejectedWithoutSilentlySelectingAnother() {
+    final JsonNode table = bootstrap(get("/matningar?coveragePeriod=1066").body()).get("pollTable");
+    assertEquals("coveragePeriod", table.get("invalid").get(0).get("name").asString());
+    assertTrue(table.get("filters").get("coveragePeriod").isNull());
+  }
+
+  @Test
+  void pagingKeepsTheFilterAndStaysOnTheSamePublication() {
+    final String first = get("/matningar?institute=Novus").body();
+    final JsonNode table = bootstrap(first).get("pollTable");
+    assertTrue(table.get("pages").asInt() > 1, "the fixture pages Novus polls");
+    assertTrue(
+        first.contains(
+            "href=\"/matningar?publication=" + publicationId + "&amp;institute=Novus&amp;page=2\""),
+        "the next link keeps the resolved publication");
+
+    final String second = get("/matningar?institute=Novus&page=2").body();
+    final JsonNode paged = bootstrap(second).get("pollTable");
+    assertEquals(2, paged.get("page").asInt());
+    assertEquals(table.get("total").asInt(), paged.get("total").asInt());
+    assertTrue(
+        paged.get("csv").asString().startsWith("/api/v1/polls.csv?publication=" + publicationId),
+        paged.get("csv").asString());
+    assertNotEquals(
+        table.get("polls").get(0).get("pollId").asString(),
+        paged.get("polls").get(0).get("pollId").asString());
+    assertTrue(
+        second.contains(
+            "href=\"/matningar?publication=" + publicationId + "&amp;institute=Novus&amp;page=1\""),
+        "and back on the same publication");
+  }
+
+  @Test
+  void aPermanentPollsLinkCarriesItsPublicationThroughTheFormAndThePaging() {
+    final String page = get("/matningar?publication=" + publicationId + "&institute=Novus").body();
+    assertTrue(
+        page.contains("<input type=\"hidden\" name=\"publication\" value=\"" + publicationId),
+        "the filter form keeps the pin");
+    assertTrue(
+        page.contains("href=\"/matningar?publication=" + publicationId + "&amp;institute=Novus"),
+        "and so does the paging");
+  }
+
+  /**
+   * FI is a real archived observation in every period and a modeled component in none of the
+   * fixture's. The table has to show the number and say what it is, rather than dropping it or
+   * letting it read as a published estimate.
+   */
+  @Test
+  void anObservationOutsideTheModeledRosterIsMarkedRatherThanPresentedAsAnEstimate() {
+    final String page = get("/matningar?party=FI&to=2018-12-31").body();
+    final JsonNode table = bootstrap(page).get("pollTable");
+    final SiteText text = SiteText.of(Translations.SWEDISH);
+    boolean reported = false;
+    for (final JsonNode poll : table.get("polls")) {
+      if (poll.get("shares").get("FI").isNull()) {
+        continue;
+      }
+      reported = true;
+    }
+    assertTrue(reported, "the fixture reports FI shares");
+    assertTrue(table(page, "polls").contains(text.text("polls.unmodeledMark")), "the marker");
+    assertTrue(page.contains(SiteHtml.escape(text.text("polls.unmodeled"))), "and its footnote");
+  }
+
+  @Test
+  void excludedPollsAreShownOnlyWhenAskedForAndSayWhyTheyWereExcluded() {
+    final JsonNode included = bootstrap(get("/matningar").body()).get("pollTable");
+    for (final JsonNode poll : included.get("polls")) {
+      assertTrue(poll.get("eligible").asBoolean(), poll.get("pollId").asString());
+    }
+    final String page = get("/matningar?includeExcluded=true").body();
+    final JsonNode all = bootstrap(page).get("pollTable");
+    assertTrue(all.get("total").asInt() > included.get("total").asInt(), "more rows, not fewer");
+    assertTrue(
+        page.contains(
+            SiteHtml.escape(SiteText.of(Translations.SWEDISH).text("polls.column.eligibility"))),
+        "the eligibility column appears only when excluded rows can be in the table");
+  }
+
+  @Test
+  void theEnglishPollsPageTranslatesItsControlsAndDescribesItself() {
+    final String page = get("/en/polls").body();
+    final SiteText english = SiteText.of(Translations.ENGLISH);
+    assertTrue(page.contains("<html lang=\"en\">"));
+    assertTrue(page.contains("<form class=\"filters\" method=\"get\" action=\"/en/polls\">"));
+    for (final String key :
+        List.of(
+            "polls.filters",
+            "polls.filter.from",
+            "polls.filter.institute",
+            "polls.filter.coveragePeriod",
+            "polls.filter.includeExcluded",
+            "polls.filter.apply")) {
+      assertTrue(page.contains(SiteHtml.escape(english.text(key))), key);
+    }
+    final String own = english.text("head.description.polls");
+    assertTrue(
+        page.contains(
+            "<meta name=\"description\" content=\""
+                + SiteHtml.escape(own.substring(0, own.indexOf('{')))),
+        "the polls page describes itself");
+    assertTrue(page.contains("hreflang=\"sv\" href=\"" + ORIGIN + "/matningar\">"));
+  }
+
+  @Test
+  void thePollsPageOffersTheFilterOptionsItsOwnPublicationCarries() {
+    final JsonNode options = bootstrap(get("/matningar").body()).get("pollTable").get("options");
+    assertFalse(options.get("institutes").isEmpty(), "institutes to filter by");
+    assertFalse(options.get("coveragePeriods").isEmpty(), "coverage periods to filter by");
+    assertEquals(PollQuery.COMPONENTS.size(), options.get("parties").size());
+    final String page = get("/matningar").body();
+    for (final JsonNode institute : options.get("institutes")) {
+      assertTrue(
+          page.contains("<option value=\"" + SiteHtml.escape(institute.asString()) + "\""),
+          institute.asString());
+    }
+  }
+
+  private static List<String> columns(JsonNode table) {
+    final List<String> columns = new java.util.ArrayList<>();
+    for (final JsonNode column : table.get("columns")) {
+      columns.add(column.asString());
+    }
+    return columns;
   }
 
   @Test

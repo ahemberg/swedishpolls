@@ -1,5 +1,6 @@
 package se.swedishpolls;
 
+import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -51,6 +52,11 @@ public final class SiteFormat {
   public static String decimal(double value, String language) {
     final String plain = String.format(Locale.ROOT, "%.1f", value);
     return Translations.SWEDISH.equals(language) ? plain.replace('.', ',') : plain;
+  }
+
+  /** A sample size or other count, grouped the way the language groups thousands. */
+  public static String count(int value, String language) {
+    return NumberFormat.getIntegerInstance(localeOf(language)).format(value);
   }
 
   /**

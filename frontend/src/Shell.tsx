@@ -1,11 +1,12 @@
 import type { JSX } from "react";
 import { About } from "./About";
 import type { Bootstrap, PageData, Translate } from "./bootstrap";
-import { COALITIONS, headlineDate, OVERVIEW, PARTY, SEATS } from "./bootstrap";
+import { COALITIONS, headlineDate, OVERVIEW, PARTY, POLLS, SEATS } from "./bootstrap";
 import { CoalitionsPage } from "./CoalitionsPage";
 import { date, timestamp } from "./format";
 import { Overview } from "./Overview";
 import { Party } from "./Party";
+import { PollsPage } from "./PollsPage";
 import { SeatsPage } from "./SeatsPage";
 import { SiteHeader } from "./SiteHeader";
 
@@ -100,15 +101,24 @@ function Results({ page, data, t }: ResultsProps): JSX.Element {
  * The families this build renders. A family the server sent no data for is still a real page:
  * it keeps the shell, its own title and the method footer rather than reading as broken.
  */
-function Body({ page, t }: Props): JSX.Element {
-  const { data } = page;
-  if (page.publication === undefined) {
-    return <Unavailable page={page} t={t} />;
+function Published({ page, t }: Props): JSX.Element {
+  const { data, pollTable } = page;
+  // The poll table is not one of the results documents: it publishes source observations rather
+  // than the estimate, the allocation and the memberships, so it carries its own payload.
+  if (page.route.family === POLLS && pollTable !== undefined) {
+    return <PollsPage page={page} table={pollTable} t={t} />;
   }
   if (data === undefined) {
     return <Title page={page} t={t} />;
   }
   return <Results page={page} data={data} t={t} />;
+}
+
+function Body({ page, t }: Props): JSX.Element {
+  if (page.publication === undefined) {
+    return <Unavailable page={page} t={t} />;
+  }
+  return <Published page={page} t={t} />;
 }
 
 function Shell({ page, t }: Props): JSX.Element {

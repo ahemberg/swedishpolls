@@ -94,7 +94,8 @@ class PollQueryTest {
 
   @Test
   void aPageBeyondTheLastRowIsEmptyRatherThanAnError() {
-    final PollQuery.Result result = filter(PollQuery.Filters.none(), 10_000, 50);
+    final PollQuery.Result result =
+        filter(PollQuery.Filters.none(), Integer.MAX_VALUE, PollQuery.MAX_PAGE_SIZE);
     assertTrue(result.page().isEmpty());
     assertEquals(result.total(), result.matching().size());
   }

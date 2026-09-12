@@ -8,8 +8,12 @@ import org.junit.jupiter.api.Test;
 
 /** The page chrome: one key set, both languages, and no key left untranslated. */
 class SiteTextTest {
-  /** The two language abbreviations are the same word in both languages. Nothing else is. */
-  private static final Set<String> SHARED = Set.of("language.short.sv", "language.short.en");
+  /**
+   * The two language abbreviations are the same word in both languages, and the footnote marker is
+   * a typographic symbol rather than a word. Nothing else may read the same in both.
+   */
+  private static final Set<String> SHARED =
+      Set.of("language.short.sv", "language.short.en", "polls.unmodeledMark");
 
   @Test
   void bothLanguagesCarryTheSameKeys() {

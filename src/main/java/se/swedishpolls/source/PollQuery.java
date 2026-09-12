@@ -138,8 +138,9 @@ public final class PollQuery {
                 Comparator.nullsLast(Comparator.reverseOrder()))
             .thenComparing(row -> row.poll().institute())
             .thenComparingInt(row -> row.poll().rowNumber()));
-    final int from = Math.min((page - 1) * pageSize, matching.size());
-    final int to = Math.min(from + pageSize, matching.size());
+    final long offset = (long) (page - 1) * pageSize;
+    final int from = (int) Math.min(offset, matching.size());
+    final int to = (int) Math.min((long) from + pageSize, matching.size());
     return new Result(matching, matching.subList(from, to), matching.size(), page, pageSize);
   }
 

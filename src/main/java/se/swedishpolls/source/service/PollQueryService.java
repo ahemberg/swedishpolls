@@ -24,17 +24,22 @@ public class PollQueryService {
   /** One poll request against the pinned snapshot, paged like the table shows it. */
   public PollQuery.Result query(
       long snapshotId, PollQuery.Filters filters, int page, int pageSize) {
+    return query(snapshotId, periods.periods(), filters, page, pageSize);
+  }
+
+  /** One poll request classified by the coverage periods stored with its publication. */
+  public PollQuery.Result query(
+      long snapshotId,
+      List<Roster.CoveragePeriod> coverage,
+      PollQuery.Filters filters,
+      int page,
+      int pageSize) {
     return PollQuery.filter(
-        snapshotId, snapshots.polls(snapshotId), periods.periods(), filters, page, pageSize);
+        snapshotId, snapshots.polls(snapshotId), coverage, filters, page, pageSize);
   }
 
   /** Every coverage period, for requests that name one. */
   public List<Roster.CoveragePeriod> periods() {
     return periods.periods();
-  }
-
-  /** Whether a request's coverage period names a real one. */
-  public boolean knownPeriod(String coveragePeriod) {
-    return periods.periods().stream().anyMatch(period -> period.id().equals(coveragePeriod));
   }
 }

@@ -1,4 +1,5 @@
 import type { CoalitionResults, Seats } from "./chamber";
+import type { PollTable } from "./poll-table";
 
 /**
  * The page's resolved publication, as Spring wrote it into the document.
@@ -218,6 +219,7 @@ export interface Bootstrap {
     readonly language: Language;
   };
   readonly data?: PageData;
+  readonly pollTable?: PollTable;
   readonly ranges?: readonly RangeSpec[];
   readonly defaultRange?: string;
 }
@@ -229,6 +231,9 @@ export const COALITIONS = "COALITIONS";
 
 /** The individual party page family. */
 export const PARTY = "PARTY";
+
+/** The browsable poll table, which carries source observations rather than published estimates. */
+export const POLLS = "POLLS";
 
 /**
  * The publication-wide summary cards a page can offer. A party page is not here: it offers its
