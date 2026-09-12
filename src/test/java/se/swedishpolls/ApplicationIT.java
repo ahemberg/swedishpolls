@@ -11,7 +11,10 @@ import java.time.Duration;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import se.swedishpolls.publication.Translations;
 import se.swedishpolls.testsupport.TestDatabase;
+import se.swedishpolls.web.SiteHtml;
+import se.swedishpolls.web.SiteText;
 
 class ApplicationIT {
   @Test
