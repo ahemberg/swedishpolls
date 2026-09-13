@@ -1,0 +1,2201 @@
+{
+  "version": "issue-150-inventory-1",
+  "status": "checkpoint-1-evidence-not-approval",
+  "base_commit": "a4b957814db30755b0c5e2914af0e45f6ec4cb61",
+  "reason_count": 50,
+  "note": "Indices are zero-based and preserve the original release order. Evidence groups organize diagnosis, not statistically independent defects. JSON pointers refer to unchanged archived files. No revised fit or audit was run.",
+  "frozen_files": {
+    "docs/validation/coverage.json": "843fdd1ba7dcf4f70cf253996be366ff8793114676b5d24bc0777d518ab364e1",
+    "docs/validation/cross-architecture.json": "c2032d87417581dfb7a8ab289b86feb7728bc6810e132e708d7c03b1ca693f52",
+    "docs/validation/development-gates.json": "38f8f6498463f53838be92eeb113c45e9f386177d75e564fec0d23dab707f8f9",
+    "docs/validation/diagnostics.json": "d374e62a7a4e482b314f6066ff36f0c83f34ad9ca0d2fe397af9a725beb201ed",
+    "docs/validation/history.json": "8ccac840b5838cba54c24d4b3dc17bba0b9086fd4bf61acbe0cf486635844969",
+    "docs/validation/probability-precision.json": "311e4df0ec4112cb3b68e8ffb2f13a17bda685f69153deac2bd5618edd116a2a",
+    "docs/validation/protocol.json": "6f774b8517078c88b82c1af3332a3478ec8e9f7156de529c7e20f4cfbcb4d667",
+    "docs/validation/release-audit.json": "cb1d97d9b65526fa3501f17778ade2ac6741a52c5966194fabd615267bee3ad7",
+    "docs/validation/release-protocol.json": "934520c7cda4458a3cf302fcd79d2e104a3fef2233e00968c4ec42320b6b070b",
+    "docs/validation/remainder.json": "d64549550b47e13ec0fb670aa15e52e6f8bd5db1e93945fb61340c55670551ae",
+    "docs/validation/seats.json": "a66a4e8a35e66f4ef176db38794618f902b163d7191a20cc2f23608c8189229e",
+    "docs/validation/tuning.json": "8fbfa7b22b1b0db553b38ac00afa3ed070241265fa5267099502f9071b6bc397",
+    "docs/validation/uncertainty.json": "75e565e9a0b1cf2c0c9e85eae9140cfbbb73af207b4cfa75026b8db68303aa00",
+    "src/main/resources/db/migration/V1__validation_protocol.sql": "2c82a62ef035cde7feb46d59ec13dd6146d3ef5063f2cbfa0c3a8603dd724c29",
+    "src/main/resources/db/migration/V2__poll_snapshots.sql": "3f7e3b136c04106c8df8f2a612fcd4a550c9856c6f171e38a253c0acf1a89dbc",
+    "src/main/resources/db/migration/V3__election_references.sql": "042130ca1576fba8c14ee5719111cb9b5d69dd05c4f2ee373bf762b1629ee0c6",
+    "src/main/resources/db/migration/V4__coverage_periods.sql": "15b568cb1b65b7e88753d3f4e3996de243edcbf9af8c6d3d1729e91784c1ae2d",
+    "src/main/resources/db/migration/V5__publications.sql": "fd01f399ae544537a566750b339068069fabc4a9e1bca2d1690542fc87b1a897",
+    "src/main/resources/publication/model-freeze.json": "f1e9fcc08bbbdd36722c9426b861542d5f1af03104826e03ae0f9c85c2d9a9b0",
+    "src/test/resources/polls/audit.csv": "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608"
+  },
+  "evidence_groups": {
+    "candidate-grid": {
+      "explanation": "Finite ML optima at the lower grid endpoints; bounded search has not established an interior optimum. This is not a failed factorization.",
+      "evidence": [
+        "tuning.json#/resolved"
+      ],
+      "affected": [
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-01-15",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-03-16",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-05-15",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-05-10",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-07-09",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-09-07",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-11-06",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-01-05",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-03-05",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-05-04",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-07-03",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-09-01",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-10-31",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-12-30",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-02-28",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-04-29",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-06-28",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-08-27",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-10-26",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2014-05-15",
+          "boundaries": [
+            "walkVariance:lower",
+            "houseScale:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2014-09-12",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2014-11-11",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2015-01-10",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2015-03-11",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2015-05-10",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2015-07-09",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2015-09-07",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2015-11-06",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-01-05",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-03-05",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-05-04",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-07-03",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-09-01",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-10-31",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-12-30",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2017-02-28",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2017-04-29",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2017-06-28",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        }
+      ],
+      "dependent_checks": [
+        "tuning",
+        "coverage",
+        "history",
+        "uncertainty",
+        "remainder",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "fi-no-training": {
+      "explanation": "The first two FI folds have no eligible training observations in their period, rather than a numerical fit failure. Their unscored diagnostics repeat this cause.",
+      "evidence": [
+        "tuning.json#/unresolved",
+        "coverage.json#/periods/1/support"
+      ],
+      "affected": [
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2014-01-15"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2014-03-16"
+        }
+      ],
+      "dependent_checks": [
+        "tuning",
+        "coverage",
+        "history",
+        "uncertainty",
+        "remainder",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "fi-no-heldout": {
+      "explanation": "Nineteen folds after FI support ends have no held-out composition for this roster. Later training fits repeat the same historical data; they do not establish later support.",
+      "evidence": [
+        "diagnostics.json#/unscored",
+        "coverage.json#/periods/1/support"
+      ],
+      "affected": [
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2018-10-21"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2018-12-20"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2019-02-18"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2019-04-19"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2019-06-18"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2019-08-17"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2019-10-16"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2019-12-15"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2020-02-13"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2020-04-13"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2020-06-12"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2020-08-11"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2020-10-10"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2020-12-09"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2021-02-07"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2021-04-08"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2021-06-07"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2021-08-06"
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2021-10-05"
+        }
+      ],
+      "dependent_checks": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "reference-grid:eight_party_2010": {
+      "explanation": "Independent ilr-window ML search selects lower grid endpoints. Requires the same reviewed expansion as the candidate.",
+      "evidence": [
+        "diagnostics.json#/folds"
+      ],
+      "affected": [
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-01-15",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-03-16",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-05-15",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-01-10",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-03-11",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-05-10",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-07-09",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-09-07",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-11-06",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-01-05",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-03-05",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-05-04",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-07-03",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-09-01",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-10-31",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-12-30",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-02-28",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-04-29",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        }
+      ],
+      "dependent_checks": [
+        "reference_tuning",
+        "paired_comparison",
+        "reference_misfit",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "reference-grid:fi_candidate_2014_2018": {
+      "explanation": "Independent ilr-window ML search selects lower grid endpoints. Requires the same reviewed expansion as the candidate.",
+      "evidence": [
+        "diagnostics.json#/folds"
+      ],
+      "affected": [
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2014-05-15",
+          "boundaries": [
+            "walkVariance:lower",
+            "houseScale:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2014-09-12",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2015-03-11",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2015-05-10",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2015-07-09",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2015-09-07",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2015-11-06",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-01-05",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-03-05",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-05-04",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-07-03",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-09-01",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-10-31",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2016-12-30",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2017-02-28",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2017-04-29",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        },
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "cutoff": "2017-06-28",
+          "boundaries": [
+            "covarianceMultiplier:lower"
+          ]
+        }
+      ],
+      "dependent_checks": [
+        "reference_tuning",
+        "paired_comparison",
+        "reference_misfit",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "reference-loss": {
+      "explanation": "The equal-fold midpoint minus ilr-window mean is -0.023579124341236275, below -SE=-0.011921334731399268. This is a comparative failure, not evidence that pooled coverage fails. Causal attribution remains limited by aggregate archives.",
+      "evidence": [
+        "diagnostics.json#/paired",
+        "diagnostics.json#/folds"
+      ],
+      "affected": [
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-01-15"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-03-16"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-05-15"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-07-14"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-09-12"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2014-11-11"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-01-10"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-03-11"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-05-10"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-07-09"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-09-07"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2015-11-06"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-01-05"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-03-05"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-05-04"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-07-03"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-09-01"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-10-31"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2016-12-30"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-02-28"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-04-29"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-06-28"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-08-27"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-10-26"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2017-12-25"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2018-02-23"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2018-04-24"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2018-06-23"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2018-08-22"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2018-10-21"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2018-12-20"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2019-02-18"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2019-04-19"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2019-06-18"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2019-08-17"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2019-10-16"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2019-12-15"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2020-02-13"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2020-04-13"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2020-06-12"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2020-08-11"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2020-10-10"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2020-12-09"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2021-02-07"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2021-04-08"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2021-06-07"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2021-08-06"
+        },
+        {
+          "periodId": "eight_party_2010",
+          "cutoff": "2021-10-05"
+        }
+      ],
+      "dependent_checks": [
+        "paired_comparison",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:eight_party_2010:party:S": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/3",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "eight_party_2010",
+          "scope": "party",
+          "name": "S",
+          "cutoffs": [
+            "2014-01-15",
+            "2014-03-16",
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22",
+            "2018-10-21",
+            "2018-12-20",
+            "2019-02-18",
+            "2019-04-19",
+            "2019-06-18",
+            "2019-08-17",
+            "2019-10-16",
+            "2019-12-15",
+            "2020-02-13",
+            "2020-04-13",
+            "2020-06-12",
+            "2020-08-11",
+            "2020-10-10",
+            "2020-12-09",
+            "2021-02-07",
+            "2021-04-08",
+            "2021-06-07",
+            "2021-08-06",
+            "2021-10-05"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "eight_party_2010",
+            "candidate": "midpoint",
+            "scope": "party",
+            "name": "S",
+            "polls": 370,
+            "cases": 370,
+            "coverage95": 0.9837837837837838,
+            "coverage50": 0.6405405405405405,
+            "meanLogScore": 4.920328865309745,
+            "meanStandardizedResidual": -0.0783586888787151,
+            "rootMeanSquareStandardizedResidual": 0.7689698395958103
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:party:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:eight_party_2010:party:KD": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/8",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "eight_party_2010",
+          "scope": "party",
+          "name": "KD",
+          "cutoffs": [
+            "2014-01-15",
+            "2014-03-16",
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22",
+            "2018-10-21",
+            "2018-12-20",
+            "2019-02-18",
+            "2019-04-19",
+            "2019-06-18",
+            "2019-08-17",
+            "2019-10-16",
+            "2019-12-15",
+            "2020-02-13",
+            "2020-04-13",
+            "2020-06-12",
+            "2020-08-11",
+            "2020-10-10",
+            "2020-12-09",
+            "2021-02-07",
+            "2021-04-08",
+            "2021-06-07",
+            "2021-08-06",
+            "2021-10-05"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "eight_party_2010",
+            "candidate": "midpoint",
+            "scope": "party",
+            "name": "KD",
+            "polls": 370,
+            "cases": 370,
+            "coverage95": 0.8648648648648649,
+            "coverage50": 0.4189189189189189,
+            "meanLogScore": 4.920328865309745,
+            "meanStandardizedResidual": 0.3920285903607115,
+            "rootMeanSquareStandardizedResidual": 1.8415414088541135
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:party:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:eight_party_2010:party:OTHER": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/11",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "eight_party_2010",
+          "scope": "party",
+          "name": "OTHER",
+          "cutoffs": [
+            "2014-01-15",
+            "2014-03-16",
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22",
+            "2018-10-21",
+            "2018-12-20",
+            "2019-02-18",
+            "2019-04-19",
+            "2019-06-18",
+            "2019-08-17",
+            "2019-10-16",
+            "2019-12-15",
+            "2020-02-13",
+            "2020-04-13",
+            "2020-06-12",
+            "2020-08-11",
+            "2020-10-10",
+            "2020-12-09",
+            "2021-02-07",
+            "2021-04-08",
+            "2021-06-07",
+            "2021-08-06",
+            "2021-10-05"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "eight_party_2010",
+            "candidate": "midpoint",
+            "scope": "party",
+            "name": "OTHER",
+            "polls": 370,
+            "cases": 370,
+            "coverage95": 0.8486486486486486,
+            "coverage50": 0.3918918918918919,
+            "meanLogScore": 4.920328865309745,
+            "meanStandardizedResidual": 0.04883510492161168,
+            "rootMeanSquareStandardizedResidual": 1.4730679549415546
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:party:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:eight_party_2010:institute:Sifo": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/18",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "eight_party_2010",
+          "scope": "institute",
+          "name": "Sifo",
+          "cutoffs": [
+            "2014-01-15",
+            "2014-03-16",
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22",
+            "2018-10-21",
+            "2018-12-20",
+            "2019-02-18",
+            "2019-04-19",
+            "2019-06-18",
+            "2019-08-17",
+            "2019-10-16",
+            "2019-12-15",
+            "2020-02-13",
+            "2020-04-13",
+            "2020-06-12",
+            "2020-08-11",
+            "2020-10-10",
+            "2020-12-09",
+            "2021-02-07",
+            "2021-04-08",
+            "2021-06-07",
+            "2021-08-06",
+            "2021-10-05"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "eight_party_2010",
+            "candidate": "midpoint",
+            "scope": "institute",
+            "name": "Sifo",
+            "polls": 63,
+            "cases": 567,
+            "coverage95": 0.8977072310405644,
+            "coverage50": 0.5114638447971781,
+            "meanLogScore": 5.123606928815158,
+            "meanStandardizedResidual": 0.05352577703584968,
+            "rootMeanSquareStandardizedResidual": 1.3297616281950035
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:institute:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:eight_party_2010:institute:Skop": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/19",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "eight_party_2010",
+          "scope": "institute",
+          "name": "Skop",
+          "cutoffs": [
+            "2014-01-15",
+            "2014-03-16",
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22",
+            "2018-10-21",
+            "2018-12-20",
+            "2019-02-18",
+            "2019-04-19",
+            "2019-06-18",
+            "2019-08-17",
+            "2019-10-16",
+            "2019-12-15",
+            "2020-02-13",
+            "2020-04-13",
+            "2020-06-12",
+            "2020-08-11",
+            "2020-10-10",
+            "2020-12-09",
+            "2021-02-07",
+            "2021-04-08",
+            "2021-06-07",
+            "2021-08-06",
+            "2021-10-05"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "eight_party_2010",
+            "candidate": "midpoint",
+            "scope": "institute",
+            "name": "Skop",
+            "polls": 29,
+            "cases": 261,
+            "coverage95": 0.8275862068965517,
+            "coverage50": 0.42528735632183906,
+            "meanLogScore": -0.23832320351377048,
+            "meanStandardizedResidual": 0.20646188071026172,
+            "rootMeanSquareStandardizedResidual": 1.6927416450632502
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:institute:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:fi_candidate_2014_2018:party:S": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/28",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "scope": "party",
+          "name": "S",
+          "cutoffs": [
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "fi_candidate_2014_2018",
+            "candidate": "midpoint",
+            "scope": "party",
+            "name": "S",
+            "polls": 200,
+            "cases": 200,
+            "coverage95": 0.985,
+            "coverage50": 0.63,
+            "meanLogScore": 3.285757003883174,
+            "meanStandardizedResidual": -0.04244218498383384,
+            "rootMeanSquareStandardizedResidual": 0.8089736888176399
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:party:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:fi_candidate_2014_2018:party:KD": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/33",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "scope": "party",
+          "name": "KD",
+          "cutoffs": [
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "fi_candidate_2014_2018",
+            "candidate": "midpoint",
+            "scope": "party",
+            "name": "KD",
+            "polls": 200,
+            "cases": 200,
+            "coverage95": 0.855,
+            "coverage50": 0.41,
+            "meanLogScore": 3.285757003883174,
+            "meanStandardizedResidual": 0.5153675945957608,
+            "rootMeanSquareStandardizedResidual": 2.04693378853195
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:party:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:fi_candidate_2014_2018:party:FI": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/36",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "scope": "party",
+          "name": "FI",
+          "cutoffs": [
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "fi_candidate_2014_2018",
+            "candidate": "midpoint",
+            "scope": "party",
+            "name": "FI",
+            "polls": 200,
+            "cases": 200,
+            "coverage95": 0.895,
+            "coverage50": 0.48,
+            "meanLogScore": 3.285757003883174,
+            "meanStandardizedResidual": -0.2534015309688037,
+            "rootMeanSquareStandardizedResidual": 1.1090063774002483
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:party:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:fi_candidate_2014_2018:party:RESIDUAL": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/37",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "scope": "party",
+          "name": "RESIDUAL",
+          "cutoffs": [
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "fi_candidate_2014_2018",
+            "candidate": "midpoint",
+            "scope": "party",
+            "name": "RESIDUAL",
+            "polls": 200,
+            "cases": 200,
+            "coverage95": 0.825,
+            "coverage50": 0.345,
+            "meanLogScore": 3.285757003883174,
+            "meanStandardizedResidual": 0.2008335887596309,
+            "rootMeanSquareStandardizedResidual": 1.8642180365539271
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:party:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:fi_candidate_2014_2018:institute:Inizio": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/39",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "scope": "institute",
+          "name": "Inizio",
+          "cutoffs": [
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "fi_candidate_2014_2018",
+            "candidate": "midpoint",
+            "scope": "institute",
+            "name": "Inizio",
+            "polls": 21,
+            "cases": 210,
+            "coverage95": 0.8952380952380953,
+            "coverage50": 0.4857142857142857,
+            "meanLogScore": 3.537597308093688,
+            "meanStandardizedResidual": 0.046387056319188255,
+            "rootMeanSquareStandardizedResidual": 1.3444645669399224
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:institute:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:fi_candidate_2014_2018:institute:Sifo": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/44",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "scope": "institute",
+          "name": "Sifo",
+          "cutoffs": [
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "fi_candidate_2014_2018",
+            "candidate": "midpoint",
+            "scope": "institute",
+            "name": "Sifo",
+            "polls": 37,
+            "cases": 370,
+            "coverage95": 0.8837837837837837,
+            "coverage50": 0.46756756756756757,
+            "meanLogScore": 2.9793529064911493,
+            "meanStandardizedResidual": 0.024783480558750234,
+            "rootMeanSquareStandardizedResidual": 1.3869737206618316
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:institute:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:fi_candidate_2014_2018:institute:Skop": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/45",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "scope": "institute",
+          "name": "Skop",
+          "cutoffs": [
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "fi_candidate_2014_2018",
+            "candidate": "midpoint",
+            "scope": "institute",
+            "name": "Skop",
+            "polls": 22,
+            "cases": 220,
+            "coverage95": 0.8181818181818182,
+            "coverage50": 0.34545454545454546,
+            "meanLogScore": -2.3672779783159323,
+            "meanStandardizedResidual": 0.22853018401696432,
+            "rootMeanSquareStandardizedResidual": 1.837189673272659
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:institute:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    },
+    "subgroup:fi_candidate_2014_2018:fieldwork_days:1-7": {
+      "explanation": "The archived midpoint subgroup violates one or more frozen coverage or standardized-residual bounds. Multiple metrics for this subgroup describe the same observations, not independent defects. The archive does not isolate the statistical cause.",
+      "evidence": [
+        "diagnostics.json#/misfit/48",
+        "protocol.json#/resolved_diagnostic_gates"
+      ],
+      "affected": [
+        {
+          "periodId": "fi_candidate_2014_2018",
+          "scope": "fieldwork_days",
+          "name": "1-7",
+          "cutoffs": [
+            "2014-05-15",
+            "2014-07-14",
+            "2014-09-12",
+            "2014-11-11",
+            "2015-01-10",
+            "2015-03-11",
+            "2015-05-10",
+            "2015-07-09",
+            "2015-09-07",
+            "2015-11-06",
+            "2016-01-05",
+            "2016-03-05",
+            "2016-05-04",
+            "2016-07-03",
+            "2016-09-01",
+            "2016-10-31",
+            "2016-12-30",
+            "2017-02-28",
+            "2017-04-29",
+            "2017-06-28",
+            "2017-08-27",
+            "2017-10-26",
+            "2017-12-25",
+            "2018-02-23",
+            "2018-04-24",
+            "2018-06-23",
+            "2018-08-22"
+          ],
+          "fold_attribution": "All scored folds in this roster are the analysis population; subgroup-specific row/fold attribution is not retained in the aggregate archive.",
+          "metrics": {
+            "periodId": "fi_candidate_2014_2018",
+            "candidate": "midpoint",
+            "scope": "fieldwork_days",
+            "name": "1-7",
+            "polls": 71,
+            "cases": 710,
+            "coverage95": 0.8985915492957747,
+            "coverage50": 0.44647887323943664,
+            "meanLogScore": 1.9270321991172976,
+            "meanStandardizedResidual": 0.1349217642378633,
+            "rootMeanSquareStandardizedResidual": 1.3949013422310645
+          }
+        }
+      ],
+      "dependent_checks": [
+        "systematic_misfit:fieldwork_days:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ]
+    }
+  },
+  "reasons": [
+    {
+      "release_reason_index": 0,
+      "development_reason_index": null,
+      "reason": "development_gates: 49 development gate reasons stand",
+      "evidence_group": null,
+      "kind": "aggregate_wrapper"
+    },
+    {
+      "release_reason_index": 1,
+      "development_reason_index": 0,
+      "reason": "development_gates: coverage: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails",
+      "evidence_group": "candidate-grid",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 2,
+      "development_reason_index": 1,
+      "reason": "development_gates: coverage: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol",
+      "evidence_group": "fi-no-training",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 3,
+      "development_reason_index": 2,
+      "reason": "development_gates: uncertainty: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails",
+      "evidence_group": "candidate-grid",
+      "kind": "propagated"
+    },
+    {
+      "release_reason_index": 4,
+      "development_reason_index": 3,
+      "reason": "development_gates: uncertainty: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol",
+      "evidence_group": "fi-no-training",
+      "kind": "propagated"
+    },
+    {
+      "release_reason_index": 5,
+      "development_reason_index": 4,
+      "reason": "development_gates: diagnostics: coverage validation: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails",
+      "evidence_group": "candidate-grid",
+      "kind": "propagated"
+    },
+    {
+      "release_reason_index": 6,
+      "development_reason_index": 5,
+      "reason": "development_gates: diagnostics: coverage validation: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol",
+      "evidence_group": "fi-no-training",
+      "kind": "propagated"
+    },
+    {
+      "release_reason_index": 7,
+      "development_reason_index": 6,
+      "reason": "development_gates: diagnostics: eight_party_2010: the midpoint candidate loses to the ilr-window reference by 0.023579124341236275, beyond the paired standard error of 0.011921334731399268",
+      "evidence_group": "reference-loss",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 8,
+      "development_reason_index": 7,
+      "reason": "development_gates: diagnostics: eight_party_2010: the ilr-window reference resolved on a grid boundary in 18 folds, which needs the same documented expansion as the candidate's",
+      "evidence_group": "reference-grid:eight_party_2010",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 9,
+      "development_reason_index": 8,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018: the ilr-window reference resolved on a grid boundary in 17 folds, which needs the same documented expansion as the candidate's",
+      "evidence_group": "reference-grid:fi_candidate_2014_2018",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 10,
+      "development_reason_index": 9,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2014-01-15 scored nothing: the tuning run resolved no parameters for this fold",
+      "evidence_group": "fi-no-training",
+      "kind": "propagated"
+    },
+    {
+      "release_reason_index": 11,
+      "development_reason_index": 10,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2014-03-16 scored nothing: the tuning run resolved no parameters for this fold",
+      "evidence_group": "fi-no-training",
+      "kind": "propagated"
+    },
+    {
+      "release_reason_index": 12,
+      "development_reason_index": 11,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2018-10-21 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 13,
+      "development_reason_index": 12,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2018-12-20 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 14,
+      "development_reason_index": 13,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-02-18 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 15,
+      "development_reason_index": 14,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-04-19 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 16,
+      "development_reason_index": 15,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-06-18 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 17,
+      "development_reason_index": 16,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-08-17 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 18,
+      "development_reason_index": 17,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-10-16 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 19,
+      "development_reason_index": 18,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-12-15 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 20,
+      "development_reason_index": 19,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-02-13 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 21,
+      "development_reason_index": 20,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-04-13 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 22,
+      "development_reason_index": 21,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-06-12 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 23,
+      "development_reason_index": 22,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-08-11 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 24,
+      "development_reason_index": 23,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-10-10 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 25,
+      "development_reason_index": 24,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-12-09 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 26,
+      "development_reason_index": 25,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2021-02-07 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 27,
+      "development_reason_index": 26,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2021-04-08 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 28,
+      "development_reason_index": 27,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2021-06-07 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 29,
+      "development_reason_index": 28,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2021-08-06 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 30,
+      "development_reason_index": 29,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2021-10-05 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 31,
+      "development_reason_index": 30,
+      "reason": "development_gates: eight_party_2010 party S has unexplained subgroup coverage 95/50=0.9837837837837838/0.6405405405405405",
+      "evidence_group": "subgroup:eight_party_2010:party:S",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 32,
+      "development_reason_index": 31,
+      "reason": "development_gates: eight_party_2010 party KD has unexplained subgroup coverage 95/50=0.8648648648648649/0.4189189189189189",
+      "evidence_group": "subgroup:eight_party_2010:party:KD",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 33,
+      "development_reason_index": 32,
+      "reason": "development_gates: eight_party_2010 party KD has root-mean-square standardized residual 1.8415414088541135",
+      "evidence_group": "subgroup:eight_party_2010:party:KD",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 34,
+      "development_reason_index": 33,
+      "reason": "development_gates: eight_party_2010 party OTHER has unexplained subgroup coverage 95/50=0.8486486486486486/0.3918918918918919",
+      "evidence_group": "subgroup:eight_party_2010:party:OTHER",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 35,
+      "development_reason_index": 34,
+      "reason": "development_gates: eight_party_2010 institute Sifo has unexplained subgroup coverage 95/50=0.8977072310405644/0.5114638447971781",
+      "evidence_group": "subgroup:eight_party_2010:institute:Sifo",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 36,
+      "development_reason_index": 35,
+      "reason": "development_gates: eight_party_2010 institute Skop has unexplained subgroup coverage 95/50=0.8275862068965517/0.42528735632183906",
+      "evidence_group": "subgroup:eight_party_2010:institute:Skop",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 37,
+      "development_reason_index": 36,
+      "reason": "development_gates: eight_party_2010 institute Skop has root-mean-square standardized residual 1.6927416450632502",
+      "evidence_group": "subgroup:eight_party_2010:institute:Skop",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 38,
+      "development_reason_index": 37,
+      "reason": "development_gates: fi_candidate_2014_2018 party S has unexplained subgroup coverage 95/50=0.985/0.63",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:S",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 39,
+      "development_reason_index": 38,
+      "reason": "development_gates: fi_candidate_2014_2018 party KD has unexplained subgroup coverage 95/50=0.855/0.41",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:KD",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 40,
+      "development_reason_index": 39,
+      "reason": "development_gates: fi_candidate_2014_2018 party KD has absolute mean standardized residual 0.5153675945957608",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:KD",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 41,
+      "development_reason_index": 40,
+      "reason": "development_gates: fi_candidate_2014_2018 party KD has root-mean-square standardized residual 2.04693378853195",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:KD",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 42,
+      "development_reason_index": 41,
+      "reason": "development_gates: fi_candidate_2014_2018 party FI has unexplained subgroup coverage 95/50=0.895/0.48",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:FI",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 43,
+      "development_reason_index": 42,
+      "reason": "development_gates: fi_candidate_2014_2018 party RESIDUAL has unexplained subgroup coverage 95/50=0.825/0.345",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:RESIDUAL",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 44,
+      "development_reason_index": 43,
+      "reason": "development_gates: fi_candidate_2014_2018 party RESIDUAL has root-mean-square standardized residual 1.8642180365539271",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:RESIDUAL",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 45,
+      "development_reason_index": 44,
+      "reason": "development_gates: fi_candidate_2014_2018 institute Inizio has unexplained subgroup coverage 95/50=0.8952380952380953/0.4857142857142857",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:institute:Inizio",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 46,
+      "development_reason_index": 45,
+      "reason": "development_gates: fi_candidate_2014_2018 institute Sifo has unexplained subgroup coverage 95/50=0.8837837837837837/0.46756756756756757",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:institute:Sifo",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 47,
+      "development_reason_index": 46,
+      "reason": "development_gates: fi_candidate_2014_2018 institute Skop has unexplained subgroup coverage 95/50=0.8181818181818182/0.34545454545454546",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:institute:Skop",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 48,
+      "development_reason_index": 47,
+      "reason": "development_gates: fi_candidate_2014_2018 institute Skop has root-mean-square standardized residual 1.837189673272659",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:institute:Skop",
+      "kind": "reported_failure"
+    },
+    {
+      "release_reason_index": 49,
+      "development_reason_index": 48,
+      "reason": "development_gates: fi_candidate_2014_2018 fieldwork_days 1-7 has unexplained subgroup coverage 95/50=0.8985915492957747/0.44647887323943664",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:fieldwork_days:1-7",
+      "kind": "reported_failure"
+    }
+  ]
+}

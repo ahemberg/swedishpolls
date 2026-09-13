@@ -1,12 +1,16 @@
 import { type JSX, useEffect, useRef, useState } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
+import { CoalitionEditor } from "./CoalitionEditor";
 import { CoalitionHistoryPlot } from "./CoalitionHistoryPlot";
 
 import {
+  type Assignment,
+  assignmentFromSelection,
   BLOCKS,
   type CoalitionHistoryData,
   type CoalitionLinkError,
   coalitionSharePath,
+  groupsFor,
 } from "./coalition-history";
 import { decimal, interval, percent, shortDate, timestamp } from "./format";
 import { TimelineTable } from "./TimelineTable";
@@ -94,11 +98,13 @@ function HistoryChart({
           <p key={series.component}>
             {t(`coalitionHistory.${series.component}`)}
             {SEPARATOR}
-            {interval(
-              [series.mean[cursor.index], series.lower[cursor.index], series.upper[cursor.index]],
-              page.language,
-              t,
-            )}
+            {history.selection[series.component].length === 0 && t("coalitionEditor.assignParty")}
+            {history.selection[series.component].length > 0 &&
+              interval(
+                [series.mean[cursor.index], series.lower[cursor.index], series.upper[cursor.index]],
+                page.language,
+                t,
+              )}
           </p>
         ))}
       </div>
@@ -121,11 +127,11 @@ function HistoryChart({
 }
 
 function LatestHistory({
-  initial,
+  history,
   page,
   t,
 }: {
-  readonly initial: CoalitionHistoryData;
+  readonly history: CoalitionHistoryData;
   readonly page: Bootstrap;
   readonly t: Translate;
 }): JSX.Element {
@@ -133,28 +139,34 @@ function LatestHistory({
     <>
       <p>{t("coalitionHistory.note")}</p>
       <p>
-        {t("coalitionHistory.published", { date: timestamp(initial.publishedAt, page.locale) })}
+        {t("coalitionHistory.published", { date: timestamp(history.publishedAt, page.locale) })}
       </p>
-      <h3>{t("coalitionHistory.latest", { date: shortDate(initial.latest.date, page.locale) })}</h3>
+      <h3>{t("coalitionHistory.latest", { date: shortDate(history.latest.date, page.locale) })}</h3>
       {BLOCKS.map((block) => (
         <p key={block}>
           <strong>{t(`coalitionHistory.${block}`)}</strong>
           {SEPARATOR}
-          {initial.selection[block].join(" + ")}
+          {history.selection[block].join(" + ") || t("coalitionEditor.noParties")}
           {MEMBERS_SEPARATOR}
-          {interval(
-            [initial.latest[block].mean, initial.latest[block].lower, initial.latest[block].upper],
-            page.language,
-            t,
-          )}
+          {history.selection[block].length === 0 && t("coalitionEditor.assignParty")}
+          {history.selection[block].length > 0 &&
+            interval(
+              [
+                history.latest[block].mean,
+                history.latest[block].lower,
+                history.latest[block].upper,
+              ],
+              page.language,
+              t,
+            )}
         </p>
       ))}
       <dl>
         {(
           [
-            ["unassigned", initial.latest.unassignedMean],
-            ["remainder", initial.latest.comparableRemainderMean],
-            ["outside", initial.latest.outsideBothMean],
+            ["unassigned", history.latest.unassignedMean],
+            ["remainder", history.latest.comparableRemainderMean],
+            ["outside", history.latest.outsideBothMean],
           ] as const
         ).map(([label, value]) => (
           <div key={label}>
@@ -174,29 +186,40 @@ function useHistoryRange(initial: CoalitionHistoryData): {
   readonly history: CoalitionHistoryData;
   readonly loading: boolean;
   readonly failed: boolean;
-  readonly load: (form: HTMLFormElement) => Promise<void>;
+  readonly requestedRange: CoalitionHistoryData["requestedRange"];
+  readonly load: (
+    selection: CoalitionHistoryData["selection"],
+    range: CoalitionHistoryData["requestedRange"],
+  ) => Promise<void>;
+  readonly retry: () => Promise<void>;
 } {
   const [history, setHistory] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [requestedRange, setRequestedRange] = useState(initial.requestedRange);
   const pending = useRef<AbortController | null>(null);
+  const lastRequest = useRef({ selection: initial.selection, range: initial.requestedRange });
   useEffect(
     () => (): void => {
       pending.current?.abort();
     },
     [],
   );
-  async function load(form: HTMLFormElement): Promise<void> {
+  async function load(
+    selection: CoalitionHistoryData["selection"],
+    range: CoalitionHistoryData["requestedRange"],
+  ): Promise<void> {
     pending.current?.abort();
     const request = new AbortController();
     pending.current = request;
-    const fields = new FormData(form);
+    lastRequest.current = { selection, range };
+    setRequestedRange(range);
     const parameters = new URLSearchParams({
-      a: initial.selection.a.join(","),
-      b: initial.selection.b.join(","),
-      from: String(fields.get("from")),
-      to: String(fields.get("to")),
-      step: String(initial.requestedRange.step),
+      a: selection.a.join(","),
+      b: selection.b.join(","),
+      from: range.from,
+      to: range.to,
+      step: String(range.step),
     });
     setLoading(true);
     setFailed(false);
@@ -218,7 +241,14 @@ function useHistoryRange(initial: CoalitionHistoryData): {
       setHistory(next);
     }
   }
-  return { history, loading, failed, load };
+  return {
+    history,
+    loading,
+    failed,
+    requestedRange,
+    load,
+    retry: () => load(lastRequest.current.selection, lastRequest.current.range),
+  };
 }
 
 function PublishedHistory({
@@ -230,15 +260,34 @@ function PublishedHistory({
   readonly page: Bootstrap;
   readonly t: Translate;
 }): JSX.Element {
-  const { history, loading, failed, load } = useHistoryRange(initial);
+  const { history, loading, failed, requestedRange, load, retry } = useHistoryRange(initial);
+  const [assignment, setAssignment] = useState(() => assignmentFromSelection(initial.selection));
+
+  function changeAssignment(next: Assignment): void {
+    setAssignment(next);
+    load(groupsFor(next), history.requestedRange);
+  }
+
   return (
     <>
-      <LatestHistory initial={initial} page={page} t={t} />
+      <CoalitionEditor
+        assignment={assignment}
+        initial={initial}
+        onChange={changeAssignment}
+        page={page}
+        t={t}
+      />
+      <LatestHistory history={history} page={page} t={t} />
       <form
         className="coalition-range"
         onSubmit={(event) => {
           event.preventDefault();
-          load(event.currentTarget);
+          const fields = new FormData(event.currentTarget);
+          load(groupsFor(assignment), {
+            from: String(fields.get("from")),
+            to: String(fields.get("to")),
+            step: history.requestedRange.step,
+          });
         }}
       >
         <label>
@@ -267,10 +316,17 @@ function PublishedHistory({
       </form>
       <p role="status">
         {loading && t("coalitionHistory.loading")}
-        {failed && t("coalitionHistory.error")}
+        {failed && (
+          <>
+            {t("coalitionHistory.error")}{" "}
+            <button type="button" onClick={retry}>
+              {t("coalitionHistory.retry")}
+            </button>
+          </>
+        )}
       </p>
       <p>
-        <a href={coalitionSharePath(page.route.path, history.selection, history.requestedRange)}>
+        <a href={coalitionSharePath(page.route.path, groupsFor(assignment), requestedRange)}>
           {t("coalitionHistory.share")}
         </a>
       </p>

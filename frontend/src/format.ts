@@ -119,6 +119,13 @@ function interval(
   });
 }
 
+function share(value: number | null, language: Language, t: Translate): string {
+  if (typeof value === "number") {
+    return percent(decimal(value, language), language);
+  }
+  return t("estimate.unavailable");
+}
+
 export {
   colour,
   count,
@@ -128,6 +135,7 @@ export {
   level,
   percent,
   probability,
+  share,
   shortDate,
   timestamp,
 };

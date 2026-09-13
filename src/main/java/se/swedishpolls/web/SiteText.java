@@ -591,6 +591,7 @@ public final class SiteText {
     text.put("coalitionHistory.noParties", "inga partier");
     text.put("coalitionHistory.loading", "Uppdaterar perioden…");
     text.put("coalitionHistory.error", "Perioden kunde inte hämtas. Försök igen.");
+    text.put("coalitionHistory.retry", "Försök igen");
     text.put("coalitionHistory.cursor", "Gemensamt datum för båda blocken");
     text.put("coalitionHistory.table", "Datum, medelvärde och punktvist 95 % intervall");
     text.put("coalitionHistory.remainder", "Jämförbar rest");
@@ -598,6 +599,27 @@ public final class SiteText {
     text.put("coalitionHistory.unassigned", "Ej tilldelade partier");
     text.put("coalitionHistory.empty", "Inga skattningar i den valda perioden.");
     text.put("coalitionHistory.interval", "{mean} %, 95 % intervall {lower} till {upper} %");
+    text.put("coalitionEditor.title", "Bygg två block");
+    text.put(
+        "coalitionEditor.help",
+        "Dra en partibricka eller välj den och flytta den med knapparna. Escape avbryter ett val.");
+    text.put("coalitionEditor.support", "Senaste väljarstödet");
+    text.put("coalitionEditor.supportUnavailable", "Senaste väljarstödet kan inte visas.");
+    text.put("coalitionEditor.supportLabel", "Block A {a}, block B {b}, utanför båda {outside}");
+    text.put("coalitionEditor.a", "Block A");
+    text.put("coalitionEditor.b", "Block B");
+    text.put("coalitionEditor.unassigned", "Ej tilldelade partier");
+    text.put("coalitionEditor.remainder", "Jämförbar rest");
+    text.put("coalitionEditor.outside", "Utanför båda");
+    text.put("coalitionEditor.notSeats", "Väljarstöd, inte mandat");
+    text.put("coalitionEditor.moved", "{party} flyttades till {destination}");
+    text.put("coalitionEditor.moveHere", "Flytta hit {party}");
+    text.put("coalitionEditor.partyLabel", "{party}, {destination}. Välj för att flytta.");
+    text.put("coalitionEditor.emptyZone", "Släpp partier här");
+    text.put("coalitionEditor.reset", "Återställ");
+    text.put("coalitionEditor.clear", "Rensa");
+    text.put("coalitionEditor.noParties", "Inga partier");
+    text.put("coalitionEditor.assignParty", "Tilldela ett parti för att jämföra");
     text.put(
         "coalitions.lead",
         "Tio bestämda partikombinationer per {date}. Etiketten anger vilka partier som räknas"
@@ -1146,6 +1168,7 @@ public final class SiteText {
     text.put("coalitionHistory.noParties", "no parties");
     text.put("coalitionHistory.loading", "Updating range…");
     text.put("coalitionHistory.error", "Could not load this range. Try again.");
+    text.put("coalitionHistory.retry", "Retry");
     text.put("coalitionHistory.cursor", "Shared date for both blocks");
     text.put("coalitionHistory.table", "Date, mean and pointwise 95% interval");
     text.put("coalitionHistory.remainder", "Comparable remainder");
@@ -1153,6 +1176,28 @@ public final class SiteText {
     text.put("coalitionHistory.unassigned", "Unassigned parties");
     text.put("coalitionHistory.empty", "No estimates in the selected range.");
     text.put("coalitionHistory.interval", "{mean}%, 95% interval {lower} to {upper}%");
+    text.put("coalitionEditor.title", "Build two coalitions");
+    text.put(
+        "coalitionEditor.help",
+        "Drag a party tile, or select it and use the move buttons. Escape cancels a selection.");
+    text.put("coalitionEditor.support", "Latest voting intention");
+    text.put("coalitionEditor.supportUnavailable", "Latest voting intention is unavailable.");
+    text.put(
+        "coalitionEditor.supportLabel", "Coalition A {a}, coalition B {b}, outside both {outside}");
+    text.put("coalitionEditor.a", "Coalition A");
+    text.put("coalitionEditor.b", "Coalition B");
+    text.put("coalitionEditor.unassigned", "Unassigned parties");
+    text.put("coalitionEditor.remainder", "Comparable remainder");
+    text.put("coalitionEditor.outside", "Outside both");
+    text.put("coalitionEditor.notSeats", "Support, not seats");
+    text.put("coalitionEditor.moved", "{party} moved to {destination}");
+    text.put("coalitionEditor.moveHere", "Move here {party}");
+    text.put("coalitionEditor.partyLabel", "{party}, {destination}. Select to move.");
+    text.put("coalitionEditor.emptyZone", "Drop parties here");
+    text.put("coalitionEditor.reset", "Reset");
+    text.put("coalitionEditor.clear", "Clear");
+    text.put("coalitionEditor.noParties", "No parties");
+    text.put("coalitionEditor.assignParty", "Assign a party to compare");
     text.put(
         "coalitions.lead",
         "Ten fixed party combinations as of {date}. The label states which parties are counted"
