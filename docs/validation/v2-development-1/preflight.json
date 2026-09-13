@@ -1,7 +1,7 @@
 {
   "status" : "ready",
   "protocolVersion" : "v2-development-1",
-  "registrationSha256" : "ad538782b28341f3450bb0286b153c576bbe5f75b52a6093175b4fed42a4f9b9",
+  "registrationSha256" : "84eb0bb797bca506debe7b154856bd212bf633f159e83b67a385221249f4528b",
   "sourceSha256" : "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
   "folds" : 96,
   "activeFolds" : 75,
