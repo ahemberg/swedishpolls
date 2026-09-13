@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.ejml.simple.SimpleMatrix;
 import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.Roster;
 import tools.jackson.databind.JsonNode;
@@ -31,6 +32,20 @@ public final class DevelopmentValidation {
   private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final String FROZEN = "frozen";
   private static final String VERSION = "v2-development-1";
+  private static final String PREPARE_COMMAND =
+      "./mvnw -DskipTests spring-boot:run"
+          + " -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation"
+          + " -Dspring-boot.run.arguments='prepare"
+          + " docs/validation/v2-development-1/registration-plan.json"
+          + " src/test/resources/polls/audit.csv"
+          + " docs/validation/v2-development-1/registration.json'";
+  private static final String PREFLIGHT_COMMAND =
+      "./mvnw -DskipTests spring-boot:run"
+          + " -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation"
+          + " -Dspring-boot.run.arguments='preflight"
+          + " docs/validation/v2-development-1/registration.json"
+          + " src/test/resources/polls/audit.csv"
+          + " docs/validation/v2-development-1/preflight.json'";
 
   private DevelopmentValidation() {}
 
@@ -303,7 +318,9 @@ public final class DevelopmentValidation {
                     20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914,
                     20260915)),
         "Approved precision seeds mismatch");
-    require(required(plan, "commands").size() == 2, "Approved commands are incomplete");
+    require(
+        strings(plan, "commands").equals(List.of(PREPARE_COMMAND, PREFLIGHT_COMMAND)),
+        "Approved commands mismatch");
     require(
         required(plan, "outputLocation")
             .asString()
@@ -327,9 +344,27 @@ public final class DevelopmentValidation {
             "src/main/java/se/swedishpolls/estimation/PollObservations.java",
             "docs/validation/protocol.json",
             "docs/validation/diagnostics.json",
+            "docs/validation/coverage.json",
+            "docs/validation/tuning.json",
+            "docs/validation/history.json",
+            "docs/validation/uncertainty.json",
+            "docs/validation/remainder.json",
+            "docs/validation/seats.json",
+            "docs/validation/development-gates.json",
+            "docs/validation/release-audit.json",
             "src/main/resources/publication/model-freeze.json")) {
       require(identities.contains(path), "Missing required identity " + path);
     }
+    final JsonNode gates = required(plan, "gateDefinitions");
+    require(
+        required(gates, "protocol").asString().equals("docs/validation/protocol.json")
+            && required(gates, "development")
+                .asString()
+                .equals("docs/validation/development-gates.json")
+            && required(gates, "proposal")
+                .asString()
+                .equals("docs/validation/remediation-protocol-v2-proposal.md"),
+        "Approved gate definitions mismatch");
     final Map<String, String> environment =
         Map.of(
             "javaVersion", "25.0.4",
@@ -483,6 +518,40 @@ public final class DevelopmentValidation {
     environment(environment, "javaVersion", "java.version");
     environment(environment, "osName", "os.name");
     environment(environment, "osArch", "os.arch");
+    require(
+        command(null, "Cannot inspect Maven", "./mvnw", "--version")
+            .startsWith("Apache Maven " + required(environment, "mavenVersion").asString() + " "),
+        "Environment identity mismatch: mavenVersion");
+    require(
+        command(null, "Cannot inspect Node", "target/node/node", "--version")
+            .trim()
+            .equals("v" + required(environment, "nodeVersion").asString()),
+        "Environment identity mismatch: nodeVersion");
+    require(
+        command(
+                null,
+                "Cannot inspect npm",
+                "target/node/node",
+                "target/node/node_modules/npm/bin/npm-cli.js",
+                "--version")
+            .trim()
+            .equals(required(environment, "npmVersion").asString()),
+        "Environment identity mismatch: npmVersion");
+    final String ejmlLocation =
+        SimpleMatrix.class.getProtectionDomain().getCodeSource().getLocation().toString();
+    require(
+        ejmlLocation.contains("/" + required(environment, "ejmlVersion").asString() + "/")
+            || ejmlLocation.contains(
+                "-" + required(environment, "ejmlVersion").asString() + ".jar"),
+        "Environment identity mismatch: ejmlVersion");
+    require(
+        text(Path.of("compose.yaml"))
+            .contains("image: " + required(environment, "postgresImage").asString()),
+        "Environment identity mismatch: postgresImage");
+    require(
+        text(Path.of("pom.xml"))
+            .contains("<runtime.image>" + required(environment, "runtimeImage").asString()),
+        "Environment identity mismatch: runtimeImage");
   }
 
   private static void environment(JsonNode registered, String field, String property) {
@@ -557,6 +626,10 @@ public final class DevelopmentValidation {
     final List<String> command = new ArrayList<>();
     command.add("git");
     command.addAll(List.of(arguments));
+    return command(directory, failure, command.toArray(String[]::new));
+  }
+
+  private static String command(Path directory, String failure, String... command) {
     try {
       final ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
       if (directory != null) builder.directory(directory.toFile());
