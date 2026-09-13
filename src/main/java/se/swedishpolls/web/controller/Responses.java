@@ -24,16 +24,27 @@ final class Responses {
   static ResponseEntity<byte[]> respond(
       byte[] body, MediaType mediaType, boolean permanent, String ifNoneMatch) {
     final String etag = "\"" + sha256(body) + "\"";
-    final CacheControl cache =
-        permanent
-            ? CacheControl.maxAge(Duration.ofSeconds(IMMUTABLE_MAX_AGE_SECONDS))
-                .cachePublic()
-                .immutable()
-            : CacheControl.maxAge(Duration.ofSeconds(CURRENT_MAX_AGE_SECONDS)).cachePublic();
+    final CacheControl cache = cache(permanent);
     if (etag.equals(ifNoneMatch)) {
       return ResponseEntity.status(HttpStatus.NOT_MODIFIED).eTag(etag).cacheControl(cache).build();
     }
     return ResponseEntity.ok().eTag(etag).cacheControl(cache).contentType(mediaType).body(body);
+  }
+
+  static <T> ResponseEntity<T> render(T body, boolean permanent) {
+    return render(body, MediaType.APPLICATION_JSON, permanent);
+  }
+
+  static <T> ResponseEntity<T> render(T body, MediaType mediaType, boolean permanent) {
+    return ResponseEntity.ok().cacheControl(cache(permanent)).contentType(mediaType).body(body);
+  }
+
+  private static CacheControl cache(boolean permanent) {
+    return permanent
+        ? CacheControl.maxAge(Duration.ofSeconds(IMMUTABLE_MAX_AGE_SECONDS))
+            .cachePublic()
+            .immutable()
+        : CacheControl.maxAge(Duration.ofSeconds(CURRENT_MAX_AGE_SECONDS)).cachePublic();
   }
 
   private static String sha256(byte[] body) {
