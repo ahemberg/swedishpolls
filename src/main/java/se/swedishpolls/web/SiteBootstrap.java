@@ -97,12 +97,47 @@ public final class SiteBootstrap {
    * documents its family reads. Everything the page shows comes from this one object.
    */
   public ObjectNode page(SiteRoutes.Route route, Publications.Resolved resolved) {
-    return page(route, resolved, PollRequest.unfiltered());
+    return page(
+        route,
+        resolved,
+        PollRequest.unfiltered(),
+        new CoalitionHistoryQuery.Request(CoalitionSelection.preset(), null, null, LONG_STEP));
+  }
+
+  public ObjectNode coalitionPage(
+      SiteRoutes.Route route,
+      Publications.Resolved resolved,
+      CoalitionHistoryQuery.Request request) {
+    return page(route, resolved, PollRequest.unfiltered(), request);
+  }
+
+  public ObjectNode invalidCoalitionPage(
+      SiteRoutes.Route route,
+      Publications.Resolved resolved,
+      Map<String, List<String>> parameters,
+      CoalitionSelection.Invalid error) {
+    final ObjectNode page = shell(route);
+    publication(page, resolved.header(), resolved.permanent());
+    chamber(page, resolved.header());
+    coalitionLinkError(page, route, parameters, error);
+    return page;
   }
 
   /** The same page, with the filter state a polls request declared. Other families ignore it. */
   public ObjectNode page(
       SiteRoutes.Route route, Publications.Resolved resolved, PollRequest polls) {
+    return page(
+        route,
+        resolved,
+        polls,
+        new CoalitionHistoryQuery.Request(CoalitionSelection.preset(), null, null, LONG_STEP));
+  }
+
+  private ObjectNode page(
+      SiteRoutes.Route route,
+      Publications.Resolved resolved,
+      PollRequest polls,
+      CoalitionHistoryQuery.Request coalitionRequest) {
     final PublicationHeader header = resolved.header();
     final ObjectNode page = shell(route);
     publication(page, header, resolved.permanent());
@@ -117,13 +152,8 @@ public final class SiteBootstrap {
             .coalitionHistory(header)
             .ifPresent(
                 body ->
-                    ((ObjectNode) page.get("data"))
-                        .set(
-                            "coalitionHistory",
-                            CoalitionHistoryQuery.sample(
-                                (ObjectNode) JSON.readTree(body),
-                                new CoalitionHistoryQuery.Request(
-                                    CoalitionSelection.preset(), null, null, LONG_STEP))));
+                    coalitionHistory(
+                        page, route, (ObjectNode) JSON.readTree(body), coalitionRequest));
       }
       case POLLS -> pollTable(page, header, polls);
       case POLLSTERS -> pollsters(page, header);
@@ -133,6 +163,60 @@ public final class SiteBootstrap {
       party(page, header, route.parameter());
     }
     return page;
+  }
+
+  private static void coalitionHistory(
+      ObjectNode page,
+      SiteRoutes.Route route,
+      ObjectNode stored,
+      CoalitionHistoryQuery.Request request) {
+    final ObjectNode history = CoalitionHistoryQuery.sample(stored, request);
+    ((ObjectNode) page.get("data")).set("coalitionHistory", history);
+    final String query =
+        "?a="
+            + joined(history, "a")
+            + "&b="
+            + joined(history, "b")
+            + "&from="
+            + history.get("requestedRange").get("from").asString()
+            + "&to="
+            + history.get("requestedRange").get("to").asString();
+    final String path =
+        SiteRoutes.path(route.family(), route.language(), route.parameter()) + query;
+    ((ObjectNode) page.get("route")).put("path", path);
+    final ObjectNode alternates = (ObjectNode) page.get("alternates");
+    for (final String language : Translations.LANGUAGES) {
+      alternates.put(
+          language, SiteRoutes.path(route.family(), language, route.parameter()) + query);
+    }
+    page.put("coalitionShare", path);
+    page.put("customCoalitionSelection", !request.selection().equals(CoalitionSelection.preset()));
+  }
+
+  private static void coalitionLinkError(
+      ObjectNode page,
+      SiteRoutes.Route route,
+      Map<String, List<String>> parameters,
+      CoalitionSelection.Invalid error) {
+    final ObjectNode invalid = page.putObject("coalitionLinkError");
+    invalid.put("field", error.field());
+    invalid.put(
+        "reason", SiteText.of(route.language()).text("coalitionHistory.invalid." + error.reason()));
+    invalid.put("reset", SiteRoutes.path(route.family(), route.language(), route.parameter()));
+    final ObjectNode requested = invalid.putObject("requested");
+    for (final String name : List.of("a", "b", "parties", "from", "to")) {
+      if (parameters.containsKey(name)) {
+        final ArrayNode values = requested.putArray(name);
+        parameters.get(name).forEach(values::add);
+      }
+    }
+    page.put("customCoalitionSelection", true);
+  }
+
+  private static String joined(ObjectNode history, String block) {
+    final List<String> parties = new ArrayList<>();
+    history.get("selection").get(block).forEach(party -> parties.add(party.asString()));
+    return String.join(",", parties);
   }
 
   /**

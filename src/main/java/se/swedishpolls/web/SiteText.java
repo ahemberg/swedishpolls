@@ -124,6 +124,9 @@ public final class SiteText {
         "Tio regeringsunderlag per {date}: mandatintervall, sannolikhet för egen majoritet och"
             + " jämförelser mellan dem. Inte en valprognos.");
     text.put(
+        "head.description.coalitionComparison",
+        "Jämför block A ({a}) med block B ({b}) från {from} till {to}.");
+    text.put(
         "head.imageAlt.seats", "Sammanfattande bild: approximerad mandatfördelning per {date}.");
     text.put("head.imageAlt.coalitions", "Sammanfattande bild: regeringsunderlag per {date}.");
 
@@ -561,6 +564,31 @@ public final class SiteText {
     text.put("coalitionHistory.from", "Från");
     text.put("coalitionHistory.to", "Till");
     text.put("coalitionHistory.apply", "Visa period");
+    text.put("coalitionHistory.share", "Länk till jämförelsen");
+    text.put("coalitionHistory.invalid", "Länken till jämförelsen är ogiltig.");
+    text.put("coalitionHistory.invalid.overlap", "Ett parti får inte ingå i båda blocken.");
+    text.put(
+        "coalitionHistory.invalid.missing_block",
+        "Både a och b krävs. Ett tomt värde väljer inga partier.");
+    text.put(
+        "coalitionHistory.invalid.invalid_party",
+        "Använd varje versal kod för de åtta partierna högst en gång, utan blanksteg eller tomma delar.");
+    text.put(
+        "coalitionHistory.invalid.mixed_parameters", "Blanda inte parametern parties med a och b.");
+    text.put("coalitionHistory.invalid.repeated_parameter", "Ange parametern exakt en gång.");
+    text.put(
+        "coalitionHistory.invalid.reversed_range",
+        "Slutdatumet måste vara samma som eller senare än startdatumet.");
+    text.put(
+        "coalitionHistory.invalid.malformed_date",
+        "Använd ett riktigt datum som ÅÅÅÅ-MM-DD från år 0001 till 9999.");
+    text.put("coalitionHistory.invalid.invalid_date", "Använd ett riktigt kalenderdatum.");
+    text.put(
+        "coalitionHistory.invalid.resolved_reversed_range",
+        "Det valda slutdatumet är före startdatumet.");
+    text.put("coalitionHistory.invalid.unsupported_step", "Använd steget 1, 3 eller 7.");
+    text.put("coalitionHistory.reset", "Återställ standardblocken");
+    text.put("coalitionHistory.noParties", "inga partier");
     text.put("coalitionHistory.loading", "Uppdaterar perioden…");
     text.put("coalitionHistory.error", "Perioden kunde inte hämtas. Försök igen.");
     text.put("coalitionHistory.cursor", "Gemensamt datum för båda blocken");
@@ -655,6 +683,9 @@ public final class SiteText {
         "head.description.coalitions",
         "Ten coalitions as of {date}: seat intervals, majority probabilities and comparisons"
             + " between them. Not an election forecast.");
+    text.put(
+        "head.description.coalitionComparison",
+        "Compare block A ({a}) with block B ({b}) from {from} to {to}.");
     text.put("head.imageAlt.seats", "Summary image: national seat approximation as of {date}.");
     text.put("head.imageAlt.coalitions", "Summary image: coalitions as of {date}.");
 
@@ -1087,6 +1118,32 @@ public final class SiteText {
     text.put("coalitionHistory.from", "From");
     text.put("coalitionHistory.to", "To");
     text.put("coalitionHistory.apply", "Show range");
+    text.put("coalitionHistory.share", "Link to this comparison");
+    text.put("coalitionHistory.invalid", "This comparison link is invalid.");
+    text.put("coalitionHistory.invalid.overlap", "A party cannot belong to both coalitions.");
+    text.put(
+        "coalitionHistory.invalid.missing_block",
+        "Both a and b are required; an empty value selects no parties.");
+    text.put(
+        "coalitionHistory.invalid.invalid_party",
+        "Use each uppercase eight-party code at most once, without spaces or empty tokens.");
+    text.put(
+        "coalitionHistory.invalid.mixed_parameters",
+        "Do not mix parties with the a and b parameters.");
+    text.put("coalitionHistory.invalid.repeated_parameter", "Supply this parameter exactly once.");
+    text.put(
+        "coalitionHistory.invalid.reversed_range",
+        "The end date must be on or after the start date.");
+    text.put(
+        "coalitionHistory.invalid.malformed_date",
+        "Use a real YYYY-MM-DD date in years 0001 through 9999.");
+    text.put("coalitionHistory.invalid.invalid_date", "Use a real calendar date.");
+    text.put(
+        "coalitionHistory.invalid.resolved_reversed_range",
+        "The resolved end date precedes the start date.");
+    text.put("coalitionHistory.invalid.unsupported_step", "Use a step of 1, 3 or 7.");
+    text.put("coalitionHistory.reset", "Reset to the preset coalitions");
+    text.put("coalitionHistory.noParties", "no parties");
     text.put("coalitionHistory.loading", "Updating range…");
     text.put("coalitionHistory.error", "Could not load this range. Try again.");
     text.put("coalitionHistory.cursor", "Shared date for both blocks");

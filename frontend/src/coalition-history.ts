@@ -1,6 +1,12 @@
 import type { Series } from "./bootstrap";
 
 type Block = "a" | "b";
+interface CoalitionLinkError {
+  readonly field: string;
+  readonly reason: string;
+  readonly reset: string;
+  readonly requested: Readonly<Record<string, readonly string[]>>;
+}
 interface Summary {
   readonly mean: number | null;
   readonly lower: number | null;
@@ -168,5 +174,13 @@ function fitSegments(history: SegmentedHistory): readonly (readonly number[])[] 
   }, []);
 }
 
-export type { Block, CoalitionHistoryData };
-export { BLOCKS, blockColors, fitSegments };
+function coalitionSharePath(
+  path: string,
+  selection: CoalitionHistoryData["selection"],
+  range: Pick<CoalitionHistoryData["requestedRange"], "from" | "to">,
+): string {
+  return `${path.split("?")[0]}?a=${selection.a.join(",")}&b=${selection.b.join(",")}&from=${range.from}&to=${range.to}`;
+}
+
+export type { Block, CoalitionHistoryData, CoalitionLinkError };
+export { BLOCKS, blockColors, coalitionSharePath, fitSegments };

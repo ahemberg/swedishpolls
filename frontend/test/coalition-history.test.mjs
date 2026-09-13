@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { blockColors, fitSegments } from '../src/coalition-history.ts';
+import { blockColors, coalitionSharePath, fitSegments } from '../src/coalition-history.ts';
+
+test('share paths keep the current canonical assignment and range', () => {
+  assert.equal(
+    coalitionSharePath('/en/coalitions?old=yes', {a:['S','V'], b:[]}, {from:'2020-01-01',to:'2020-12-31'}),
+    '/en/coalitions?a=S,V&b=&from=2020-01-01&to=2020-12-31'
+  );
+});
 
 test('approved mixtures use latest support, conditional SD blue and neutral missing weights', () => {
   assert.equal(blockColors([['S', 'M'], []], {S:10,M:30})[0], '#463864');

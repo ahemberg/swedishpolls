@@ -135,6 +135,17 @@ public final class SiteHtml {
       return text.text("unavailable.body");
     }
     final SiteRoutes.Family family = family(bootstrap);
+    if (family == SiteRoutes.Family.COALITIONS && bootstrap.path("data").has("coalitionHistory")) {
+      final JsonNode history = bootstrap.get("data").get("coalitionHistory");
+      String result =
+          SiteText.fill(
+              text.text("head.description.coalitionComparison"),
+              "a",
+              members(history.get("selection").get("a"), text));
+      result = SiteText.fill(result, "b", members(history.get("selection").get("b"), text));
+      result = SiteText.fill(result, "from", history.get("requestedRange").get("from").asString());
+      return SiteText.fill(result, "to", history.get("requestedRange").get("to").asString());
+    }
     final boolean party = family == SiteRoutes.Family.PARTY;
     final String key =
         party && bootstrap.get("data").get("party").get("historicalOnly").asBoolean()
@@ -145,6 +156,14 @@ public final class SiteHtml {
     }
     final String dated = SiteText.fill(text.text(key), "date", fieldwork(bootstrap));
     return party ? SiteText.fill(dated, "party", partyName(bootstrap)) : dated;
+  }
+
+  private static String members(JsonNode selection, SiteText text) {
+    final List<String> members = new ArrayList<>();
+    selection.forEach(party -> members.add(party.asString()));
+    return members.isEmpty()
+        ? text.text("coalitionHistory.noParties")
+        : String.join(" + ", members);
   }
 
   private static String imageAlt(ObjectNode bootstrap, SiteText text) {
@@ -174,6 +193,10 @@ public final class SiteHtml {
    */
   private static String shareImage(ObjectNode bootstrap) {
     if (!bootstrap.has("publication")) {
+      return null;
+    }
+    if (family(bootstrap) == SiteRoutes.Family.COALITIONS
+        && bootstrap.path("customCoalitionSelection").asBoolean()) {
       return null;
     }
     final JsonNode card = bootstrap.get("publication").get("assets").get(cardKind(bootstrap));
@@ -428,6 +451,19 @@ public final class SiteHtml {
     html.append("<section class=\"sec\"><h2>")
         .append(escape(text.text("coalitionHistory.title")))
         .append("</h2>");
+    final JsonNode invalid = bootstrap.path("coalitionLinkError");
+    if (!invalid.isMissingNode()) {
+      html.append("<div role=\"alert\"><p>")
+          .append(escape(text.text("coalitionHistory.invalid")))
+          .append(" ")
+          .append(escape(invalid.get("reason").asString()))
+          .append("</p><a href=\"")
+          .append(escape(invalid.get("reset").asString()))
+          .append("\">")
+          .append(escape(text.text("coalitionHistory.reset")))
+          .append("</a></div></section>");
+      return;
+    }
     if (history.isMissingNode()) {
       html.append("<p>")
           .append(escape(text.text("coalitionHistory.unavailable")))
@@ -467,6 +503,23 @@ public final class SiteHtml {
                       text)))
           .append("</p>");
     }
+    final String path = bootstrap.get("route").get("path").asString();
+    final String action = path.substring(0, path.indexOf('?'));
+    html.append("<form class=\"coalition-range\" method=\"get\" action=\"")
+        .append(escape(action))
+        .append("\">");
+    hidden(html, "a", joined(history.get("selection").get("a")));
+    hidden(html, "b", joined(history.get("selection").get("b")));
+    coalitionDate(
+        html, text, true, LocalDate.parse(history.get("requestedRange").get("from").asString()));
+    coalitionDate(
+        html, text, false, LocalDate.parse(history.get("requestedRange").get("to").asString()));
+    html.append("<button type=\"submit\">")
+        .append(escape(text.text("coalitionHistory.apply")))
+        .append("</button></form>");
+    if (history.get("dates").isEmpty()) {
+      html.append("<p>").append(escape(text.text("coalitionHistory.empty"))).append("</p>");
+    }
     html.append("<div class=\"scroll\"><table class=\"coalition-history\"><caption>")
         .append(escape(text.text("coalitionHistory.table")))
         .append("</caption><thead><tr><th scope=\"col\">")
@@ -496,7 +549,29 @@ public final class SiteHtml {
       }
       html.append("</tr>");
     }
-    html.append("</tbody></table></div></section>");
+    html.append("</tbody></table></div><p><a href=\"")
+        .append(escape(bootstrap.get("coalitionShare").asString()))
+        .append("\">")
+        .append(escape(text.text("coalitionHistory.share")))
+        .append("</a></p></section>");
+  }
+
+  private static String joined(JsonNode parties) {
+    final List<String> values = new ArrayList<>();
+    parties.forEach(party -> values.add(party.asString()));
+    return String.join(",", values);
+  }
+
+  private static void coalitionDate(
+      StringBuilder html, SiteText text, boolean from, LocalDate value) {
+    final String field = from ? "from" : "to";
+    html.append("<label>")
+        .append(escape(text.text("coalitionHistory." + field)))
+        .append("<input type=\"date\" name=\"")
+        .append(field)
+        .append("\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"")
+        .append(value)
+        .append("\" required></label>");
   }
 
   private static String coalitionInterval(

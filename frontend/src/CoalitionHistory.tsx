@@ -2,7 +2,12 @@ import { type JSX, useEffect, useRef, useState } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
 import { CoalitionHistoryPlot } from "./CoalitionHistoryPlot";
 
-import { BLOCKS, type CoalitionHistoryData } from "./coalition-history";
+import {
+  BLOCKS,
+  type CoalitionHistoryData,
+  type CoalitionLinkError,
+  coalitionSharePath,
+} from "./coalition-history";
 import { decimal, interval, percent, shortDate, timestamp } from "./format";
 import { TimelineTable } from "./TimelineTable";
 import { useCursor } from "./useCursor";
@@ -11,6 +16,7 @@ import { historyJson } from "./useHistory";
 interface Props {
   readonly page: Bootstrap;
   readonly history: CoalitionHistoryData | undefined;
+  readonly error: CoalitionLinkError | undefined;
   readonly t: Translate;
 }
 const SEPARATOR = ": ";
@@ -263,6 +269,11 @@ function PublishedHistory({
         {loading && t("coalitionHistory.loading")}
         {failed && t("coalitionHistory.error")}
       </p>
+      <p>
+        <a href={coalitionSharePath(page.route.path, history.selection, history.requestedRange)}>
+          {t("coalitionHistory.share")}
+        </a>
+      </p>
       <div aria-busy={loading}>
         <HistoryChart
           key={`${history.requestedRange.from}/${history.requestedRange.to}`}
@@ -275,7 +286,20 @@ function PublishedHistory({
   );
 }
 
-function CoalitionHistory({ page, history, t }: Props): JSX.Element {
+function CoalitionHistory({ page, history, error, t }: Props): JSX.Element {
+  if (error !== undefined) {
+    return (
+      <section className="sec coalition-history-section">
+        <h2>{t("coalitionHistory.title")}</h2>
+        <div role="alert">
+          <p>
+            {t("coalitionHistory.invalid")} {error.reason}
+          </p>
+          <a href={error.reset}>{t("coalitionHistory.reset")}</a>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="sec coalition-history-section">
       <h2>{t("coalitionHistory.title")}</h2>
