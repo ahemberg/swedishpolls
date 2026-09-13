@@ -1,0 +1,29 @@
+{
+  "protocolVersion" : "coalition-history-1",
+  "sourceSha256" : "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+  "pipelineSeconds" : 449.524628886,
+  "outcome" : "PUBLISHED",
+  "detail" : null,
+  "jvmMaxHeapBytes" : 4294967296,
+  "javaRuntime" : "25.0.4+7-1-24.04-Ubuntu",
+  "releaseScope" : "Isolated benchmark fixture only. Live frozen release remains blocked.",
+  "artifactBytes" : 109201059,
+  "artifactSha256" : "a322981f24e4dc1bfad93ef488fab7974907f391f5c66190914388dfab31d0a4",
+  "precision" : {
+    "seeds" : [ 20260908, 20260909, 20260910 ],
+    "periods" : [ {
+      "dates" : [ "2010-01-04", "2017-03-26", "2018-08-30", "2024-06-15", "2024-07-29", "2025-08-16", "2026-05-13", "2026-09-03" ],
+      "periodId" : "eight_party_2010",
+      "comparedSummaries" : 6120,
+      "maxMeanErrorPoints" : 0.02299143561012329,
+      "maxEndpointErrorPoints" : 0.07660232022019642
+    } ],
+    "referenceSeed" : 20260911,
+    "referenceDraws" : 40000,
+    "protocolVersion" : "coalition-history-1",
+    "maxMeanErrorPoints" : 0.12,
+    "maxEndpointErrorPoints" : 0.12
+  },
+  "images" : 26,
+  "processHighWaterMark" : "VmHWM:\t 3612236 kB"
+}
