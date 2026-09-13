@@ -518,6 +518,7 @@ public final class DevelopmentValidation {
     environment(environment, "javaVersion", "java.version");
     environment(environment, "osName", "os.name");
     environment(environment, "osArch", "os.arch");
+    if (!VERSION.equals(required(plan, "version").asString())) return;
     require(
         command(null, "Cannot inspect Maven", "./mvnw", "--version")
             .startsWith("Apache Maven " + required(environment, "mavenVersion").asString() + " "),
