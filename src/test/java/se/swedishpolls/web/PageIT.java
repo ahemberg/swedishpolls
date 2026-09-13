@@ -49,7 +49,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * The public pages, served from one published publication: both languages, the basic HTML a reader
- * gets before any script runs, and the metadata a shared link carries.
+ * gets before any script runs, and the metadata a shared link carries. These checks need the
+ * generated publication; request errors and cache policy live in {@code PageControllerTest}.
  */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -182,11 +183,6 @@ class PageIT {
   }
 
   @Test
-  void anUnknownPartySlugReturnsNotFound() {
-    assertEquals(404, get("/parti/okant").statusCode());
-  }
-
-  @Test
   void theOverviewCarriesItsHeadlineDateAndResultsTableBeforeAnyScriptRuns() {
     final String page = get("/").body();
     final JsonNode resolved = bootstrap(page);
@@ -301,11 +297,6 @@ class PageIT {
     final HttpResponse<String> current = get("/");
     assertTrue(header(current, "Cache-Control").contains("max-age=300"));
     assertFalse(header(current, "Cache-Control").contains("immutable"));
-  }
-
-  @Test
-  void anUnknownPublicationIsRefusedRatherThanFallingBackToTheCurrentOne() {
-    assertEquals(404, get("/?publication=pub_00000000T000000Z").statusCode());
   }
 
   @Test
