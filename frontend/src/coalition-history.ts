@@ -1,6 +1,10 @@
 import type { Series } from "./bootstrap";
 
 type Block = "a" | "b";
+const PARTIES = ["S", "M", "SD", "V", "C", "KD", "L", "MP"] as const;
+type Party = (typeof PARTIES)[number];
+type Destination = Block | "unassigned";
+type Assignment = readonly Destination[];
 interface Summary {
   readonly mean: number | null;
   readonly lower: number | null;
@@ -38,6 +42,7 @@ interface CoalitionHistoryData {
 }
 
 const BLOCKS: readonly Block[] = ["a", "b"];
+const PRESET: Assignment = ["a", "b", "b", "a", "a", "b", "b", "a"];
 const PALETTE: ReadonlyMap<string, string> = new Map([
   ["S", "#d22d3f"],
   ["M", "#173b70"],
@@ -141,6 +146,56 @@ function blockColors(
   );
 }
 
+function assignmentFromSelection(selection: CoalitionHistoryData["selection"]): Assignment {
+  return PARTIES.map((party) => {
+    if (selection.a.includes(party)) {
+      return "a";
+    }
+    if (selection.b.includes(party)) {
+      return "b";
+    }
+    return "unassigned";
+  });
+}
+
+function destinationOf(assignment: Assignment, party: Party): Destination {
+  return assignment[PARTIES.indexOf(party)] ?? "unassigned";
+}
+
+function groupsFor(assignment: Assignment): Readonly<Record<Block, readonly Party[]>> {
+  return {
+    a: PARTIES.filter((party) => destinationOf(assignment, party) === "a"),
+    b: PARTIES.filter((party) => destinationOf(assignment, party) === "b"),
+  };
+}
+
+function assign(assignment: Assignment, party: Party, destination: Destination): Assignment {
+  return assignment.map((current, index) => {
+    if (PARTIES[index] === party) {
+      return destination;
+    }
+    return current;
+  });
+}
+
+function emptyAssignment(): Assignment {
+  return PARTIES.map(() => "unassigned");
+}
+
+function total(
+  parties: readonly Party[],
+  shares: Readonly<Record<string, number | null>>,
+): number | null {
+  if (parties.some((party) => typeof shares[party] !== "number")) {
+    return null;
+  }
+  return parties.reduce((sum, party) => sum + (shares[party] ?? 0), 0);
+}
+
+function tileColor(party: Party): string {
+  return partyColor(party, false);
+}
+
 type SegmentedHistory = Pick<CoalitionHistoryData, "dates" | "fitIds" | "fitBoundaries" | "gaps">;
 
 function startsSegment(history: SegmentedHistory, index: number, date: string): boolean {
@@ -168,5 +223,18 @@ function fitSegments(history: SegmentedHistory): readonly (readonly number[])[] 
   }, []);
 }
 
-export type { Block, CoalitionHistoryData };
-export { BLOCKS, blockColors, fitSegments };
+export type { Assignment, Block, CoalitionHistoryData, Destination, Party };
+export {
+  assign,
+  assignmentFromSelection,
+  BLOCKS,
+  blockColors,
+  destinationOf,
+  emptyAssignment,
+  fitSegments,
+  groupsFor,
+  PARTIES,
+  PRESET,
+  tileColor,
+  total,
+};
