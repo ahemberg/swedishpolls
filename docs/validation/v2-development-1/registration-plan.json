@@ -1,7 +1,7 @@
 {
   "version": "v2-development-1",
   "registeredOn": "2026-09-13",
-  "implementationCommit": "b752faad5d6843c4e39038eeb0f30623bf66c23b",
+  "implementationCommit": "6d10a0fa42be05ac14b00014401a09f7de25905f",
   "authority": {
     "proposal": "v2-development-1-proposal-1",
     "proposalCommit": "d5699e82fd537ddc6bad817c4884c36a62752401",
@@ -20,10 +20,12 @@
     {"path": "frontend/package-lock.json", "sha256": "9435e439b60a378cf1c171d588aa47c27937d621416103fd1f90c7838bb9707b"},
     {"path": "compose.yaml", "sha256": "67e98177d8c54d7b284f79d6f732db78ce0d216e066faf54857fcbe8619291a6"},
     {"path": "compose.dev.yaml", "sha256": "b7db0e30c83eb4f04f03fa6eee862dc4ba309742b475072570f88cecb17fe8f2"},
-    {"path": "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java", "sha256": "c5824ac354044345ae9eab93d019ca8ae3920c037d24903ed9814976fec6da37"},
+    {"path": "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java", "sha256": "5b55392efff61d4eb54b71b37665a8c7625dccaa81ac2c8710fae6b27112cc15"},
     {"path": "src/main/java/se/swedishpolls/estimation/DevelopmentTuning.java", "sha256": "af76ea1981c2c263115f2ab693d77f6578026b01bd80fe6cfca9d05f135dae6e"},
     {"path": "src/main/java/se/swedishpolls/estimation/DevelopmentDiagnostics.java", "sha256": "b968fe1cba13ab376ac360faccc75e434b40773921819c4ffd898b629d26ac3a"},
     {"path": "src/main/java/se/swedishpolls/estimation/PollObservations.java", "sha256": "d6a0b2d400d538181d9f0fced69368dfd29831e6ec8c73be2eb3610fa351aa10"},
+    {"path": "src/main/java/se/swedishpolls/estimation/DailyStateSpace.java", "sha256": "2c7ddaa06ccaa47750313913caa600202a53a9fdb23eb7541bad94ee1259edbf"},
+    {"path": "src/main/java/se/swedishpolls/estimation/WindowFilter.java", "sha256": "47a4ebfa7fb38b63fbdfb96ad7e73b7bc2f9ba0a4cc090c235895a5230e6c3f1"},
     {"path": "src/main/java/se/swedishpolls/source/PollCsv.java", "sha256": "0ae713d15ceccc9ef1047ad98264f6f0d76bac9f787487d5f0d1e9e1dfc639b8"},
     {"path": "src/main/java/se/swedishpolls/source/Roster.java", "sha256": "b7b4bf64e44dde3a93b6daf9057dbf0378aa237b183d2e04bcc2d76df626a55c"},
     {"path": "docs/validation/protocol.json", "sha256": "6f774b8517078c88b82c1af3332a3478ec8e9f7156de529c7e20f4cfbcb4d667"},
@@ -118,6 +120,7 @@
   },
   "commands": [
     "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='prepare docs/validation/v2-development-1/registration-plan.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/registration.json'",
-    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='preflight docs/validation/v2-development-1/registration.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/preflight.json'"
+    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='preflight docs/validation/v2-development-1/registration.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/preflight.json'",
+    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='tune docs/validation/v2-development-1/registration.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/evidence/run-1/tuning.json'"
   ]
 }
