@@ -28,6 +28,7 @@ import tools.jackson.databind.node.ObjectNode;
 /** Prepares and checks the frozen inputs for the development-only v2 validation run. */
 public final class DevelopmentValidation {
   public static final int SUCCESS = 0;
+  public static final int BLOCKED = 1;
   public static final int REJECTED = 2;
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
@@ -47,6 +48,13 @@ public final class DevelopmentValidation {
           + " docs/validation/v2-development-1/registration.json"
           + " src/test/resources/polls/audit.csv"
           + " docs/validation/v2-development-1/preflight.json'";
+  private static final String TUNE_COMMAND =
+      "./mvnw -DskipTests spring-boot:run"
+          + " -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation"
+          + " -Dspring-boot.run.arguments='tune"
+          + " docs/validation/v2-development-1/registration.json"
+          + " src/test/resources/polls/audit.csv"
+          + " docs/validation/v2-development-1/evidence/run-1/tuning.json'";
 
   private DevelopmentValidation() {}
 
@@ -58,10 +66,14 @@ public final class DevelopmentValidation {
    * The operator entry point. Preparation never fits; preflight never creates the evidence path.
    */
   public static int run(String... args) {
-    if (args.length != 4 || (!args[0].equals("prepare") && !args[0].equals("preflight"))) {
+    if (args.length != 4
+        || (!args[0].equals("prepare")
+            && !args[0].equals("preflight")
+            && !args[0].equals("tune"))) {
       System.err.println(
           "Usage: prepare <plan.json> <source.csv> <registration.json> | preflight"
-              + " <registration.json> <source.csv> <result.json>");
+              + " <registration.json> <source.csv> <result.json> | tune"
+              + " <registration.json> <source.csv> <evidence.json>");
       return REJECTED;
     }
     final Path registrationInput = Path.of(args[1]);
@@ -69,7 +81,8 @@ public final class DevelopmentValidation {
     final Path output = Path.of(args[3]);
     try {
       if (args[0].equals("prepare")) prepare(registrationInput, source, output);
-      else preflight(registrationInput, source, output);
+      else if (args[0].equals("preflight")) preflight(registrationInput, source, output);
+      else return tune(registrationInput, source, output) ? SUCCESS : BLOCKED;
       return SUCCESS;
     } catch (RuntimeException e) {
       rejected(output, e.getMessage());
@@ -112,6 +125,25 @@ public final class DevelopmentValidation {
 
   private static void preflight(Path registrationFile, Path sourceFile, Path resultFile) {
     refuseExisting(resultFile);
+    final CheckedRegistration checked = check(registrationFile, sourceFile);
+    final JsonNode registration = checked.registration();
+    final ArrayNode rebuilt = checked.folds();
+
+    final ObjectNode result = JSON.createObjectNode();
+    result.put("status", "ready");
+    result.put("protocolVersion", required(registration, "version").asString());
+    result.put("registrationSha256", checked.registrationSha256());
+    result.put("sourceSha256", digest(sourceFile));
+    result.put("folds", rebuilt.size());
+    result.put(
+        "activeFolds",
+        rebuilt.valueStream().filter(row -> row.get("active").booleanValue()).count());
+    result.put("fitEvidence", "not_run");
+    result.putArray("reasons");
+    writeNew(resultFile, pretty(result));
+  }
+
+  private static CheckedRegistration check(Path registrationFile, Path sourceFile) {
     final byte[] registrationBytes = bytes(registrationFile);
     final String expected = text(checksum(registrationFile)).trim();
     require(expected.equals(sha256(registrationBytes)), "Registration checksum mismatch");
@@ -132,19 +164,196 @@ public final class DevelopmentValidation {
     compareArchived(plan, rebuilt);
     verifyApprovedManifest(plan, rebuilt);
     verifyFrozenLocation(plan, registrationFile);
+    return new CheckedRegistration(registration, plan, rebuilt, sha256(registrationBytes));
+  }
+
+  private static boolean tune(Path registrationFile, Path sourceFile, Path resultFile) {
+    refuseExisting(resultFile);
+    final CheckedRegistration checked = check(registrationFile, sourceFile);
+    verifyEvidenceLocation(checked.plan(), resultFile);
+    final List<PollCsv.Poll> polls = PollCsv.parse(bytes(sourceFile));
+    final DevelopmentTuning.Grid grid = grid(checked.plan());
+    final List<LocalDate> elections = dates(checked.plan(), "electionCycleDates");
+    final Map<String, Roster.CoveragePeriod> periods = new LinkedHashMap<>();
+    for (JsonNode declared : required(checked.plan(), "periods")) {
+      final Roster.CoveragePeriod period = period(declared);
+      periods.put(period.id(), period);
+    }
 
     final ObjectNode result = JSON.createObjectNode();
-    result.put("status", "ready");
-    result.put("protocolVersion", required(registration, "version").asString());
-    result.put("registrationSha256", sha256(registrationBytes));
+    result.put("protocolVersion", required(checked.registration(), "version").asString());
+    result.put("registrationSha256", checked.registrationSha256());
     result.put("sourceSha256", digest(sourceFile));
-    result.put("folds", rebuilt.size());
-    result.put(
-        "activeFolds",
-        rebuilt.valueStream().filter(row -> row.get("active").booleanValue()).count());
-    result.put("fitEvidence", "not_run");
-    result.putArray("reasons");
+    result.put("fitEvidence", "complete");
+    final ObjectNode evidenceGrid = ((ObjectNode) required(checked.plan(), "grid")).deepCopy();
+    evidenceGrid.put(
+        "interpretation",
+        "values below one are development-only underdispersion relative to nominal multinomial covariance");
+    result.set("grid", evidenceGrid);
+    final ArrayNode reasons = result.putArray("reasons");
+    final ArrayNode folds = result.putArray("folds");
+    boolean passed = true;
+    for (JsonNode manifest : checked.folds()) {
+      final ObjectNode foldResult = folds.addObject();
+      copy(manifest, foldResult, "periodId", "cutoff", "scoreThrough", "active");
+      foldResult.set("trainingObservationRows", manifest.get("trainingObservationRows"));
+      foldResult.put(
+          "trainingObservationRowsSha256",
+          manifest.get("trainingObservationRowsSha256").asString());
+      if (!manifest.get("active").booleanValue()) {
+        foldResult.put("reason", required(manifest, "reason").asString());
+        continue;
+      }
+      final String periodId = manifest.get("periodId").asString();
+      final DevelopmentTuning.Fold fold =
+          new DevelopmentTuning.Fold(
+              LocalDate.parse(manifest.get("cutoff").asString()),
+              LocalDate.parse(manifest.get("scoreThrough").asString()));
+      final PollObservations.Batch training =
+          PollObservations.prepare(periods.get(periodId), DevelopmentTuning.training(polls, fold));
+      final ArrayNode methods = foldResult.putArray("methods");
+      for (FittedMethod method : FittedMethod.values()) {
+        final ObjectNode search = search(methods, method, training, elections, grid);
+        if (!search.get("gatePassed").booleanValue()) {
+          passed = false;
+          for (JsonNode reason : search.get("reasons"))
+            reasons.add(
+                periodId + " " + fold.cutoff() + " " + method.id + ": " + reason.asString());
+        }
+      }
+    }
+    result.put("gatePassed", passed);
+    result.put("status", passed ? "complete" : "blocked");
     writeNew(resultFile, pretty(result));
+    return passed;
+  }
+
+  private static ObjectNode search(
+      ArrayNode methods,
+      FittedMethod method,
+      PollObservations.Batch training,
+      List<LocalDate> elections,
+      DevelopmentTuning.Grid grid) {
+    final List<SearchAttempt> attempts =
+        grid.points().parallelStream()
+            .map(point -> attempt(method, training, elections, point))
+            .toList();
+    final ObjectNode result = methods.addObject();
+    result.put("method", method.id);
+    final ArrayNode evidence = result.putArray("attempts");
+    int best = -1;
+    final ArrayNode reasons = result.putArray("reasons");
+    for (int index = 0; index < attempts.size(); index++) {
+      final SearchAttempt attempt = attempts.get(index);
+      final ObjectNode point = evidence.addObject();
+      parameters(point.putObject("parameters"), attempt.parameters());
+      if (attempt.reason() == null) {
+        point.put("status", "resolved");
+        point.put("logLikelihood", attempt.logLikelihood());
+        if (best < 0 || attempt.logLikelihood() > attempts.get(best).logLikelihood()) best = index;
+      } else {
+        point.put("status", "failed");
+        point.put("reason", attempt.reason());
+        reasons.add(
+            "required grid point failed at " + attempt.parameters() + ": " + attempt.reason());
+      }
+    }
+    final ArrayNode boundaries = result.putArray("gridBoundaries");
+    boolean available = best >= 0;
+    if (available) {
+      final SearchAttempt selected = attempts.get(best);
+      parameters(result.putObject("selectedParameters"), selected.parameters());
+      result.put("selectedLogLikelihood", selected.logLikelihood());
+      boundary(
+          boundaries,
+          "walkVariance",
+          grid.walkVariances().indexOf(selected.parameters().walkVariance()),
+          grid.walkVariances().size());
+      boundary(
+          boundaries,
+          "houseScale",
+          grid.houseScales().indexOf(selected.parameters().houseScale()),
+          grid.houseScales().size());
+      boundary(
+          boundaries,
+          "covarianceMultiplier",
+          grid.covarianceMultipliers().indexOf(selected.parameters().covarianceMultiplier()),
+          grid.covarianceMultipliers().size());
+      try {
+        confirm(method, training, elections, selected);
+      } catch (RuntimeException e) {
+        available = false;
+        reasons.add("selected fit could not be retained: " + e.getMessage());
+      }
+      if (!boundaries.isEmpty()) reasons.add("selected parameters sit on a grid boundary");
+    } else {
+      reasons.add("no parameter point resolved finitely");
+    }
+    result.put("numericallyAvailable", available);
+    result.put("gatePassed", available && reasons.isEmpty());
+    return result;
+  }
+
+  private static SearchAttempt attempt(
+      FittedMethod method,
+      PollObservations.Batch training,
+      List<LocalDate> elections,
+      DailyStateSpace.Parameters parameters) {
+    try {
+      final double likelihood = likelihood(method, training, elections, parameters);
+      if (!Double.isFinite(likelihood))
+        return new SearchAttempt(parameters, null, "nonfinite marginal likelihood");
+      return new SearchAttempt(parameters, likelihood, null);
+    } catch (RuntimeException e) {
+      return new SearchAttempt(
+          parameters, null, e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+    }
+  }
+
+  private static double likelihood(
+      FittedMethod method,
+      PollObservations.Batch training,
+      List<LocalDate> elections,
+      DailyStateSpace.Parameters parameters) {
+    return method == FittedMethod.MIDPOINT_CANDIDATE
+        ? DailyStateSpace.logLikelihood(training, elections, parameters)
+        : WindowFilter.logLikelihood(
+            training, elections, parameters, WindowFilter.Convention.FIELDWORK);
+  }
+
+  private static void confirm(
+      FittedMethod method,
+      PollObservations.Batch training,
+      List<LocalDate> elections,
+      SearchAttempt selected) {
+    final double retained =
+        method == FittedMethod.MIDPOINT_CANDIDATE
+            ? DailyStateSpace.fit(training, elections, selected.parameters()).logLikelihood()
+            : WindowFilter.score(
+                    training,
+                    List.of(),
+                    elections,
+                    selected.parameters(),
+                    WindowFilter.Convention.FIELDWORK)
+                .logLikelihood();
+    require(
+        Double.compare(retained, selected.logLikelihood()) == 0,
+        "retained fit disagrees with its tuning likelihood");
+  }
+
+  private static void parameters(ObjectNode target, DailyStateSpace.Parameters parameters) {
+    target.put("walkVariance", parameters.walkVariance());
+    target.put("houseScale", parameters.houseScale());
+    target.put("covarianceMultiplier", parameters.covarianceMultiplier());
+  }
+
+  private static void boundary(ArrayNode target, String name, int index, int size) {
+    if (index == 0) target.add(name + ":lower");
+    if (index == size - 1) target.add(name + ":upper");
+  }
+
+  private static void copy(JsonNode source, ObjectNode target, String... fields) {
+    for (String field : fields) target.set(field, required(source, field));
   }
 
   private static ArrayNode manifests(JsonNode plan, Path sourceFile) {
@@ -320,7 +529,7 @@ public final class DevelopmentValidation {
                     20260915)),
         "Approved precision seeds mismatch");
     require(
-        strings(plan, "commands").equals(List.of(PREPARE_COMMAND, PREFLIGHT_COMMAND)),
+        strings(plan, "commands").equals(List.of(PREPARE_COMMAND, PREFLIGHT_COMMAND, TUNE_COMMAND)),
         "Approved commands mismatch");
     require(
         required(plan, "outputLocation")
@@ -343,6 +552,8 @@ public final class DevelopmentValidation {
             "src/main/java/se/swedishpolls/estimation/DevelopmentTuning.java",
             "src/main/java/se/swedishpolls/estimation/DevelopmentDiagnostics.java",
             "src/main/java/se/swedishpolls/estimation/PollObservations.java",
+            "src/main/java/se/swedishpolls/estimation/DailyStateSpace.java",
+            "src/main/java/se/swedishpolls/estimation/WindowFilter.java",
             "docs/validation/protocol.json",
             "docs/validation/diagnostics.json",
             "docs/validation/coverage.json",
@@ -450,6 +661,12 @@ public final class DevelopmentValidation {
   private static List<Integer> integers(JsonNode parent, String field) {
     final List<Integer> values = new ArrayList<>();
     for (JsonNode value : required(parent, field)) values.add(value.intValue());
+    return List.copyOf(values);
+  }
+
+  private static List<LocalDate> dates(JsonNode parent, String field) {
+    final List<LocalDate> values = new ArrayList<>();
+    for (JsonNode value : required(parent, field)) values.add(LocalDate.parse(value.asString()));
     return List.copyOf(values);
   }
 
@@ -570,6 +787,13 @@ public final class DevelopmentValidation {
     }
   }
 
+  private static void verifyEvidenceLocation(JsonNode plan, Path result) {
+    final Path evidence =
+        Path.of(required(plan, "outputLocation").asString()).toAbsolutePath().normalize();
+    final Path parent = result.toAbsolutePath().normalize().getParent();
+    require(evidence.equals(parent), "Tuning evidence must use the registered output location");
+  }
+
   private static String rowsSha256(List<PollCsv.Poll> polls) {
     final StringBuilder rows = new StringBuilder();
     for (PollCsv.Poll poll : polls)
@@ -684,4 +908,21 @@ public final class DevelopmentValidation {
       throw new UncheckedIOException(e);
     }
   }
+
+  private enum FittedMethod {
+    MIDPOINT_CANDIDATE("midpoint_candidate"),
+    ILR_WINDOW_REFERENCE("ilr_window_reference");
+
+    private final String id;
+
+    FittedMethod(String id) {
+      this.id = id;
+    }
+  }
+
+  private record SearchAttempt(
+      DailyStateSpace.Parameters parameters, Double logLikelihood, String reason) {}
+
+  private record CheckedRegistration(
+      JsonNode registration, JsonNode plan, ArrayNode folds, String registrationSha256) {}
 }

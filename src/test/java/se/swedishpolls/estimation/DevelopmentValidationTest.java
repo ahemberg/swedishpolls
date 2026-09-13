@@ -187,6 +187,15 @@ class DevelopmentValidationTest {
         grid.get("walkVariances").size()
             * grid.get("houseScales").size()
             * grid.get("covarianceMultipliers").size());
+    assertEquals(3, registration.get("plan").get("commands").size());
+    assertTrue(registration.get("plan").get("commands").get(2).asString().contains("'tune "));
+    assertTrue(
+        registration
+            .get("plan")
+            .get("identities")
+            .valueStream()
+            .map(identity -> identity.get("path").asString())
+            .anyMatch(path -> path.endsWith("/WindowFilter.java")));
 
     final Path result = temp.resolve("registered-preflight.json");
     assertEquals(
@@ -222,6 +231,195 @@ class DevelopmentValidationTest {
             .get("reasons")
             .toString()
             .contains("environment"));
+  }
+
+  @Test
+  void tunesBothFittedMethodsAndRetainsTheWholeSearch() throws Exception {
+    final Path source = temp.resolve("tuning-polls.csv");
+    Files.write(
+        source,
+        PollCsvFixtures.csv(
+            row("2014-01-10", "2014-01-01", "2014-01-09", "NA")
+                + row("2014-01-16", "2014-01-10", "2014-01-14", "NA")
+                + row("2014-04-12", "2014-04-09", "2014-04-11", "1")
+                + row("2014-05-10", "2014-05-01", "2014-05-05", "1")
+                + row("2014-05-16", "2014-04-20", "2014-04-30", "1")
+                + row("2014-06-01", "2014-05-20", "2014-05-30", "1")));
+    final Path identity = temp.resolve("tuning-implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final Path evidence = temp.resolve("tuning-evidence");
+    final Path plan = temp.resolve("tuning-plan.json");
+    Files.writeString(plan, plan(source, identity, evidence), StandardCharsets.UTF_8);
+    final Path registration = temp.resolve("tuning-registration.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+
+    final Path result = evidence.resolve("tuning.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "tune", registration.toString(), source.toString(), result.toString()));
+
+    final JsonNode tuning = JSON.readTree(Files.readAllBytes(result));
+    assertEquals("blocked", tuning.get("status").asString());
+    assertEquals("complete", tuning.get("fitEvidence").asString());
+    assertTrue(tuning.get("grid").get("interpretation").asString().contains("underdispersion"));
+    assertEquals(6, tuning.get("folds").size());
+    assertEquals(
+        3,
+        tuning
+            .get("folds")
+            .valueStream()
+            .filter(fold -> fold.get("active").booleanValue())
+            .count());
+    assertEquals(
+        3,
+        tuning
+            .get("folds")
+            .valueStream()
+            .filter(fold -> !fold.get("active").booleanValue())
+            .count());
+    final JsonNode sparse = fold(tuning, "fi", "2014-05-15");
+    assertEquals(2, sparse.get("trainingObservationRows").size());
+    assertFalse(contains(sparse.get("trainingObservationRows"), 5));
+    assertEquals(2, sparse.get("methods").size());
+    assertEquals("midpoint_candidate", sparse.get("methods").get(0).get("method").asString());
+    assertEquals("ilr_window_reference", sparse.get("methods").get(1).get("method").asString());
+    for (JsonNode method : sparse.get("methods")) {
+      assertEquals(2, method.get("attempts").size());
+      assertTrue(method.get("numericallyAvailable").booleanValue());
+      assertFalse(method.get("gatePassed").booleanValue());
+      assertTrue(method.has("selectedParameters"));
+      assertFalse(method.get("gridBoundaries").isEmpty());
+    }
+    assertFalse(tuning.get("gatePassed").booleanValue());
+    assertFalse(tuning.get("reasons").isEmpty());
+  }
+
+  @Test
+  void aFailedGridPointIsRetainedWithoutErasingTheAvailableSelection() throws Exception {
+    final Path source = temp.resolve("failing-polls.csv");
+    Files.write(
+        source,
+        PollCsvFixtures.csv(
+            row("2014-01-10", "2014-01-01", "2014-01-09", "NA")
+                + row("2014-01-16", "2014-01-10", "2014-01-14", "NA")
+                + row("2014-04-12", "2014-04-09", "2014-04-11", "1")
+                + row("2014-05-10", "2014-05-01", "2014-05-05", "1")
+                + row("2014-05-16", "2014-04-20", "2014-04-30", "1")
+                + row("2014-06-01", "2014-05-20", "2014-05-30", "1")));
+    final Path identity = temp.resolve("failing-implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final Path evidence = temp.resolve("failing-evidence");
+    final Path plan = temp.resolve("failing-plan.json");
+    Files.writeString(
+        plan,
+        plan(source, identity, evidence)
+            .replace("[0.000003, 0.00001]", "[0.000003, 1.7976931348623157E308]"),
+        StandardCharsets.UTF_8);
+    final Path registration = temp.resolve("failing-registration.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+
+    final Path result = evidence.resolve("tuning.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "tune", registration.toString(), source.toString(), result.toString()));
+
+    final JsonNode method =
+        fold(JSON.readTree(Files.readAllBytes(result)), "eight", "2014-05-15")
+            .get("methods")
+            .get(0);
+    assertEquals("resolved", method.get("attempts").get(0).get("status").asString());
+    assertEquals("failed", method.get("attempts").get(1).get("status").asString());
+    assertTrue(method.get("attempts").get(1).has("reason"));
+    assertTrue(method.get("numericallyAvailable").booleanValue());
+    assertFalse(method.get("gatePassed").booleanValue());
+    assertEquals(0.000003, method.get("selectedParameters").get("walkVariance").doubleValue());
+  }
+
+  @Test
+  void anExactTieKeepsTheFirstPointInAscendingGridOrder() throws Exception {
+    final Path source = temp.resolve("tie-polls.csv");
+    Files.write(
+        source,
+        PollCsvFixtures.csv(
+            row("2014-01-01", "2014-01-01", "2014-01-01", "NA")
+                + row("2014-01-03", "2014-01-03", "2014-01-03", "NA")));
+    final Path identity = temp.resolve("tie-implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final Path evidence = temp.resolve("tie-evidence");
+    final Path plan = temp.resolve("tie-plan.json");
+    Files.writeString(plan, tiePlan(source, identity, evidence), StandardCharsets.UTF_8);
+    final Path registration = temp.resolve("tie-registration.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+
+    final Path result = evidence.resolve("tuning.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "tune", registration.toString(), source.toString(), result.toString()));
+    final JsonNode methods =
+        fold(JSON.readTree(Files.readAllBytes(result)), "eight", "2014-01-02").get("methods");
+    for (JsonNode method : methods) {
+      assertEquals(
+          method.get("attempts").get(0).get("logLikelihood").doubleValue(),
+          method.get("attempts").get(1).get("logLikelihood").doubleValue(),
+          0);
+      assertEquals(0.000003, method.get("selectedParameters").get("walkVariance").doubleValue());
+    }
+  }
+
+  @Test
+  void heldOutPollChangesCannotSelectTuningParameters() throws Exception {
+    final String training =
+        row("2014-01-10", "2014-01-01", "2014-01-09", "NA")
+            + row("2014-01-16", "2014-01-10", "2014-01-14", "NA")
+            + row("2014-04-12", "2014-04-09", "2014-04-11", "1")
+            + row("2014-05-10", "2014-05-01", "2014-05-05", "1");
+    final String ipsosHeldOut = row("2014-05-16", "2014-04-20", "2014-04-30", "1");
+    final JsonNode ipsos = tune("ipsos", training + ipsosHeldOut);
+    final JsonNode novus = tune("novus", training + ipsosHeldOut.replace("Ipsos", "Novus"));
+
+    assertEquals(
+        fold(ipsos, "fi", "2014-05-15").get("methods"),
+        fold(novus, "fi", "2014-05-15").get("methods"));
+  }
+
+  @Test
+  void anUnexpectedEmptyActiveFoldStopsBeforeFitting() throws Exception {
+    final Path source = temp.resolve("empty-active-polls.csv");
+    Files.write(source, PollCsvFixtures.csv(row("2014-01-10", "2014-01-01", "2014-01-09", "NA")));
+    final Path identity = temp.resolve("empty-active-implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final Path evidence = temp.resolve("empty-active-evidence");
+    final Path plan = temp.resolve("empty-active-plan.json");
+    Files.writeString(
+        plan,
+        plan(source, identity, evidence)
+            .replace("\"activeThrough\": \"2014-05-15\"", "\"activeThrough\": \"2018-10-21\""),
+        StandardCharsets.UTF_8);
+    final Path registration = temp.resolve("empty-active-registration.json");
+
+    assertEquals(
+        DevelopmentValidation.REJECTED,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+    assertTrue(
+        JSON.readTree(Files.readAllBytes(registration))
+            .get("reasons")
+            .toString()
+            .contains("Unexpected empty active"));
+    assertEquals(
+        "not_run", JSON.readTree(Files.readAllBytes(registration)).get("fitEvidence").asString());
   }
 
   private static JsonNode fold(JsonNode registration, String period, String cutoff) {
@@ -267,7 +465,7 @@ class DevelopmentValidationTest {
             "covarianceMultipliers": [0.5]
           },
           "periods": [
-            {"id": "eight", "from": "2010-01-01", "to": null, "individualFi": false, "activeFrom": "2014-01-15", "activeThrough": "2014-05-15"},
+            {"id": "eight", "from": "2014-01-01", "to": null, "individualFi": false, "activeFrom": "2014-01-15", "activeThrough": "2014-05-15"},
             {"id": "fi", "from": "2014-04-09", "to": "2018-09-07", "individualFi": true, "activeFrom": "2014-05-15", "activeThrough": "2014-05-15"}
           ],
           "folds": [
@@ -275,6 +473,7 @@ class DevelopmentValidationTest {
             {"cutoff": "2014-05-15", "scoreThrough": "2014-06-19"},
             {"cutoff": "2018-10-21", "scoreThrough": "2018-11-25"}
           ],
+          "electionCycleDates": ["2014-09-14"],
           "commands": ["prepare", "preflight"]
         }
         """
@@ -288,5 +487,64 @@ class DevelopmentValidationTest {
             System.getProperty("os.arch"),
             output,
             identity);
+  }
+
+  private static String tiePlan(Path source, Path identity, Path output) throws Exception {
+    return """
+        {
+          "version": "test-v2",
+          "testFixture": true,
+          "registeredOn": "2026-09-13",
+          "source": {"path": "%s", "sha256": "%s"},
+          "identities": [{"path": "%s", "sha256": "%s"}],
+          "environment": {"javaVersion": "%s", "osName": "%s", "osArch": "%s"},
+          "outputLocation": "%s",
+          "protectedLocations": ["%s"],
+          "grid": {
+            "walkVariances": [0.000003, 0.00001],
+            "houseScales": [0.01],
+            "covarianceMultipliers": [0.5]
+          },
+          "periods": [
+            {"id": "eight", "from": "2014-01-01", "to": null, "individualFi": false, "activeFrom": "2014-01-02", "activeThrough": "2014-01-02"}
+          ],
+          "folds": [
+            {"cutoff": "2014-01-02", "scoreThrough": "2014-02-06"}
+          ],
+          "electionCycleDates": ["2014-09-14"],
+          "commands": ["prepare", "preflight"]
+        }
+        """
+        .formatted(
+            source,
+            DevelopmentGates.sha256(source),
+            identity,
+            DevelopmentGates.sha256(identity),
+            System.getProperty("java.version"),
+            System.getProperty("os.name"),
+            System.getProperty("os.arch"),
+            output,
+            identity);
+  }
+
+  private JsonNode tune(String name, String rows) throws Exception {
+    final Path source = temp.resolve(name + "-polls.csv");
+    Files.write(source, PollCsvFixtures.csv(rows));
+    final Path identity = temp.resolve(name + "-implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final Path evidence = temp.resolve(name + "-evidence");
+    final Path plan = temp.resolve(name + "-plan.json");
+    Files.writeString(plan, plan(source, identity, evidence), StandardCharsets.UTF_8);
+    final Path registration = temp.resolve(name + "-registration.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+    final Path result = evidence.resolve("tuning.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "tune", registration.toString(), source.toString(), result.toString()));
+    return JSON.readTree(Files.readAllBytes(result));
   }
 }
