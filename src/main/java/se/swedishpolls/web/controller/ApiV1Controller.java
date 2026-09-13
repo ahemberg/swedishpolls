@@ -133,7 +133,7 @@ public class ApiV1Controller {
       final ObjectNode sampled =
           se.swedishpolls.web.CoalitionHistoryQuery.sample(objects.readValue(artifact), request);
       return json(coalitionHistories.readValue(sampled), resolved);
-    } catch (se.swedishpolls.model.CoalitionSelection.Invalid invalid) {
+    } catch (se.swedishpolls.web.CoalitionSelection.Invalid invalid) {
       throw new ApiErrors.ApiException(
           org.springframework.http.HttpStatus.BAD_REQUEST,
           new ApiErrorResponse.Field("invalid_filter", invalid.field(), invalid.getMessage()));

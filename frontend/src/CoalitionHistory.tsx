@@ -1,19 +1,8 @@
 import { type JSX, useEffect, useRef, useState } from "react";
-import type { Bootstrap, Series, Translate } from "./bootstrap";
-import {
-  axisLevels,
-  axisMaximum,
-  BASELINE,
-  bandPath,
-  HEIGHT,
-  LEFT,
-  linePath,
-  PLOT_WIDTH,
-  TOP,
-  WIDTH,
-  yAt,
-} from "./chart";
-import { BLOCKS, blockColors, type CoalitionHistoryData, fitSegments } from "./coalition-history";
+import type { Bootstrap, Translate } from "./bootstrap";
+import { CoalitionHistoryPlot } from "./CoalitionHistoryPlot";
+
+import { BLOCKS, type CoalitionHistoryData } from "./coalition-history";
 import { decimal, interval, percent, shortDate, timestamp } from "./format";
 import { TimelineTable } from "./TimelineTable";
 import { useCursor } from "./useCursor";
@@ -24,94 +13,40 @@ interface Props {
   readonly history: CoalitionHistoryData | undefined;
   readonly t: Translate;
 }
-const BAND_OPACITY = 0.16;
-const LINE_WIDTH = 2;
-const LABEL_OFFSET = 6;
-const DASH = "7 4";
 const SEPARATOR = ": ";
 const MEMBERS_SEPARATOR = " · ";
 
-function HistoryPlot({
+function HistoryBreaks({
   history,
   page,
   t,
-  index,
 }: {
   readonly history: CoalitionHistoryData;
   readonly page: Bootstrap;
   readonly t: Translate;
-  readonly index: number;
 }): JSX.Element {
-  const drawn = BLOCKS.map((component) => ({ component, ...history.series[component] }));
-  const colors = blockColors([history.selection.a, history.selection.b], history.latest.partyMeans);
-  const maximum = axisMaximum(drawn);
-  const first = Date.parse(history.requestedRange.from);
-  const duration = Math.max(1, Date.parse(history.requestedRange.to) - first);
-  const x = (index: number): number =>
-    LEFT +
-    (PLOT_WIDTH * (Date.parse(history.dates[index] ?? history.requestedRange.from) - first)) /
-      duration;
-  const y = (value: number): number => yAt(value, maximum);
-  const segments = fitSegments(history);
   return (
-    <svg
-      className="coalition-plot"
-      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      role="img"
-      aria-label={t("coalitionHistory.table")}
-    >
-      {axisLevels(maximum).map((value) => (
-        <g key={value}>
-          <line x1={LEFT} x2={LEFT + PLOT_WIDTH} y1={y(value)} y2={y(value)} stroke="#d5d5d5" />
-          <text x={LEFT - LABEL_OFFSET} y={y(value)} textAnchor="end">
-            {percent(String(value), page.language)}
-          </text>
-        </g>
-      ))}
-      {drawn.map((series, blockIndex) => (
-        <g key={series.component} fill={colors[blockIndex]} stroke={colors[blockIndex]}>
-          {segments.map((indices) => {
-            const sliced: Series = {
-              component: series.component,
-              mean: indices.map((index) => series.mean[index] ?? null),
-              lower: indices.map((index) => series.lower[index] ?? null),
-              upper: indices.map((index) => series.upper[index] ?? null),
-            };
-            const at = (index: number): number => x(indices[index] ?? 0);
-            let dash: string | undefined;
-            if (series.component === "b") {
-              dash = DASH;
-            }
-            return (
-              <g key={indices[0]}>
-                <path d={bandPath(sliced, at, y)} fillOpacity={BAND_OPACITY} stroke="none" />
-                <path
-                  d={linePath(sliced.mean, at, y)}
-                  fill="none"
-                  strokeWidth={LINE_WIDTH}
-                  strokeDasharray={dash}
-                />
-                {indices.length === 1 && typeof sliced.mean[0] === "number" && (
-                  <circle cx={at(0)} cy={y(sliced.mean[0])} r={LINE_WIDTH} />
-                )}
-              </g>
-            );
-          })}
-          {typeof series.mean[index] === "number" && (
-            <text
-              x={x(index) + LABEL_OFFSET}
-              y={y(series.mean[index] ?? 0) - LABEL_OFFSET}
-              stroke="none"
-            >
-              {series.component.toUpperCase()}
-            </text>
-          )}
-        </g>
-      ))}
-      {history.dates[index] !== undefined && (
-        <line x1={x(index)} x2={x(index)} y1={TOP} y2={BASELINE} stroke="#555" />
-      )}
-    </svg>
+    <details>
+      <summary>{t("coalitionHistory.breaks")}</summary>
+      <p>{t("timeline.gap")}</p>
+      <p>{t("method.coverage.boundaryNote")}</p>
+      <ul>
+        {history.gaps.map((gap) => (
+          <li key={gap.from}>
+            {shortDate(gap.from, page.locale)}
+            {MEMBERS_SEPARATOR}
+            {shortDate(gap.to, page.locale)}
+          </li>
+        ))}
+      </ul>
+      <ul>
+        {history.fitBoundaries.map((boundary) => (
+          <li key={boundary.date}>
+            {t("coalitionHistory.fit", { date: shortDate(boundary.date, page.locale) })}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
@@ -129,7 +64,7 @@ function HistoryChart({
   const date = history.dates[cursor.index];
   return (
     <>
-      <HistoryPlot history={history} page={page} t={t} index={cursor.index} />
+      <CoalitionHistoryPlot history={history} page={page} t={t} index={cursor.index} />
       <div className="coalition-axis">
         <span>{shortDate(history.requestedRange.from, page.locale)}</span>
         <span>{shortDate(history.requestedRange.to, page.locale)}</span>
@@ -161,6 +96,7 @@ function HistoryChart({
           </p>
         ))}
       </div>
+      <HistoryBreaks history={history} page={page} t={t} />
       <details>
         <summary>{t("coalitionHistory.table")}</summary>
         <div className="scroll">

@@ -9,6 +9,10 @@ import java.util.Map;
 
 /** Groups an eligible poll into the modeled components of one coverage period. */
 public final class Roster {
+  /** Canonical order for coalition memberships and subset-mask bits. */
+  public static final List<String> COALITION_PARTIES =
+      List.of("S", "M", "SD", "V", "C", "KD", "L", "MP");
+
   private Roster() {}
 
   public record CoveragePeriod(

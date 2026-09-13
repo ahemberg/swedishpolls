@@ -548,6 +548,8 @@ public final class SiteText {
 
     text.put("coalitions.title", "Regeringsunderlag");
     text.put("coalitionHistory.title", "Blockens väljarstöd");
+    text.put("coalitionHistory.breaks", "Glapp och modellgränser");
+    text.put("coalitionHistory.fit", "Modellgräns {date}");
     text.put(
         "coalitionHistory.note",
         "Medelvärde och punktvisa 95 % osäkerhetsintervall. Intervallen gäller varje dag för sig, med modellens frysta hyperparametrar.");
@@ -1071,6 +1073,8 @@ public final class SiteText {
 
     text.put("coalitions.title", "Coalitions");
     text.put("coalitionHistory.title", "Coalition vote shares");
+    text.put("coalitionHistory.breaks", "Gaps and model boundaries");
+    text.put("coalitionHistory.fit", "Model boundary {date}");
     text.put(
         "coalitionHistory.note",
         "Mean and pointwise 95% uncertainty intervals. Intervals apply to each day separately, conditional on the frozen model hyperparameters.");

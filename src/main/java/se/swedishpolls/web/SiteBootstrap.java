@@ -11,7 +11,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
-import se.swedishpolls.model.CoalitionSelection;
 import se.swedishpolls.publication.ModelFreeze;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.Translations;

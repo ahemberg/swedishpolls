@@ -169,6 +169,22 @@ class ApiV1ControllerTest {
       mvc.perform(get(path).param("a", "").param("b", "").param("step", invalid))
           .andExpect(status().isBadRequest());
     }
+    final ObjectNode missing = (ObjectNode) subsets.get(0);
+    for (final String value : List.of("mean", "lower", "upper"))
+      missing.set(value, JSON.readTree("[null,null,null,null]"));
+    missing.set(
+        "availability",
+        JSON.readTree(
+            "[\"party_unavailable\",\"party_unavailable\",\"party_unavailable\",\"party_unavailable\"]"));
+    means.putNull("S");
+    when(publications.coalitionHistory(HEADER)).thenReturn(Optional.of(stored.toString()));
+    mvc.perform(get(path).param("a", "S").param("b", "M"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.series.a.mean[0]").isEmpty())
+        .andExpect(jsonPath("$.series.a.availability[0]").value("party_unavailable"))
+        .andExpect(jsonPath("$.series.b.mean[0]").value(10))
+        .andExpect(jsonPath("$.latest.outsideBothMean").isEmpty())
+        .andExpect(jsonPath("$.latest.availability").value("party_unavailable"));
     when(publications.coalitionHistory(HEADER)).thenReturn(Optional.empty());
     mvc.perform(get(path).param("a", "S").param("b", "M"))
         .andExpect(status().isConflict())

@@ -169,6 +169,23 @@ class PublicationIT {
         metadata.path("coalitionHistory").path("artifactSha256").asString());
     final JsonNode coalitionHistory = JSON.readTree(artifact);
     assertEquals(255, coalitionHistory.get("subsets").size());
+    for (final JsonNode subset : coalitionHistory.get("subsets")) {
+      for (final String column : List.of("mean", "lower", "upper", "availability")) {
+        assertEquals(coalitionHistory.get("dates").size(), subset.get(column).size());
+      }
+    }
+    assertEquals(
+        header.headlinePeriod(), coalitionHistory.get("coveragePeriodIds").get(0).asString());
+    assertEquals(
+        coalitionHistory.get("dates").get(coalitionHistory.get("dates").size() - 1),
+        coalitionHistory.get("latest").get("date"));
+    assertEquals(
+        metadata.path("coalitionHistory").path("artifactSha256").asString(),
+        db.sql(
+                "SELECT sha256 FROM publication_document WHERE publication_id = ? AND surface = 'coalition-history' AND language = 'sv'")
+            .param(header.publicationId())
+            .query(String.class)
+            .single());
     assertEquals(header.runId(), coalitionHistory.get("modelRunId").asString());
     assertEquals(header.publishedAt().toString(), coalitionHistory.get("publishedAt").asString());
 
@@ -278,8 +295,14 @@ class PublicationIT {
             .document(first.publicationId(), PublicationDocuments.latestSurface(PERIOD), "sv")
             .orElseThrow();
 
+    final PublicationHeader pinned = store.header(first.publicationId()).orElseThrow();
+    final String pairedBefore = publications.coalitionHistory(pinned).orElseThrow();
     TestPublication.serve(wireMock, TestPublication.polls("2019-06-01"));
     final Publisher.Attempt second = publisher.publish();
+    assertEquals(
+        pairedBefore,
+        publications.coalitionHistory(pinned).orElseThrow(),
+        "Requests retain the page's resolved publication while current changes");
     assertEquals(PublicationOutcome.PUBLISHED, second.outcome(), second.detail());
     assertNotEquals(first.publicationId(), second.publicationId());
     assertEquals(second.publicationId(), store.current().orElseThrow().publicationId());
@@ -320,8 +343,14 @@ class PublicationIT {
     final String csv = PollQuery.csv(before, filters);
     assertTrue(before.total() > 0, "the fixture has Novus polls to pin");
 
+    final PublicationHeader pinned = store.header(first.publicationId()).orElseThrow();
+    final String pairedBefore = publications.coalitionHistory(pinned).orElseThrow();
     TestPublication.serve(wireMock, TestPublication.polls("2019-06-01"));
     final Publisher.Attempt second = publisher.publish();
+    assertEquals(
+        pairedBefore,
+        publications.coalitionHistory(pinned).orElseThrow(),
+        "Requests retain the page's resolved publication while current changes");
     assertEquals(PublicationOutcome.PUBLISHED, second.outcome(), second.detail());
     final long corrected = store.header(second.publicationId()).orElseThrow().snapshotId();
     assertNotEquals(snapshot, corrected, "the correction is a different snapshot");

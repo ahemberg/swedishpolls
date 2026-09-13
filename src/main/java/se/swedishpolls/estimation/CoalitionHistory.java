@@ -8,7 +8,7 @@ import se.swedishpolls.source.Roster;
 
 /** Pointwise support summaries of the 255 nonempty eight-party subsets, in mask order. */
 public final class CoalitionHistory {
-  public static final List<String> ROSTER = se.swedishpolls.model.CoalitionSelection.ROSTER;
+  public static final List<String> ROSTER = Roster.COALITION_PARTIES;
 
   private CoalitionHistory() {}
 
@@ -31,7 +31,10 @@ public final class CoalitionHistory {
     }
   }
 
-  /** Streams fitted days; only the final ensemble remains after its summaries are calculated. */
+  private record Summarized(
+      Day coalition, EstimateHistory.Day parties, JointUncertainty.Draws finalDraws) {}
+
+  /** Streams days through the existing parallel pool; retains only summaries and final draws. */
   public static Estimated estimate(
       EstimateHistory.Fitted fitted,
       Roster.CoveragePeriod period,
@@ -42,17 +45,28 @@ public final class CoalitionHistory {
     JointUncertainty.Draws last = null;
     for (final EstimateHistory.Span span : fitted.spans()) {
       final double[][] basis = PollObservations.transposedBasis(span.batch());
-      final List<EstimateHistory.Day> partyDays = new ArrayList<>();
       final String fitId = period.id() + ":" + span.fit().days().getFirst().date();
-      for (final DailyStateSpace.Day day : span.fit().days()) {
-        final double[][] shares =
-            JointUncertainty.transformed(span.batch(), basis, period.id(), day, rules);
-        last = JointUncertainty.retained(span.batch(), period.id(), day, shares, rules);
-        days.add(new Day(day.date(), period.id(), fitId, aggregate(last)));
-        partyDays.add(
-            EstimateHistory.published(
-                JointUncertainty.summarize(span.batch(), basis, period.id(), day, shares, rules)));
-      }
+      final LocalDate finalDate = span.fit().days().getLast().date();
+      final List<Summarized> summarized =
+          span.fit().days().parallelStream()
+              .map(
+                  day -> {
+                    final double[][] shares =
+                        JointUncertainty.transformed(span.batch(), basis, period.id(), day, rules);
+                    final JointUncertainty.Draws retained =
+                        JointUncertainty.retained(span.batch(), period.id(), day, shares, rules);
+                    return new Summarized(
+                        new Day(day.date(), period.id(), fitId, aggregate(retained)),
+                        EstimateHistory.published(
+                            JointUncertainty.summarize(
+                                span.batch(), basis, period.id(), day, shares, rules)),
+                        day.date().equals(finalDate) ? retained : null);
+                  })
+              .toList();
+      days.addAll(summarized.stream().map(Summarized::coalition).toList());
+      final List<EstimateHistory.Day> partyDays =
+          summarized.stream().map(Summarized::parties).toList();
+      last = summarized.getLast().finalDraws();
       segments.add(
           new EstimateHistory.Segment(
               period.id(), partyDays.getFirst().date(), partyDays.getLast().date(), partyDays));

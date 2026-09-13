@@ -120,8 +120,7 @@ public final class CoalitionHistoryDocument {
     }
     final ObjectNode latest = node.putObject("latest");
     final EstimateHistory.Day last = PublicationDocuments.lastDay(results.headline().history());
-    latest.put("date", results.lastFieldworkDate().toString());
-    latest.put("estimatedOn", last.date().toString());
+    latest.put("date", last.date().toString());
     latest.put("fitId", results.headline().coalitionHistory().getLast().fitId());
     final ObjectNode partyMeans = latest.putObject("partyMeans");
     for (final String party : CoalitionHistory.ROSTER) {

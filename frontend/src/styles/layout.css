@@ -190,8 +190,31 @@ footer.about p.meta {
   border-radius: 4px;
 }
 
-.coalition-plot text {
+.coalition-graphic {
+  position: relative;
+}
+
+.coalition-axis-label,
+.coalition-direct-label {
+  position: absolute;
   font-size: 12px;
+  line-height: 1;
+  color: rgb(34 34 34);
+  background: rgb(255 255 255 / 90%);
+  transform: translateY(-100%);
+}
+
+.coalition-axis-label {
+  left: 2px;
+}
+
+.coalition-direct-label {
+  margin-left: 6px;
+  font-weight: 700;
+}
+
+.coalition-direct-label.block-b {
+  transform: translateY(0);
 }
 
 .coalition-axis,
@@ -214,4 +237,10 @@ footer.about p.meta {
 
 .coalition-history-section [aria-busy="true"] .coalition-plot {
   opacity: 0.5;
+}
+
+.coalition-range input,
+.coalition-range button,
+.coalition-history-section input[type="range"] {
+  min-height: 44px;
 }

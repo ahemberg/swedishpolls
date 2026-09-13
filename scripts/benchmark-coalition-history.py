@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run #31's isolated full pipeline; bound aggregate process RSS plus new container memory."""
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -38,6 +39,11 @@ def memory(group, initial):
 def main():
     os.chdir(ROOT)
     initial = containers()
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    compiled = hashlib.sha256()
+    for path in sorted(Path("target/classes").rglob("*.class")):
+        compiled.update(str(path).encode())
+        compiled.update(path.read_bytes())
     start = time.monotonic()
     peak = 0
     stopped = None
@@ -61,7 +67,7 @@ def main():
                 break
             time.sleep(1)
         code = process.wait()
-    report = {"command": command, "host": os.uname().nodename, "secondsIncludingTestStartup": time.monotonic() - start,
+    report = {"command": command, "host": os.uname().nodename, "gitCommit": commit, "compiledClassesSha256": compiled.hexdigest(), "secondsIncludingTestStartup": time.monotonic() - start,
               "sampledPeakAggregateBytes": peak, "memoryLimitBytes": LIMIT, "samplingSeconds": 1,
               "memoryMethod": "sum of benchmark process-group RSS and memory.current of containers started during the benchmark; shared pages may be counted twice",
               "stopped": stopped, "exitCode": code}

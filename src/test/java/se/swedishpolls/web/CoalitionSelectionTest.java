@@ -1,4 +1,4 @@
-package se.swedishpolls.model;
+package se.swedishpolls.web;
 
 import static org.junit.jupiter.api.Assertions.*;
 

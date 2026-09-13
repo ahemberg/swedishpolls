@@ -1,4 +1,4 @@
-package se.swedishpolls.model;
+package se.swedishpolls.web;
 
 import java.util.HashSet;
 import java.util.List;
@@ -6,7 +6,7 @@ import java.util.Set;
 
 /** Two disjoint selections in the fixed eight-party roster order. */
 public record CoalitionSelection(List<String> a, List<String> b) {
-  public static final List<String> ROSTER = List.of("S", "M", "SD", "V", "C", "KD", "L", "MP");
+  public static final List<String> ROSTER = se.swedishpolls.source.Roster.COALITION_PARTIES;
 
   public CoalitionSelection {
     a = canonical(a, "a");

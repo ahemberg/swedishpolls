@@ -393,7 +393,7 @@ public class PublicationStore {
             """
         SELECT jsonb_build_object(
           'schemaVersion', body->'schemaVersion', 'aggregationVersion', body->'aggregationVersion',
-          'artifactSha256', encode(sha256(convert_to(body::text, 'UTF8')), 'hex'),
+          'artifactSha256', sha256,
           'artifactBytes', octet_length(body::text),
           'interval', body->'interval', 'roster', body->'roster',
           'draws', body->'draws', 'seed', body->'seed')::text
@@ -407,13 +407,21 @@ public class PublicationStore {
 
   public void recordDocument(String publicationId, String surface, String language, String body) {
     db.sql(
-            "INSERT INTO publication_document(publication_id, surface, language, body, sha256)"
-                + " VALUES (?, ?, ?, ?::jsonb, ?)")
+            """
+        WITH document AS (SELECT ?::jsonb AS body)
+        INSERT INTO publication_document(publication_id, surface, language, body, sha256)
+        SELECT ?, ?, ?, body,
+          CASE WHEN ? = 'coalition-history'
+            THEN encode(sha256(convert_to(body::text, 'UTF8')), 'hex')
+            ELSE ? END
+        FROM document
+        """)
         .params(
+            body,
             publicationId,
             surface,
             language,
-            body,
+            surface,
             Digest.sha256(body.getBytes(StandardCharsets.UTF_8)))
         .update();
   }
