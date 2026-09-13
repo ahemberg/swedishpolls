@@ -112,6 +112,14 @@ public final class SiteText {
         "Publicerade mätningar till och med {date}: institut, fältarbete, urval och redovisade"
             + " andelar, med källans precision. Inte en valprognos.");
     text.put(
+        "head.description.pollsters",
+        "Instituten bakom sammanvägningen, deras metodepoker och deras huseffekter per {date},"
+            + " med intervall. Inte en valprognos.");
+    text.put(
+        "head.description.method",
+        "Hur skattningen tas fram: källdata och täckning, modellen, osäkerheten, valideringen"
+            + " och reproduktionen. Inte en valprognos.");
+    text.put(
         "head.description.coalitions",
         "Tio regeringsunderlag per {date}: mandatintervall, sannolikhet för egen majoritet och"
             + " jämförelser mellan dem. Inte en valprognos.");
@@ -293,6 +301,178 @@ public final class SiteText {
         "CSV-filen innehåller exakt de filtrerade raderna ur samma publicering och samma"
             + " ögonblicksbild som tabellen, med källans precision bevarad.");
 
+    text.put(
+        "pollsters.lead",
+        "Instituten bakom sammanvägningen: vem som mätt, hur de mätt och hur deras skattningar"
+            + " systematiskt avviker från institutsgenomsnittet i mandatperioden.");
+    text.put("pollsters.metadata", "Institut och metodepoker");
+    text.put("pollsters.column.companies", "Företag");
+    text.put("pollsters.column.eras", "Metodepoker");
+    text.put("pollsters.column.polls", "Mätningar");
+    text.put("pollsters.column.first", "Första fältarbete");
+    text.put("pollsters.column.last", "Senaste fältarbete");
+    text.put(
+        "pollsters.erasNote",
+        "Metodepoken beskriver mätsättningen, inte namnet: ett varumärkesbyte är ingen"
+            + " metodändring, och en metod kan bestå under ett nytt namn.");
+    text.put(
+        "pollsters.gridCaption",
+        "Huseffekter under {cycle}, i procentenheter. Färgen förstärks med avvikelsen; talet"
+            + " står alltid i rutan.");
+    text.put(
+        "pollsters.intervalCaption",
+        "Samma effekter som tabell, med intervall: en rad per institut och parti.");
+    text.put("pollsters.shrunk", "skjuten mot noll");
+    text.put("pollsters.shrunkCell", "{effect} (skjuten mot noll)");
+    text.put(
+        "pollsters.shrunkNote",
+        "En effekt märkt \u201dskjuten mot noll\u201d kommer från ett institut med få"
+            + " mätningar i perioden; modellen drar då effekten mot genomsnittet istället"
+            + " för att läsa av den rakt av.");
+
+    text.put(
+        "method.lead",
+        "Siffrorna på den här sajten är skattningar av väljaropinion, inte prognoser. Den"
+            + " här sidan förklarar var de kommer från, vad de gäller och vad som är"
+            + " validerat.");
+    text.put("method.data.title", "Data och källor");
+    text.put(
+        "method.data.history",
+        "Publicerad historia är korrigerad historia: varje publicering bygger på den"
+            + " fullständiga ögonblicksbild som då är aktuell, med de rättelser och"
+            + " borttagningar den innehåller. Den påstår inte att visa vad en besökare såg"
+            + " vid den tiden.");
+    text.put(
+        "method.data.provenance",
+        "Varje mätning arkiveras med institut, företag, metodepok, datum, urval och de"
+            + " andelar som redovisats, med källans egen precision. Mätningar modellen"
+            + " uteslutit arkiveras med sina skäl.");
+    text.put(
+        "method.data.eligibility",
+        "Modellen använder vanliga opinionsmätningar. Exit- och valdagsmätningar utesluts,"
+            + " liksom tills vidare mätningar som saknar en nödvändig andel, urvalsstorlek"
+            + " eller användbara fältarbetsdatum. Ett värde källan inte redovisat gissas"
+            + " aldrig och fylls aldrig med noll.");
+    text.put(
+        "method.data.eras",
+        "Institut, företag och metodepoker förs isär. Ett varumärkesbyte är ingen"
+            + " metodändring, och samma metod kan fortsätta under ett nytt namn.");
+    text.put("method.coverage.title", "Täckningsperioder");
+    text.put(
+        "method.coverage.rosterCaption",
+        "De perioder som har en validerad enskild skattning, vilka partier som"
+            + " särredovisas och vad Övriga innehåller.");
+    text.put("method.coverage.column.roster", "Särredovisade partier");
+    text.put("method.coverage.column.span", "Från–till");
+    text.put("method.coverage.column.status", "Stöd i modellen");
+    text.put("method.coverage.validated", "Validerat");
+    text.put("method.coverage.candidate", "Under validering");
+    text.put("method.coverage.column.decision", "Ägarbeslut");
+    text.put(
+        "method.coverage.otherNote",
+        "Övriga är samlat stöd utanför periodens särredovisade partier och tilldelas inga"
+            + " mandat som grupp. Vid en jämförelse över periodgränser används den"
+            + " jämförbara restposten: stödet utanför de åtta fasta partierna, med FI"
+            + " inräknat i varje period.");
+    text.put(
+        "method.coverage.fiNote",
+        "Feministiskt initiativ är särskattat bara i de perioder som tabellen markerar med"
+            + " eget stöd. Utanför dem är mätningarna kvar i källtabellen, men den enskilda"
+            + " skattningen är otillgänglig — den är aldrig noll.");
+    text.put(
+        "method.coverage.boundaryNote",
+        "Varje period anpassas för sig, utan antagen kontinuitet över en gräns. Ett brott i"
+            + " kurvan vid en gräns är ingen väljarvandring.");
+    text.put("method.model.title", "Modellen");
+    text.put(
+        "method.model.observations",
+        "Varje mätning bidrar med en observation vid fältarbetets mittpunkt, i en sammansatt"
+            + " ilr-parametrisering med full multinomial kovarians. En daglig random walk i"
+            + " samma rum knyter dagarna samman.");
+    text.put(
+        "method.model.estimand",
+        "Den publicerade kurvan är den utjämnade skattningen av väljaropinion. Rubriktalet"
+            + " gäller den sista fältarbetsdagen och skrivs aldrig framåt i tiden.");
+    text.put(
+        "method.model.house",
+        "Institutseffekter nollställs per mandatperiod, skjuts mot noll för institut med få"
+            + " mätningar och centreras med lika vikt per institut. De mäter avvikelsen"
+            + " från institutsgenomsnittet i perioden, inte från den sanna opinionen.");
+    text.put(
+        "method.model.overdispersion",
+        "Spridningen mellan mätningar utöver ren sampling fångas av en gemensam faktor på"
+            + " observationskovariansen, delad av alla institut.");
+    text.put(
+        "method.model.hyper",
+        "Hyperparametrarna — walkvarians, effektskala och överdispersion — väljs per period"
+            + " på ett förut registrerat rutnät. Den publicerade osäkerheten är betingad"
+            + " på de valda värdena.");
+    text.put(
+        "method.model.draws",
+        "Sannolikheter och mandatintervall räknas från samma gemensamma dragningar, så att"
+            + " ett partis siffra och ett underslags siffra hänger ihop. Valresultat visas"
+            + " som referenspunkter, aldrig som modellobservationer.");
+    text.put("method.validation.title", "Validering och grindar");
+    text.put(
+        "method.validation.verdictReleased",
+        "Registrerad status för det här protokollet: släppt. Alla blockerande grindar är"
+            + " klarade.");
+    text.put(
+        "method.validation.verdictBlocked",
+        "Registrerad status för det här protokollet: blockerad. Ingen ny skattning"
+            + " publiceras förrän grindarna är klarade, och bara ett registrerat"
+            + " ägarbeslut kan undanta en grind.");
+    text.put("method.validation.failed", "Blockerande grindar som inte är klarade: {gates}");
+    text.put("method.validation.gatesLead", "De registrerade prediktiva grindarna:");
+    text.put(
+        "method.validation.gateScore",
+        "Den genomsnittliga prediktiva poängen slår den registrerade recensviktade"
+            + " baslinjen på de frusna utvecklingsvecken, och är inte väsentligt sämre än"
+            + " referensen.");
+    text.put(
+        "method.validation.gateCoverage",
+        "95 %-intervallen träffar inom 90–98 procent av tiden och 50 %-intervallen inom"
+            + " 40–60 procent, med mätnivåbruset inkluderat i utfallet.");
+    text.put(
+        "method.validation.gateMisfit",
+        "Ingen oförklarad systematisk avvikelse per parti, institut eller fältarbetets"
+            + " längd; residualautokorrelation granskas och förklaras.");
+    text.put("method.validation.coverageLead", "Registrerade krav på en täckningsperiod:");
+    text.put("method.coverage.gate.polls", "Minst antal mätningar");
+    text.put("method.coverage.gate.institutes", "Minst antal institut");
+    text.put("method.coverage.gate.gap", "Största tillåtna glapp, i dagar");
+    text.put("method.coverage.gate.shifts", "Gränsförskjutningar som provas, i dagar");
+    text.put("method.coverage.gate.burnIn", "Inbränning innan stabiliteten mäts, i dagar");
+    text.put(
+        "method.coverage.gate.stability",
+        "Största tillåtna rörelse vid inbränningen, i procentenheter");
+    text.put("method.coverage.gate.development", "Utvecklingsdata avsnörs");
+    text.put(
+        "method.validation.sensitivity",
+        "För varje publicering räknas känsligheten mot registrerade alternativ: ett"
+            + " institut i taget utelämnat, och likaviktning istället för viktning efter"
+            + " antal mätningar. Rör ett alternativ en publicerad sannolikhet mer än den"
+            + " registrerade tröskeln står upplysningen bredvid talet, på mandat- och"
+            + " underlagssidorna.");
+    text.put("method.reproduction.title", "Reproduktion");
+    text.put("method.reproduction.seed", "Frö: {seed}");
+    text.put("method.reproduction.draws", "Gemensamma dragningar: {draws}");
+    text.put(
+        "method.reproduction.decimals", "Publicerade andelar avrundas till {decimals} decimal.");
+    text.put(
+        "method.reproduction.drift",
+        "Störst tillåten rörelse mellan två publiceringar är {points} procentenheter; en"
+            + " större rörelse stoppar publiceringen.");
+    text.put("method.reproduction.estimator", "Estimator {version}, numerik {library}.");
+    text.put(
+        "method.reproduction.protocols",
+        "Utvecklingsprotokoll {development}, släppprotokoll {release}.");
+    text.put(
+        "method.reproduction.inputs",
+        "Ögonblicksbilden, körningen, kodversionen och fröet står i sidfoten. Arkiverade"
+            + " ingångar och parametrar ska reproducera publicerade resultat.");
+    text.put("method.seats.title", "Nationella mandat");
+
     text.put("downloads.title", "För journalister");
     text.put("downloads.polls", "Mätningar (CSV)");
     text.put("downloads.estimates", "Skattningar (JSON)");
@@ -440,6 +620,14 @@ public final class SiteText {
         "head.description.polls",
         "Published polls up to {date}: pollster, fieldwork, sample and reported shares, at the"
             + " source's own precision. Not an election forecast.");
+    text.put(
+        "head.description.pollsters",
+        "The pollsters behind the pooled estimate, their method eras and their house effects"
+            + " as of {date}, with intervals. Not an election forecast.");
+    text.put(
+        "head.description.method",
+        "How the estimate is produced: source data and coverage, the model, uncertainty,"
+            + " validation and reproduction. Not an election forecast.");
     text.put(
         "head.description.coalitions",
         "Ten coalitions as of {date}: seat intervals, majority probabilities and comparisons"
@@ -620,6 +808,172 @@ public final class SiteText {
         "polls.downloadNote",
         "The CSV holds exactly the filtered rows, from the same publication and the same snapshot"
             + " as the table, with the source's precision preserved.");
+
+    text.put(
+        "pollsters.lead",
+        "The pollsters behind the pooled estimate: who has measured, how they measure, and how"
+            + " their estimates systematically deviate from the institute ensemble of the"
+            + " election cycle.");
+    text.put("pollsters.metadata", "Pollsters and method eras");
+    text.put("pollsters.column.companies", "Companies");
+    text.put("pollsters.column.eras", "Method eras");
+    text.put("pollsters.column.polls", "Polls");
+    text.put("pollsters.column.first", "First fieldwork");
+    text.put("pollsters.column.last", "Latest fieldwork");
+    text.put(
+        "pollsters.erasNote",
+        "A method era describes the measurement, not the name: a brand rename is not a method"
+            + " change, and a method can continue under a new name.");
+    text.put(
+        "pollsters.gridCaption",
+        "House effects during {cycle}, in percentage points. The colour deepens with the"
+            + " deviation; the number is always in the cell.");
+    text.put(
+        "pollsters.intervalCaption",
+        "The same effects as a table, with intervals: one row per pollster and party.");
+    text.put("pollsters.shrunk", "shrunk toward zero");
+    text.put("pollsters.shrunkCell", "{effect} (shrunk toward zero)");
+    text.put(
+        "pollsters.shrunkNote",
+        "An effect marked \u201cshrunk toward zero\u201d comes from a pollster with few polls"
+            + " in the cycle; the model then pulls the effect toward the ensemble rather than"
+            + " reading it off directly.");
+
+    text.put(
+        "method.lead",
+        "The numbers on this site are estimates of voting intention, not forecasts. This page"
+            + " explains where they come from, what they cover, and what has been validated.");
+    text.put("method.data.title", "Data and sources");
+    text.put(
+        "method.data.history",
+        "Published history is corrected history: every publication is built from the complete"
+            + " snapshot current at the time, with the corrections and removals it carries. It"
+            + " does not claim to show what a visitor saw back then.");
+    text.put(
+        "method.data.provenance",
+        "Every poll is archived with its pollster, company, method era, dates, sample and"
+            + " reported shares, at the source's own precision. Polls the model excluded are"
+            + " archived with their reasons.");
+    text.put(
+        "method.data.eligibility",
+        "The model uses ordinary opinion polls. Exit and election-day polls are excluded, as"
+            + " are, for now, polls missing a required share, sample size or usable fieldwork"
+            + " dates. A value the source did not report is never guessed and never filled"
+            + " with zero.");
+    text.put(
+        "method.data.eras",
+        "Pollster, company and method era are kept apart. A brand rename is not a method"
+            + " change, and the same method can continue under a new name.");
+    text.put("method.coverage.title", "Coverage periods");
+    text.put(
+        "method.coverage.rosterCaption",
+        "The periods that carry a validated individual estimate, which parties are reported"
+            + " separately, and what Other includes.");
+    text.put("method.coverage.column.roster", "Separately reported parties");
+    text.put("method.coverage.column.span", "From–to");
+    text.put("method.coverage.column.status", "Support in the model");
+    text.put("method.coverage.validated", "Validated");
+    text.put("method.coverage.candidate", "Under validation");
+    text.put("method.coverage.column.decision", "Owner decision");
+    text.put(
+        "method.coverage.otherNote",
+        "Other is combined support outside the period's separately reported parties and"
+            + " receives no seats as a group. A comparison across period boundaries uses the"
+            + " comparable remainder: support outside the fixed eight parties, counting FI in"
+            + " every period.");
+    text.put(
+        "method.coverage.fiNote",
+        "Feminist Initiative is estimated individually only in the periods the table marks as"
+            + " supported. Outside them the observations stay in the source table, but the"
+            + " individual estimate is unavailable — it is never zero.");
+    text.put(
+        "method.coverage.boundaryNote",
+        "Each period is fitted on its own, with no continuity assumed across a boundary. A"
+            + " break in the curve at a boundary is not voter movement.");
+    text.put("method.model.title", "The model");
+    text.put(
+        "method.model.observations",
+        "Every poll contributes one observation at its fieldwork midpoint, in a compositional"
+            + " ilr parametrisation with the full multinomial covariance. A daily random walk"
+            + " in the same space ties the days together.");
+    text.put(
+        "method.model.estimand",
+        "The published curve is the smoothed estimate of voting intention. The headline number"
+            + " refers to the last fieldwork day and is never projected forward.");
+    text.put(
+        "method.model.house",
+        "House effects reset every election cycle, are shrunk toward zero for pollsters with"
+            + " few polls, and are centred with equal weight per pollster. They measure the"
+            + " deviation from the cycle's institute ensemble, not from true opinion.");
+    text.put(
+        "method.model.overdispersion",
+        "Poll-to-poll variation beyond pure sampling is carried by one shared factor on the"
+            + " observation covariance, common to every pollster.");
+    text.put(
+        "method.model.hyper",
+        "The hyperparameters — walk variance, house-effect scale and overdispersion — are"
+            + " chosen per period over a pre-registered grid. The published uncertainty is"
+            + " conditional on the chosen values.");
+    text.put(
+        "method.model.draws",
+        "Probabilities and seat intervals are computed from the same joint draws, so a party's"
+            + " number and a coalition's number move together. Election outcomes are shown as"
+            + " reference dots, never as model observations.");
+    text.put("method.validation.title", "Validation and gates");
+    text.put(
+        "method.validation.verdictReleased",
+        "Recorded verdict for this protocol: released. Every blocking gate has passed.");
+    text.put(
+        "method.validation.verdictBlocked",
+        "Recorded verdict for this protocol: blocked. No new estimate publishes until the"
+            + " gates pass, and only a recorded owner decision can waive one.");
+    text.put("method.validation.failed", "Blocking gates not passed: {gates}");
+    text.put("method.validation.gatesLead", "The registered predictive gates:");
+    text.put(
+        "method.validation.gateScore",
+        "The mean predictive score beats the registered recency-weighted baseline on the"
+            + " frozen development folds, and is not materially worse than the reference.");
+    text.put(
+        "method.validation.gateCoverage",
+        "The 95% intervals hit within 90–98 percent of the time and the 50% intervals within"
+            + " 40–60 percent, with poll noise included in the outcome.");
+    text.put(
+        "method.validation.gateMisfit",
+        "No unexplained systematic misfit by party, pollster or fieldwork length; residual"
+            + " autocorrelation is inspected and explained.");
+    text.put("method.validation.coverageLead", "Registered requirements for a coverage period:");
+    text.put("method.coverage.gate.polls", "Minimum number of polls");
+    text.put("method.coverage.gate.institutes", "Minimum number of pollsters");
+    text.put("method.coverage.gate.gap", "Largest allowed gap, in days");
+    text.put("method.coverage.gate.shifts", "Boundary shifts tested, in days");
+    text.put("method.coverage.gate.burnIn", "Burn-in before stability is measured, in days");
+    text.put(
+        "method.coverage.gate.stability", "Largest allowed shift at burn-in, in percentage points");
+    text.put("method.coverage.gate.development", "Development data cut off at");
+    text.put(
+        "method.validation.sensitivity",
+        "Every publication is rechecked against the registered alternatives: one pollster left"
+            + " out at a time, and equal weighting instead of weighting by poll count. When an"
+            + " alternative moves a published probability past the registered threshold, the"
+            + " disclosure stands next to the number, on the seats and coalitions pages.");
+    text.put("method.reproduction.title", "Reproduction");
+    text.put("method.reproduction.seed", "Seed: {seed}");
+    text.put("method.reproduction.draws", "Joint draws: {draws}");
+    text.put(
+        "method.reproduction.decimals", "Published shares are quoted to {decimals} decimal place.");
+    text.put(
+        "method.reproduction.drift",
+        "The largest allowed movement between two publications is {points} percentage points;"
+            + " a larger one stops the publication.");
+    text.put("method.reproduction.estimator", "Estimator {version}, numerics {library}.");
+    text.put(
+        "method.reproduction.protocols",
+        "Development protocol {development}, release protocol {release}.");
+    text.put(
+        "method.reproduction.inputs",
+        "The snapshot, run, code version and seed are in the footer. Archived inputs and"
+            + " parameters must reproduce published results.");
+    text.put("method.seats.title", "National seats");
 
     text.put("downloads.title", "For journalists");
     text.put("downloads.polls", "Polls (CSV)");

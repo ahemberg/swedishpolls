@@ -4,11 +4,14 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
+import se.swedishpolls.publication.ModelFreeze;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.service.Publications;
@@ -109,7 +112,8 @@ public final class SiteBootstrap {
       case OVERVIEW, PARTY -> overview(page, header);
       case SEATS, COALITIONS -> chamber(page, header);
       case POLLS -> pollTable(page, header, polls);
-      case POLLSTERS, METHOD -> {}
+      case POLLSTERS -> pollsters(page, header);
+      case METHOD -> method(page, header);
     }
     if (route.family() == SiteRoutes.Family.PARTY) {
       party(page, header, route.parameter());
@@ -310,6 +314,139 @@ public final class SiteBootstrap {
     return periods.stream()
         .filter(period -> period.id().equals(periodId))
         .noneMatch(period -> period.roster().contains(component));
+  }
+
+  /**
+   * The pollsters page: every institute's archived footprint, its method eras, and its house
+   * effects per election cycle with the uncertainty the fit gives them. All cycles are carried, so
+   * a page served before any script runs still shows every cycle the publication fitted, and the
+   * heatmap and its table alternative read the same cells rather than deriving them twice.
+   */
+  private void pollsters(ObjectNode page, PublicationHeader header) {
+    final String language = page.get("language").asString();
+    final ObjectNode institutes = document(publications.institutes(header, language));
+    final ObjectNode node = page.putObject("data").putObject("pollsters");
+    node.set("reference", institutes.get("reference").deepCopy());
+    node.set("components", effectComponents(institutes));
+
+    final ArrayNode metadata = node.putArray("institutes");
+    for (final JsonNode institute : institutes.get("institutes")) {
+      final ObjectNode entry = metadata.addObject();
+      entry.set("institute", institute.get("institute").deepCopy());
+      entry.set("companies", institute.get("companies").deepCopy());
+      entry.set("polls", institute.get("polls").deepCopy());
+      entry.set("firstCollection", institute.get("firstCollection").deepCopy());
+      entry.set("lastCollection", institute.get("lastCollection").deepCopy());
+      entry.set("methodEras", institute.get("methodEras").deepCopy());
+    }
+
+    final ArrayNode matrices = node.putArray("matrices");
+    for (final JsonNode cycle : institutes.get("electionCycles")) {
+      final ObjectNode matrix = matrices.addObject();
+      matrix.set("cycle", cycle.deepCopy());
+      final ArrayNode rows = matrix.putArray("rows");
+      for (final JsonNode institute : institutes.get("institutes")) {
+        final ObjectNode row = rows.addObject();
+        row.set("institute", institute.get("institute").deepCopy());
+        final ArrayNode cells = row.putArray("cells");
+        for (final JsonNode effect : institute.get("houseEffects")) {
+          if (!cycle.asString().equals(effect.get("electionCycle").asString())) {
+            continue;
+          }
+          final ObjectNode cell = cells.addObject();
+          cell.set("component", effect.get("component").deepCopy());
+          cell.set("mean", effect.get("mean").deepCopy());
+          cell.set("lower", effect.get("lower").deepCopy());
+          cell.set("upper", effect.get("upper").deepCopy());
+          cell.set("shrunk", effect.get("shrunk").deepCopy());
+          cell.put("heat", heat(effect.get("mean").asDouble()));
+        }
+      }
+    }
+  }
+
+  /** The components house effects exist for, in the poll columns' order, extras after them. */
+  private static ArrayNode effectComponents(ObjectNode institutes) {
+    final Set<String> seen = new LinkedHashSet<>();
+    for (final JsonNode institute : institutes.get("institutes")) {
+      for (final JsonNode effect : institute.get("houseEffects")) {
+        seen.add(effect.get("component").asString());
+      }
+    }
+    final List<String> ordered = new ArrayList<>();
+    for (final String component : PollQuery.COMPONENTS) {
+      if (seen.contains(component)) {
+        ordered.add(component);
+      }
+    }
+    for (final String component : seen) {
+      if (!ordered.contains(component)) {
+        ordered.add(component);
+      }
+    }
+    final ArrayNode components = JSON.createArrayNode();
+    ordered.forEach(components::add);
+    return components;
+  }
+
+  /**
+   * The colour step of one heatmap cell, from the effect's size. Half-point steps keep a cell
+   * readable at both ends of the scale; the number stays in the cell, so colour is never the only
+   * cue.
+   */
+  static String heat(double mean) {
+    if (Math.abs(mean) < 0.25) {
+      return "z";
+    }
+    final int steps = Math.min(3, (int) Math.floor((Math.abs(mean) + 0.25) / 0.5));
+    return (mean > 0 ? "p" : "n") + steps;
+  }
+
+  /**
+   * The method page: the explanations are the page's own wording, and the numbers beside them come
+   * from the shipped estimator contract and the pinned publication's coverage classification. The
+   * latest document is carried whole, so the footer's interval line and the coverage table read the
+   * publication every other page reads.
+   */
+  private void method(ObjectNode page, PublicationHeader header) {
+    final String language = page.get("language").asString();
+    final ObjectNode data = page.putObject("data");
+    data.set("latest", document(publications.latest(header, header.headlinePeriod(), language)));
+    page.put("approximatedElection", header.approximatedElection());
+
+    final ModelFreeze freeze = publications.freeze();
+    final ObjectNode node = data.putObject("method");
+
+    final ObjectNode verdict = node.putObject("verdict");
+    verdict.put("status", freeze.releaseStatus());
+    verdict.put("released", freeze.released());
+    final ArrayNode failed = verdict.putArray("failedGates");
+    freeze.failedBlockingGates().forEach(failed::add);
+
+    final ObjectNode estimator = node.putObject("estimator");
+    estimator.put("version", freeze.estimatorVersion());
+    estimator.put("numericalLibrary", freeze.numericalLibrary());
+    estimator.put("developmentProtocol", freeze.developmentProtocolVersion());
+    estimator.put("releaseProtocol", freeze.releaseProtocolVersion());
+
+    final ObjectNode draws = node.putObject("draws");
+    draws.put("seed", freeze.uncertainty().seed());
+    draws.put("count", freeze.uncertainty().draws());
+    draws.put("decimals", freeze.resolution().decimals());
+    draws.put("maxDriftPoints", freeze.maxDriftPoints());
+    final ArrayNode levels = draws.putArray("intervalLevels");
+    freeze.uncertainty().intervalLevels().forEach(levels::add);
+
+    final ObjectNode coverage = node.putObject("coverage");
+    coverage.put(
+        "developmentThrough", freeze.developmentCoverage().developmentThrough().toString());
+    coverage.put("minObservations", freeze.developmentCoverage().minObservations());
+    coverage.put("minInstitutes", freeze.developmentCoverage().minInstitutes());
+    coverage.put("maxInternalGapDays", freeze.developmentCoverage().maxInternalGapDays());
+    final ArrayNode shifts = coverage.putArray("boundaryShiftDays");
+    freeze.developmentCoverage().boundaryShiftDays().forEach(shifts::add);
+    coverage.put("stabilityBurnInDays", freeze.developmentCoverage().stabilityBurnInDays());
+    coverage.put("maxStabilityShiftPoints", freeze.developmentCoverage().maxStabilityShiftPoints());
   }
 
   /** The shell every page carries: language, translated routes, wording and site identity. */

@@ -31,6 +31,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
 import se.swedishpolls.estimation.Coalitions;
+import se.swedishpolls.publication.ModelFreeze;
 import se.swedishpolls.publication.PublicationOutcome;
 import se.swedishpolls.publication.ShareImages;
 import se.swedishpolls.publication.Translations;
@@ -562,18 +563,37 @@ class PageIT {
     final String template = text.text("head.description.overview");
     final String overview = SiteHtml.escape(template.substring(0, template.indexOf('{')));
     for (final Map.Entry<String, String> page :
-        Map.of("/mandat", "seats", "/regeringsunderlag", "coalitions").entrySet()) {
+        Map.of(
+                "/mandat",
+                "seats",
+                "/regeringsunderlag",
+                "coalitions",
+                "/institut",
+                "pollsters",
+                "/metod",
+                "method")
+            .entrySet()) {
       final String body = get(page.getKey()).body();
       assertFalse(
           body.contains("<meta name=\"description\" content=\"" + overview),
           page.getKey() + " repeats the overview description");
-      final String own = text.text("head.description." + page.getValue());
       assertTrue(
-          body.contains(
-              "<meta name=\"description\" content=\""
-                  + SiteHtml.escape(own.substring(0, own.indexOf('{')))),
+          body.contains("<meta name=\"description\" content=\"" + own(text, page.getValue())),
           page.getKey() + " describes itself");
     }
+  }
+
+  /**
+   * The start of a page's own description, up to its first placeholder. A description with no
+   * placeholder, like the method page's, is used whole.
+   */
+  private static String own(SiteText text, String family) {
+    final String template = text.text("head.description." + family);
+    final int placeholder = template.indexOf('{');
+    if (placeholder < 0) {
+      return SiteHtml.escape(template);
+    }
+    return SiteHtml.escape(template.substring(0, placeholder));
   }
 
   /**
@@ -585,8 +605,14 @@ class PageIT {
   void aWideTableScrollsInsideItsOwnContainerRatherThanWideningThePage() {
     for (final Map.Entry<String, List<String>> page :
         Map.of(
-                "/mandat", List.of("seats"),
-                "/regeringsunderlag", List.of("coalitions", "pairwise"))
+                "/mandat",
+                List.of("seats"),
+                "/regeringsunderlag",
+                List.of("coalitions", "pairwise"),
+                "/institut",
+                List.of("institutes", "heat-grid", "heat-table"),
+                "/metod",
+                List.of("coverage"))
             .entrySet()) {
       final String body = get(page.getKey()).body();
       for (final String name : page.getValue()) {
@@ -598,16 +624,24 @@ class PageIT {
   }
 
   @Test
-  void theSeatsAndCoalitionsPagesPinTheSamePublicationForEveryDependentLink() {
-    for (final String path : List.of("/mandat", "/regeringsunderlag")) {
-      final String page = get(path).body();
+  void theSeatsCoalitionsAndPollstersPagesPinTheSamePublicationForEveryDependentLink() {
+    for (final Map.Entry<String, List<String>> path :
+        Map.of(
+                "/mandat",
+                List.of("seats", "coalitions"),
+                "/regeringsunderlag",
+                List.of("seats", "coalitions"),
+                "/institut",
+                List.of("institutes"))
+            .entrySet()) {
+      final String page = get(path.getKey()).body();
       final JsonNode resolved = bootstrap(page);
-      assertEquals(publicationId, resolved.get("api").get("publication").asString(), path);
-      for (final String surface : List.of("seats", "coalitions")) {
+      assertEquals(publicationId, resolved.get("api").get("publication").asString(), path.getKey());
+      for (final String surface : path.getValue()) {
         assertTrue(
             page.contains(
                 "/api/v1/" + surface + "?publication=" + publicationId + "&amp;language=sv"),
-            path + " does not offer " + surface + " pinned to its own publication");
+            path.getKey() + " does not offer " + surface + " pinned to its own publication");
       }
     }
   }
@@ -885,6 +919,248 @@ class PageIT {
       columns.add(column.asString());
     }
     return columns;
+  }
+
+  // The pollsters page: institutes, their eras and their house effects per cycle.
+
+  @Test
+  void thePollstersPageNamesItsInstitutesTheirErasAndTheirFootprint() {
+    final String page = get("/institut").body();
+    final JsonNode pollsters = bootstrap(page).get("data").get("pollsters");
+    final SiteText text = SiteText.of(Translations.SWEDISH);
+    assertTrue(page.contains("<table class=\"institutes\">"), "the metadata table");
+    assertTrue(page.contains(SiteHtml.escape(text.text("pollsters.metadata"))), "the section");
+    assertTrue(page.contains(SiteHtml.escape(text.text("pollsters.erasNote"))), "the era note");
+    assertTrue(page.contains(SiteHtml.escape(text.text("pollsters.lead"))), "the lead");
+    final String rendered = table(page, "institutes");
+    assertTrue(pollsters.get("institutes").size() > 0, "the fixture has institutes");
+    for (final JsonNode institute : pollsters.get("institutes")) {
+      final String name = institute.get("institute").asString();
+      assertTrue(rendered.contains(SiteHtml.escape(name)), name);
+      assertTrue(
+          rendered.contains(">" + institute.get("polls").asInt() + "<"), name + " poll count");
+      for (final JsonNode era : institute.get("methodEras")) {
+        if (!era.get("evidence").isNull()) {
+          assertTrue(
+              rendered.contains("href=\"" + SiteHtml.escape(era.get("evidence").asString())),
+              name + " era evidence");
+        }
+      }
+    }
+  }
+
+  @Test
+  void thePollstersPageRendersAHeatTablePerCycleBesideItsTableAlternative() {
+    final String page = get("/institut").body();
+    final JsonNode pollsters = bootstrap(page).get("data").get("pollsters");
+    final SiteText text = SiteText.of(Translations.SWEDISH);
+    assertTrue(pollsters.get("matrices").size() > 0, "the fixture has fitted cycles");
+    assertEquals(
+        pollsters.get("matrices").size(),
+        occurrences(page, "<table class=\"heat-grid\">"),
+        "one heat table per cycle");
+    assertEquals(
+        pollsters.get("matrices").size(),
+        occurrences(page, "<table class=\"heat-table\">"),
+        "one table alternative per cycle");
+    int cells = 0;
+    for (final JsonNode matrix : pollsters.get("matrices")) {
+      final String caption =
+          SiteHtml.escape(
+              SiteText.fill(
+                  text.text("pollsters.gridCaption"), "cycle", matrix.get("cycle").asString()));
+      assertTrue(page.contains(caption), matrix.get("cycle").asString());
+      for (final JsonNode row : matrix.get("rows")) {
+        for (final JsonNode cell : row.get("cells")) {
+          cells++;
+          assertEquals(
+              SiteBootstrap.heat(cell.get("mean").asDouble()),
+              cell.get("heat").asString(),
+              "the colour step follows the effect's size");
+          final String language = Translations.SWEDISH;
+          final String markup =
+              "<td class=\"num heat "
+                  + SiteHtml.escape(cell.get("heat").asString())
+                  + "\" title=\""
+                  + SiteHtml.escape(
+                      SiteText.fill(
+                          SiteText.fill(
+                              text.text("party.effectRange"),
+                              "lower",
+                              SiteFormat.decimal(cell.get("lower").asDouble(), language)),
+                          "upper",
+                          SiteFormat.decimal(cell.get("upper").asDouble(), language)))
+                  + "\">"
+                  + SiteHtml.escape(SiteFormat.decimal(cell.get("mean").asDouble(), language))
+                  + "</td>";
+          assertTrue(page.contains(markup), markup);
+        }
+      }
+    }
+    assertEquals(
+        cells,
+        occurrences(page, "<td class=\"num heat "),
+        "one heat cell per effect, and the table alternative carries every one");
+  }
+
+  @Test
+  void thePollstersPageSaysWhatItsEffectsAreMeasuredAgainst() {
+    final String page = get("/institut").body();
+    final JsonNode pollsters = bootstrap(page).get("data").get("pollsters");
+    assertTrue(page.contains(SiteHtml.escape(pollsters.get("reference").asString())));
+    assertTrue(
+        page.contains(SiteHtml.escape(SiteText.of(Translations.SWEDISH).text("notForecast"))),
+        "the single header statement");
+  }
+
+  @Test
+  void theEnglishPollstersPageRendersTheSameTablesInEnglish() {
+    final String page = get("/en/pollsters").body();
+    final SiteText english = SiteText.of(Translations.ENGLISH);
+    assertTrue(page.contains("<html lang=\"en\">"));
+    assertTrue(page.contains("<table class=\"institutes\">"));
+    assertTrue(page.contains(SiteHtml.escape(english.text("pollsters.metadata"))));
+    final String own = english.text("head.description.pollsters");
+    assertTrue(
+        page.contains(
+            "<meta name=\"description\" content=\""
+                + SiteHtml.escape(own.substring(0, own.indexOf('{')))),
+        "the pollsters page describes itself");
+    assertTrue(page.contains("hreflang=\"sv\" href=\"" + ORIGIN + "/institut\">"));
+  }
+
+  // The method page: the written explanation, the recorded verdict and the frozen values.
+
+  @Test
+  void theMethodPageExplainsDataCoverageModelValidationAndSeats() {
+    final String page = get("/metod").body();
+    final SiteText text = SiteText.of(Translations.SWEDISH);
+    final Translations words = Translations.of(Translations.SWEDISH);
+    for (final String key :
+        List.of(
+            "method.lead",
+            "method.data.title",
+            "method.data.history",
+            "method.data.provenance",
+            "method.data.eligibility",
+            "method.data.eras",
+            "method.coverage.title",
+            "method.coverage.otherNote",
+            "method.coverage.fiNote",
+            "method.coverage.boundaryNote",
+            "method.model.title",
+            "method.model.observations",
+            "method.model.estimand",
+            "method.model.house",
+            "method.model.overdispersion",
+            "method.model.hyper",
+            "method.model.draws",
+            "method.validation.title",
+            "method.validation.gateScore",
+            "method.validation.gateCoverage",
+            "method.validation.gateMisfit",
+            "method.validation.sensitivity",
+            "method.reproduction.title",
+            "method.reproduction.inputs",
+            "method.seats.title",
+            "seats.threshold",
+            "seats.pointVersusMean",
+            "notForecast")) {
+      assertTrue(page.contains(SiteHtml.escape(text.text(key))), key);
+    }
+    assertTrue(page.contains(SiteHtml.escape(words.text("seats.note"))), "the seat limitations");
+    assertTrue(page.contains(SiteHtml.escape(words.text("seats.tie"))), "deterministic ties");
+  }
+
+  @Test
+  void theMethodPagePresentsTheRecordedVerdictOfTheFreezeItRunsUnder() {
+    final String page = get("/metod").body();
+    final ModelFreeze freeze = ModelFreeze.load();
+    final JsonNode verdict = bootstrap(page).get("data").get("method").get("verdict");
+    assertEquals(freeze.releaseStatus(), verdict.get("status").asString());
+    assertEquals(freeze.released(), verdict.get("released").asBoolean());
+    final List<String> gates = new java.util.ArrayList<>();
+    for (final JsonNode gate : verdict.get("failedGates")) {
+      gates.add(gate.asString());
+    }
+    assertEquals(freeze.failedBlockingGates(), gates);
+    final SiteText text = SiteText.of(Translations.SWEDISH);
+    final String key =
+        freeze.released()
+            ? "method.validation.verdictReleased"
+            : "method.validation.verdictBlocked";
+    assertTrue(page.contains(SiteHtml.escape(text.text(key))), key);
+  }
+
+  @Test
+  void theMethodPageCarriesTheFrozenReproductionValues() {
+    final String page = get("/en/method").body();
+    final ModelFreeze freeze = ModelFreeze.load();
+    final JsonNode method = bootstrap(page).get("data").get("method");
+    assertEquals(freeze.uncertainty().seed(), method.get("draws").get("seed").asLong());
+    assertEquals(freeze.uncertainty().draws(), method.get("draws").get("count").asInt());
+    assertEquals(freeze.resolution().decimals(), method.get("draws").get("decimals").asInt());
+    assertEquals(
+        freeze.maxDriftPoints(), method.get("draws").get("maxDriftPoints").asDouble(), 0.0);
+    assertEquals(freeze.estimatorVersion(), method.get("estimator").get("version").asString());
+    assertTrue(page.contains("Seed: " + freeze.uncertainty().seed()), "the seed, spelled out");
+    assertTrue(page.contains("Joint draws: " + freeze.uncertainty().draws()), "the draw count");
+  }
+
+  @Test
+  void theMethodPageListsCoveragePeriodsWithTheirRostersAndTheirOwnerDecisions() {
+    final String page = get("/metod").body();
+    final JsonNode latest = bootstrap(page).get("data").get("latest");
+    final Translations labels = Translations.of(Translations.SWEDISH);
+    assertTrue(latest.get("coveragePeriods").size() > 0, "the fixture has coverage periods");
+    final String rendered = table(page, "coverage");
+    for (final JsonNode period : latest.get("coveragePeriods")) {
+      final String id = period.get("id").asString();
+      assertTrue(rendered.contains(SiteHtml.escape(id)), id);
+      for (final JsonNode component : period.get("roster")) {
+        assertTrue(
+            rendered.contains(SiteHtml.escape(labels.component(component.asString()))),
+            id + " " + component.asString());
+      }
+      if (period.get("otherMembers").size() > 0) {
+        assertTrue(
+            rendered.contains(SiteHtml.escape(labels.component("FI"))),
+            id + " names what OTHER includes");
+      }
+      final JsonNode decision = period.get("decision");
+      if (!decision.isNull()) {
+        assertTrue(
+            rendered.contains("href=\"" + SiteHtml.escape(decision.asString())),
+            id + " links its owner decision");
+      }
+    }
+  }
+
+  @Test
+  void theEnglishMethodPageRendersItsOwnWordingAndDescribesItself() {
+    final String page = get("/en/method").body();
+    final SiteText english = SiteText.of(Translations.ENGLISH);
+    assertTrue(page.contains("<html lang=\"en\">"));
+    assertTrue(page.contains(SiteHtml.escape(english.text("method.lead"))));
+    assertFalse(
+        page.contains(SiteHtml.escape(SiteText.of(Translations.SWEDISH).text("method.lead"))));
+    final String own = english.text("head.description.method");
+    assertTrue(
+        page.contains("<meta name=\"description\" content=\"" + SiteHtml.escape(own)),
+        "the method page describes itself");
+    assertTrue(page.contains("hreflang=\"sv\" href=\"" + ORIGIN + "/metod\">"));
+  }
+
+  @Test
+  void thePollstersAndMethodPagesReuseTheOverviewCard() {
+    final JsonNode assets = bootstrap(get("/institut").body()).get("publication").get("assets");
+    final String card = assets.get(ShareImages.OVERVIEW).get("sv").asString();
+    assertTrue(
+        get("/institut").body().contains("<meta property=\"og:image\" content=\"" + ORIGIN + card),
+        "the pollsters page shares the overview card");
+    assertTrue(
+        get("/metod").body().contains("<meta property=\"og:image\" content=\"" + ORIGIN + card),
+        "the method page shares the overview card");
   }
 
   @Test

@@ -263,8 +263,8 @@ public final class SiteHtml {
         case SEATS -> seats(html, bootstrap, text);
         case COALITIONS -> coalitions(html, bootstrap, text);
         case POLLS -> polls(html, bootstrap, text);
-        case POLLSTERS, METHOD ->
-            html.append("<h1>").append(escape(title(bootstrap, text))).append("</h1>\n");
+        case POLLSTERS -> pollsters(html, bootstrap, text);
+        case METHOD -> method(html, bootstrap, text);
       }
     }
     html.append("</main>\n");
@@ -1279,6 +1279,462 @@ public final class SiteHtml {
         .append("</p>\n");
   }
 
+  // The pollsters page: institutes, their method eras and their house effects per cycle.
+
+  /**
+   * The pollsters page, read without a script: who the institutes are, how they measure, and one
+   * heat table per election cycle beside its own table alternative. Both renderings read the same
+   * cells, so a number shown in colour and the same number shown as a row cannot disagree.
+   */
+  private static void pollsters(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final JsonNode pollsters = bootstrap.get("data").get("pollsters");
+    html.append("<h1>").append(escape(text.text("head.title.pollsters"))).append("</h1>\n");
+    html.append("<p class=\"meta\">").append(escape(text.text("pollsters.lead"))).append("</p>\n");
+    html.append("<p class=\"meta\">").append(escape(text.text("notForecast"))).append("</p>\n");
+    instituteTable(html, text, pollsters);
+    effects(html, bootstrap, text);
+    pollstersDownloads(html, bootstrap, text);
+  }
+
+  /** The house-effect download and the summary image, pinned to this publication. */
+  private static void pollstersDownloads(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final String publication = bootstrap.get("api").get("publication").asString();
+    final String language = bootstrap.get("language").asString();
+    final String pin = "?publication=" + publication + "&language=" + language;
+    html.append("<h2>")
+        .append(escape(text.text("downloads.title")))
+        .append("</h2>\n<ul class=\"downloads\">\n");
+    link(html, "/api/v1/institutes" + pin, text.text("downloads.houseEffects"));
+    final String image = shareImage(bootstrap);
+    if (image != null) {
+      link(html, image, text.text("downloads.image"));
+    }
+    html.append("</ul>\n<p class=\"meta\">")
+        .append(escape(SiteText.fill(text.text("downloads.pinned"), "publication", publication)))
+        .append("</p>\n");
+  }
+
+  /** Who each institute is: the companies behind it, its eras and its archived footprint. */
+  private static void instituteTable(StringBuilder html, SiteText text, JsonNode pollsters) {
+    html.append("<h2>").append(escape(text.text("pollsters.metadata"))).append("</h2>\n");
+    html.append("<div class=\"scroll\">\n<table class=\"institutes\"><thead><tr><th scope=\"col\">")
+        .append(escape(text.text("polls.column.institute")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("pollsters.column.companies")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("pollsters.column.eras")))
+        .append("</th><th scope=\"col\" class=\"num\">")
+        .append(escape(text.text("pollsters.column.polls")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("pollsters.column.first")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("pollsters.column.last")))
+        .append("</th></tr></thead><tbody>\n");
+    for (final JsonNode institute : pollsters.get("institutes")) {
+      html.append("<tr><th scope=\"row\">")
+          .append(escape(institute.get("institute").asString()))
+          .append("</th><td>")
+          .append(escape(String.join(", ", strings(institute.get("companies")))))
+          .append("</td><td>");
+      eras(html, institute.get("methodEras"));
+      html.append("</td><td class=\"num\">")
+          .append(escape(Integer.toString(institute.get("polls").asInt())))
+          .append("</td><td>")
+          .append(escape(span(institute.get("firstCollection"), text)))
+          .append("</td><td>")
+          .append(escape(span(institute.get("lastCollection"), text)))
+          .append("</td></tr>\n");
+    }
+    html.append("</tbody></table>\n</div>\n");
+    html.append("<p class=\"footnote\">")
+        .append(escape(text.text("pollsters.erasNote")))
+        .append("</p>\n");
+  }
+
+  /** The documented eras of one series, each linked to its evidence when the source carries it. */
+  private static void eras(StringBuilder html, JsonNode methodEras) {
+    String separator = "";
+    for (final JsonNode era : methodEras) {
+      final String id = era.get("id").asString();
+      final JsonNode evidence = era.get("evidence");
+      html.append(separator);
+      if (evidence == null || evidence.isNull() || evidence.asString().isBlank()) {
+        html.append(escape(id));
+      } else {
+        html.append("<a href=\"")
+            .append(escape(evidence.asString()))
+            .append("\">")
+            .append(escape(id))
+            .append("</a>");
+      }
+      separator = ", ";
+    }
+  }
+
+  private static List<String> strings(JsonNode values) {
+    final List<String> strings = new ArrayList<>();
+    for (final JsonNode value : values) {
+      strings.add(value.asString());
+    }
+    return strings;
+  }
+
+  /** A collection date the archive holds, or the missing marker where it holds none. */
+  private static String span(JsonNode value, SiteText text) {
+    return value == null || value.isNull() ? text.text("polls.missing") : value.asString();
+  }
+
+  /** One heat table and one table alternative per election cycle, then the shared reference. */
+  private static void effects(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final String language = bootstrap.get("language").asString();
+    final JsonNode pollsters = bootstrap.get("data").get("pollsters");
+    html.append("<h2>").append(escape(text.text("party.houseEffects"))).append("</h2>\n");
+    final JsonNode matrices = pollsters.get("matrices");
+    if (matrices.isEmpty()) {
+      html.append("<p>").append(escape(text.text("party.houseUnavailable"))).append("</p>\n");
+      return;
+    }
+    boolean shrunk = false;
+    for (final JsonNode matrix : matrices) {
+      shrunk = cycleGrid(html, language, text, pollsters, matrix) || shrunk;
+      shrunk = cycleTable(html, language, text, bootstrap.get("labels"), matrix) || shrunk;
+    }
+    html.append("<p class=\"footnote\">")
+        .append(escape(pollsters.get("reference").asString()))
+        .append("</p>\n");
+    if (shrunk) {
+      html.append("<p class=\"footnote\">")
+          .append(escape(text.text("pollsters.shrunkNote")))
+          .append("</p>\n");
+    }
+  }
+
+  /** The heat table of one cycle: institute rows, party columns, the number in the cell. */
+  private static boolean cycleGrid(
+      StringBuilder html, String language, SiteText text, JsonNode pollsters, JsonNode matrix) {
+    final JsonNode components = pollsters.get("components");
+    html.append("<div class=\"scroll\">\n<table class=\"heat-grid\">\n<caption>")
+        .append(
+            escape(
+                SiteText.fill(
+                    text.text("pollsters.gridCaption"), "cycle", matrix.get("cycle").asString())))
+        .append("</caption>\n<thead><tr><th scope=\"col\">")
+        .append(escape(text.text("polls.column.institute")))
+        .append("</th>");
+    for (final JsonNode component : components) {
+      html.append("<th scope=\"col\" class=\"num\">")
+          .append(escape(component.asString()))
+          .append("</th>");
+    }
+    html.append("</tr></thead>\n<tbody>\n");
+    boolean shrunk = false;
+    for (final JsonNode row : matrix.get("rows")) {
+      html.append("<tr><th scope=\"row\">")
+          .append(escape(row.get("institute").asString()))
+          .append("</th>");
+      final Map<String, JsonNode> cells = cellsByComponent(row.get("cells"));
+      for (final JsonNode component : components) {
+        final JsonNode cell = cells.get(component.asString());
+        if (cell == null) {
+          html.append("<td class=\"num\"></td>");
+          continue;
+        }
+        shrunk = shrunk || cell.get("shrunk").asBoolean();
+        html.append("<td class=\"num heat ")
+            .append(escape(cell.get("heat").asString()))
+            .append("\" title=\"")
+            .append(
+                escape(
+                    SiteText.fill(
+                        SiteText.fill(
+                            text.text("party.effectRange"),
+                            "lower",
+                            SiteFormat.decimal(cell.get("lower").asDouble(), language)),
+                        "upper",
+                        SiteFormat.decimal(cell.get("upper").asDouble(), language))))
+            .append("\">")
+            .append(escape(SiteFormat.decimal(cell.get("mean").asDouble(), language)))
+            .append("</td>");
+      }
+      html.append("</tr>\n");
+    }
+    html.append("</tbody></table>\n</div>\n");
+    return shrunk;
+  }
+
+  /** The table alternative of one cycle: effect, interval and the shrunk marker per cell. */
+  private static boolean cycleTable(
+      StringBuilder html, String language, SiteText text, JsonNode labels, JsonNode matrix) {
+    html.append("<div class=\"scroll\">\n<table class=\"heat-table\">\n<caption>")
+        .append(escape(text.text("pollsters.intervalCaption")))
+        .append("</caption><thead><tr><th scope=\"col\">")
+        .append(escape(text.text("polls.column.institute")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("estimate.column.party")))
+        .append("</th><th scope=\"col\" class=\"num\">")
+        .append(escape(text.text("party.houseEffect")))
+        .append("</th><th scope=\"col\" class=\"num\">")
+        .append(escape(text.text("party.houseInterval")))
+        .append("</th></tr></thead><tbody>\n");
+    boolean shrunk = false;
+    for (final JsonNode row : matrix.get("rows")) {
+      for (final JsonNode cell : row.get("cells")) {
+        shrunk = shrunk || cell.get("shrunk").asBoolean();
+        final String effect =
+            cell.get("shrunk").asBoolean()
+                ? SiteText.fill(
+                    text.text("pollsters.shrunkCell"),
+                    "effect",
+                    SiteFormat.decimal(cell.get("mean").asDouble(), language))
+                : SiteFormat.decimal(cell.get("mean").asDouble(), language);
+        html.append("<tr><th scope=\"row\">")
+            .append(escape(row.get("institute").asString()))
+            .append("</th><td>")
+            .append(escape(label(labels, cell.get("component").asString())))
+            .append("</td><td class=\"num\">")
+            .append(escape(effect))
+            .append("</td><td class=\"num\">")
+            .append(
+                escape(
+                    SiteText.fill(
+                        SiteText.fill(
+                            text.text("party.effectRange"),
+                            "lower",
+                            SiteFormat.decimal(cell.get("lower").asDouble(), language)),
+                        "upper",
+                        SiteFormat.decimal(cell.get("upper").asDouble(), language))))
+            .append("</td></tr>\n");
+      }
+    }
+    html.append("</tbody></table>\n</div>\n");
+    return shrunk;
+  }
+
+  private static Map<String, JsonNode> cellsByComponent(JsonNode cells) {
+    final Map<String, JsonNode> byComponent = new java.util.LinkedHashMap<>();
+    for (final JsonNode cell : cells) {
+      byComponent.put(cell.get("component").asString(), cell);
+    }
+    return byComponent;
+  }
+
+  // The method page: the written explanation of the estimate, its validation and its reproduction.
+
+  private static void method(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final String language = bootstrap.get("language").asString();
+    final Translations words = Translations.of(language);
+    html.append("<h1>").append(escape(text.text("head.title.method"))).append("</h1>\n");
+    html.append("<p class=\"meta\">").append(escape(text.text("method.lead"))).append("</p>\n");
+    html.append("<h2>").append(escape(text.text("method.data.title"))).append("</h2>\n");
+    note(html, text.text("method.data.history"));
+    note(html, text.text("method.data.provenance"));
+    note(html, text.text("method.data.eligibility"));
+    note(html, text.text("method.data.eras"));
+    coverage(html, bootstrap, text);
+    html.append("<h2>").append(escape(text.text("method.model.title"))).append("</h2>\n");
+    note(html, text.text("method.model.observations"));
+    note(html, text.text("method.model.estimand"));
+    note(html, text.text("method.model.house"));
+    note(html, text.text("method.model.overdispersion"));
+    note(html, text.text("method.model.hyper"));
+    note(html, text.text("method.model.draws"));
+    validation(html, bootstrap, text);
+    reproduction(html, bootstrap, text, language);
+    html.append("<h2>").append(escape(text.text("method.seats.title"))).append("</h2>\n");
+    note(
+        html,
+        SiteText.fill(
+            text.text("seats.era"),
+            "year",
+            Integer.toString(bootstrap.get("approximatedElection").asInt())));
+    note(html, text.text("seats.threshold"));
+    note(html, words.text("seats.note"));
+    note(html, words.text("seats.tie"));
+    note(html, text.text("seats.pointVersusMean"));
+  }
+
+  /** The coverage periods of the pinned publication, their rosters and their owner decisions. */
+  private static void coverage(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final JsonNode periods = bootstrap.get("data").get("latest").get("coveragePeriods");
+    final JsonNode labels = bootstrap.get("labels");
+    html.append("<h2>").append(escape(text.text("method.coverage.title"))).append("</h2>\n");
+    html.append("<div class=\"scroll\">\n<table class=\"coverage\"><caption>")
+        .append(escape(text.text("method.coverage.rosterCaption")))
+        .append("</caption><thead><tr><th scope=\"col\">")
+        .append(escape(text.text("polls.column.period")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("method.coverage.column.span")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("method.coverage.column.roster")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("polls.column.other")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("method.coverage.column.status")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("method.coverage.column.decision")))
+        .append("</th></tr></thead><tbody>\n");
+    for (final JsonNode period : periods) {
+      final List<String> roster = new ArrayList<>();
+      for (final JsonNode component : period.get("roster")) {
+        roster.add(label(labels, component.asString()));
+      }
+      final List<String> other = new ArrayList<>();
+      for (final JsonNode component : period.get("otherMembers")) {
+        other.add(label(labels, component.asString()));
+      }
+      final JsonNode decision = period.get("decision");
+      html.append("<tr><th scope=\"row\">")
+          .append(escape(period.get("id").asString()))
+          .append("</th><td>")
+          .append(
+              escape(
+                  period.get("to").isNull()
+                      ? period.get("from").asString() + "–"
+                      : period.get("from").asString() + "–" + period.get("to").asString()))
+          .append("</td><td>")
+          .append(escape(String.join(", ", roster)))
+          .append("</td><td>")
+          .append(escape(String.join(", ", other)))
+          .append("</td><td>")
+          .append(
+              escape(
+                  text.text(
+                      period.get("supportValidated").asBoolean()
+                          ? "method.coverage.validated"
+                          : "method.coverage.candidate")))
+          .append("</td><td>");
+      if (decision == null || decision.isNull() || decision.asString().isBlank()) {
+        html.append(escape(text.text("polls.missing")));
+      } else {
+        html.append("<a href=\"")
+            .append(escape(decision.asString()))
+            .append("\">")
+            .append(escape(text.text("method.coverage.column.decision")))
+            .append("</a>");
+      }
+      html.append("</td></tr>\n");
+    }
+    html.append("</tbody></table>\n</div>\n");
+    note(html, text.text("method.coverage.otherNote"));
+    note(html, text.text("method.coverage.fiNote"));
+    note(html, text.text("method.coverage.boundaryNote"));
+  }
+
+  /** The recorded verdict, the registered predictive gates, and the per-period requirements. */
+  private static void validation(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final JsonNode method = bootstrap.get("data").get("method");
+    final JsonNode verdict = method.get("verdict");
+    html.append("<h2>").append(escape(text.text("method.validation.title"))).append("</h2>\n");
+    note(
+        html,
+        text.text(
+            verdict.get("released").asBoolean()
+                ? "method.validation.verdictReleased"
+                : "method.validation.verdictBlocked"));
+    if (!verdict.get("failedGates").isEmpty()) {
+      final List<String> gates = strings(verdict.get("failedGates"));
+      note(
+          html,
+          SiteText.fill(text.text("method.validation.failed"), "gates", String.join(", ", gates)));
+    }
+    note(html, text.text("method.validation.gatesLead"));
+    html.append("<ul>\n");
+    for (final String key :
+        List.of(
+            "method.validation.gateScore",
+            "method.validation.gateCoverage",
+            "method.validation.gateMisfit")) {
+      html.append("<li>").append(escape(text.text(key))).append("</li>\n");
+    }
+    html.append("</ul>\n");
+    gateTable(html, text, method.get("coverage"));
+    note(html, text.text("method.validation.sensitivity"));
+  }
+
+  /** The registered per-period requirements, with the frozen values beside them. */
+  private static void gateTable(StringBuilder html, SiteText text, JsonNode coverage) {
+    html.append("<p class=\"meta\">")
+        .append(escape(text.text("method.validation.coverageLead")))
+        .append("</p>\n");
+    html.append("<table class=\"gates\"><tbody>\n");
+    gateRow(html, text, coverage, "method.coverage.gate.polls", "minObservations");
+    gateRow(html, text, coverage, "method.coverage.gate.institutes", "minInstitutes");
+    gateRow(html, text, coverage, "method.coverage.gate.gap", "maxInternalGapDays");
+    html.append("<tr><th scope=\"row\">")
+        .append(escape(text.text("method.coverage.gate.shifts")))
+        .append("</th><td class=\"num\">")
+        .append(escape(String.join(", ", strings(coverage.get("boundaryShiftDays")))))
+        .append("</td></tr>\n");
+    gateRow(html, text, coverage, "method.coverage.gate.burnIn", "stabilityBurnInDays");
+    gateRow(html, text, coverage, "method.coverage.gate.stability", "maxStabilityShiftPoints");
+    html.append("<tr><th scope=\"row\">")
+        .append(escape(text.text("method.coverage.gate.development")))
+        .append("</th><td class=\"num\">")
+        .append(escape(coverage.get("developmentThrough").asString()))
+        .append("</td></tr>\n");
+    html.append("</tbody></table>\n");
+  }
+
+  private static void gateRow(
+      StringBuilder html, SiteText text, JsonNode coverage, String key, String field) {
+    html.append("<tr><th scope=\"row\">")
+        .append(escape(text.text(key)))
+        .append("</th><td class=\"num\">")
+        .append(escape(coverage.get(field).asText()))
+        .append("</td></tr>\n");
+  }
+
+  /** What it takes to rerun this deployment: seed, draws, resolution, drift bound and versions. */
+  private static void reproduction(
+      StringBuilder html, ObjectNode bootstrap, SiteText text, String language) {
+    final JsonNode draws = bootstrap.get("data").get("method").get("draws");
+    final JsonNode estimator = bootstrap.get("data").get("method").get("estimator");
+    html.append("<h2>").append(escape(text.text("method.reproduction.title"))).append("</h2>\n");
+    note(
+        html,
+        SiteText.fill(
+            text.text("method.reproduction.seed"),
+            "seed",
+            Long.toString(draws.get("seed").asLong())));
+    note(
+        html,
+        SiteText.fill(
+            text.text("method.reproduction.draws"),
+            "draws",
+            Integer.toString(draws.get("count").asInt())));
+    note(
+        html,
+        SiteText.fill(
+            text.text("method.reproduction.decimals"),
+            "decimals",
+            Integer.toString(draws.get("decimals").asInt())));
+    note(
+        html,
+        SiteText.fill(
+            text.text("method.reproduction.drift"),
+            "points",
+            SiteFormat.decimal(draws.get("maxDriftPoints").asDouble(), language)));
+    note(
+        html,
+        SiteText.fill(
+            SiteText.fill(
+                text.text("method.reproduction.estimator"),
+                "version",
+                estimator.get("version").asString()),
+            "library",
+            estimator.get("numericalLibrary").asString()));
+    note(
+        html,
+        SiteText.fill(
+            SiteText.fill(
+                text.text("method.reproduction.protocols"),
+                "development",
+                estimator.get("developmentProtocol").asString()),
+            "release",
+            estimator.get("releaseProtocol").asString()));
+    note(html, text.text("method.reproduction.inputs"));
+  }
+
   private static void blocs(StringBuilder html, ObjectNode bootstrap, SiteText text) {
     final String language = bootstrap.get("language").asString();
     final JsonNode coalitions = bootstrap.get("data").get("coalitions");
@@ -1354,9 +1810,10 @@ public final class SiteHtml {
   /** The one method footer: the model, the seat approximation, OTHER and the missing-data rule. */
   private static void about(StringBuilder html, ObjectNode bootstrap, SiteText text) {
     final JsonNode publication = bootstrap.get("publication");
+    final JsonNode latest = bootstrap.has("data") ? bootstrap.get("data").get("latest") : null;
     final String level =
-        bootstrap.has("data")
-            ? SiteFormat.level(bootstrap.get("data").get("latest").get("intervalLevel").asDouble())
+        latest != null && latest.has("intervalLevel")
+            ? SiteFormat.level(latest.get("intervalLevel").asDouble())
             : null;
     html.append("<footer class=\"about\">\n<h2>")
         .append(escape(text.text("about.title")))

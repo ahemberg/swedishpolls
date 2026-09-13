@@ -1,12 +1,23 @@
 import type { JSX } from "react";
 import { About } from "./About";
 import type { Bootstrap, PageData, Translate } from "./bootstrap";
-import { COALITIONS, headlineDate, OVERVIEW, PARTY, POLLS, SEATS } from "./bootstrap";
+import {
+  COALITIONS,
+  headlineDate,
+  METHOD,
+  OVERVIEW,
+  PARTY,
+  POLLS,
+  POLLSTERS,
+  SEATS,
+} from "./bootstrap";
 import { CoalitionsPage } from "./CoalitionsPage";
 import { date, timestamp } from "./format";
+import { MethodPage } from "./MethodPage";
 import { Overview } from "./Overview";
 import { Party } from "./Party";
 import { PollsPage } from "./PollsPage";
+import { PollstersPage } from "./PollstersPage";
 import { SeatsPage } from "./SeatsPage";
 import { SiteHeader } from "./SiteHeader";
 
@@ -86,6 +97,8 @@ const PAGES: Readonly<Record<string, (props: ResultsProps) => JSX.Element>> = {
   [PARTY]: ({ page, t }) => <Party page={page} t={t} />,
   [SEATS]: ({ page, data, t }) => <SeatsPage page={page} data={data} t={t} />,
   [COALITIONS]: ({ page, data, t }) => <CoalitionsPage page={page} data={data} t={t} />,
+  [POLLSTERS]: ({ page, t }) => <PollstersPage page={page} t={t} />,
+  [METHOD]: ({ page, t }) => <MethodPage page={page} t={t} />,
 };
 
 /** The page of whichever family carries results. The server attaches data only to those. */

@@ -2,6 +2,7 @@
 @import "./styles/theme.css";
 @import "./styles/layout.css";
 @import "./styles/tables.css";
+@import "./styles/heat.css";
 
 /*
  * The approved visual design: the accessibility-adjusted party palette, flat rules instead of

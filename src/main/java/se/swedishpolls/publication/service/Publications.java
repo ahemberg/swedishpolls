@@ -3,6 +3,7 @@ package se.swedishpolls.publication.service;
 import java.time.Instant;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
+import se.swedishpolls.publication.ModelFreeze;
 import se.swedishpolls.publication.PublicationAsset;
 import se.swedishpolls.publication.PublicationDocuments;
 import se.swedishpolls.publication.PublicationHeader;
@@ -25,9 +26,11 @@ public class Publications {
   }
 
   private final PublicationStore store;
+  private final ModelFreeze freeze;
 
   public Publications(PublicationStore store) {
     this.store = store;
+    this.freeze = ModelFreeze.load();
   }
 
   /** The pinned publication when named, otherwise the current publication. */
@@ -69,6 +72,15 @@ public class Publications {
   /** When the source was last read successfully, whether or not a publication followed. */
   public Optional<Instant> lastSuccessfulCheck() {
     return store.lastSuccessfulCheck();
+  }
+
+  /**
+   * The shipped estimator contract this deployment runs under: its protocol versions, the release
+   * verdict and the frozen values a page that explains the method presents. It is deployment-wide
+   * rather than per publication, so it is read once here rather than out of a stored document.
+   */
+  public ModelFreeze freeze() {
+    return freeze;
   }
 
   /** One immutable asset version of one publication. */

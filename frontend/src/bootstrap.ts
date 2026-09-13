@@ -1,4 +1,6 @@
 import type { CoalitionResults, Seats } from "./chamber";
+import type { PollstersData } from "./institutes";
+import type { MethodData } from "./method";
 import type { PollTable } from "./poll-table";
 
 /**
@@ -33,6 +35,7 @@ export interface CoveragePeriod {
   readonly otherMembers: readonly string[];
   readonly individualFi: boolean;
   readonly supportValidated: boolean;
+  readonly decision: string | null;
   readonly otherAlsoIncludes: string;
 }
 
@@ -193,6 +196,8 @@ export interface PageData {
   readonly history?: History;
   readonly polls?: Polls;
   readonly party?: PartyData;
+  readonly pollsters?: PollstersData;
+  readonly method?: MethodData;
 }
 
 export interface Bootstrap {
@@ -218,6 +223,7 @@ export interface Bootstrap {
     readonly publication: string;
     readonly language: Language;
   };
+  readonly approximatedElection?: number;
   readonly data?: PageData;
   readonly pollTable?: PollTable;
   readonly ranges?: readonly RangeSpec[];
@@ -234,6 +240,12 @@ export const PARTY = "PARTY";
 
 /** The browsable poll table, which carries source observations rather than published estimates. */
 export const POLLS = "POLLS";
+
+/** The pollsters page, which carries institute metadata and house effects rather than estimates. */
+export const POLLSTERS = "POLLSTERS";
+
+/** The method page, which carries the explanation and the frozen numbers rather than results. */
+export const METHOD = "METHOD";
 
 /**
  * The publication-wide summary cards a page can offer. A party page is not here: it offers its
