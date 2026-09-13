@@ -1,24 +1,20 @@
 package se.swedishpolls.web.controller;
 
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.service.Publications;
-import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.PollQuery;
 import se.swedishpolls.source.Roster;
 import se.swedishpolls.source.service.PollQueryService;
@@ -26,8 +22,8 @@ import se.swedishpolls.web.EstimateQuery;
 import se.swedishpolls.web.PollFilters;
 import se.swedishpolls.web.PublicationCoverage;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectReader;
 import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
@@ -38,57 +34,59 @@ import tools.jackson.databind.node.ObjectNode;
 @RestController
 @RequestMapping("/api/v1")
 public class ApiV1Controller {
-  private static final JsonMapper JSON = JsonMapper.builder().build();
-
   private final Publications publications;
   private final PollQueryService queries;
+  private final ObjectReader coalitions;
+  private final ObjectReader histories;
+  private final ObjectReader institutes;
+  private final ObjectReader objects;
+  private final ObjectReader publicationMetadata;
 
-  public ApiV1Controller(Publications publications, PollQueryService queries) {
+  public ApiV1Controller(Publications publications, PollQueryService queries, JsonMapper json) {
     this.publications = publications;
     this.queries = queries;
+    coalitions = json.readerFor(CoalitionsResponse.class);
+    histories = json.readerFor(HistoryResponse.class);
+    institutes = json.readerFor(InstitutesDocument.class);
+    objects = json.readerFor(ObjectNode.class);
+    publicationMetadata = json.readerFor(PublicationResponse.class);
   }
 
   @GetMapping("/publication")
-  public ResponseEntity<byte[]> publication(
-      @RequestParam(defaultValue = Translations.SWEDISH) String language,
-      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+  public ResponseEntity<PublicationResponse> publication(
+      @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(null, language);
-    return json(publicationBody(resolved, Translations.of(language)), resolved, ifNoneMatch);
+    return json(publicationBody(resolved, Translations.of(language)), resolved);
   }
 
   @GetMapping("/publications/{publicationId}")
-  public ResponseEntity<byte[]> permanentPublication(
+  public ResponseEntity<PublicationResponse> permanentPublication(
       @PathVariable String publicationId,
-      @RequestParam(defaultValue = Translations.SWEDISH) String language,
-      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+      @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publicationId, language);
-    return json(publicationBody(resolved, Translations.of(language)), resolved, ifNoneMatch);
+    return json(publicationBody(resolved, Translations.of(language)), resolved);
   }
 
   @GetMapping("/estimates/latest")
   public ResponseEntity<byte[]> latest(
       @RequestParam(required = false) String publication,
       @RequestParam(required = false) String coveragePeriod,
-      @RequestParam(defaultValue = Translations.SWEDISH) String language,
-      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+      @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
     final String period =
         coveragePeriod == null ? resolved.header().headlinePeriod() : coveragePeriod;
-    return json(
-        document(publications.latest(resolved.header(), period, language), "coveragePeriod"),
-        resolved,
-        ifNoneMatch);
+    return rawJson(
+        publications.latest(resolved.header(), period, language), "coveragePeriod", resolved);
   }
 
   @GetMapping("/estimates/history")
-  public ResponseEntity<byte[]> history(
+  public ResponseEntity<HistoryResponse> history(
       @RequestParam(required = false) String publication,
       @RequestParam(required = false) String from,
       @RequestParam(required = false) String to,
       @RequestParam(required = false) String step,
       @RequestParam(required = false) String coveragePeriod,
-      @RequestParam(defaultValue = Translations.SWEDISH) String language,
-      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+      @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
     final List<PollFilters.Invalid> invalid = new ArrayList<>();
     final LocalDate fromDate = PollFilters.date(from, "from", invalid);
@@ -105,96 +103,71 @@ public class ApiV1Controller {
     if (!invalid.isEmpty()) {
       throw ApiErrors.invalidFilter(invalid);
     }
-    return json(
+    final ObjectNode sampled =
         EstimateQuery.sample(
-            stored, new EstimateQuery.Range(fromDate, toDate, stepDays, coveragePeriod)),
-        resolved,
-        ifNoneMatch);
+            stored, new EstimateQuery.Range(fromDate, toDate, stepDays, coveragePeriod));
+    return json(histories.readValue(sampled), resolved);
   }
 
   @GetMapping("/institutes")
-  public ResponseEntity<byte[]> institutes(
+  public ResponseEntity<InstitutesResponse> institutes(
       @RequestParam(required = false) String publication,
       @RequestParam(required = false) String electionCycle,
-      @RequestParam(defaultValue = Translations.SWEDISH) String language,
-      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+      @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
-    final ObjectNode stored =
-        document(publications.institutes(resolved.header(), language), "publication");
-    final List<String> cycles = new ArrayList<>();
-    for (final JsonNode cycle : stored.get("electionCycles")) {
-      cycles.add(cycle.asString());
-    }
-    if (electionCycle != null && !cycles.contains(electionCycle)) {
+    final InstitutesDocument stored =
+        document(
+            publications.institutes(resolved.header(), language),
+            "publication",
+            institutes,
+            InstitutesDocument.class);
+    if (electionCycle != null && !stored.electionCycles().contains(electionCycle)) {
       throw ApiErrors.invalidFilter(
           List.of(new PollFilters.Invalid("electionCycle", "unknown_election_cycle")));
     }
-    final String selected =
-        electionCycle == null ? (cycles.isEmpty() ? null : cycles.getLast()) : electionCycle;
-    final ObjectNode node = stored.deepCopy();
-    if (selected == null) {
-      node.putNull("electionCycle");
-    } else {
-      node.put("electionCycle", selected);
-    }
-    for (final JsonNode institute : node.get("institutes")) {
-      final ArrayNode effects = (ArrayNode) institute.get("houseEffects");
-      final ArrayNode kept = node.arrayNode();
-      for (final JsonNode effect : effects) {
-        if (selected == null || selected.equals(effect.get("electionCycle").asString())) {
-          kept.add(effect.deepCopy());
-        }
-      }
-      ((ObjectNode) institute).set("houseEffects", kept);
-    }
-    return json(node, resolved, ifNoneMatch);
+    return json(stored.select(electionCycle), resolved);
   }
 
   @GetMapping("/elections")
   public ResponseEntity<byte[]> elections(
       @RequestParam(required = false) String publication,
       @RequestParam(required = false) String coveragePeriod,
-      @RequestParam(defaultValue = Translations.SWEDISH) String language,
-      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+      @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
     final String period =
         coveragePeriod == null ? resolved.header().headlinePeriod() : coveragePeriod;
-    return json(
-        document(publications.elections(resolved.header(), period, language), "coveragePeriod"),
-        resolved,
-        ifNoneMatch);
+    return rawJson(
+        publications.elections(resolved.header(), period, language), "coveragePeriod", resolved);
   }
 
   @GetMapping("/seats")
   public ResponseEntity<byte[]> seats(
       @RequestParam(required = false) String publication,
       @RequestParam(required = false) String election,
-      @RequestParam(defaultValue = Translations.SWEDISH) String language,
-      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+      @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
     final int electionYear =
         election == null ? resolved.header().approximatedElection() : year(election);
-    return json(
-        document(publications.seats(resolved.header(), electionYear, language), "election"),
-        resolved,
-        ifNoneMatch);
+    return rawJson(
+        publications.seats(resolved.header(), electionYear, language), "election", resolved);
   }
 
   @GetMapping("/coalitions")
-  public ResponseEntity<byte[]> coalitions(
+  public ResponseEntity<?> coalitions(
       @RequestParam(required = false) String publication,
       @RequestParam(required = false) String election,
       @RequestParam(required = false) String coalition,
-      @RequestParam(defaultValue = Translations.SWEDISH) String language,
-      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+      @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
     final int electionYear =
         election == null ? resolved.header().approximatedElection() : year(election);
-    final ObjectNode stored =
-        document(publications.coalitions(resolved.header(), electionYear, language), "election");
+    final Optional<String> body =
+        publications.coalitions(resolved.header(), electionYear, language);
     if (coalition == null) {
-      return json(stored, resolved, ifNoneMatch);
+      return rawJson(body, "election", resolved);
     }
+    final CoalitionsResponse stored =
+        document(body, "election", coalitions, CoalitionsResponse.class);
     final List<String> requested = List.of(coalition.split(",", -1));
     final List<String> known = Translations.COALITION_IDS;
     final List<PollFilters.Invalid> invalid = new ArrayList<>();
@@ -206,19 +179,11 @@ public class ApiV1Controller {
     if (!invalid.isEmpty()) {
       throw ApiErrors.invalidFilter(invalid);
     }
-    final ObjectNode node = stored.deepCopy();
-    final ArrayNode kept = node.arrayNode();
-    for (final JsonNode entry : stored.get("coalitions")) {
-      if (requested.contains(entry.get("id").asString())) {
-        kept.add(entry.deepCopy());
-      }
-    }
-    node.set("coalitions", kept);
-    return json(node, resolved, ifNoneMatch);
+    return json(stored.select(requested), resolved);
   }
 
   @GetMapping("/polls")
-  public ResponseEntity<byte[]> polls(
+  public ResponseEntity<PollsResponse> polls(
       @RequestParam(required = false) String publication,
       @RequestParam(required = false) String from,
       @RequestParam(required = false) String to,
@@ -228,8 +193,7 @@ public class ApiV1Controller {
       @RequestParam(required = false) String includeExcluded,
       @RequestParam(required = false) String page,
       @RequestParam(required = false) String pageSize,
-      @RequestParam(defaultValue = Translations.SWEDISH) String language,
-      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+      @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
     final PublicationHeader header = resolved.header();
     final List<Roster.CoveragePeriod> periods = coverage(header, language);
@@ -254,9 +218,9 @@ public class ApiV1Controller {
     final PollQuery.Result result =
         queries.query(header.snapshotId(), periods, filters, requestedPage, size);
     return json(
-        pollsBody(header, result, filters, resolved, Translations.of(language)),
-        resolved,
-        ifNoneMatch);
+        PollsResponse.from(
+            header, result, filters, resolved.publicationId(), Translations.of(language)),
+        resolved);
   }
 
   @GetMapping(value = "/polls.csv", produces = "text/csv; charset=utf-8")
@@ -268,8 +232,7 @@ public class ApiV1Controller {
       @RequestParam(required = false) String party,
       @RequestParam(required = false) String coveragePeriod,
       @RequestParam(required = false) String includeExcluded,
-      @RequestParam(defaultValue = Translations.SWEDISH) String language,
-      @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+      @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
     final PublicationHeader header = resolved.header();
     final List<Roster.CoveragePeriod> periods = coverage(header, language);
@@ -289,108 +252,14 @@ public class ApiV1Controller {
     final PollQuery.Result result =
         queries.query(header.snapshotId(), periods, filters, 1, PollQuery.MAX_PAGE_SIZE);
     final byte[] body = PollQuery.csv(result, filters).getBytes(StandardCharsets.UTF_8);
-    return Responses.respond(
-        body,
-        MediaType.parseMediaType("text/csv; charset=utf-8"),
-        resolved.permanent(),
-        ifNoneMatch);
+    return Responses.render(
+        body, MediaType.parseMediaType("text/csv; charset=utf-8"), resolved.permanent());
   }
 
   // Publication metadata, composed from the immutable rows and the current pointer.
 
-  private ObjectNode publicationBody(Publications.Resolved resolved, Translations text) {
-    return publications.metadata(resolved.header(), text);
-  }
-
-  private ObjectNode pollsBody(
-      PublicationHeader header,
-      PollQuery.Result result,
-      PollQuery.Filters filters,
-      Publications.Resolved resolved,
-      Translations text) {
-    final ObjectNode node = JSON.createObjectNode();
-    final ObjectNode identity = node.putObject("publication");
-    identity.put("publicationId", header.publicationId());
-    identity.put("runId", header.runId());
-    identity.put("snapshotId", header.snapshotId());
-    final ObjectNode declared = node.putObject("filters");
-    if (filters.from() == null) {
-      declared.putNull("from");
-    } else {
-      declared.put("from", filters.from().toString());
-    }
-    if (filters.to() == null) {
-      declared.putNull("to");
-    } else {
-      declared.put("to", filters.to().toString());
-    }
-    final ArrayNode institutes = declared.putArray("institute");
-    filters.institutes().forEach(institutes::add);
-    final ArrayNode parties = declared.putArray("party");
-    filters.selectedComponents().forEach(parties::add);
-    declared.put("includeExcluded", filters.includeExcluded());
-    if (filters.coveragePeriod() == null) {
-      declared.putNull("coveragePeriod");
-    } else {
-      declared.put("coveragePeriod", filters.coveragePeriod());
-    }
-    if (filters.coveragePeriod() == null) {
-      node.put("coveragePeriod", header.headlinePeriod());
-    } else {
-      node.put("coveragePeriod", filters.coveragePeriod());
-    }
-    node.put("total", result.total());
-    node.put("page", result.page1());
-    node.put("pageSize", result.pageSize());
-    node.put("csv", PollFilters.csvLink(resolved.publicationId(), filters));
-    final ObjectNode labels = node.putObject("labels");
-    for (final String component : filters.selectedComponents()) {
-      labels.put(component, text.component(component));
-    }
-    final ArrayNode polls = node.putArray("polls");
-    for (final PollQuery.Row row : result.page()) {
-      polls.add(pollNode(row, filters));
-    }
-    return node;
-  }
-
-  /** An absent value is null, never zero and never an empty string standing in for one. */
-  private static void putOrNull(ObjectNode node, String field, Object value) {
-    switch (value) {
-      case null -> node.putNull(field);
-      case String text -> node.put(field, text);
-      case LocalDate date -> node.put(field, date.toString());
-      case BigDecimal number -> node.put(field, number);
-      default -> throw new IllegalArgumentException("Unpublishable value for " + field);
-    }
-  }
-
-  private ObjectNode pollNode(PollQuery.Row row, PollQuery.Filters filters) {
-    final PollCsv.Poll poll = row.poll();
-    final ObjectNode node = JSON.createObjectNode();
-    node.put("pollId", row.pollId());
-    node.put("institute", poll.institute());
-    node.put("company", poll.company());
-    node.put("methodEra", poll.methodEra());
-    node.put("methodEvidence", poll.methodEvidence());
-    node.put("surveyType", poll.surveyType());
-    putOrNull(node, "publicationDate", poll.publicationDate());
-    putOrNull(node, "collectionFrom", poll.collectionFrom());
-    putOrNull(node, "collectionTo", poll.collectionTo());
-    node.put("approximatePeriod", row.approximatePeriod());
-    putOrNull(node, "sampleSize", poll.sampleSize());
-    node.put("denominatorNote", poll.denominatorNote());
-    final ObjectNode shares = node.putObject("shares");
-    for (final String component : filters.selectedComponents()) {
-      putOrNull(shares, component, poll.shares().get(component));
-    }
-    putOrNull(node, "other", poll.remainder());
-    putOrNull(node, "uncertain", row.uncertain());
-    node.put("coveragePeriod", row.coveragePeriod());
-    node.put("eligible", poll.eligible());
-    final ArrayNode reasons = node.putArray("exclusionReasons");
-    poll.exclusionReasons().forEach(reasons::add);
-    return node;
+  private PublicationResponse publicationBody(Publications.Resolved resolved, Translations text) {
+    return publicationMetadata.readValue(publications.metadata(resolved.header(), text));
   }
 
   // Request parsing and publication resolution.
@@ -440,12 +309,21 @@ public class ApiV1Controller {
         document(publications.latest(header, header.headlinePeriod(), language), "publication"));
   }
 
-  private static ObjectNode document(Optional<String> body, String parameterName) {
+  private ObjectNode document(Optional<String> body, String parameterName) {
     if (body.isEmpty()) {
       throw ApiErrors.invalidFilter(
           List.of(new PollFilters.Invalid(parameterName, "unavailable_for_this_publication")));
     }
-    return (ObjectNode) JSON.readTree(body.get());
+    return objects.readValue(body.get());
+  }
+
+  private static <T> T document(
+      Optional<String> body, String parameterName, ObjectReader reader, Class<T> type) {
+    if (body.isEmpty()) {
+      throw ApiErrors.invalidFilter(
+          List.of(new PollFilters.Invalid(parameterName, "unavailable_for_this_publication")));
+    }
+    return type.cast(reader.readValue(body.get()));
   }
 
   private static boolean knownPeriod(ObjectNode history, String coveragePeriod) {
@@ -459,12 +337,19 @@ public class ApiV1Controller {
 
   // Response shaping: content ETags and the two cache classes.
 
-  private ResponseEntity<byte[]> json(
-      ObjectNode body, Publications.Resolved resolved, String ifNoneMatch) {
-    return Responses.respond(
-        JSON.writeValueAsBytes(body),
+  private static <T> ResponseEntity<T> json(T body, Publications.Resolved resolved) {
+    return Responses.render(body, resolved.permanent());
+  }
+
+  private ResponseEntity<byte[]> rawJson(
+      Optional<String> body, String parameterName, Publications.Resolved resolved) {
+    if (body.isEmpty()) {
+      throw ApiErrors.invalidFilter(
+          List.of(new PollFilters.Invalid(parameterName, "unavailable_for_this_publication")));
+    }
+    return Responses.render(
+        body.get().getBytes(StandardCharsets.UTF_8),
         MediaType.APPLICATION_JSON,
-        resolved.permanent(),
-        ifNoneMatch);
+        resolved.permanent());
   }
 }
