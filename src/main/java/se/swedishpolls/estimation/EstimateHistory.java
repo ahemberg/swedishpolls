@@ -365,7 +365,7 @@ public final class EstimateHistory {
    * The published half of a drawn day. The drawn mean and its intervals carry over; the transform
    * of the mean state beside them does not, because two numbers cannot both be the point estimate.
    */
-  private static Day published(JointUncertainty.Day day) {
+  static Day published(JointUncertainty.Day day) {
     final java.util.LinkedHashMap<
             java.lang.String, se.swedishpolls.estimation.EstimateHistory.Estimate>
         components = new LinkedHashMap<String, Estimate>();

@@ -1,4 +1,5 @@
 import type { CoalitionResults, Seats } from "./chamber";
+import type { CoalitionHistoryData } from "./coalition-history";
 import type { PollstersData } from "./institutes";
 import type { MethodData } from "./method";
 import type { PollTable } from "./poll-table";
@@ -189,6 +190,7 @@ export interface NavigationEntry {
  * overview alone, so they are absent rather than empty on the seats and coalitions pages.
  */
 export interface PageData {
+  readonly coalitionHistory?: CoalitionHistoryData;
   readonly latest: Latest;
   readonly seats: Seats;
   readonly coalitions: CoalitionResults;

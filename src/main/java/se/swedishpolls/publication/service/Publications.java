@@ -52,6 +52,13 @@ public class Publications {
     return document(publication, PublicationDocuments.HISTORY_SURFACE, language);
   }
 
+  public Optional<String> coalitionHistory(PublicationHeader publication) {
+    return document(
+        publication,
+        se.swedishpolls.publication.CoalitionHistoryDocument.SURFACE,
+        Translations.SWEDISH);
+  }
+
   public Optional<String> institutes(PublicationHeader publication, String language) {
     return document(publication, PublicationDocuments.INSTITUTES_SURFACE, language);
   }

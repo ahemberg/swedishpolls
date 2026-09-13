@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import se.swedishpolls.estimation.CoalitionHistory;
+import se.swedishpolls.estimation.CoalitionPrecision;
 import se.swedishpolls.estimation.ComparableRemainder;
 import se.swedishpolls.estimation.CoverageValidation;
 import se.swedishpolls.estimation.DailyStateSpace;
@@ -31,9 +33,12 @@ public final class PublicationRun {
       EstimateHistory.Estimated history,
       ComparableRemainder.Estimated remainder,
       JointUncertainty.Draws draws,
-      List<HouseEffects.Effect> houseEffects) {
+      List<HouseEffects.Effect> houseEffects,
+      List<CoalitionHistory.Day> coalitionHistory,
+      CoalitionPrecision.Report coalitionPrecision) {
     public Period {
       houseEffects = List.copyOf(houseEffects);
+      coalitionHistory = List.copyOf(coalitionHistory);
     }
 
     @Override
@@ -105,12 +110,20 @@ public final class PublicationRun {
       // independently, because reproducing the input is its point.
       final EstimateHistory.Fitted fitted =
           EstimateHistory.fitted(period, polls, electionDates, parameters, coverage);
-      final EstimateHistory.Estimated history =
-          EstimateHistory.estimate(fitted, period, coverage, freeze.uncertainty());
+      if (freeze.coalitionPrecision().draws() != freeze.uncertainty().draws()
+          || !freeze.coalitionPrecision().seeds().contains(freeze.uncertainty().seed())) {
+        throw new IllegalStateException(
+            "Coalition precision must validate the publication ensemble");
+      }
+      final CoalitionPrecision.Report precision =
+          CoalitionPrecision.evaluate(fitted, period.id(), freeze.coalitionPrecision());
+      precision.requirePassed();
+      final CoalitionHistory.Estimated combined =
+          CoalitionHistory.estimate(fitted, period, coverage, freeze.uncertainty());
+      final EstimateHistory.Estimated history = combined.history();
       final ComparableRemainder.Estimated remainder =
           ComparableRemainder.estimate(fitted, period, references, coverage, freeze.uncertainty());
-      final JointUncertainty.Draws drawn =
-          JointUncertainty.finalDay(fitted, period, parameters, freeze.uncertainty()).draws();
+      final JointUncertainty.Draws drawn = combined.finalDraws();
       periods.add(
           new Period(
               period,
@@ -123,7 +136,9 @@ public final class PublicationRun {
                   electionDates,
                   level,
                   freeze.uncertainty().draws(),
-                  freeze.uncertainty().seed())));
+                  freeze.uncertainty().seed()),
+              combined.days(),
+              precision));
     }
     if (periods.isEmpty()) {
       throw new IllegalStateException("No validated coverage period produced an estimate");

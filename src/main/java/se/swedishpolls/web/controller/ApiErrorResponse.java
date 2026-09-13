@@ -9,6 +9,8 @@ sealed interface ApiErrorResponse extends java.io.Serializable {
 
   String message();
 
+  record Field(String code, String field, String message) implements ApiErrorResponse {}
+
   record Basic(String code, String message) implements ApiErrorResponse {}
 
   record Version(String code, String message, List<String> supportedVersions)

@@ -49,5 +49,17 @@
     }
   ],
   "estimatorVersion": "midpoint-ilr-state-space/v1-development-1",
-  "numericalLibrary": "org.ejml:ejml-simple:0.46.1"
+  "numericalLibrary": "org.ejml:ejml-simple:0.46.1",
+  "coalitionHistoryPrecision": {
+    "draws": 10000,
+    "seeds": [
+      20260908,
+      20260909,
+      20260910
+    ],
+    "referenceDraws": 40000,
+    "referenceSeed": 20260911,
+    "maxMeanErrorPoints": 0.12,
+    "maxEndpointErrorPoints": 0.12
+  }
 }

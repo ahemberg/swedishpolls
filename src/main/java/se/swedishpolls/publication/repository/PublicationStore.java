@@ -387,6 +387,24 @@ public class PublicationStore {
         .update();
   }
 
+  /** Read the small capability manifest without transferring every subset to metadata callers. */
+  public Optional<String> coalitionHistoryMetadata(String publicationId) {
+    return db.sql(
+            """
+        SELECT jsonb_build_object(
+          'schemaVersion', body->'schemaVersion', 'aggregationVersion', body->'aggregationVersion',
+          'artifactSha256', encode(sha256(convert_to(body::text, 'UTF8')), 'hex'),
+          'artifactBytes', octet_length(body::text),
+          'interval', body->'interval', 'roster', body->'roster',
+          'draws', body->'draws', 'seed', body->'seed')::text
+        FROM publication_document
+        WHERE publication_id = ? AND surface = 'coalition-history' AND language = 'sv'
+        """)
+        .param(publicationId)
+        .query(String.class)
+        .optional();
+  }
+
   public void recordDocument(String publicationId, String surface, String language, String body) {
     db.sql(
             "INSERT INTO publication_document(publication_id, surface, language, body, sha256)"

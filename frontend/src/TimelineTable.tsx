@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import type { Bootstrap, Series, Translate } from "./bootstrap";
-import { decimal, percent, shortDate } from "./format";
+import { decimal, interval, percent, shortDate } from "./format";
 
 /**
  * The chart's table alternative. It carries the same sampled days and the same values, so a reader
@@ -21,16 +21,34 @@ function TimelineTable({
   drawn,
   label,
   t,
+  intervals = false,
 }: {
   readonly page: Bootstrap;
   readonly dates: readonly string[];
   readonly drawn: readonly Series[];
   readonly label: (component: string) => string;
   readonly t: Translate;
+  readonly intervals?: boolean;
 }): JSX.Element {
+  let caption = "timeline.tableCaption";
+  let className: string | undefined;
+  if (intervals) {
+    caption = "coalitionHistory.table";
+    className = "coalition-history";
+  }
+  function value(series: Series, index: number): string {
+    if (intervals) {
+      return interval(
+        [series.mean[index], series.lower[index], series.upper[index]],
+        page.language,
+        t,
+      );
+    }
+    return cell(page, series, index, t);
+  }
   return (
-    <table>
-      <caption>{t("timeline.tableCaption")}</caption>
+    <table className={className}>
+      <caption>{t(caption)}</caption>
       <thead>
         <tr>
           <th scope="col">{t("timeline.column.date")}</th>
@@ -47,7 +65,7 @@ function TimelineTable({
             <th scope="row">{shortDate(day, page.locale)}</th>
             {drawn.map((series) => (
               <td key={series.component} className="num">
-                {cell(page, series, position, t)}
+                {value(series, position)}
               </td>
             ))}
           </tr>

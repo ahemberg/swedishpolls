@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import type { Bootstrap, PageData, Translate } from "./bootstrap";
 import { ChamberHeading } from "./ChamberHeading";
+import { CoalitionHistory } from "./CoalitionHistory";
 import type { CoalitionResults } from "./chamber";
 import { Downloads } from "./Downloads";
 import { decimal, probability } from "./format";
@@ -125,6 +126,7 @@ function CoalitionsPage({ page, data, t }: Props): JSX.Element {
         lead="coalitions.lead"
         majoritySeats={coalitions.majoritySeats}
       />
+      <CoalitionHistory page={page} history={data.coalitionHistory} t={t} />
       <section className="sec">
         <Catalogue page={page} coalitions={coalitions} t={t} />
         <p className="footnote">{coalitions.note}</p>

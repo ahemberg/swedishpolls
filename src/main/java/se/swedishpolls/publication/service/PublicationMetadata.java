@@ -70,6 +70,14 @@ final class PublicationMetadata {
       }
     }
     node.put("history", header.history());
+    store
+        .coalitionHistoryMetadata(header.publicationId())
+        .ifPresent(
+            manifest -> {
+              node.putObject("capabilities").put("customCoalitionHistory", 1);
+              node.set("coalitionHistory", JSON.readTree(manifest));
+            });
+
     return node;
   }
 }

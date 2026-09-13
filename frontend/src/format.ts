@@ -1,4 +1,4 @@
-import type { Language } from "./bootstrap";
+import type { Language, Translate } from "./bootstrap";
 
 /**
  * The same number and date wording the server applies. Both sides read the same locale and the
@@ -104,4 +104,30 @@ function colour(component: string): string {
   return `var(--c-${component})`;
 }
 
-export { colour, count, date, decimal, level, percent, probability, shortDate, timestamp };
+function interval(
+  [mean, lower, upper]: readonly (number | null | undefined)[],
+  language: Language,
+  t: Translate,
+): string {
+  if (typeof mean !== "number" || typeof lower !== "number" || typeof upper !== "number") {
+    return t("estimate.unavailable");
+  }
+  return t("coalitionHistory.interval", {
+    mean: decimal(mean, language),
+    lower: decimal(lower, language),
+    upper: decimal(upper, language),
+  });
+}
+
+export {
+  colour,
+  count,
+  date,
+  decimal,
+  interval,
+  level,
+  percent,
+  probability,
+  shortDate,
+  timestamp,
+};

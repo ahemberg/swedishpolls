@@ -1,0 +1,26 @@
+{
+  "protocolVersion" : "coalition-history-1",
+  "sourceSha256" : "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+  "developmentEnd" : "2021-10-05",
+  "periods" : [ {
+    "periodId" : "eight_party_2010",
+    "report" : {
+      "dates" : [ "2010-01-04", "2015-11-13", "2018-08-30", "2021-09-20" ],
+      "comparedSummaries" : 3060,
+      "maxMeanErrorPoints" : 0.02299138845725679,
+      "maxEndpointErrorPoints" : 0.07299455198887728,
+      "passed" : true
+    }
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "report" : {
+      "dates" : [ "2014-04-09", "2016-06-22", "2018-08-25", "2018-09-05" ],
+      "comparedSummaries" : 3060,
+      "maxMeanErrorPoints" : 0.03038927446257844,
+      "maxEndpointErrorPoints" : 0.11285730515322712,
+      "passed" : true
+    }
+  } ],
+  "seconds" : 34.178800627,
+  "passed" : true
+}

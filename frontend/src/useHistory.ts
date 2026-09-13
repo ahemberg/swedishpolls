@@ -30,6 +30,14 @@ function query(page: Bootstrap, range: RangeSpec): string {
   return `${api.base}/estimates/history?${parameters.toString()}`;
 }
 
+async function historyJson<T>(url: string, signal: AbortSignal): Promise<T> {
+  const response = await fetch(url, { signal });
+  if (!response.ok) {
+    throw new Error(`History request failed: ${response.status}`);
+  }
+  return response.json() as Promise<T>;
+}
+
 function useHistory(page: Bootstrap, rangeId: string): Loaded {
   const initial = page.data?.history;
   const isDefault = rangeId === page.defaultRange;
@@ -47,16 +55,12 @@ function useHistory(page: Bootstrap, rangeId: string): Loaded {
     const aborter = new AbortController();
     setLoading(true);
     setFailed(false);
-    fetch(query(page, range), { signal: aborter.signal })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(rangeId);
-        }
-        return response.json() as Promise<History>;
-      })
+    historyJson<History>(query(page, range), aborter.signal)
       .then((loaded) => {
-        setHistory(loaded);
-        setLoading(false);
+        if (!aborter.signal.aborted) {
+          setHistory(loaded);
+          setLoading(false);
+        }
       })
       .catch(() => {
         if (!aborter.signal.aborted) {
@@ -65,10 +69,10 @@ function useHistory(page: Bootstrap, rangeId: string): Loaded {
         }
       });
     return () => aborter.abort();
-  }, [page, range, rangeId, isDefault, initial]);
+  }, [page, range, isDefault, initial]);
 
   return { history, loading, failed };
 }
 
 export type { Loaded };
-export { useHistory };
+export { historyJson, useHistory };

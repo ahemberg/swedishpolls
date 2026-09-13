@@ -26,10 +26,33 @@ public final class TestFreeze {
     return ModelFreeze.parse(adjusted(draws, "blocked", false));
   }
 
+  /**
+   * Isolated host benchmark: only the release verdict changes, every numerical rule stays frozen.
+   */
+  public static ModelFreeze benchmark() {
+    try (final InputStream input = ModelFreeze.class.getResourceAsStream(ModelFreeze.RESOURCE)) {
+      final ObjectNode root = (ObjectNode) JSON.readTree(input.readAllBytes());
+      final ObjectNode release = (ObjectNode) root.get("release");
+      release.put("status", "released");
+      release.putArray("failedBlockingGates");
+      return ModelFreeze.parse(root);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
   private static JsonNode adjusted(int draws, String status, boolean clearGates) {
     try (final InputStream input = ModelFreeze.class.getResourceAsStream(ModelFreeze.RESOURCE)) {
       final ObjectNode root = (ObjectNode) JSON.readTree(input.readAllBytes());
       root.put("draws", draws);
+      // Pipeline fixtures use few draws and do not claim production Monte Carlo precision.
+      // The real error rule is checked separately by CoalitionPrecisionTest and its registered
+      // study.
+      final ObjectNode precision = (ObjectNode) root.get("coalitionHistoryPrecision");
+      precision.put("draws", draws);
+      precision.put("referenceDraws", draws * 4);
+      precision.put("maxMeanErrorPoints", 100);
+      precision.put("maxEndpointErrorPoints", 100);
       final ObjectNode release = (ObjectNode) root.get("release");
       release.put("status", status);
       if (clearGates) {

@@ -423,6 +423,92 @@ public final class SiteHtml {
    * The coalitions page: all ten memberships, and every pair of them compared over the same draws.
    * A label is membership and nothing more, which the page says next to the catalogue.
    */
+  private static void coalitionHistory(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final JsonNode history = bootstrap.path("data").path("coalitionHistory");
+    html.append("<section class=\"sec\"><h2>")
+        .append(escape(text.text("coalitionHistory.title")))
+        .append("</h2>");
+    if (history.isMissingNode()) {
+      html.append("<p>")
+          .append(escape(text.text("coalitionHistory.unavailable")))
+          .append("</p></section>");
+      return;
+    }
+    final String language = bootstrap.get("language").asString();
+    html.append("<p>").append(escape(text.text("coalitionHistory.note"))).append("</p>");
+    html.append("<p>")
+        .append(
+            escape(
+                SiteText.fill(
+                    text.text("coalitionHistory.published"),
+                    "date",
+                    history.get("publishedAt").asString())))
+        .append("</p>");
+    html.append("<h3>")
+        .append(
+            escape(
+                SiteText.fill(
+                    text.text("coalitionHistory.latest"),
+                    "date",
+                    history.get("latest").get("date").asString())))
+        .append("</h3>");
+    for (final String block : List.of("a", "b")) {
+      final JsonNode summary = history.get("latest").get(block);
+      html.append("<p>").append(escape(text.text("coalitionHistory." + block))).append(": ");
+      for (final JsonNode party : history.get("selection").get(block))
+        html.append(escape(party.asString())).append(" ");
+      html.append(
+              escape(
+                  coalitionInterval(
+                      summary.get("mean"),
+                      summary.get("lower"),
+                      summary.get("upper"),
+                      language,
+                      text)))
+          .append("</p>");
+    }
+    html.append("<div class=\"scroll\"><table class=\"coalition-history\"><caption>")
+        .append(escape(text.text("coalitionHistory.table")))
+        .append("</caption><thead><tr><th scope=\"col\">")
+        .append(escape(text.text("timeline.column.date")))
+        .append("</th>");
+    for (final String block : List.of("a", "b"))
+      html.append("<th scope=\"col\">")
+          .append(escape(text.text("coalitionHistory." + block)))
+          .append("</th>");
+    html.append("</tr></thead><tbody>");
+    for (int index = 0; index < history.get("dates").size(); index++) {
+      html.append("<tr><th scope=\"row\">")
+          .append(escape(history.get("dates").get(index).asString()))
+          .append("</th>");
+      for (final String block : List.of("a", "b")) {
+        final JsonNode series = history.get("series").get(block);
+        html.append("<td>")
+            .append(
+                escape(
+                    coalitionInterval(
+                        series.get("mean").get(index),
+                        series.get("lower").get(index),
+                        series.get("upper").get(index),
+                        language,
+                        text)))
+            .append("</td>");
+      }
+      html.append("</tr>");
+    }
+    html.append("</tbody></table></div></section>");
+  }
+
+  private static String coalitionInterval(
+      JsonNode mean, JsonNode lower, JsonNode upper, String language, SiteText text) {
+    if (!mean.isNumber() || !lower.isNumber() || !upper.isNumber())
+      return text.text("estimate.unavailable");
+    return text.text("coalitionHistory.interval")
+        .replace("{mean}", SiteFormat.decimal(mean.asDouble(), language))
+        .replace("{lower}", SiteFormat.decimal(lower.asDouble(), language))
+        .replace("{upper}", SiteFormat.decimal(upper.asDouble(), language));
+  }
+
   private static void coalitions(StringBuilder html, ObjectNode bootstrap, SiteText text) {
     final String language = bootstrap.get("language").asString();
     final JsonNode labels = bootstrap.get("labels");
@@ -441,6 +527,7 @@ public final class SiteHtml {
                     "majority",
                     Integer.toString(coalitions.get("majoritySeats").asInt()))))
         .append("</p>\n");
+    coalitionHistory(html, bootstrap, text);
     html.append("<div class=\"scroll\">\n<table class=\"coalitions\">\n<caption>")
         .append(escape(text.text("coalitions.caption")))
         .append("</caption>\n<thead><tr>");

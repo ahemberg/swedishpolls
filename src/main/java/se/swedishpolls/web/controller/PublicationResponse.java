@@ -14,7 +14,13 @@ record PublicationResponse(
     ModelRun modelRun,
     Snapshot snapshot,
     JsonNode assets,
-    String history) {
+    String history,
+    @com.fasterxml.jackson.annotation.JsonInclude(
+            com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        JsonNode capabilities,
+    @com.fasterxml.jackson.annotation.JsonInclude(
+            com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        JsonNode coalitionHistory) {
   record ModelRun(
       String runId,
       String codeVersion,
