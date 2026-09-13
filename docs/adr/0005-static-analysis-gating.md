@@ -46,21 +46,25 @@ start-up, and the flags need updating in step.
 
 ## ArchUnit evaluation
 
-The decision is to decline ArchUnit while all 19 production Java files remain in one package.
-None of the proposed rules justifies another test dependency and custom rule code today:
+The original evaluation declined ArchUnit while production lived in one package. The package
+migration in #116 through #118 satisfies the recorded reconsideration trigger: responsibility and
+MVC role boundaries now exist, including inbound controllers.
 
-| Candidate | Current evidence |
-| --- | --- |
-| Require constructor injection | Production code has no injected fields and only three Spring components. ADR 0004 already requires constructor injection. |
-| Forbid `java.util.Date` and `Calendar` | Production code has no references to either type and already uses `java.time`. |
-| Keep web types away from `JdbcClient` and `JdbcTemplate` | There are no inbound controller types, so the rule would pass without checking a class. |
-| Forbid `System.out` and `System.err` | `ImageSmokeCheck` intentionally reports its result to standard output as a command-line program, so a blanket rule would reject valid code. |
-| Forbid `printStackTrace` | Production code has no calls to it. |
+#119 adopts the test-scoped `archunit` core library, using the existing JUnit runner. Its compiled
+class importer and package-cycle checks avoid maintaining a bytecode parser or dependency graph.
+`ArchitectureTest` imports only Maven's production output, `target/classes`, so test fixtures do
+not enter the dependency analysis. It runs in the ordinary Maven test phase and therefore gates
+`./mvnw verify`, with no separate test engine or CI job.
 
-Reconsider ArchUnit when the code has package or module boundaries with dependency rules worth
-enforcing, when an inbound web layer makes the JDBC rule non-vacuous, or when repeated review
-findings show that a documented prohibition needs an automated check. Until then, Error Prone
-and SpotBugs remain the build's static-analysis gates.
+The rules enforce [the package guide](../java-packages.md): acyclic packages, responsibility and
+MVC role direction, no dependencies back into the bootstrap package, plain calculations and
+model values, JDBC confined to repositories/configuration, controllers free of storage and
+fitting, and scheduled entry points calling services. Two schedulers moved beside their services
+to remove actual root-to-service-to-root package cycles. There is no baseline or suppression.
+
+The earlier candidates for constructor injection, legacy date types, standard output and
+`printStackTrace` remain outside this rule set. This adoption adds only the dependency checks
+justified by the migrated architecture.
 
 ## Error Prone opt-in review
 

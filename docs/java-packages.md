@@ -2,7 +2,7 @@
 
 Read [ADR 0008](adr/0008-java-package-organization.md) for the decision and its rationale. This
 guide is the convention to follow when adding Java classes, moving classes, or changing package
-dependencies. The code is partly migrated; see [Current state](#current-state-partially-migrated).
+dependencies. The migration is complete; see [Current state](#current-state).
 
 ## Package map
 
@@ -19,7 +19,7 @@ se.swedishpolls
 │   │                                SourceHttpConfig
 │   ├── source.repository            JDBC lookups: snapshots, coverage periods, election references,
 │   │                                national allocation rules
-│   └── source                       scheduled entry points live beside the service they call
+│   └── source.service               SnapshotIngestScheduler calls the ingestion service
 ├── estimation                       the estimator and its model, all plain Java
 │   └── (root)                       PollObservations, WindowFilter, DailyStateSpace, EstimateHistory,
 │                                    HouseEffects, RecencyBaseline, JointUncertainty, Coalitions,
@@ -37,7 +37,7 @@ se.swedishpolls
 │   │                                Publications and PublicationMetadata
 │   ├── publication.repository       document rows, asset links: PublicationStore; the worker's
 │   │                                advisory lock: PublicationLock
-│   └── publication                  scheduled entry points live beside the service they call
+│   └── publication.service          PublisherScheduler calls the publication service
 ├── model                            shared immutable values used by more than one responsibility
 │   └── (root)                       ElectionReference and NationalAllocationRule
 └── web                              the HTTP surface and the server-rendered site
@@ -67,8 +67,9 @@ Data/JPA is not required and not used; a plain class with repository-named metho
 Repositories depend on values, not on controllers or service implementations.
 
 **Scheduled entry points** (`@Scheduled` classes) are thin: read configuration, call one service
-method, log the outcome. `SnapshotIngestScheduler` sits in `source`, `PublisherScheduler` in
-`publication`. They carry no business logic.
+method, log the outcome. `SnapshotIngestScheduler` sits in `source.service`, `PublisherScheduler` in
+`publication.service`. This keeps the value packages independent of the services that use them.
+They carry no business logic.
 
 **Configuration** for a responsibility lives in that responsibility, including the registration of
 the outbound HTTP clients it owns. Only wiring that spans responsibilities, such as scheduling
@@ -154,12 +155,12 @@ publication surface needs it, `publication.service` calls it; the web layer neve
   responsibility keeps integration coverage that starts the real Spring context instead of
   constructing production components manually.
 
-## Rules for later architecture checks
+## Architecture checks
 
-The package boundaries this convention creates are the dependency rules future architecture checks
-must enforce:
+The package boundaries this convention creates are the dependency rules `ArchitectureTest`
+enforces:
 
-1. `web.controller` depends only on service classes, never on repositories, `JdbcClient` or
+1. `web.controller` calls application operations through services, never through repositories, `JdbcClient` or
    `JdbcTemplate`, filesystem access, or estimation internals.
 2. Repositories never depend on controllers or service implementations.
 3. `estimation` never depends on `publication` or `web`; `publication` may depend on `estimation`
@@ -169,16 +170,16 @@ must enforce:
 6. `@Scheduled` classes only call service methods.
 
 [ADR 0005](adr/0005-static-analysis-gating.md) declined ArchUnit while all production files lived in one package, with an explicit
-condition to reconsider when such boundaries exist. This convention is that condition; the tickets
-that implement the migration decide on the tool.
+condition to reconsider when such boundaries exist. #119 adopts the ArchUnit core library through
+the existing JUnit runner.
 
-## Current state (partially migrated)
+## Current state
 
 This section describes the tree and is updated as migration tickets land, unlike the rest of this
 guide, which states the target.
 
 `source` is organized per this convention as of #117: `source` (root) holds `PollCsv`, `PollQuery`,
-`Roster`, `Snapshot` and the `SnapshotIngestScheduler` entry point. `source.service` holds ingestion,
+`Roster` and `Snapshot`. `source.service` holds the `SnapshotIngestScheduler` entry point, ingestion,
 poll-query, election-reference and allocation-rule operations. `source.repository` holds their JDBC
 lookups. The shared `Snapshot` value stays in `source`; `ElectionReference` and
 `NationalAllocationRule` sit in `model` because repositories, services, estimation and publication
@@ -192,12 +193,12 @@ calculation instead of accessing fitting spans.
 
 `publication` and `web` are organized per this convention as of #118, so only `Application` and
 `ImageSmokeCheck` remain directly in `se.swedishpolls`. `publication` (root) holds `ModelFreeze`,
-`PublicationRun`, `PublicationDocuments`, `ShareImages`, `Translations`, the `PublisherScheduler`
-entry point, and the values a publication is read through: `PublicationHeader`,
+`PublicationRun`, `PublicationDocuments`, `ShareImages`, `Translations`, and the values a publication
+is read through: `PublicationHeader`,
 `CurrentPublication`, `PublicationAsset`, `ModelRun`, `PinnedSnapshot`, `PublicationOutcome` and
 the `Digest` operation their stored bytes are recorded under. `publication.service` holds
-`Publisher`, the `Publications` read service and `PublicationMetadata`; `publication.repository`
-holds `PublicationStore` and the `PublicationLock` advisory lock. `web` (root) holds the
+`PublisherScheduler`, `Publisher`, the `Publications` read service and `PublicationMetadata`;
+`publication.repository` holds `PublicationStore` and the `PublicationLock` advisory lock. `web` (root) holds the
 site-rendering cluster and `EstimateQuery`; `web.controller` holds `PageController`,
 `ApiV1Controller`, `AssetController`, `ApiExceptionHandler`, `ApiErrors` and the shared `Responses`
 cache and ETag helper.
@@ -212,7 +213,13 @@ words its own movement figure instead of borrowing the site's, and `ShareImages`
 `PollQuery.COMPONENTS`; `SiteRoutesTest` fails if the party pages and the poll components ever
 disagree.
 
-#119 adds the compiled dependency checks.
+#119 completes the migration with compiled dependency checks. It moves both scheduled entry points
+into their service packages to remove package cycles without changing scheduling or publication
+behavior. `ArchitectureTest` checks every production class in `target/classes`, excluding test
+fixtures. Run it with `./mvnw -Dtest=ArchitectureTest test`, or through `./mvnw verify`.
+Controllers can use response values and web formatting helpers; their application operations go
+through services. Scheduled entry points may read returned values and log outcomes, but invoke
+application operations only on services.
 [ADR 0003](adr/0003-immutable-model-values.md) (immutable model values),
 [ADR 0004](adr/0004-spring-infrastructure-and-integration-tests.md) (Spring infrastructure and
 integration tests), and [ADR 0007](adr/0007-publications-are-immutable-documents.md) (publications

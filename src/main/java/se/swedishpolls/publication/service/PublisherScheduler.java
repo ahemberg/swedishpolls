@@ -1,11 +1,10 @@
-package se.swedishpolls.publication;
+package se.swedishpolls.publication.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import se.swedishpolls.publication.service.Publisher;
 
 /** Runs the single publication worker. Overlap is prevented by its advisory lock, not by timing. */
 @Component
