@@ -127,6 +127,16 @@ class PageIT {
       final String page = get(path).body();
       final JsonNode history = bootstrap(page).path("data").path("coalitionHistory");
       assertEquals(publicationId, history.path("publicationId").asString());
+      final HttpResponse<String> api =
+          get(
+              "/api/v1/publications/"
+                  + publicationId
+                  + "/coalition-history?a=S,V,C,MP&b=M,KD,L,SD&step=7");
+      assertEquals(200, api.statusCode());
+      assertEquals(
+          history,
+          JSON.readTree(api.body()),
+          "The served page and paired HTTP response use the same complete artifact");
       assertEquals(
           List.of("S", "V", "C", "MP"),
           JSON.convertValue(
@@ -139,6 +149,7 @@ class PageIT {
       final Path preview = Path.of("target", "coalition-preview", path.substring(1), "index.html");
       Files.createDirectories(preview.getParent());
       Files.writeString(preview, page);
+      Files.writeString(preview.resolveSibling("coalition-history.json"), api.body());
     }
   }
 

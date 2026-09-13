@@ -16,6 +16,16 @@ public record CoalitionSelection(List<String> a, List<String> b) {
     }
   }
 
+  @Override
+  public List<String> a() {
+    return List.copyOf(a);
+  }
+
+  @Override
+  public List<String> b() {
+    return List.copyOf(b);
+  }
+
   public static CoalitionSelection parse(String a, String b) {
     return new CoalitionSelection(tokens(a, "a"), tokens(b, "b"));
   }
