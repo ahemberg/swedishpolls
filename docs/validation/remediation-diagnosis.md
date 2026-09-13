@@ -15,16 +15,16 @@ run. The compact reproduction command was:
 python3 - <<'PY'
 import json
 from collections import Counter
-t = json.load(open("docs/validation/tuning.json"))
-d = json.load(open("docs/validation/diagnostics.json"))
+tuning_report = json.load(open("docs/validation/tuning.json"))
+diagnostics_report = json.load(open("docs/validation/diagnostics.json"))
 for period in ("eight_party_2010", "fi_candidate_2014_2018"):
-    rows = [r for r in t["resolved"] if r["periodId"] == period]
+    rows = [r for r in tuning_report["resolved"] if r["periodId"] == period]
     print(period, len(rows), sum(bool(r["gridBoundaries"]) for r in rows),
           Counter(a for r in rows for a in r["gridBoundaries"]))
-print(t["unresolved"])
-print(d["unscored"])
-print(d["paired"])
-print([r for r in d["misfit"] if r["periodId"] == "eight_party_2010"])
+print(tuning_report["unresolved"])
+print(diagnostics_report["unscored"])
+print(diagnostics_report["paired"])
+print([r for r in diagnostics_report["misfit"] if r["periodId"] == "eight_party_2010"])
 PY
 ```
 
@@ -100,7 +100,7 @@ Both unresolved rows are FI candidate training folds:
 | 2014-01-15 | 2014-02-19 | No eligible training observation in the FI period | [tuning.json](tuning.json#L1749-L1756) |
 | 2014-03-16 | 2014-04-20 | No eligible training observation in the FI period | [tuning.json](tuning.json#L1757-L1763) |
 
-The FI candidate period starts on 2014-04-09, so these cutoffs precede its first supported source
+The FI candidate coverage segment starts on 2014-04-09, so these cutoffs precede its first supported source
 observation. This is an empty-period fold, not a failed numerical fit. `tuneAll` emits this reason
 when `PollObservations.prepare` returns no observations, before it attempts the grid
 [`fit`](../../src/main/java/se/swedishpolls/estimation/DevelopmentTuning.java#L229-L244). The
@@ -205,7 +205,7 @@ upper bands (`0.9850` at 95%, `0.6300` at 50%), KD below the 95% lower band (`0.
 RMS `1.8372`), Sifo is below the 95% band (`0.8838`), Inizio is below the same band (`0.8952`
 over 21 polls and 210 component cases), and the 1-7-day fieldwork band is just below
 95% (`0.8986`). These are descriptive FI diagnostics only. The FI roster has 200 scored polls in
-the archived breakdown and remains an unvalidated candidate period. See [diagnostics.json](diagnostics.json#L2490-L2794).
+the archived breakdown and remains an unvalidated candidate coverage segment. See [diagnostics.json](diagnostics.json#L2490-L2794).
 
 Residual dependence is material. Eight-party whitened-residual autocorrelation is `0.4086`,
 `0.4116`, and `0.4316` at lags 1, 2, and 3. The same report measures mean whitened-residual cross-products per ilr coordinate, `1.0904` for

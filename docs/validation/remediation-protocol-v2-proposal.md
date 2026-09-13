@@ -40,7 +40,7 @@ frozen eight-party comparison. This proposal does not change the midpoint likeli
 ## Smallest proposed change
 
 Approve one development-only expansion of the lower grid endpoints, and a complete
-fold disposition manifest for the fixed FI coverage period. Keep the midpoint
+fold disposition manifest for the fixed FI candidate coverage segment. Keep the midpoint
 candidate, independently tuned ilr-window reference, recency baseline, priors,
 equal-institute centering, method eras, zero replacement and full covariances.
 No per-party or per-institute noise parameters and no window-estimator substitution
@@ -64,7 +64,9 @@ ranges, not estimates inferred from unrun fits.
 A multiplier below one permits underdispersion relative to the nominal multinomial
 covariance. Although `DailyStateSpace` and `DevelopmentTuning.Grid` already accept
 positive multipliers, this changes the interpretation of the handoff's inflated
-observation noise and the glossary's overdispersion. Owner approval must explicitly
+observation noise and the glossary's overdispersion. This explicitly proposes
+reconsidering [ADR 0001](../adr/0001-midpoint-state-space-estimator.md)'s pooled
+overdispersion decision for this development experiment. Owner approval must explicitly
 accept this interpretation for development. It is not a tolerance relaxation or
 permission to publish narrower intervals. If the owner requires multiplier >= 1,
 reject this proposal and request a separately justified constrained-boundary protocol;
@@ -106,7 +108,7 @@ physical row identity and reason. Missing FI is never zero or an observed residu
 | FI, 2014-05-15 through 2018-08-22, all 27 registered cutoffs | Active; rerun every fold | Includes the sparse initial fit and final horizon crossing the support end; score all eligible in-period rows and retain excluded out-of-period rows |
 | FI, 2018-10-21 through 2021-10-05, all 19 registered cutoffs | Outside estimable period, not scored | No held-out composition after the fixed FI support end; retain the original repeated historical tuning rows as evidence, not 19 new independent fits |
 
-The inventory enumerates all 21 inactive cutoffs. The fixed FI source-support interval
+The inventory enumerates all 21 inactive cutoffs. The fixed FI candidate coverage segment
 is 2014-04-09 through 2018-09-07, based on coverage evidence rather than predictive
 scores. It is candidate support, not approval to publish individual FI estimates.
 Retain every one of the 96 roster/cutoff entries in the revised manifest, including
