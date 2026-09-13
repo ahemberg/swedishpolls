@@ -1,10 +1,9 @@
-package se.swedishpolls.source;
+package se.swedishpolls.source.service;
 
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import se.swedishpolls.source.service.SnapshotIngest;
 
 @Component
 @ConditionalOnProperty(name = "polls.ingest.enabled", havingValue = "true", matchIfMissing = true)
