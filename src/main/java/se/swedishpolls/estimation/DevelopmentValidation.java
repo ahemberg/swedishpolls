@@ -10,10 +10,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.Roster;
 import tools.jackson.databind.JsonNode;
@@ -28,6 +30,7 @@ public final class DevelopmentValidation {
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final String FROZEN = "frozen";
+  private static final String VERSION = "v2-development-1";
 
   private DevelopmentValidation() {}
 
@@ -45,12 +48,12 @@ public final class DevelopmentValidation {
               + " <registration.json> <source.csv> <result.json>");
       return REJECTED;
     }
-    final Path first = Path.of(args[1]);
+    final Path registrationInput = Path.of(args[1]);
     final Path source = Path.of(args[2]);
     final Path output = Path.of(args[3]);
     try {
-      if (args[0].equals("prepare")) prepare(first, source, output);
-      else preflight(first, source, output);
+      if (args[0].equals("prepare")) prepare(registrationInput, source, output);
+      else preflight(registrationInput, source, output);
       return SUCCESS;
     } catch (RuntimeException e) {
       rejected(output, e.getMessage());
@@ -63,17 +66,16 @@ public final class DevelopmentValidation {
     refuseExisting(registrationFile);
     refuseExisting(checksum(registrationFile));
     final JsonNode plan = read(planFile);
-    require(
-        required(plan, "version").asString().startsWith("v2")
-            || required(plan, "version").asString().startsWith("test-"),
-        "Development registration must be versioned");
+    verifyProtocol(plan);
     verifySource(plan, sourceFile);
     verifyIdentities(plan);
+    verifyImplementationCommit(plan);
     verifyEnvironment(plan);
     verifyOutputLocation(plan);
     grid(plan);
     final ArrayNode folds = manifests(plan, sourceFile);
     compareArchived(plan, folds);
+    verifyApprovedManifest(plan, folds);
 
     final ObjectNode registration = JSON.createObjectNode();
     registration.put("status", FROZEN);
@@ -101,15 +103,19 @@ public final class DevelopmentValidation {
     require(
         FROZEN.equals(required(registration, "status").asString()), "Registration is not frozen");
     final JsonNode plan = required(registration, "plan");
+    verifyProtocol(plan);
     verifyPlanIdentity(registration);
     verifySource(plan, sourceFile);
     verifyIdentities(plan);
+    verifyImplementationCommit(plan);
     verifyEnvironment(plan);
     verifyOutputLocation(plan);
     grid(plan);
     final ArrayNode rebuilt = manifests(plan, sourceFile);
     require(rebuilt.equals(required(registration, "folds")), "Eligibility row manifest mismatch");
     compareArchived(plan, rebuilt);
+    verifyApprovedManifest(plan, rebuilt);
+    verifyCommitted(registrationFile);
 
     final ObjectNode result = JSON.createObjectNode();
     result.put("status", "ready");
@@ -264,9 +270,138 @@ public final class DevelopmentValidation {
         doubles(grid, "covarianceMultipliers"));
   }
 
+  private static void verifyProtocol(JsonNode plan) {
+    final String version = required(plan, "version").asString();
+    if (!VERSION.equals(version)) {
+      require(
+          version.startsWith("test-") && required(plan, "testFixture").booleanValue(),
+          "Unsupported development protocol version");
+      return;
+    }
+    require(
+        required(plan, "source")
+            .get("sha256")
+            .asString()
+            .equals("27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608"),
+        "Approved source identity mismatch");
+    require(
+        required(required(plan, "authority"), "proposal")
+            .asString()
+            .equals("v2-development-1-proposal-1"),
+        "Approved authority mismatch");
+    required(plan, "implementationCommit");
+    require(
+        strings(plan, "electionCycleDates")
+            .equals(List.of("2010-09-19", "2014-09-14", "2018-09-09", "2022-09-11")),
+        "Approved election cycle dates mismatch");
+    final JsonNode seeds = required(plan, "seeds");
+    require(required(seeds, "master").intValue() == 20260908, "Approved master seed mismatch");
+    require(
+        integers(seeds, "precision")
+            .equals(
+                List.of(
+                    20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914,
+                    20260915)),
+        "Approved precision seeds mismatch");
+    require(required(plan, "commands").size() == 2, "Approved commands are incomplete");
+    require(
+        required(plan, "outputLocation")
+            .asString()
+            .equals("docs/validation/v2-development-1/evidence/run-1"),
+        "Approved output location mismatch");
+    require(
+        required(plan, "foldsFrom").asString().equals("docs/validation/protocol.json"),
+        "Approved fold source mismatch");
+    require(
+        required(plan, "archivedDiagnostics").asString().equals("docs/validation/diagnostics.json"),
+        "Approved diagnostic source mismatch");
+    final Set<String> identities = new HashSet<>();
+    for (JsonNode identity : required(plan, "identities")) {
+      identities.add(required(identity, "path").asString());
+    }
+    for (String path :
+        List.of(
+            "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java",
+            "src/main/java/se/swedishpolls/estimation/DevelopmentTuning.java",
+            "src/main/java/se/swedishpolls/estimation/DevelopmentDiagnostics.java",
+            "src/main/java/se/swedishpolls/estimation/PollObservations.java",
+            "docs/validation/protocol.json",
+            "docs/validation/diagnostics.json",
+            "src/main/resources/publication/model-freeze.json")) {
+      require(identities.contains(path), "Missing required identity " + path);
+    }
+    final Map<String, String> environment =
+        Map.of(
+            "javaVersion", "25.0.4",
+            "osName", "Linux",
+            "osArch", "amd64",
+            "mavenVersion", "3.9.16",
+            "nodeVersion", "24.13.1",
+            "npmVersion", "11.8.0",
+            "ejmlVersion", "0.46.1",
+            "postgresImage",
+                "postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636",
+            "runtimeImage",
+                "eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e");
+    for (Map.Entry<String, String> entry : environment.entrySet()) {
+      require(
+          required(required(plan, "environment"), entry.getKey())
+              .asString()
+              .equals(entry.getValue()),
+          "Approved environment identity mismatch: " + entry.getKey());
+    }
+    require(
+        doubles(required(plan, "grid"), "walkVariances")
+            .equals(List.of(0.000003, 0.00001, 0.00003, 0.0001, 0.0003, 0.001)),
+        "Approved walk-variance grid mismatch");
+    require(
+        doubles(required(plan, "grid"), "houseScales").equals(List.of(0.01, 0.02, 0.05, 0.1, 0.2)),
+        "Approved house-scale grid mismatch");
+    require(
+        doubles(required(plan, "grid"), "covarianceMultipliers")
+            .equals(List.of(0.5, 0.75, 1.0, 1.5, 2.0, 3.0)),
+        "Approved covariance grid mismatch");
+  }
+
+  private static void verifyApprovedManifest(JsonNode plan, ArrayNode manifests) {
+    if (!VERSION.equals(required(plan, "version").asString())) return;
+    require(manifests.size() == 96, "Approved protocol must contain 96 fold entries");
+    final long active =
+        manifests.valueStream().filter(fold -> fold.get("active").booleanValue()).count();
+    require(active == 75, "Approved protocol must contain 75 active fold entries");
+    final long missingTraining =
+        manifests
+            .valueStream()
+            .filter(fold -> fold.has("reason"))
+            .filter(
+                fold -> fold.get("reason").asString().equals("no_eligible_training_observation"))
+            .count();
+    final long missingComposition =
+        manifests
+            .valueStream()
+            .filter(fold -> fold.has("reason"))
+            .filter(fold -> fold.get("reason").asString().equals("no_held_out_composition"))
+            .count();
+    require(missingTraining == 2, "Approved protocol must contain two missing-training folds");
+    require(
+        missingComposition == 19, "Approved protocol must contain 19 missing-composition folds");
+  }
+
   private static List<Double> doubles(JsonNode parent, String field) {
     final List<Double> values = new ArrayList<>();
     for (JsonNode value : required(parent, field)) values.add(value.doubleValue());
+    return List.copyOf(values);
+  }
+
+  private static List<String> strings(JsonNode parent, String field) {
+    final List<String> values = new ArrayList<>();
+    for (JsonNode value : required(parent, field)) values.add(value.asString());
+    return List.copyOf(values);
+  }
+
+  private static List<Integer> integers(JsonNode parent, String field) {
+    final List<Integer> values = new ArrayList<>();
+    for (JsonNode value : required(parent, field)) values.add(value.intValue());
     return List.copyOf(values);
   }
 
@@ -310,6 +445,29 @@ public final class DevelopmentValidation {
 
   private static void verifyIdentities(JsonNode plan) {
     for (JsonNode identity : required(plan, "identities")) verifyIdentity(identity, "Input");
+  }
+
+  private static void verifyImplementationCommit(JsonNode plan) {
+    if (!VERSION.equals(required(plan, "version").asString())) return;
+    final String commit = required(plan, "implementationCommit").asString();
+    final Path root =
+        Path.of(git(null, "Cannot locate the repository", "rev-parse", "--show-toplevel").trim());
+    git(
+        root,
+        "Implementation commit is unavailable",
+        "rev-parse",
+        "--verify",
+        commit + "^{commit}");
+    for (JsonNode identity : required(plan, "identities")) {
+      git(
+          root,
+          "Identity differs from the implementation commit",
+          "diff",
+          "--quiet",
+          commit,
+          "--",
+          required(identity, "path").asString());
+    }
   }
 
   private static void verifyIdentity(JsonNode identity, String kind) {
@@ -370,6 +528,50 @@ public final class DevelopmentValidation {
 
   private static void refuseExisting(Path path) {
     require(!Files.exists(path), "Output already exists: " + path);
+  }
+
+  private static void verifyCommitted(Path registration) {
+    final Path absolute = registration.toAbsolutePath().normalize();
+    final Path root =
+        Path.of(git(null, "Cannot locate the repository", "rev-parse", "--show-toplevel").trim());
+    require(absolute.startsWith(root), "Frozen registration is outside the repository");
+    final String relative = root.relativize(absolute).toString();
+    git(
+        root,
+        "Frozen registration is not committed",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        relative);
+    git(
+        root,
+        "Frozen registration has uncommitted changes",
+        "diff",
+        "--quiet",
+        "HEAD",
+        "--",
+        relative);
+  }
+
+  private static String git(Path directory, String failure, String... arguments) {
+    final List<String> command = new ArrayList<>();
+    command.add("git");
+    command.addAll(List.of(arguments));
+    try {
+      final ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
+      if (directory != null) builder.directory(directory.toFile());
+      final Process process = builder.start();
+      final String output =
+          new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+      final int exit = process.waitFor();
+      require(exit == 0, failure + (output.isBlank() ? "" : ": " + output.trim()));
+      return output;
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Interrupted while checking frozen registration", e);
+    }
   }
 
   private static Path checksum(Path registration) {

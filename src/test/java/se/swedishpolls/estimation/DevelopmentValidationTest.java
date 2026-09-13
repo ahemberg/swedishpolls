@@ -65,10 +65,11 @@ class DevelopmentValidationTest {
 
     final Path result = temp.resolve("preflight.json");
     assertEquals(
-        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.REJECTED,
         DevelopmentValidation.run(
             "preflight", registration.toString(), source.toString(), result.toString()));
-    assertEquals("ready", JSON.readTree(Files.readAllBytes(result)).get("status").asString());
+    assertTrue(
+        JSON.readTree(Files.readAllBytes(result)).get("reasons").toString().contains("repository"));
     assertFalse(Files.exists(evidence));
 
     final Path changedRegistration = temp.resolve("changed-registration.json");
@@ -197,6 +198,31 @@ class DevelopmentValidationTest {
             Path.of("src", "test", "resources", "polls", "audit.csv").toString(),
             result.toString()));
     assertEquals("ready", JSON.readTree(Files.readAllBytes(result)).get("status").asString());
+
+    final JsonNode wrongToolchain = registration.deepCopy();
+    ((ObjectNode) wrongToolchain.get("plan").get("environment")).put("npmVersion", "wrong");
+    final Path wrongToolchainRegistration = temp.resolve("wrong-toolchain.json");
+    Files.writeString(
+        wrongToolchainRegistration,
+        JSON.writerWithDefaultPrettyPrinter().writeValueAsString(wrongToolchain) + "\n",
+        StandardCharsets.UTF_8);
+    Files.writeString(
+        wrongToolchainRegistration.resolveSibling("wrong-toolchain.json.sha256"),
+        DevelopmentGates.sha256(wrongToolchainRegistration) + "\n",
+        StandardCharsets.UTF_8);
+    final Path wrongToolchainResult = temp.resolve("wrong-toolchain-result.json");
+    assertEquals(
+        DevelopmentValidation.REJECTED,
+        DevelopmentValidation.run(
+            "preflight",
+            wrongToolchainRegistration.toString(),
+            Path.of("src", "test", "resources", "polls", "audit.csv").toString(),
+            wrongToolchainResult.toString()));
+    assertTrue(
+        JSON.readTree(Files.readAllBytes(wrongToolchainResult))
+            .get("reasons")
+            .toString()
+            .contains("environment"));
   }
 
   private static JsonNode fold(JsonNode registration, String period, String cutoff) {
@@ -229,6 +255,7 @@ class DevelopmentValidationTest {
     return """
         {
           "version": "test-v2",
+          "testFixture": true,
           "registeredOn": "2026-09-13",
           "source": {"path": "%s", "sha256": "%s"},
           "identities": [{"path": "%s", "sha256": "%s"}],
