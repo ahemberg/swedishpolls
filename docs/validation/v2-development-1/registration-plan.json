@@ -1,7 +1,7 @@
 {
   "version": "v2-development-1",
   "registeredOn": "2026-09-13",
-  "implementationCommit": "3cd4f663970906326a00ad7f423fdaf5ce355d6a",
+  "implementationCommit": "4ef50c3bc269734cc9579bc7b6f29fda088ecf92",
   "authority": {
     "proposal": "v2-development-1-proposal-1",
     "proposalCommit": "d5699e82fd537ddc6bad817c4884c36a62752401",
@@ -20,7 +20,7 @@
     {"path": "frontend/package-lock.json", "sha256": "9435e439b60a378cf1c171d588aa47c27937d621416103fd1f90c7838bb9707b"},
     {"path": "compose.yaml", "sha256": "67e98177d8c54d7b284f79d6f732db78ce0d216e066faf54857fcbe8619291a6"},
     {"path": "compose.dev.yaml", "sha256": "b7db0e30c83eb4f04f03fa6eee862dc4ba309742b475072570f88cecb17fe8f2"},
-    {"path": "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java", "sha256": "c1f6ee09db03b50a62cb8dd20db6888cae47d1b528d8ed5e828175f4a47801d4"},
+    {"path": "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java", "sha256": "d687dc54eb5267b72449b78dbbdc7cc0f2343cc6241f08aa191156622adc0d1f"},
     {"path": "src/main/java/se/swedishpolls/estimation/DevelopmentTuning.java", "sha256": "af76ea1981c2c263115f2ab693d77f6578026b01bd80fe6cfca9d05f135dae6e"},
     {"path": "src/main/java/se/swedishpolls/estimation/DevelopmentDiagnostics.java", "sha256": "b968fe1cba13ab376ac360faccc75e434b40773921819c4ffd898b629d26ac3a"},
     {"path": "src/main/java/se/swedishpolls/estimation/PollObservations.java", "sha256": "d6a0b2d400d538181d9f0fced69368dfd29831e6ec8c73be2eb3610fa351aa10"},
@@ -29,6 +29,14 @@
     {"path": "docs/validation/protocol.json", "sha256": "6f774b8517078c88b82c1af3332a3478ec8e9f7156de529c7e20f4cfbcb4d667"},
     {"path": "docs/validation/release-protocol.json", "sha256": "934520c7cda4458a3cf302fcd79d2e104a3fef2233e00968c4ec42320b6b070b"},
     {"path": "docs/validation/diagnostics.json", "sha256": "d374e62a7a4e482b314f6066ff36f0c83f34ad9ca0d2fe397af9a725beb201ed"},
+    {"path": "docs/validation/coverage.json", "sha256": "843fdd1ba7dcf4f70cf253996be366ff8793114676b5d24bc0777d518ab364e1"},
+    {"path": "docs/validation/tuning.json", "sha256": "8fbfa7b22b1b0db553b38ac00afa3ed070241265fa5267099502f9071b6bc397"},
+    {"path": "docs/validation/history.json", "sha256": "8ccac840b5838cba54c24d4b3dc17bba0b9086fd4bf61acbe0cf486635844969"},
+    {"path": "docs/validation/uncertainty.json", "sha256": "75e565e9a0b1cf2c0c9e85eae9140cfbbb73af207b4cfa75026b8db68303aa00"},
+    {"path": "docs/validation/remainder.json", "sha256": "d64549550b47e13ec0fb670aa15e52e6f8bd5db1e93945fb61340c55670551ae"},
+    {"path": "docs/validation/seats.json", "sha256": "a66a4e8a35e66f4ef176db38794618f902b163d7191a20cc2f23608c8189229e"},
+    {"path": "docs/validation/development-gates.json", "sha256": "38f8f6498463f53838be92eeb113c45e9f386177d75e564fec0d23dab707f8f9"},
+    {"path": "docs/validation/release-audit.json", "sha256": "cb1d97d9b65526fa3501f17778ade2ac6741a52c5966194fabd615267bee3ad7"},
     {"path": "docs/validation/remediation-inventory.json", "sha256": "fb4a0d251ab43fb05eeb58b74c5864ba766f398cc1ea990fac25365250e0fcb5"},
     {"path": "docs/validation/remediation-protocol-v2-proposal.md", "sha256": "dbf828812ae9f9d8b6ff984501b02759a06d925df08ec804668e56db2d332c71"},
     {"path": "docs/adr/0009-development-remediation-protocol.md", "sha256": "dd9bb226b10264837d2a1cad0c1058ce013361feb73a6944b95e5014a55172e0"},
@@ -39,6 +47,11 @@
     {"path": "src/main/resources/db/migration/V5__publications.sql", "sha256": "fd01f399ae544537a566750b339068069fabc4a9e1bca2d1690542fc87b1a897"},
     {"path": "src/main/resources/publication/model-freeze.json", "sha256": "65f1e9e4e8ae3dd3ddbf20004f211cabf0fac56eb3689484c2635d869cda38fb"}
   ],
+  "gateDefinitions": {
+    "protocol": "docs/validation/protocol.json",
+    "development": "docs/validation/development-gates.json",
+    "proposal": "docs/validation/remediation-protocol-v2-proposal.md"
+  },
   "environment": {
     "javaVersion": "25.0.4",
     "osName": "Linux",
