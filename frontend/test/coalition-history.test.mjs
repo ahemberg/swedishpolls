@@ -1,6 +1,48 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { blockColors, fitSegments } from '../src/coalition-history.ts';
+import {
+  assign,
+  assignmentFromSelection,
+  blockColors,
+  destinationOf,
+  emptyAssignment,
+  fitSegments,
+  groupsFor,
+  PARTIES,
+  PRESET,
+  total,
+} from '../src/coalition-history.ts';
+
+test('all 6,561 assignments keep each party in exactly one ordered destination', () => {
+  const destinations = ['a', 'b', 'unassigned'];
+  for (let state = 0; state < 3 ** PARTIES.length; state += 1) {
+    let remaining = state;
+    const assignment = PARTIES.map(() => {
+      const destination = destinations[remaining % destinations.length];
+      remaining = Math.floor(remaining / destinations.length);
+      return destination;
+    });
+    const groups = groupsFor(assignment);
+    assert.deepEqual(groups.a, PARTIES.filter((party) => destinationOf(assignment, party) === 'a'));
+    assert.deepEqual(groups.b, PARTIES.filter((party) => destinationOf(assignment, party) === 'b'));
+    assert.equal(groups.a.length + groups.b.length + assignment.filter((value) => value === 'unassigned').length, PARTIES.length);
+  }
+});
+
+test('preset, clear, singleton and moves preserve canonical roster order', () => {
+  assert.deepEqual(groupsFor(PRESET), {a:['S','V','C','MP'], b:['M','SD','KD','L']});
+  assert.deepEqual(groupsFor(emptyAssignment()), {a:[], b:[]});
+  const singleton = assign(emptyAssignment(), 'SD', 'b');
+  assert.deepEqual(groupsFor(singleton), {a:[], b:['SD']});
+  assert.equal(destinationOf(assign(singleton, 'SD', 'a'), 'SD'), 'a');
+  assert.deepEqual(assignmentFromSelection({a:['MP','S'], b:['L']}), ['a','unassigned','unassigned','unassigned','unassigned','unassigned','b','a']);
+});
+
+test('latest totals use zero for empty groups and null for missing constituents', () => {
+  assert.equal(total([], {}), 0);
+  assert.equal(total(['S','V'], {S:31.2,V:7.8}), 39);
+  assert.equal(total(['S','V'], {S:31.2,V:null}), null);
+});
 
 test('approved mixtures use latest support, conditional SD blue and neutral missing weights', () => {
   assert.equal(blockColors([['S', 'M'], []], {S:10,M:30})[0], '#463864');
