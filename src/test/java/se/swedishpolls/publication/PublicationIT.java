@@ -97,6 +97,57 @@ class PublicationIT {
         lock, ingest, queries, electionReferences, allocationRules, target, DRAWS);
   }
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private se.swedishpolls.publication.service.Publications publications;
+
+  @Test
+  @org.junit.jupiter.api.condition.EnabledIfSystemProperty(
+      named = "coalition.benchmark",
+      matches = "true")
+  void benchmarkTheFullPipelineOnTheSelectedHost() throws IOException {
+    // The complete archived source, without trimming its history or relaxing numerical gates.
+    final byte[] bytes = Files.readAllBytes(Path.of("src/test/resources/polls/audit.csv"));
+    TestPublication.serve(wireMock, bytes);
+    final long start = System.nanoTime();
+    final Publisher.Attempt attempt =
+        TestPublication.benchmark(lock, ingest, queries, electionReferences, allocationRules, store)
+            .publish();
+    final double seconds = (System.nanoTime() - start) / 1_000_000_000.0;
+    final tools.jackson.databind.node.ObjectNode evidence = JSON.createObjectNode();
+    evidence.put("protocolVersion", "coalition-history-1");
+    evidence.put("sourceSha256", Digest.sha256(bytes));
+    evidence.put("pipelineSeconds", seconds);
+    evidence.put("outcome", attempt.outcome().toString());
+    evidence.put("detail", attempt.detail());
+    evidence.put("jvmMaxHeapBytes", Runtime.getRuntime().maxMemory());
+    evidence.put("javaRuntime", System.getProperty("java.runtime.version"));
+    evidence.put(
+        "releaseScope", "Isolated benchmark fixture only. Live frozen release remains blocked.");
+    if (attempt.outcome() == PublicationOutcome.PUBLISHED) {
+      final String artifact =
+          store
+              .document(attempt.publicationId(), CoalitionHistoryDocument.SURFACE, "sv")
+              .orElseThrow();
+      evidence.put(
+          "artifactBytes", artifact.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+      evidence.put(
+          "artifactSha256",
+          Digest.sha256(artifact.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+      evidence.set("precision", JSON.readTree(artifact).get("precision"));
+      evidence.put("images", store.assets(attempt.publicationId()).size());
+    }
+    evidence.put(
+        "processHighWaterMark",
+        Files.readAllLines(Path.of("/proc/self/status")).stream()
+            .filter(line -> line.startsWith("VmHWM:"))
+            .findFirst()
+            .orElseThrow());
+    Files.writeString(
+        Path.of("target/coalition-pipeline-benchmark.json"), evidence.toPrettyString());
+    assertEquals(PublicationOutcome.PUBLISHED, attempt.outcome(), attempt.detail());
+    assertTrue(seconds < 1800, evidence.toPrettyString());
+  }
+
   @Test
   void aChangedSnapshotBecomesOnePublicationWithEveryDocumentAndEveryCard() {
     final Publisher.Attempt attempt = publisher().publish();
@@ -110,6 +161,34 @@ class PublicationIT {
     final PublicationHeader header = store.header(current.publicationId()).orElseThrow();
     assertEquals(PublicationStore.PUBLISHED, header.state());
     assertEquals("corrected", header.history());
+    final JsonNode metadata = publications.metadata(header, Translations.of("sv"));
+    assertEquals(1, metadata.path("capabilities").path("customCoalitionHistory").asInt());
+    final String artifact = publications.coalitionHistory(header).orElseThrow();
+    assertEquals(
+        Digest.sha256(artifact.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+        metadata.path("coalitionHistory").path("artifactSha256").asString());
+    final JsonNode coalitionHistory = JSON.readTree(artifact);
+    assertEquals(255, coalitionHistory.get("subsets").size());
+    for (final JsonNode subset : coalitionHistory.get("subsets")) {
+      for (final String column : List.of("mean", "lower", "upper", "availability")) {
+        assertEquals(coalitionHistory.get("dates").size(), subset.get(column).size());
+      }
+    }
+    assertEquals(
+        header.headlinePeriod(), coalitionHistory.get("coveragePeriodIds").get(0).asString());
+    assertEquals(
+        coalitionHistory.get("dates").get(coalitionHistory.get("dates").size() - 1),
+        coalitionHistory.get("latest").get("date"));
+    assertEquals(
+        metadata.path("coalitionHistory").path("artifactSha256").asString(),
+        db.sql(
+                "SELECT sha256 FROM publication_document WHERE publication_id = ? AND surface = 'coalition-history' AND language = 'sv'")
+            .param(header.publicationId())
+            .query(String.class)
+            .single());
+    assertEquals(header.runId(), coalitionHistory.get("modelRunId").asString());
+    assertEquals(header.publishedAt().toString(), coalitionHistory.get("publishedAt").asString());
+
     assertEquals(PERIOD, header.headlinePeriod());
     assertTrue(header.approximatedElection() >= header.lastFieldworkDate().getYear());
     // The three times are distinct quantities, and none of them stands in for the others.
@@ -120,6 +199,7 @@ class PublicationIT {
       for (final String surface :
           List.of(
               PublicationDocuments.HISTORY_SURFACE,
+              "coalition-history",
               PublicationDocuments.INSTITUTES_SURFACE,
               PublicationDocuments.latestSurface(PERIOD),
               PublicationDocuments.electionsSurface(PERIOD))) {
@@ -165,14 +245,17 @@ class PublicationIT {
         latest.get("unavailable").get("FI").get("reason").asString());
   }
 
-  @Test
-  void aFailedUpdateExposesNoPartialPublicationAndKeepsThePriorOneWithStaleness() {
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+  void aFailedUpdateExposesNoPartialPublicationAndKeepsThePriorOneWithStaleness(
+      boolean artifactWrite) {
     final Publisher.Attempt first = publisher().publish();
     assertEquals(PublicationOutcome.PUBLISHED, first.outcome(), first.detail());
     final List<PublicationAsset> published = store.assets(first.publicationId());
 
     TestPublication.serve(wireMock, TestPublication.polls("2019-06-01"));
-    final Publisher.Attempt failed = released(new FailingStore(db, transactions, root)).publish();
+    final Publisher.Attempt failed =
+        released(new FailingStore(db, transactions, root, artifactWrite)).publish();
     assertEquals(PublicationOutcome.FAILED, failed.outcome());
 
     final CurrentPublication current = store.current().orElseThrow();
@@ -180,6 +263,11 @@ class PublicationIT {
     assertTrue(current.stale());
     assertNotNull(current.staleSince());
     assertEquals(published, store.assets(first.publicationId()));
+    final PublicationStore restarted = new PublicationStore(db, transactions, root.toString());
+    assertEquals(
+        store.document(first.publicationId(), CoalitionHistoryDocument.SURFACE, "sv"),
+        restarted.document(first.publicationId(), CoalitionHistoryDocument.SURFACE, "sv"));
+    assertTrue(restarted.coalitionHistoryMetadata(first.publicationId()).isPresent());
     assertEquals(
         0,
         db.sql("SELECT count(*) FROM publication WHERE state = 'candidate'")
@@ -207,8 +295,14 @@ class PublicationIT {
             .document(first.publicationId(), PublicationDocuments.latestSurface(PERIOD), "sv")
             .orElseThrow();
 
+    final PublicationHeader pinned = store.header(first.publicationId()).orElseThrow();
+    final String pairedBefore = publications.coalitionHistory(pinned).orElseThrow();
     TestPublication.serve(wireMock, TestPublication.polls("2019-06-01"));
     final Publisher.Attempt second = publisher.publish();
+    assertEquals(
+        pairedBefore,
+        publications.coalitionHistory(pinned).orElseThrow(),
+        "Requests retain the page's resolved publication while current changes");
     assertEquals(PublicationOutcome.PUBLISHED, second.outcome(), second.detail());
     assertNotEquals(first.publicationId(), second.publicationId());
     assertEquals(second.publicationId(), store.current().orElseThrow().publicationId());
@@ -249,8 +343,14 @@ class PublicationIT {
     final String csv = PollQuery.csv(before, filters);
     assertTrue(before.total() > 0, "the fixture has Novus polls to pin");
 
+    final PublicationHeader pinned = store.header(first.publicationId()).orElseThrow();
+    final String pairedBefore = publications.coalitionHistory(pinned).orElseThrow();
     TestPublication.serve(wireMock, TestPublication.polls("2019-06-01"));
     final Publisher.Attempt second = publisher.publish();
+    assertEquals(
+        pairedBefore,
+        publications.coalitionHistory(pinned).orElseThrow(),
+        "Requests retain the page's resolved publication while current changes");
     assertEquals(PublicationOutcome.PUBLISHED, second.outcome(), second.detail());
     final long corrected = store.header(second.publicationId()).orElseThrow().snapshotId();
     assertNotEquals(snapshot, corrected, "the correction is a different snapshot");
@@ -378,8 +478,20 @@ class PublicationIT {
 
   /** A store that stages nothing, standing in for a failed image write or an interrupted move. */
   private static final class FailingStore extends PublicationStore {
-    FailingStore(JdbcClient db, PlatformTransactionManager transactions, Path root) {
+    private final boolean artifactWrite;
+
+    FailingStore(
+        JdbcClient db, PlatformTransactionManager transactions, Path root, boolean artifactWrite) {
       super(db, transactions, root.toString());
+      this.artifactWrite = artifactWrite;
+    }
+
+    @Override
+    public void recordDocument(String publicationId, String surface, String language, String body) {
+      if (artifactWrite && CoalitionHistoryDocument.SURFACE.equals(surface)) {
+        throw new IllegalStateException("injected coalition artifact failure");
+      }
+      super.recordDocument(publicationId, surface, language, body);
     }
 
     @Override

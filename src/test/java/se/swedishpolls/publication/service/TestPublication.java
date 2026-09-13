@@ -57,6 +57,17 @@ public final class TestPublication {
         TestFreeze.released(draws));
   }
 
+  /** Full pipeline in an isolated test database, with production numerical rules. */
+  public static Publisher benchmark(
+      PublicationLock lock,
+      SnapshotIngest ingest,
+      PollQueryService queries,
+      ElectionReferenceService elections,
+      NationalAllocationRuleService rules,
+      PublicationStore store) {
+    return new Publisher(lock, ingest, queries, elections, rules, store, TestFreeze.benchmark());
+  }
+
   /** A worker at the blocked release verdict the repository actually ships. */
   public static Publisher blocked(
       PublicationLock lock,

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import se.swedishpolls.estimation.CoalitionPrecision;
 import se.swedishpolls.estimation.CoverageValidation;
 import se.swedishpolls.estimation.DailyStateSpace;
 import se.swedishpolls.estimation.EstimateHistory;
@@ -44,6 +45,7 @@ public final class ModelFreeze {
   private final Map<String, Period> periods;
   private final String estimatorVersion;
   private final String numericalLibrary;
+  private final CoalitionPrecision.Rules coalitionPrecision;
 
   private ModelFreeze(
       String developmentProtocolVersion,
@@ -56,7 +58,8 @@ public final class ModelFreeze {
       double maxDriftPoints,
       Map<String, Period> periods,
       String estimatorVersion,
-      String numericalLibrary) {
+      String numericalLibrary,
+      CoalitionPrecision.Rules coalitionPrecision) {
     this.developmentProtocolVersion = developmentProtocolVersion;
     this.releaseProtocolVersion = releaseProtocolVersion;
     this.releaseStatus = releaseStatus;
@@ -68,6 +71,7 @@ public final class ModelFreeze {
     this.periods = Map.copyOf(periods);
     this.estimatorVersion = estimatorVersion;
     this.numericalLibrary = numericalLibrary;
+    this.coalitionPrecision = coalitionPrecision;
   }
 
   public static ModelFreeze load() {
@@ -109,6 +113,9 @@ public final class ModelFreeze {
                   required(parameters, "houseScale").doubleValue(),
                   required(parameters, "covarianceMultiplier").doubleValue())));
     }
+    final JsonNode coalition = required(root, "coalitionHistoryPrecision");
+    final List<Long> coalitionSeeds = new ArrayList<>();
+    for (final JsonNode seed : required(coalition, "seeds")) coalitionSeeds.add(seed.longValue());
     return new ModelFreeze(
         required(root, "developmentProtocolVersion").asString(),
         required(root, "releaseProtocolVersion").asString(),
@@ -133,7 +140,14 @@ public final class ModelFreeze {
         required(root, "maxDriftPoints").doubleValue(),
         periods,
         required(root, "estimatorVersion").asString(),
-        required(root, "numericalLibrary").asString());
+        required(root, "numericalLibrary").asString(),
+        new CoalitionPrecision.Rules(
+            required(coalition, "draws").intValue(),
+            coalitionSeeds,
+            required(coalition, "referenceDraws").intValue(),
+            required(coalition, "referenceSeed").longValue(),
+            required(coalition, "maxMeanErrorPoints").doubleValue(),
+            required(coalition, "maxEndpointErrorPoints").doubleValue()));
   }
 
   private static JsonNode required(JsonNode parent, String field) {
@@ -213,6 +227,10 @@ public final class ModelFreeze {
 
   public String estimatorVersion() {
     return estimatorVersion;
+  }
+
+  public CoalitionPrecision.Rules coalitionPrecision() {
+    return coalitionPrecision;
   }
 
   public String numericalLibrary() {

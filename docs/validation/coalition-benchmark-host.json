@@ -1,0 +1,23 @@
+{
+  "command": [
+    "./mvnw",
+    "-q",
+    "-Dskip.installnodenpm",
+    "-Dskip.npm",
+    "-DargLine=-Xmx4g",
+    "-Dcoalition.benchmark=true",
+    "-Dit.test=PublicationIT#benchmarkTheFullPipelineOnTheSelectedHost",
+    "failsafe:integration-test",
+    "failsafe:verify"
+  ],
+  "host": "alex-lenovo",
+  "gitCommit": "030d9c1774318a90cc54bb513a64d470ef3d81ea",
+  "compiledClassesSha256": "59f6a5e625641a80a986fb4258f2c72e7a310563965a1ef48f02122c0a95fab4",
+  "secondsIncludingTestStartup": 467.6682838119741,
+  "sampledPeakAggregateBytes": 5271355392,
+  "memoryLimitBytes": 6000000000,
+  "samplingSeconds": 1,
+  "memoryMethod": "sum of benchmark process-group RSS and memory.current of containers started during the benchmark; shared pages may be counted twice",
+  "stopped": null,
+  "exitCode": 0
+}

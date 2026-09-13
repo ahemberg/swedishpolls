@@ -547,6 +547,29 @@ public final class SiteText {
             + " grupp.");
 
     text.put("coalitions.title", "Regeringsunderlag");
+    text.put("coalitionHistory.title", "Blockens väljarstöd");
+    text.put("coalitionHistory.breaks", "Glapp och modellgränser");
+    text.put("coalitionHistory.fit", "Modellgräns {date}");
+    text.put(
+        "coalitionHistory.note",
+        "Medelvärde och punktvisa 95 % osäkerhetsintervall. Intervallen gäller varje dag för sig, med modellens frysta hyperparametrar.");
+    text.put("coalitionHistory.unavailable", "Blockhistorik saknas för denna publicering.");
+    text.put("coalitionHistory.a", "Block A, heldragen");
+    text.put("coalitionHistory.b", "Block B, streckad");
+    text.put("coalitionHistory.latest", "Senaste skattning, {date}");
+    text.put("coalitionHistory.published", "Publicerad {date}");
+    text.put("coalitionHistory.from", "Från");
+    text.put("coalitionHistory.to", "Till");
+    text.put("coalitionHistory.apply", "Visa period");
+    text.put("coalitionHistory.loading", "Uppdaterar perioden…");
+    text.put("coalitionHistory.error", "Perioden kunde inte hämtas. Försök igen.");
+    text.put("coalitionHistory.cursor", "Gemensamt datum för båda blocken");
+    text.put("coalitionHistory.table", "Datum, medelvärde och punktvist 95 % intervall");
+    text.put("coalitionHistory.remainder", "Jämförbar rest");
+    text.put("coalitionHistory.outside", "Utanför båda blocken");
+    text.put("coalitionHistory.unassigned", "Ej tilldelade partier");
+    text.put("coalitionHistory.empty", "Inga skattningar i den valda perioden.");
+    text.put("coalitionHistory.interval", "{mean} %, 95 % intervall {lower} till {upper} %");
     text.put(
         "coalitions.lead",
         "Tio bestämda partikombinationer per {date}. Etiketten anger vilka partier som räknas"
@@ -1049,6 +1072,30 @@ public final class SiteText {
             + " seats as a group.");
 
     text.put("coalitions.title", "Coalitions");
+    text.put("coalitionHistory.title", "Coalition vote shares");
+    text.put("coalitionHistory.breaks", "Gaps and model boundaries");
+    text.put("coalitionHistory.fit", "Model boundary {date}");
+    text.put(
+        "coalitionHistory.note",
+        "Mean and pointwise 95% uncertainty intervals. Intervals apply to each day separately, conditional on the frozen model hyperparameters.");
+    text.put(
+        "coalitionHistory.unavailable", "Coalition history is unavailable for this publication.");
+    text.put("coalitionHistory.a", "Block A, solid");
+    text.put("coalitionHistory.b", "Block B, dashed");
+    text.put("coalitionHistory.latest", "Latest estimate, {date}");
+    text.put("coalitionHistory.published", "Published {date}");
+    text.put("coalitionHistory.from", "From");
+    text.put("coalitionHistory.to", "To");
+    text.put("coalitionHistory.apply", "Show range");
+    text.put("coalitionHistory.loading", "Updating range…");
+    text.put("coalitionHistory.error", "Could not load this range. Try again.");
+    text.put("coalitionHistory.cursor", "Shared date for both blocks");
+    text.put("coalitionHistory.table", "Date, mean and pointwise 95% interval");
+    text.put("coalitionHistory.remainder", "Comparable remainder");
+    text.put("coalitionHistory.outside", "Outside both blocks");
+    text.put("coalitionHistory.unassigned", "Unassigned parties");
+    text.put("coalitionHistory.empty", "No estimates in the selected range.");
+    text.put("coalitionHistory.interval", "{mean}%, 95% interval {lower} to {upper}%");
     text.put(
         "coalitions.lead",
         "Ten fixed party combinations as of {date}. The label states which parties are counted"

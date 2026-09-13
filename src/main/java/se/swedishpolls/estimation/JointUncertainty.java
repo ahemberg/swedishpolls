@@ -404,7 +404,7 @@ public final class JointUncertainty {
   }
 
   /** The day's transformed draws as the retained matrix, one row per draw. */
-  private static Draws retained(
+  static Draws retained(
       PollObservations.Batch batch,
       String periodId,
       DailyStateSpace.Day day,
@@ -469,7 +469,7 @@ public final class JointUncertainty {
   }
 
   /** The same summary over draws already taken, so a caller reading one day draws it once. */
-  private static Day summarize(
+  static Day summarize(
       PollObservations.Batch batch,
       double[][] basis,
       String periodId,

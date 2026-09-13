@@ -14,6 +14,22 @@ import tools.jackson.databind.json.JsonMapper;
 
 /** The shipped frozen model must stay the development evidence, not a second opinion of it. */
 class ModelFreezeTest {
+  @Test
+  void coalitionPrecisionMatchesItsSeparateRegistration() throws Exception {
+    final JsonNode registered = read(Path.of("docs/validation/coalition-history-protocol.json"));
+    final se.swedishpolls.estimation.CoalitionPrecision.Rules shipped =
+        ModelFreeze.load().coalitionPrecision();
+    assertEquals(registered.get("draws").asInt(), shipped.draws());
+    assertEquals(registered.get("referenceDraws").asInt(), shipped.referenceDraws());
+    assertEquals(registered.get("referenceSeed").asLong(), shipped.referenceSeed());
+    assertEquals(registered.get("maxMeanErrorPoints").asDouble(), shipped.maxMeanErrorPoints());
+    assertEquals(
+        registered.get("maxEndpointErrorPoints").asDouble(), shipped.maxEndpointErrorPoints());
+    final List<Long> seeds = new ArrayList<>();
+    for (final JsonNode seed : registered.get("seeds")) seeds.add(seed.longValue());
+    assertEquals(seeds, shipped.seeds());
+  }
+
   private static final Path PROTOCOL = Path.of("docs", "validation", "protocol.json");
   private static final Path COVERAGE = Path.of("docs", "validation", "coverage.json");
   private static final Path AUDIT = Path.of("docs", "validation", "release-audit.json");

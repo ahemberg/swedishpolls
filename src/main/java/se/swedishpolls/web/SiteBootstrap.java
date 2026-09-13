@@ -110,7 +110,21 @@ public final class SiteBootstrap {
     // inheriting an empty page from a default arm and rendering a heading with no numbers.
     switch (route.family()) {
       case OVERVIEW, PARTY -> overview(page, header);
-      case SEATS, COALITIONS -> chamber(page, header);
+      case SEATS -> chamber(page, header);
+      case COALITIONS -> {
+        chamber(page, header);
+        publications
+            .coalitionHistory(header)
+            .ifPresent(
+                body ->
+                    ((ObjectNode) page.get("data"))
+                        .set(
+                            "coalitionHistory",
+                            CoalitionHistoryQuery.sample(
+                                (ObjectNode) JSON.readTree(body),
+                                new CoalitionHistoryQuery.Request(
+                                    CoalitionSelection.preset(), null, null, LONG_STEP))));
+      }
       case POLLS -> pollTable(page, header, polls);
       case POLLSTERS -> pollsters(page, header);
       case METHOD -> method(page, header);

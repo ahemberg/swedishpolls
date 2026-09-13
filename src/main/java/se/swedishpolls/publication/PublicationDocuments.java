@@ -78,7 +78,10 @@ public final class PublicationDocuments {
 
   /** Every document of one publication, in both languages. */
   public static List<Document> all(
-      Identity identity, PublicationRun.Results results, ModelFreeze freeze) {
+      Identity identity,
+      PublicationRun.Results results,
+      ModelFreeze freeze,
+      java.time.Instant publishedAt) {
     final List<Document> documents = new ArrayList<>();
     for (final String language : Translations.LANGUAGES) {
       final Translations text = Translations.of(language);
@@ -95,6 +98,12 @@ public final class PublicationDocuments {
                 elections(identity, results, period, text)));
       }
       documents.add(new Document(HISTORY_SURFACE, language, history(identity, results, freeze)));
+      documents.add(
+          new Document(
+              CoalitionHistoryDocument.SURFACE,
+              language,
+              CoalitionHistoryDocument.render(
+                  identity, results, freeze, publishedAt, coveragePeriods(results, text))));
       documents.add(
           new Document(INSTITUTES_SURFACE, language, institutes(identity, results, freeze, text)));
       for (final NationalAllocationRule rules : results.allocationRules()) {

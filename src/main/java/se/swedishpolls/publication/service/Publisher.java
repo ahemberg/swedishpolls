@@ -194,7 +194,7 @@ public class Publisher {
     checkReproduction(results, polls);
     checkDrift(results);
 
-    final Instant publishedAt = Instant.now();
+    final Instant publishedAt = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
     final String publicationId = PUBLICATION_ID.format(publishedAt);
     final String runId = store.nextRunId();
     String candidate = null;
@@ -213,7 +213,7 @@ public class Publisher {
       final PublicationDocuments.Identity identity =
           new PublicationDocuments.Identity(publicationId, runId, snapshot.id());
       for (final PublicationDocuments.Document document :
-          PublicationDocuments.all(identity, results, freeze)) {
+          PublicationDocuments.all(identity, results, freeze, publishedAt)) {
         store.recordDocument(
             publicationId,
             document.surface(),

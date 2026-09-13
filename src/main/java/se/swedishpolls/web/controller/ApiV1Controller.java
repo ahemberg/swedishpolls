@@ -38,6 +38,7 @@ public class ApiV1Controller {
   private final PollQueryService queries;
   private final ObjectReader coalitions;
   private final ObjectReader histories;
+  private final ObjectReader coalitionHistories;
   private final ObjectReader institutes;
   private final ObjectReader objects;
   private final ObjectReader publicationMetadata;
@@ -47,6 +48,7 @@ public class ApiV1Controller {
     this.queries = queries;
     coalitions = json.readerFor(CoalitionsResponse.class);
     histories = json.readerFor(HistoryResponse.class);
+    coalitionHistories = json.readerFor(CoalitionHistoryResponse.class);
     institutes = json.readerFor(InstitutesDocument.class);
     objects = json.readerFor(ObjectNode.class);
     publicationMetadata = json.readerFor(PublicationResponse.class);
@@ -107,6 +109,35 @@ public class ApiV1Controller {
         EstimateQuery.sample(
             stored, new EstimateQuery.Range(fromDate, toDate, stepDays, coveragePeriod));
     return json(histories.readValue(sampled), resolved);
+  }
+
+  @GetMapping("/publications/{publicationId}/coalition-history")
+  public ResponseEntity<CoalitionHistoryResponse> coalitionHistory(
+      @PathVariable String publicationId,
+      @RequestParam org.springframework.util.MultiValueMap<String, String> parameters) {
+    final Publications.Resolved resolved =
+        publications.resolve(publicationId).orElseThrow(ApiErrors::unknownPublication);
+    try {
+      final se.swedishpolls.web.CoalitionHistoryQuery.Request request =
+          se.swedishpolls.web.CoalitionHistoryQuery.parse(parameters);
+      final String artifact =
+          publications
+              .coalitionHistory(resolved.header())
+              .orElseThrow(
+                  () ->
+                      new ApiErrors.ApiException(
+                          org.springframework.http.HttpStatus.CONFLICT,
+                          new ApiErrorResponse.Basic(
+                              "feature_unavailable",
+                              "This publication has no coalition history.")));
+      final ObjectNode sampled =
+          se.swedishpolls.web.CoalitionHistoryQuery.sample(objects.readValue(artifact), request);
+      return json(coalitionHistories.readValue(sampled), resolved);
+    } catch (se.swedishpolls.web.CoalitionSelection.Invalid invalid) {
+      throw new ApiErrors.ApiException(
+          org.springframework.http.HttpStatus.BAD_REQUEST,
+          new ApiErrorResponse.Field("invalid_filter", invalid.field(), invalid.getMessage()));
+    }
   }
 
   @GetMapping("/institutes")

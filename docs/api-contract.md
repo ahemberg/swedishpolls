@@ -142,3 +142,52 @@ against the stored coverage periods, election references and allocation rules.
 
 [Snapshot ingest](ingestion.md), [election references](election-references.md) and
 [party rosters](party-rosters.md) are the earlier checkpoints this contract exposes.
+
+## Coalition support histories, post-v1
+
+`GET /api/v1/publications/{publicationId}/coalition-history?a=S,V&b=M,KD`
+selects two disjoint subsets from that publication's stored joint-draw summaries.
+Both parameters are required; an empty value selects no parties. Codes must be exact
+uppercase members of `S,M,SD,V,C,KD,L,MP`. Duplicates, overlap, whitespace, empty
+internal tokens and repeated recognized parameters return HTTP 400 with `code`,
+`field` and `message`. Returned memberships follow the fixed roster order.
+
+Optional inclusive `from` and `to` bounds use real `YYYY-MM-DD` dates in years
+0001 through 9999. Omitted bounds use the stored history extent. `step` allows
+1, 3 or 7 and defaults to 1. Sampling retains supported fit endpoints and returns
+all intersecting gap and fit-boundary descriptors. Unsupported requested ranges
+are preserved; a wholly unsupported range returns HTTP 200 with empty date arrays
+and explicit gaps. Request cost depends on stored history, not the requested
+number of calendar days.
+
+The response carries `schemaVersion`, `publicationId`, `modelRunId`,
+`sourceSnapshotId`, `lastFieldworkDate`, `publishedAt`, `interval`, `selection`,
+`requestedRange`, `dates`, `fitIds`, `coveragePeriodIds`, `series`, `coveragePeriods`,
+`gaps`, `fitBoundaries` and `latest`. Each of `series.a` and `series.b` has aligned
+`mean`, `lower`, `upper` and `availability` columns. All values retain full
+precision. The existing v1 party documents retain their registered display
+rounding; singleton coalition values equal the unrounded party summaries.
+
+Intervals are 95% pointwise equal-tailed intervals conditional on frozen
+hyperparameters, with linear interpolation at sorted index `(n - 1) * p`. Each
+coalition is summed within each joint draw before taking its mean or quantiles.
+These summaries do not estimate an A-minus-B interval or the probability that A
+exceeds B. Empty selections have null estimates and `empty_selection` availability.
+Missing constituents have null estimates and `party_unavailable` availability.
+
+`latest` is independent of the requested history range. It includes the estimate
+date, fit identity, eight party means, both block summaries, unassigned mean,
+comparable remainder and mean support outside both blocks. Comparable remainder
+includes FI exactly once, using FI plus RESIDUAL where FI is individually modeled
+and OTHER elsewhere. Empty blocks occupy zero geometry; missing values remain
+unavailable.
+
+Metadata advertises `capabilities.customCoalitionHistory: 1` only for publications
+with the complete artifact. `coalitionHistory` records its versions, stored-byte
+SHA-256, byte count, roster, interval convention and drawing provenance. Old
+publications remain unchanged and return HTTP 409 `feature_unavailable` on the
+new route. Unknown publication identifiers return HTTP 404 without fallback.
+Successful pinned responses receive immutable caching and content ETags; errors
+receive no immutable cache directive. The existing current-publication resolver
+retains its frozen HTTP 503 `estimates_unavailable` response before a publication
+exists.

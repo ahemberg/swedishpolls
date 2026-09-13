@@ -121,6 +121,39 @@ class PageIT {
   }
 
   @Test
+  void coalitionPagesCarryJointHistoriesAndAnIntervalTableFromTheirPinnedPublication()
+      throws Exception {
+    for (final String path : List.of("/regeringsunderlag", "/en/coalitions")) {
+      final String page = get(path).body();
+      final JsonNode history = bootstrap(page).path("data").path("coalitionHistory");
+      assertEquals(publicationId, history.path("publicationId").asString());
+      final HttpResponse<String> api =
+          get(
+              "/api/v1/publications/"
+                  + publicationId
+                  + "/coalition-history?a=S,V,C,MP&b=M,KD,L,SD&step=7");
+      assertEquals(200, api.statusCode());
+      assertEquals(
+          history,
+          JSON.readTree(api.body()),
+          "The served page and paired HTTP response use the same complete artifact");
+      assertEquals(
+          List.of("S", "V", "C", "MP"),
+          JSON.convertValue(
+              history.path("selection").path("a"),
+              new tools.jackson.core.type.TypeReference<List<String>>() {}));
+      assertTrue(page.contains("<table class=\"coalition-history\">"));
+      assertTrue(page.contains("95%") || page.contains("95 %"));
+      assertTrue(history.path("latest").path("a").path("mean").isNumber());
+      // Retain the actual served page and API response for browser checks of the built assets.
+      final Path preview = Path.of("target", "coalition-preview", path.substring(1), "index.html");
+      Files.createDirectories(preview.getParent());
+      Files.writeString(preview, page);
+      Files.writeString(preview.resolveSibling("coalition-history.json"), api.body());
+    }
+  }
+
+  @Test
   void everyApprovedRouteIsServedInBothLanguagesWithItsOwnLanguageAttribute() {
     for (final SiteRoutes.Family family : SiteRoutes.Family.values()) {
       for (final String language : Translations.LANGUAGES) {

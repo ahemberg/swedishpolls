@@ -2,6 +2,7 @@ package se.swedishpolls.web.controller;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -63,6 +64,131 @@ class ApiV1ControllerTest {
     when(publications.resolve(org.mockito.ArgumentMatchers.nullable(String.class)))
         .thenReturn(Optional.empty());
     when(publications.lastSuccessfulCheck()).thenReturn(Optional.empty());
+  }
+
+  @Test
+  void pairedHistoriesValidateSelectionsAndRetainFitEndpointsAndLatestOutsideTheRange()
+      throws Exception {
+    when(publications.resolve(HEADER.publicationId()))
+        .thenReturn(Optional.of(new Publications.Resolved(HEADER, true)));
+    final ObjectNode stored = JSON.createObjectNode();
+    stored.put("schemaVersion", 1);
+    stored.put("publicationId", HEADER.publicationId());
+    stored.put("modelRunId", HEADER.runId());
+    stored.put("sourceSnapshotId", HEADER.snapshotId());
+    stored.put("lastFieldworkDate", "2020-01-05");
+    stored.put("publishedAt", HEADER.publishedAt().toString());
+    stored.set(
+        "dates", JSON.readTree("[\"2020-01-01\",\"2020-01-02\",\"2020-01-04\",\"2020-01-05\"]"));
+    stored.set("fitIds", JSON.readTree("[\"one\",\"one\",\"two\",\"two\"]"));
+    stored.set("coveragePeriodIds", JSON.readTree("[\"eight\",\"eight\",\"eight\",\"eight\"]"));
+    stored.set(
+        "gaps",
+        JSON.readTree(
+            "[{\"from\":\"2020-01-03\",\"to\":\"2020-01-03\",\"reason\":\"unsupported_date\"}]"));
+    stored.set("fitBoundaries", JSON.readTree("[{\"date\":\"2020-01-04\",\"fitId\":\"two\"}]"));
+    stored.putArray("coveragePeriods");
+    stored.putObject("interval").put("level", 0.95);
+    final tools.jackson.databind.node.ArrayNode subsets = stored.putArray("subsets");
+    for (int mask = 1; mask < 256; mask++) {
+      subsets.add(
+          JSON.readTree(
+              "{\"mean\":[10,11,12,13],\"lower\":[9,10,11,12],\"upper\":[11,12,13,14],\"availability\":[\"available\",\"available\",\"available\",\"available\"]}"));
+    }
+    final ObjectNode latest = stored.putObject("latest");
+    latest.put("date", "2020-01-05");
+    latest.put("fitId", "two");
+    latest.put("historyIndex", 3);
+    latest.put("comparableRemainderMean", 4);
+    final ObjectNode means = latest.putObject("partyMeans");
+    for (final String party : List.of("S", "M", "SD", "V", "C", "KD", "L", "MP")) {
+      means.put(party, 12);
+    }
+    when(publications.coalitionHistory(HEADER)).thenReturn(Optional.of(stored.toString()));
+    final String path = "/api/v1/publications/" + HEADER.publicationId() + "/coalition-history";
+    mvc.perform(get(path).param("a", "V,S").param("b", "M").param("step", "7"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.selection.a[0]").value("S"))
+        .andExpect(jsonPath("$.dates", hasSize(4)))
+        .andExpect(jsonPath("$.latest.a.mean").value(13))
+        .andExpect(
+            header()
+                .string(
+                    HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("immutable")));
+    mvc.perform(
+            get(path)
+                .param("a", "")
+                .param("b", "M")
+                .param("from", "0001-01-01")
+                .param("to", "0001-01-02"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.dates", hasSize(0)))
+        .andExpect(jsonPath("$.gaps[0].from").value("0001-01-01"))
+        .andExpect(jsonPath("$.requestedRange.to").value("0001-01-02"))
+        .andExpect(jsonPath("$.latest.a.availability").value("empty_selection"))
+        .andExpect(jsonPath("$.latest.b.mean").value(13));
+    for (final String selection : List.of("s", "FI", "OTHER", "S,S", "S,", ",S", " S")) {
+      mvc.perform(get(path).param("a", selection).param("b", "M"))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.field").value("a"));
+    }
+    mvc.perform(get(path).param("a", "S").param("b", "S")).andExpect(status().isBadRequest());
+    mvc.perform(get(path).param("a", "S", "M").param("b", "")).andExpect(status().isBadRequest());
+    mvc.perform(get(path).param("a", "S")).andExpect(status().isBadRequest());
+    mvc.perform(get(path).param("a", "S").param("b", "").param("from", "2020-02-30"))
+        .andExpect(status().isBadRequest());
+    // A boundary within one fit must retain both adjacent endpoints even at step 7.
+    stored.set("fitIds", JSON.readTree("[\"one\",\"one\",\"one\",\"one\"]"));
+    when(publications.coalitionHistory(HEADER)).thenReturn(Optional.of(stored.toString()));
+    mvc.perform(get(path).param("a", "S").param("b", "M").param("step", "7"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.dates", hasSize(4)));
+    final String etag =
+        mvc.perform(get(path).param("a", "S").param("b", "M"))
+            .andReturn()
+            .getResponse()
+            .getHeader(HttpHeaders.ETAG);
+    assertNotNull(etag);
+    mvc.perform(get(path).param("a", "S").param("b", "M").header(HttpHeaders.IF_NONE_MATCH, etag))
+        .andExpect(status().isNotModified());
+    mvc.perform(get(path).param("a", "V").param("b", "M").header(HttpHeaders.IF_NONE_MATCH, etag))
+        .andExpect(status().isOk());
+    mvc.perform(
+            get(path)
+                .param("a", "")
+                .param("b", "")
+                .param("from", "0001-01-01")
+                .param("to", "9999-12-31"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.latest.outsideBothMean").value(100));
+    for (final String invalid : List.of("0000-01-01", "10000-01-01", "2020-1-01", "")) {
+      mvc.perform(get(path).param("a", "").param("b", "").param("from", invalid))
+          .andExpect(status().isBadRequest());
+    }
+    for (final String invalid : List.of("0", "2", "07", "")) {
+      mvc.perform(get(path).param("a", "").param("b", "").param("step", invalid))
+          .andExpect(status().isBadRequest());
+    }
+    final ObjectNode missing = (ObjectNode) subsets.get(0);
+    for (final String value : List.of("mean", "lower", "upper"))
+      missing.set(value, JSON.readTree("[null,null,null,null]"));
+    missing.set(
+        "availability",
+        JSON.readTree(
+            "[\"party_unavailable\",\"party_unavailable\",\"party_unavailable\",\"party_unavailable\"]"));
+    means.putNull("S");
+    when(publications.coalitionHistory(HEADER)).thenReturn(Optional.of(stored.toString()));
+    mvc.perform(get(path).param("a", "S").param("b", "M"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.series.a.mean[0]").isEmpty())
+        .andExpect(jsonPath("$.series.a.availability[0]").value("party_unavailable"))
+        .andExpect(jsonPath("$.series.b.mean[0]").value(10))
+        .andExpect(jsonPath("$.latest.outsideBothMean").isEmpty())
+        .andExpect(jsonPath("$.latest.availability").value("party_unavailable"));
+    when(publications.coalitionHistory(HEADER)).thenReturn(Optional.empty());
+    mvc.perform(get(path).param("a", "S").param("b", "M"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("feature_unavailable"));
   }
 
   @Test
