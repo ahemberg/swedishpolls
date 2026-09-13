@@ -4,12 +4,12 @@
   "registeredOn" : "2026-09-13",
   "planIdentity" : {
     "path" : "docs/validation/v2-development-1/registration-plan.json",
-    "sha256" : "57ac67368920b6cb3e3dc9c2ba4c9c601f88f76ff32646dad3280a1090b3e659"
+    "sha256" : "ae5a71776e21654cfaa9e73db530f362ba8846794584f600f11682ebe3a55c91"
   },
   "plan" : {
     "version" : "v2-development-1",
     "registeredOn" : "2026-09-13",
-    "implementationCommit" : "c23b3b7b4c6e6c2fbeefbefe95bb3eba5b0e91d4",
+    "implementationCommit" : "b752faad5d6843c4e39038eeb0f30623bf66c23b",
     "authority" : {
       "proposal" : "v2-development-1-proposal-1",
       "proposalCommit" : "d5699e82fd537ddc6bad817c4884c36a62752401",
@@ -39,7 +39,7 @@
       "sha256" : "b7db0e30c83eb4f04f03fa6eee862dc4ba309742b475072570f88cecb17fe8f2"
     }, {
       "path" : "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java",
-      "sha256" : "c64c026d9b67acd64ea2fe34280f0672da2481266a66b02102f9be17a0ff5d30"
+      "sha256" : "c5824ac354044345ae9eab93d019ca8ae3920c037d24903ed9814976fec6da37"
     }, {
       "path" : "src/main/java/se/swedishpolls/estimation/DevelopmentTuning.java",
       "sha256" : "af76ea1981c2c263115f2ab693d77f6578026b01bd80fe6cfca9d05f135dae6e"
@@ -129,6 +129,10 @@
       "nodeVersion" : "24.13.1",
       "npmVersion" : "11.8.0",
       "ejmlVersion" : "0.46.1",
+      "mavenCoreSha256" : "5d45c72e3dbfab8b68d15ad4f12777b7d9b5fe4d4adc99c3bd51fb9641fab009",
+      "nodeSha256" : "d95de52ccb76fb2c5775bf176f29f3025e4b19352c092aad51ce5d930717359f",
+      "npmCliSha256" : "8e5f6f3429f8cdbe693cdc29904e9d5a7b127a494bd15c804bd54c7403bfcbe7",
+      "ejmlJarSha256" : "9f5dc17cde87c00570278aae3d9b2efcdd5b5e058728d6929ae892816c419f25",
       "postgresImage" : "postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636",
       "runtimeImage" : "eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e"
     },
