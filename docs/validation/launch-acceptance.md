@@ -28,7 +28,7 @@ The run retained `build-reports`, `fallow-reports`, `verified-classes` and `imag
 | Required evidence | Status and next input |
 | --- | --- |
 | Statistical release permission | Blocked by the recorded verdict. Requires upstream resolution under an approved protocol or an explicit recorded owner waiver. |
-| Selected host and release identity | Pending operator-supplied host/access method, memory allocation, HTTPS origin, site name and confirmation of exact release digests. |
+| Selected host and release identity | Operator selected this local machine and supplied HTTP access at localhost:8080. Memory allocation, public HTTPS origin, final site name and exact release identity remain unconfirmed. |
 | Real publication cards on both architectures | Pending validated publications and exact-image checks, including Swedish glyphs. Synthetic font smoke checks are insufficient. |
 | Publication failure and persistence checks | Pending exact-release checks for failed checks/rendering, interrupted staging, first-publication unavailability, failed-update staleness, permanent bytes across updates/restart and pinned responses. Existing integration tests are supporting evidence only. |
 | Every approved route without JavaScript | Pending exact-release checks in both languages for headline/date/results, escaped metadata, canonical/alternate links, historical FI, image dates, invalid routes/filters and unsupported values. |
@@ -42,3 +42,11 @@ The owner operates deployment. Custom coalitions remain outside v1 launch depend
 ## Verification of this record
 
 `./mvnw spotless:apply` passed on 2026-09-13. Local `./mvnw verify` stopped while extracting Node with `No space left on device`; the root filesystem had about 9 MB available. The local test suite therefore did not complete. The successful hosted run above applies to the named source commit, not this documentation change.
+
+## Local service observation
+
+On 2026-09-13 the operator selected this machine and started the service at `http://localhost:8080`. HTTP checks without JavaScript returned 200 for all 30 approved page routes: six non-party page families and nine party pages in each language, using the translated slugs in `SiteRoutes`. The overview showed the first-publication unavailable message and a source-check timestamp. `/api/v1/publication` and `/api/v1/estimates/latest` both returned 503 with `estimates_unavailable` and source-check time `2026-09-13T10:36:02.228056Z`. An unknown route and unknown party returned 404.
+
+The overview identifies the site as `Swedish Polls` and its canonical URL as `https://localhost/`. These are observed settings, not a confirmed public deployment origin/name. The served script `/assets/main-BbKpT3Gm.js` measured 72,209 bytes after Python gzip compression, below the 150 KB target for that script alone. This does not measure browser transfer size, additional dynamically loaded JavaScript or Lighthouse performance.
+
+These observations establish local HTTP reachability and first-publication unavailability only. They do not verify populated results, publication images, browser interactions, exact container identity or either architecture's deployment acceptance. No running service was restarted or changed.
