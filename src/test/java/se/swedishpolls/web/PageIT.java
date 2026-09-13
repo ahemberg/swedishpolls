@@ -154,6 +154,81 @@ class PageIT {
   }
 
   @Test
+  void aSharedCoalitionLinkRestoresItsCanonicalSelectionAndRangeInBothRenderings() {
+    final String page =
+        get("/en/coalitions?a=V,S&b=KD&from=2014-01-01&to=2014-02-01"
+                + "&variant=prototype&utm_source=test")
+            .body();
+    final JsonNode resolved = bootstrap(page);
+    final JsonNode history = resolved.path("data").path("coalitionHistory");
+    assertEquals(
+        List.of("S", "V"),
+        JSON.convertValue(
+            history.path("selection").path("a"),
+            new tools.jackson.core.type.TypeReference<List<String>>() {}));
+    assertEquals(
+        List.of("KD"),
+        JSON.convertValue(
+            history.path("selection").path("b"),
+            new tools.jackson.core.type.TypeReference<List<String>>() {}));
+    assertEquals("2014-01-01", history.path("requestedRange").path("from").asString());
+    assertEquals("2014-02-01", history.path("requestedRange").path("to").asString());
+    final String canonical = "/en/coalitions?a=S,V&b=KD&from=2014-01-01&to=2014-02-01";
+    assertEquals(canonical, resolved.path("route").path("path").asString());
+    assertEquals(canonical, resolved.path("alternates").path("en").asString());
+    assertEquals(
+        "/regeringsunderlag?a=S,V&b=KD&from=2014-01-01&to=2014-02-01",
+        resolved.path("alternates").path("sv").asString());
+    assertTrue(page.contains("href=\"" + canonical.replace("&", "&amp;") + "\""), page);
+    assertTrue(
+        page.contains("Compare block A (S + V) with block B (KD) from 2014-01-01 to 2014-02-01."),
+        "metadata describes the requested comparison");
+    assertFalse(
+        page.contains("property=\"og:image\""), "a preset card must not depict a custom selection");
+  }
+
+  @Test
+  void coalitionLinksKeepEmptyAndLegacyBlocksButExposeInvalidInputWithoutRepairingIt() {
+    JsonNode history =
+        bootstrap(get("/regeringsunderlag?parties=MP,S&from=2014-01-01").body())
+            .path("data")
+            .path("coalitionHistory");
+    assertEquals(
+        List.of("S", "MP"),
+        JSON.convertValue(
+            history.path("selection").path("a"),
+            new tools.jackson.core.type.TypeReference<List<String>>() {}));
+    assertTrue(history.path("selection").path("b").isEmpty());
+
+    final String unsupported = get("/regeringsunderlag?b=M&from=0001-01-01&to=0001-01-02").body();
+    history = bootstrap(unsupported).path("data").path("coalitionHistory");
+    assertTrue(history.path("selection").path("a").isEmpty());
+    assertEquals("M", history.path("selection").path("b").path(0).asString());
+    assertTrue(history.path("dates").isEmpty(), "a valid unsupported range remains no-data");
+    assertTrue(unsupported.contains("Inga skattningar i den valda perioden."));
+
+    for (final String query :
+        List.of(
+            "a=S&a=M&b=",
+            "a=S&b=S",
+            "a=S,,V&b=",
+            "a=FI&b=",
+            "a=s&b=",
+            "parties=S&a=M",
+            "a=&b=&from=2020-02-30",
+            "a=&b=&from=2020-02-02&to=2020-02-01")) {
+      final HttpResponse<String> response = get("/regeringsunderlag?" + query);
+      assertEquals(200, response.statusCode(), query);
+      final JsonNode resolved = bootstrap(response.body());
+      assertTrue(resolved.path("data").path("coalitionHistory").isMissingNode(), query);
+      assertTrue(resolved.path("coalitionLinkError").path("requested").isObject(), query);
+      assertTrue(response.body().contains("role=\"alert\""), query);
+      assertTrue(response.body().contains("href=\"/regeringsunderlag\""), query);
+      assertFalse(response.body().contains("This comparison link is invalid."), query);
+    }
+  }
+
+  @Test
   void everyApprovedRouteIsServedInBothLanguagesWithItsOwnLanguageAttribute() {
     for (final SiteRoutes.Family family : SiteRoutes.Family.values()) {
       for (final String language : Translations.LANGUAGES) {
@@ -596,16 +671,7 @@ class PageIT {
     final String template = text.text("head.description.overview");
     final String overview = SiteHtml.escape(template.substring(0, template.indexOf('{')));
     for (final Map.Entry<String, String> page :
-        Map.of(
-                "/mandat",
-                "seats",
-                "/regeringsunderlag",
-                "coalitions",
-                "/institut",
-                "pollsters",
-                "/metod",
-                "method")
-            .entrySet()) {
+        Map.of("/mandat", "seats", "/institut", "pollsters", "/metod", "method").entrySet()) {
       final String body = get(page.getKey()).body();
       assertFalse(
           body.contains("<meta name=\"description\" content=\"" + overview),

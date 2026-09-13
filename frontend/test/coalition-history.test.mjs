@@ -4,6 +4,7 @@ import {
   assign,
   assignmentFromSelection,
   blockColors,
+  coalitionSharePath,
   destinationOf,
   emptyAssignment,
   fitSegments,
@@ -42,6 +43,14 @@ test('latest totals use zero for empty groups and null for missing constituents'
   assert.equal(total([], {}), 0);
   assert.equal(total(['S','V'], {S:31.2,V:7.8}), 39);
   assert.equal(total(['S','V'], {S:31.2,V:null}), null);
+});
+
+test('share paths use the editor assignment and selected range', () => {
+  const assignment = assign(PRESET, 'V', 'unassigned');
+  assert.equal(
+    coalitionSharePath('/en/coalitions?old=yes', groupsFor(assignment), {from:'2020-01-01',to:'2020-12-31'}),
+    '/en/coalitions?a=S,C,MP&b=M,SD,KD,L&from=2020-01-01&to=2020-12-31'
+  );
 });
 
 test('approved mixtures use latest support, conditional SD blue and neutral missing weights', () => {

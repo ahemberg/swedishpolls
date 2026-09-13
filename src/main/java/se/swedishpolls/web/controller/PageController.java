@@ -9,10 +9,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import se.swedishpolls.publication.service.Publications;
+import se.swedishpolls.web.CoalitionHistoryQuery;
+import se.swedishpolls.web.CoalitionSelection;
 import se.swedishpolls.web.PollFilters;
 import se.swedishpolls.web.SiteBootstrap;
 import se.swedishpolls.web.SiteHtml;
@@ -61,13 +64,14 @@ public class PageController {
   public ResponseEntity<byte[]> page(
       HttpServletRequest request,
       @RequestParam(required = false) String publication,
+      @RequestParam MultiValueMap<String, String> parameters,
       @RequestHeader(name = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
     final SiteRoutes.Route route =
         SiteRoutes.resolve(request.getRequestURI()).orElseThrow(ApiErrors::unknownRoute);
     final Optional<Publications.Resolved> resolved = resolve(publication);
     final ObjectNode page =
         resolved
-            .map(selected -> bootstrap.page(route, selected))
+            .map(selected -> page(route, selected, parameters))
             .orElseGet(
                 () ->
                     bootstrap.unavailable(route, publications.lastSuccessfulCheck().orElse(null)));
@@ -76,6 +80,20 @@ public class PageController {
         new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8),
         resolved.map(Publications.Resolved::permanent).orElse(false),
         ifNoneMatch);
+  }
+
+  private ObjectNode page(
+      SiteRoutes.Route route,
+      Publications.Resolved resolved,
+      MultiValueMap<String, String> parameters) {
+    if (route.family() != SiteRoutes.Family.COALITIONS) {
+      return bootstrap.page(route, resolved);
+    }
+    try {
+      return bootstrap.coalitionPage(route, resolved, CoalitionHistoryQuery.parsePage(parameters));
+    } catch (CoalitionSelection.Invalid error) {
+      return bootstrap.invalidCoalitionPage(route, resolved, parameters, error);
+    }
   }
 
   /**

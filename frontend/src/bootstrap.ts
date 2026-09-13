@@ -1,5 +1,5 @@
 import type { CoalitionResults, Seats } from "./chamber";
-import type { CoalitionHistoryData } from "./coalition-history";
+import type { CoalitionHistoryData, CoalitionLinkError } from "./coalition-history";
 import type { PollstersData } from "./institutes";
 import type { MethodData } from "./method";
 import type { PollTable } from "./poll-table";
@@ -228,6 +228,7 @@ export interface Bootstrap {
   readonly approximatedElection?: number;
   readonly data?: PageData;
   readonly pollTable?: PollTable;
+  readonly coalitionLinkError?: CoalitionLinkError;
   readonly ranges?: readonly RangeSpec[];
   readonly defaultRange?: string;
 }

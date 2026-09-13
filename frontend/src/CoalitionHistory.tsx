@@ -8,6 +8,8 @@ import {
   assignmentFromSelection,
   BLOCKS,
   type CoalitionHistoryData,
+  type CoalitionLinkError,
+  coalitionSharePath,
   groupsFor,
 } from "./coalition-history";
 import { decimal, interval, percent, shortDate, timestamp } from "./format";
@@ -18,6 +20,7 @@ import { historyJson } from "./useHistory";
 interface Props {
   readonly page: Bootstrap;
   readonly history: CoalitionHistoryData | undefined;
+  readonly error: CoalitionLinkError | undefined;
   readonly t: Translate;
 }
 const SEPARATOR = ": ";
@@ -183,6 +186,7 @@ function useHistoryRange(initial: CoalitionHistoryData): {
   readonly history: CoalitionHistoryData;
   readonly loading: boolean;
   readonly failed: boolean;
+  readonly requestedRange: CoalitionHistoryData["requestedRange"];
   readonly load: (
     selection: CoalitionHistoryData["selection"],
     range: CoalitionHistoryData["requestedRange"],
@@ -192,6 +196,7 @@ function useHistoryRange(initial: CoalitionHistoryData): {
   const [history, setHistory] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [requestedRange, setRequestedRange] = useState(initial.requestedRange);
   const pending = useRef<AbortController | null>(null);
   const lastRequest = useRef({ selection: initial.selection, range: initial.requestedRange });
   useEffect(
@@ -208,6 +213,7 @@ function useHistoryRange(initial: CoalitionHistoryData): {
     const request = new AbortController();
     pending.current = request;
     lastRequest.current = { selection, range };
+    setRequestedRange(range);
     const parameters = new URLSearchParams({
       a: selection.a.join(","),
       b: selection.b.join(","),
@@ -239,6 +245,7 @@ function useHistoryRange(initial: CoalitionHistoryData): {
     history,
     loading,
     failed,
+    requestedRange,
     load,
     retry: () => load(lastRequest.current.selection, lastRequest.current.range),
   };
@@ -253,7 +260,7 @@ function PublishedHistory({
   readonly page: Bootstrap;
   readonly t: Translate;
 }): JSX.Element {
-  const { history, loading, failed, load, retry } = useHistoryRange(initial);
+  const { history, loading, failed, requestedRange, load, retry } = useHistoryRange(initial);
   const [assignment, setAssignment] = useState(() => assignmentFromSelection(initial.selection));
 
   function changeAssignment(next: Assignment): void {
@@ -318,6 +325,11 @@ function PublishedHistory({
           </>
         )}
       </p>
+      <p>
+        <a href={coalitionSharePath(page.route.path, groupsFor(assignment), requestedRange)}>
+          {t("coalitionHistory.share")}
+        </a>
+      </p>
       <div aria-busy={loading}>
         <HistoryChart
           key={`${history.requestedRange.from}/${history.requestedRange.to}`}
@@ -330,7 +342,20 @@ function PublishedHistory({
   );
 }
 
-function CoalitionHistory({ page, history, t }: Props): JSX.Element {
+function CoalitionHistory({ page, history, error, t }: Props): JSX.Element {
+  if (error !== undefined) {
+    return (
+      <section className="sec coalition-history-section">
+        <h2>{t("coalitionHistory.title")}</h2>
+        <div role="alert">
+          <p>
+            {t("coalitionHistory.invalid")} {error.reason}
+          </p>
+          <a href={error.reset}>{t("coalitionHistory.reset")}</a>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="sec coalition-history-section">
       <h2>{t("coalitionHistory.title")}</h2>

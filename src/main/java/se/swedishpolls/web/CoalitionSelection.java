@@ -12,7 +12,7 @@ public record CoalitionSelection(List<String> a, List<String> b) {
     a = canonical(a, "a");
     b = canonical(b, "b");
     if (a.stream().anyMatch(b::contains)) {
-      throw new Invalid("b", "A party cannot belong to both coalitions.");
+      throw new Invalid("b", "overlap", "A party cannot belong to both coalitions.");
     }
   }
 
@@ -36,7 +36,8 @@ public record CoalitionSelection(List<String> a, List<String> b) {
 
   private static List<String> tokens(String value, String field) {
     if (value == null) {
-      throw new Invalid(field, "Both a and b are required; an empty value selects no parties.");
+      throw new Invalid(
+          field, "missing_block", "Both a and b are required; an empty value selects no parties.");
     }
     return value.isEmpty() ? List.of() : List.of(value.split(",", -1));
   }
@@ -47,6 +48,7 @@ public record CoalitionSelection(List<String> a, List<String> b) {
       if (!ROSTER.contains(party) || !selected.add(party)) {
         throw new Invalid(
             field,
+            "invalid_party",
             "Use each uppercase eight-party code at most once, without spaces or empty tokens.");
       }
     }
@@ -64,14 +66,20 @@ public record CoalitionSelection(List<String> a, List<String> b) {
   public static final class Invalid extends IllegalArgumentException {
     private static final long serialVersionUID = 1L;
     private final String field;
+    private final String reason;
 
-    public Invalid(String field, String message) {
+    public Invalid(String field, String reason, String message) {
       super(message);
       this.field = field;
+      this.reason = reason;
     }
 
     public String field() {
       return field;
+    }
+
+    public String reason() {
+      return reason;
     }
   }
 }

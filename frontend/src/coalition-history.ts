@@ -1,6 +1,12 @@
 import type { Series } from "./bootstrap";
 
 type Block = "a" | "b";
+interface CoalitionLinkError {
+  readonly field: string;
+  readonly reason: string;
+  readonly reset: string;
+  readonly requested: Readonly<Record<string, readonly string[]>>;
+}
 const PARTIES = ["S", "M", "SD", "V", "C", "KD", "L", "MP"] as const;
 type Party = (typeof PARTIES)[number];
 type Destination = Block | "unassigned";
@@ -223,12 +229,21 @@ function fitSegments(history: SegmentedHistory): readonly (readonly number[])[] 
   }, []);
 }
 
-export type { Assignment, Block, CoalitionHistoryData, Destination, Party };
+function coalitionSharePath(
+  path: string,
+  selection: CoalitionHistoryData["selection"],
+  range: Pick<CoalitionHistoryData["requestedRange"], "from" | "to">,
+): string {
+  return `${path.split("?")[0]}?a=${selection.a.join(",")}&b=${selection.b.join(",")}&from=${range.from}&to=${range.to}`;
+}
+
+export type { Assignment, Block, CoalitionHistoryData, CoalitionLinkError, Destination, Party };
 export {
   assign,
   assignmentFromSelection,
   BLOCKS,
   blockColors,
+  coalitionSharePath,
   destinationOf,
   emptyAssignment,
   fitSegments,

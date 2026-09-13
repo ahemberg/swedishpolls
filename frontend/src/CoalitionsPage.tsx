@@ -126,7 +126,12 @@ function CoalitionsPage({ page, data, t }: Props): JSX.Element {
         lead="coalitions.lead"
         majoritySeats={coalitions.majoritySeats}
       />
-      <CoalitionHistory page={page} history={data.coalitionHistory} t={t} />
+      <CoalitionHistory
+        page={page}
+        history={data.coalitionHistory}
+        error={page.coalitionLinkError}
+        t={t}
+      />
       <section className="sec">
         <Catalogue page={page} coalitions={coalitions} t={t} />
         <p className="footnote">{coalitions.note}</p>

@@ -20,25 +20,58 @@ public final class CoalitionHistoryQuery {
 
   public record Request(CoalitionSelection selection, LocalDate from, LocalDate to, int step) {}
 
-  public static Request parse(Map<String, List<String>> parameters) {
-    for (final String name : List.of("a", "b", "from", "to", "step")) {
-      if (parameters.containsKey(name) && parameters.get(name).size() != 1) {
-        throw new CoalitionSelection.Invalid(name, "Supply this parameter exactly once.");
-      }
+  public static Request parsePage(Map<String, List<String>> parameters) {
+    unique(parameters, List.of("a", "b", "parties", "from", "to"));
+    final boolean modern = parameters.containsKey("a") || parameters.containsKey("b");
+    if (modern && parameters.containsKey("parties")) {
+      throw new CoalitionSelection.Invalid(
+          "parties", "mixed_parameters", "Do not mix parties with the a and b parameters.");
     }
+    final CoalitionSelection selection;
+    if (modern) {
+      selection =
+          CoalitionSelection.parse(
+              parameters.containsKey("a") ? value(parameters, "a") : "",
+              parameters.containsKey("b") ? value(parameters, "b") : "");
+    } else if (parameters.containsKey("parties")) {
+      selection = CoalitionSelection.parse(value(parameters, "parties"), "");
+    } else {
+      selection = CoalitionSelection.preset();
+    }
+    final LocalDate from = date(value(parameters, "from"), "from");
+    final LocalDate to = date(value(parameters, "to"), "to");
+    ordered(from, to);
+    return new Request(selection, from, to, 7);
+  }
+
+  public static Request parse(Map<String, List<String>> parameters) {
+    unique(parameters, List.of("a", "b", "from", "to", "step"));
     final CoalitionSelection selection =
         CoalitionSelection.parse(value(parameters, "a"), value(parameters, "b"));
     final LocalDate from = date(value(parameters, "from"), "from");
     final LocalDate to = date(value(parameters, "to"), "to");
     final String step = value(parameters, "step");
     if (step != null && !List.of("1", "3", "7").contains(step)) {
-      throw new CoalitionSelection.Invalid("step", "Use a step of 1, 3 or 7.");
+      throw new CoalitionSelection.Invalid("step", "unsupported_step", "Use a step of 1, 3 or 7.");
     }
+    ordered(from, to);
+    return new Request(selection, from, to, step == null ? 1 : Integer.parseInt(step));
+  }
+
+  private static void unique(Map<String, List<String>> parameters, List<String> names) {
+    for (final String name : names) {
+      if (parameters.containsKey(name) && parameters.get(name).size() != 1) {
+        throw new CoalitionSelection.Invalid(
+            name, "repeated_parameter", "Supply this parameter exactly once.");
+      }
+    }
+  }
+
+  private static void ordered(LocalDate from, LocalDate to) {
     if (from != null && to != null && from.isAfter(to)) {
       throw new CoalitionSelection.Invalid(
-          "to", "The end date must be on or after the start date.");
+          "to", "reversed_range", "The end date must be on or after the start date.");
     }
-    return new Request(selection, from, to, step == null ? 1 : Integer.parseInt(step));
   }
 
   private static String value(Map<String, List<String>> parameters, String field) {
@@ -49,12 +82,12 @@ public final class CoalitionHistoryQuery {
     if (value == null) return null;
     if (!value.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}") || value.startsWith("0000")) {
       throw new CoalitionSelection.Invalid(
-          field, "Use a real YYYY-MM-DD date in years 0001 through 9999.");
+          field, "malformed_date", "Use a real YYYY-MM-DD date in years 0001 through 9999.");
     }
     try {
       return LocalDate.parse(value);
     } catch (DateTimeParseException error) {
-      throw new CoalitionSelection.Invalid(field, "Use a real calendar date.");
+      throw new CoalitionSelection.Invalid(field, "invalid_date", "Use a real calendar date.");
     }
   }
 
@@ -65,7 +98,8 @@ public final class CoalitionHistoryQuery {
     final LocalDate from = request.from() == null ? first : request.from();
     final LocalDate to = request.to() == null ? last : request.to();
     if (from.isAfter(to)) {
-      throw new CoalitionSelection.Invalid("to", "The resolved end date precedes the start date.");
+      throw new CoalitionSelection.Invalid(
+          "to", "resolved_reversed_range", "The resolved end date precedes the start date.");
     }
     final List<Integer> inRange = new ArrayList<>();
     for (int i = 0; i < dates.size(); i++) {
