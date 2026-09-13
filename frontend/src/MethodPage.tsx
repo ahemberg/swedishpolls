@@ -249,6 +249,7 @@ function Seats({ page, t }: { readonly page: Bootstrap; readonly t: Translate })
       <p>{t("seats.era", { year: String(page.approximatedElection ?? "") })}</p>
       <p>{t("seats.threshold")}</p>
       <p>{t("about.seats")}</p>
+      <p>{t("seats.tie")}</p>
       <p>{t("seats.pointVersusMean")}</p>
     </Section>
   );

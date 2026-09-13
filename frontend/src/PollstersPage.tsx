@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { Fragment, type JSX } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
 import { decimal } from "./format";
 import type { InstituteMeta, PollstersCell, PollstersData, PollstersMatrix } from "./institutes";
@@ -81,8 +81,11 @@ function Institutes({
                 <th scope="row">{institute.institute}</th>
                 <td>{companies(institute)}</td>
                 <td>
-                  {institute.methodEras.map((era) => (
-                    <Era id={era.id} evidence={era.evidence} key={era.id} />
+                  {institute.methodEras.map((era, index) => (
+                    <Fragment key={era.id}>
+                      {index > 0 && ", "}
+                      <Era id={era.id} evidence={era.evidence} />
+                    </Fragment>
                   ))}
                 </td>
                 <td className="num">{String(institute.polls)}</td>
