@@ -2,9 +2,11 @@
 
 Proposal `v2-development-1-proposal-1`, prepared 2026-09-13 for
 [issue #150](https://github.com/ahemberg/swedishpolls/issues/150), checkpoint 1.
-Status: **awaiting owner review, not approved and not executable registration**.
-Approval must name this proposal's commit and record the owner's rationale on #150.
-Silence is not approval. Publication remains blocked by `v1-release-1`.
+Status: **approved for development on 2026-09-13**, as recorded in
+[ADR 0009](../adr/0009-development-remediation-protocol.md). The approved proposal
+is pinned there to commit `d5699e8`; the original proposal text below describes
+the review and registration requirements. This document is not an executable
+registration. Publication remains blocked by `v1-release-1`.
 
 ## Evidence and failure inventory
 
