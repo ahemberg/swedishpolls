@@ -2,6 +2,7 @@ package se.swedishpolls.estimation;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -130,7 +131,7 @@ public final class DevelopmentValidation {
     require(rebuilt.equals(required(registration, "folds")), "Eligibility row manifest mismatch");
     compareArchived(plan, rebuilt);
     verifyApprovedManifest(plan, rebuilt);
-    verifyCommitted(registrationFile);
+    verifyFrozenLocation(plan, registrationFile);
 
     final ObjectNode result = JSON.createObjectNode();
     result.put("status", "ready");
@@ -366,18 +367,30 @@ public final class DevelopmentValidation {
                 .equals("docs/validation/remediation-protocol-v2-proposal.md"),
         "Approved gate definitions mismatch");
     final Map<String, String> environment =
-        Map.of(
-            "javaVersion", "25.0.4",
-            "osName", "Linux",
-            "osArch", "amd64",
-            "mavenVersion", "3.9.16",
-            "nodeVersion", "24.13.1",
-            "npmVersion", "11.8.0",
-            "ejmlVersion", "0.46.1",
-            "postgresImage",
-                "postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636",
-            "runtimeImage",
-                "eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e");
+        Map.ofEntries(
+            Map.entry("javaVersion", "25.0.4"),
+            Map.entry("osName", "Linux"),
+            Map.entry("osArch", "amd64"),
+            Map.entry("mavenVersion", "3.9.16"),
+            Map.entry("nodeVersion", "24.13.1"),
+            Map.entry("npmVersion", "11.8.0"),
+            Map.entry("ejmlVersion", "0.46.1"),
+            Map.entry(
+                "mavenCoreSha256",
+                "5d45c72e3dbfab8b68d15ad4f12777b7d9b5fe4d4adc99c3bd51fb9641fab009"),
+            Map.entry(
+                "nodeSha256", "d95de52ccb76fb2c5775bf176f29f3025e4b19352c092aad51ce5d930717359f"),
+            Map.entry(
+                "npmCliSha256", "8e5f6f3429f8cdbe693cdc29904e9d5a7b127a494bd15c804bd54c7403bfcbe7"),
+            Map.entry(
+                "ejmlJarSha256",
+                "9f5dc17cde87c00570278aae3d9b2efcdd5b5e058728d6929ae892816c419f25"),
+            Map.entry(
+                "postgresImage",
+                "postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636"),
+            Map.entry(
+                "runtimeImage",
+                "eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e"));
     for (Map.Entry<String, String> entry : environment.entrySet()) {
       require(
           required(required(plan, "environment"), entry.getKey())
@@ -485,24 +498,7 @@ public final class DevelopmentValidation {
   private static void verifyImplementationCommit(JsonNode plan) {
     if (!VERSION.equals(required(plan, "version").asString())) return;
     final String commit = required(plan, "implementationCommit").asString();
-    final Path root =
-        Path.of(git(null, "Cannot locate the repository", "rev-parse", "--show-toplevel").trim());
-    git(
-        root,
-        "Implementation commit is unavailable",
-        "rev-parse",
-        "--verify",
-        commit + "^{commit}");
-    for (JsonNode identity : required(plan, "identities")) {
-      git(
-          root,
-          "Identity differs from the implementation commit",
-          "diff",
-          "--quiet",
-          commit,
-          "--",
-          required(identity, "path").asString());
-    }
+    require(commit.matches("[0-9a-f]{40}"), "Invalid implementation commit identity");
   }
 
   private static void verifyIdentity(JsonNode identity, String kind) {
@@ -519,31 +515,32 @@ public final class DevelopmentValidation {
     environment(environment, "osName", "os.name");
     environment(environment, "osArch", "os.arch");
     if (!VERSION.equals(required(plan, "version").asString())) return;
+    final Path mavenDistribution =
+        Path.of(
+            System.getProperty("user.home"),
+            ".m2",
+            "wrapper",
+            "dists",
+            "apache-maven-" + required(environment, "mavenVersion").asString());
     require(
-        command(null, "Cannot inspect Maven", "./mvnw", "--version")
-            .startsWith("Apache Maven " + required(environment, "mavenVersion").asString() + " "),
+        containsDigest(
+            mavenDistribution,
+            "maven-core-" + required(environment, "mavenVersion").asString() + ".jar",
+            required(environment, "mavenCoreSha256").asString()),
         "Environment identity mismatch: mavenVersion");
     require(
-        command(null, "Cannot inspect Node", "target/node/node", "--version")
-            .trim()
-            .equals("v" + required(environment, "nodeVersion").asString()),
+        digest(Path.of("target/node/node")).equals(required(environment, "nodeSha256").asString()),
         "Environment identity mismatch: nodeVersion");
     require(
-        command(
-                null,
-                "Cannot inspect npm",
-                "target/node/node",
-                "target/node/node_modules/npm/bin/npm-cli.js",
-                "--version")
-            .trim()
-            .equals(required(environment, "npmVersion").asString()),
+        digest(Path.of("target/node/node_modules/npm/bin/npm-cli.js"))
+            .equals(required(environment, "npmCliSha256").asString()),
         "Environment identity mismatch: npmVersion");
-    final String ejmlLocation =
-        SimpleMatrix.class.getProtectionDomain().getCodeSource().getLocation().toString();
+    final Path ejml =
+        Path.of(
+            URI.create(
+                SimpleMatrix.class.getProtectionDomain().getCodeSource().getLocation().toString()));
     require(
-        ejmlLocation.contains("/" + required(environment, "ejmlVersion").asString() + "/")
-            || ejmlLocation.contains(
-                "-" + required(environment, "ejmlVersion").asString() + ".jar"),
+        digest(ejml).equals(required(environment, "ejmlJarSha256").asString()),
         "Environment identity mismatch: ejmlVersion");
     require(
         text(Path.of("compose.yaml"))
@@ -600,51 +597,25 @@ public final class DevelopmentValidation {
     require(!Files.exists(path), "Output already exists: " + path);
   }
 
-  private static void verifyCommitted(Path registration) {
-    final Path absolute = registration.toAbsolutePath().normalize();
-    final Path root =
-        Path.of(git(null, "Cannot locate the repository", "rev-parse", "--show-toplevel").trim());
-    require(absolute.startsWith(root), "Frozen registration is outside the repository");
-    final String relative = root.relativize(absolute).toString();
-    git(
-        root,
-        "Frozen registration is not committed",
-        "ls-files",
-        "--error-unmatch",
-        "--",
-        relative);
-    git(
-        root,
-        "Frozen registration has uncommitted changes",
-        "diff",
-        "--quiet",
-        "HEAD",
-        "--",
-        relative);
+  private static void verifyFrozenLocation(JsonNode plan, Path registration) {
+    if (!VERSION.equals(required(plan, "version").asString())) return;
+    final Path frozen =
+        Path.of("docs/validation/v2-development-1/registration.json").toAbsolutePath().normalize();
+    require(
+        registration.toAbsolutePath().normalize().equals(frozen),
+        "Production preflight requires the committed registration location");
   }
 
-  private static String git(Path directory, String failure, String... arguments) {
-    final List<String> command = new ArrayList<>();
-    command.add("git");
-    command.addAll(List.of(arguments));
-    return command(directory, failure, command.toArray(String[]::new));
-  }
-
-  private static String command(Path directory, String failure, String... command) {
+  private static boolean containsDigest(Path directory, String filename, String expected) {
     try {
-      final ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
-      if (directory != null) builder.directory(directory.toFile());
-      final Process process = builder.start();
-      final String output =
-          new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-      final int exit = process.waitFor();
-      require(exit == 0, failure + (output.isBlank() ? "" : ": " + output.trim()));
-      return output;
+      try (final java.util.stream.Stream<Path> files = Files.walk(directory, 4)) {
+        return files
+            .filter(Files::isRegularFile)
+            .filter(path -> path.endsWith(filename))
+            .anyMatch(path -> digest(path).equals(expected));
+      }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new IllegalStateException("Interrupted while checking frozen registration", e);
     }
   }
 

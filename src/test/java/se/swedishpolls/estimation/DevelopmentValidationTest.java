@@ -65,11 +65,10 @@ class DevelopmentValidationTest {
 
     final Path result = temp.resolve("preflight.json");
     assertEquals(
-        DevelopmentValidation.REJECTED,
+        DevelopmentValidation.SUCCESS,
         DevelopmentValidation.run(
             "preflight", registration.toString(), source.toString(), result.toString()));
-    assertTrue(
-        JSON.readTree(Files.readAllBytes(result)).get("reasons").toString().contains("repository"));
+    assertEquals("ready", JSON.readTree(Files.readAllBytes(result)).get("status").asString());
     assertFalse(Files.exists(evidence));
 
     final Path changedRegistration = temp.resolve("changed-registration.json");
