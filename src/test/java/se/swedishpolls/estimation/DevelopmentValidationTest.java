@@ -187,8 +187,16 @@ class DevelopmentValidationTest {
         grid.get("walkVariances").size()
             * grid.get("houseScales").size()
             * grid.get("covarianceMultipliers").size());
-    assertEquals(3, registration.get("plan").get("commands").size());
+    assertEquals(4, registration.get("plan").get("commands").size());
     assertTrue(registration.get("plan").get("commands").get(2).asString().contains("'tune "));
+    assertTrue(registration.get("plan").get("commands").get(3).asString().contains("'estimate "));
+    // The estimator's parameter selection is named by the registration, never by the code alone.
+    assertEquals(
+        "midpoint_candidate",
+        registration.get("plan").get("parameterSelection").get("method").asString());
+    assertEquals(
+        "latest_resolved_active_cutoff",
+        registration.get("plan").get("parameterSelection").get("fold").asString());
     assertTrue(
         registration
             .get("plan")
@@ -422,6 +430,177 @@ class DevelopmentValidationTest {
         "not_run", JSON.readTree(Files.readAllBytes(registration)).get("fitEvidence").asString());
   }
 
+  @Test
+  void estimatesSeparateHistoriesJointUncertaintyAndTheSharedDrawRemainder() throws Exception {
+    final Estimated run = estimate("shared");
+
+    final JsonNode evidence = run.evidence();
+    assertEquals("complete", evidence.get("fitEvidence").asString());
+    assertEquals("blocked", evidence.get("status").asString());
+    assertFalse(evidence.get("gatePassed").booleanValue());
+
+    // The tuned point comes from this run's own tuning evidence, never from a v1 fitted output.
+    final JsonNode provenance = evidence.get("tunedParameters");
+    assertEquals("midpoint_candidate", provenance.get("method").asString());
+    assertEquals(DevelopmentGates.sha256(run.tuning()), provenance.get("sha256").asString());
+    assertEquals(
+        0.000003,
+        provenance.get("selectedParameters").get("eight").get("walkVariance").doubleValue());
+    assertTrue(provenance.get("resolvedFolds").intValue() > 0);
+
+    // Each coverage period keeps its own separately fitted history.
+    assertEquals(2, evidence.get("coverage").get("periods").size());
+    final JsonNode eight = period(evidence, "eight");
+    final JsonNode candidate = period(evidence, "fi");
+    assertEquals("2014-01-01", eight.get("support").get("from").asString());
+    assertEquals("2014-04-09", candidate.get("support").get("from").asString());
+    // An unsupported gap is measured inside the supported window rather than hidden.
+    assertEquals(88, eight.get("support").get("largestGap").get("days").intValue());
+
+    // Every registered boundary shift is refitted, and the separate-fit step at the candidate
+    // boundary is recorded as a change of modeled membership rather than suppressed.
+    assertEquals(1, eight.get("stability").size());
+    assertEquals(7, eight.get("stability").get(0).get("shiftDays").intValue());
+    final JsonNode boundary = evidence.get("coverage").get("boundaryEffects").get(0);
+    assertEquals("2014-04-09", boundary.get("date").asString());
+    assertEquals("fi", boundary.get("periodId").asString());
+    assertEquals("eight", boundary.get("againstPeriodId").asString());
+
+    // Only the validated roster draws; the FI candidate period publishes nothing.
+    assertEquals(1, evidence.get("uncertainty").get("periods").size());
+    assertEquals(
+        "eight", evidence.get("uncertainty").get("periods").get(0).get("periodId").asString());
+
+    final JsonNode remainder = evidence.get("remainder");
+    assertEquals(1, remainder.size());
+    assertEquals("drawn", remainder.get(0).get("status").asString());
+    assertEquals("OTHER", remainder.get(0).get("members").get(0).asString());
+    assertTrue(remainder.get(0).get("maxEndpointSumErrorPoints").doubleValue() <= 1e-9);
+    assertTrue(remainder.get(0).get("estimatedDays").intValue() > 0);
+
+    assertEquals("passed", check(evidence, "seeded_reproduction").get("status").asString());
+    assertEquals("passed", check(evidence, "comparable_remainder").get("status").asString());
+    assertEquals("passed", check(evidence, "interval_endpoint_precision").get("status").asString());
+  }
+
+  @Test
+  void anUpstreamTuningBlockerIsCarriedIntoTheEstimationResult() throws Exception {
+    final JsonNode evidence = estimate("carried").evidence();
+
+    assertTrue(
+        evidence
+            .get("reasons")
+            .valueStream()
+            .anyMatch(reason -> reason.asString().startsWith("development tuning: ")),
+        evidence.get("reasons")::toString);
+    assertFalse(evidence.get("gatePassed").booleanValue());
+  }
+
+  @Test
+  void tuningEvidenceFromAnotherRegistrationCannotFeedTheEstimate() throws Exception {
+    final Estimated run = estimate("foreign");
+    final Estimated other = estimate("other");
+    // The foreign evidence sits in the registered location, so only its provenance can reject it.
+    final Path planted = run.evidenceDirectory().resolve("planted-tuning.json");
+    Files.write(planted, Files.readAllBytes(other.tuning()));
+    final Path result = run.evidenceDirectory().resolve("foreign-estimation.json");
+
+    assertEquals(
+        DevelopmentValidation.REJECTED,
+        DevelopmentValidation.run(
+            "estimate",
+            run.registration().toString(),
+            run.source().toString(),
+            planted.toString(),
+            result.toString()));
+    assertTrue(
+        JSON.readTree(Files.readAllBytes(result))
+            .get("reasons")
+            .toString()
+            .contains("another registration"));
+  }
+
+  @Test
+  void aRerunNeverOverwritesRetainedEstimationEvidence() throws Exception {
+    final Estimated run = estimate("retained");
+    final byte[] retained = Files.readAllBytes(run.result());
+
+    assertEquals(
+        DevelopmentValidation.REJECTED,
+        DevelopmentValidation.run(
+            "estimate",
+            run.registration().toString(),
+            run.source().toString(),
+            run.tuning().toString(),
+            run.result().toString()));
+    assertArrayEquals(retained, Files.readAllBytes(run.result()));
+  }
+
+  private static JsonNode period(JsonNode evidence, String periodId) {
+    return evidence
+        .get("coverage")
+        .get("periods")
+        .valueStream()
+        .filter(entry -> entry.get("periodId").asString().equals(periodId))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private static JsonNode check(JsonNode evidence, String name) {
+    return evidence
+        .get("checks")
+        .valueStream()
+        .filter(entry -> entry.get("check").asString().equals(name))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private record Estimated(
+      Path source, Path registration, Path tuning, Path result, JsonNode evidence) {
+    Path evidenceDirectory() {
+      return result.getParent();
+    }
+  }
+
+  private Estimated estimate(String name) throws Exception {
+    final Path source = temp.resolve(name + "-polls.csv");
+    Files.write(
+        source,
+        PollCsvFixtures.csv(
+            row("2014-01-10", "2014-01-01", "2014-01-09", "NA")
+                + row("2014-01-16", "2014-01-10", "2014-01-14", "NA")
+                + row("2014-04-12", "2014-04-09", "2014-04-11", "1")
+                + row("2014-05-10", "2014-05-01", "2014-05-05", "1")
+                + row("2014-05-16", "2014-04-20", "2014-04-30", "1")
+                + row("2014-06-01", "2014-05-20", "2014-05-30", "1")));
+    final Path identity = temp.resolve(name + "-implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final Path evidenceDirectory = temp.resolve(name + "-evidence");
+    final Path plan = temp.resolve(name + "-plan.json");
+    Files.writeString(plan, plan(source, identity, evidenceDirectory), StandardCharsets.UTF_8);
+    final Path registration = temp.resolve(name + "-registration.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+    final Path tuning = evidenceDirectory.resolve("tuning.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "tune", registration.toString(), source.toString(), tuning.toString()));
+    final Path result = evidenceDirectory.resolve("estimation.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "estimate",
+            registration.toString(),
+            source.toString(),
+            tuning.toString(),
+            result.toString()));
+    return new Estimated(
+        source, registration, tuning, result, JSON.readTree(Files.readAllBytes(result)));
+  }
+
   private static JsonNode fold(JsonNode registration, String period, String cutoff) {
     return registration
         .get("folds")
@@ -464,6 +643,24 @@ class DevelopmentValidationTest {
             "houseScales": [0.01],
             "covarianceMultipliers": [0.5]
           },
+          "parameterSelection": {"method": "midpoint_candidate", "fold": "latest_resolved_active_cutoff"},
+          "coverage": {
+            "developmentThrough": "2014-12-31",
+            "minObservations": 1,
+            "minInstitutes": 1,
+            "maxInternalGapDays": 400,
+            "boundaryShiftDays": [7],
+            "stabilityBurnInDays": 0,
+            "maxStabilityShiftPoints": 100.0
+          },
+          "uncertainty": {
+            "draws": 64,
+            "intervalLevels": [0.5, 0.95],
+            "precisionRepeats": 2,
+            "maxIntervalEndpointSpreadPoints": 100.0,
+            "maxEndpointSumErrorPoints": 1e-9
+          },
+          "seeds": {"master": 20260908, "precision": [20260908, 20260909]},
           "periods": [
             {"id": "eight", "from": "2014-01-01", "to": null, "individualFi": false, "activeFrom": "2014-01-15", "activeThrough": "2014-05-15"},
             {"id": "fi", "from": "2014-04-09", "to": "2018-09-07", "individualFi": true, "activeFrom": "2014-05-15", "activeThrough": "2014-05-15"}
