@@ -156,7 +156,7 @@ final class DevelopmentPredictiveEvidence {
     artifact.put("status", "incomplete");
     drawArtifacts.put(stream, artifact);
     try {
-      Files.createDirectories(file.getParent());
+      Files.createDirectories(directory.resolve("predictive-draws"));
       try (final DataOutputStream output =
           new DataOutputStream(
               new BufferedOutputStream(
