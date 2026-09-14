@@ -1,0 +1,22 @@
+{
+  "protocolVersion" : "v2-development-1",
+  "registrationSha256" : "47a34a57188e522923b0aa49d0fa7e71874812c38e90218a207ad5a1081e14b7",
+  "sourceSha256" : "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+  "tuningSha256" : "7b1c65bd77f3199e2722a05783bf21fb8517f7474ba6d1b181f025db294ae97e",
+  "implementationIdentitySha256" : "9be1e9e3ec640f11b473bfb0f7b24252dc22290e1be4746f2ec35cf5eed57cb5",
+  "architecture" : "amd64",
+  "platform" : "linux/amd64",
+  "javaVersion" : "25.0.4",
+  "javaRuntime" : "25.0.4+7-1-24.04-Ubuntu",
+  "vm" : "OpenJDK 64-Bit Server VM 25.0.4+7-1-24.04-Ubuntu",
+  "os" : "Linux 6.17.0-1020-oracle",
+  "runtimeImage" : "eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e",
+  "checks" : [ {
+    "check" : "cross_architecture_reproduction",
+    "status" : "unevaluated",
+    "detail" : "both registered architecture runs are required"
+  } ],
+  "reasons" : [ "cross-architecture reproduction is incomplete because an architecture run is missing" ],
+  "gatePassed" : false,
+  "status" : "blocked"
+}

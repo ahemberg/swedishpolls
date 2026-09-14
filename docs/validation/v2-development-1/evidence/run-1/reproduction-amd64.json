@@ -1,0 +1,52 @@
+{
+  "protocolVersion" : "v2-development-1",
+  "registrationSha256" : "47a34a57188e522923b0aa49d0fa7e71874812c38e90218a207ad5a1081e14b7",
+  "sourceSha256" : "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+  "tuningSha256" : "7b1c65bd77f3199e2722a05783bf21fb8517f7474ba6d1b181f025db294ae97e",
+  "implementationIdentitySha256" : "9be1e9e3ec640f11b473bfb0f7b24252dc22290e1be4746f2ec35cf5eed57cb5",
+  "architecture" : "amd64",
+  "platform" : "linux/amd64",
+  "javaVersion" : "25.0.4",
+  "javaRuntime" : "25.0.4+7-1-24.04-Ubuntu",
+  "vm" : "OpenJDK 64-Bit Server VM 25.0.4+7-1-24.04-Ubuntu",
+  "os" : "Linux 6.17.0-1020-oracle",
+  "runtimeImage" : "eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e",
+  "reasons" : [ ],
+  "periods" : [ {
+    "periodId" : "eight_party_2010",
+    "date" : "2021-09-20",
+    "components" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER" ],
+    "daySeed" : 5416840566589286126,
+    "draws" : 10000,
+    "offsetValues" : 0,
+    "values" : 90000,
+    "reproduction" : {
+      "seed" : 20260908,
+      "draws" : 10000,
+      "periodId" : "eight_party_2010",
+      "components" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER" ],
+      "basisSha256" : "4bfa062453f30fabc7986f2f6a774d87cea6da4899fa646d315f2154d11ca913",
+      "inputRowsSha256" : "8c3b3db1648d6a61a0f078e2155a9b139be94920a1a7e2c8b8fd8a0d99df04d5",
+      "inputRows" : 1038,
+      "parameters" : {
+        "walkVariance" : 1.0E-4,
+        "houseScale" : 0.1,
+        "covarianceMultiplier" : 1.5
+      },
+      "implementationSha256" : "d29102353c149718aa5b5b32e774a9de29da628babaa282e49a97feb6e5ebbc3",
+      "javaRuntimeVersion" : "25.0.4+7-1-24.04-Ubuntu",
+      "javaVmVersion" : "25.0.4+7-1-24.04-Ubuntu",
+      "osName" : "Linux",
+      "osArch" : "amd64",
+      "linearAlgebraVersion" : "0.46.1"
+    }
+  } ],
+  "artifact" : {
+    "path" : "reproduction-amd64.draws",
+    "sha256" : "a6cbbc0dd5be5c63f74e5f0e94c5eb67b93745a90a2d946056f274414d1af1a8",
+    "values" : 90000,
+    "bytes" : 720000
+  },
+  "status" : "complete",
+  "releaseAuthorized" : false
+}
