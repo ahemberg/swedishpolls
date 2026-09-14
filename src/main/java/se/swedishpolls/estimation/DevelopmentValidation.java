@@ -427,6 +427,21 @@ public final class DevelopmentValidation {
     for (JsonNode period : required(run, "periods")) {
       final JsonNode reproduction = required(period, "reproduction");
       require(
+          required(reproduction, "javaRuntimeVersion")
+              .asString()
+              .equals(required(run, "javaRuntime").asString()),
+          "Reproduction runtime identity mismatch");
+      require(
+          required(run, "vm")
+              .asString()
+              .endsWith(" " + required(reproduction, "javaVmVersion").asString()),
+          "Reproduction VM identity mismatch");
+      require(
+          required(run, "os")
+              .asString()
+              .startsWith(required(reproduction, "osName").asString() + " "),
+          "Reproduction operating-system identity mismatch");
+      require(
           canonicalArchitecture(required(reproduction, "osArch").asString())
               .equals(required(run, "architecture").asString()),
           "Retained draws carry another architecture identity");
@@ -2460,9 +2475,11 @@ public final class DevelopmentValidation {
             "maven-core-" + required(environment, "mavenVersion").asString() + ".jar",
             required(environment, "mavenCoreSha256").asString()),
         "Environment identity mismatch: mavenVersion");
-    require(
-        digest(Path.of("target/node/node")).equals(required(environment, "nodeSha256").asString()),
-        "Environment identity mismatch: nodeVersion");
+    if (!reproductionPlatform)
+      require(
+          digest(Path.of("target/node/node"))
+              .equals(required(environment, "nodeSha256").asString()),
+          "Environment identity mismatch: nodeVersion");
     require(
         digest(Path.of("target/node/node_modules/npm/bin/npm-cli.js"))
             .equals(required(environment, "npmCliSha256").asString()),

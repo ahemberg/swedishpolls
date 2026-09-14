@@ -1101,6 +1101,29 @@ class DevelopmentValidationTest {
             rejected.toString()));
     assertTrue(
         JSON.readTree(Files.readAllBytes(rejected)).get("reasons").toString().contains("source"));
+
+    final ObjectNode mixedEnvironment = secondRun.deepCopy();
+    mixedEnvironment.put("javaRuntime", "foreign-runtime");
+    final Path mixedEnvironmentRun = run.evidenceDirectory().resolve("mixed-environment.json");
+    Files.writeString(
+        mixedEnvironmentRun, JSON.writeValueAsString(mixedEnvironment), StandardCharsets.UTF_8);
+    final Path environmentRejected =
+        run.evidenceDirectory().resolve("mixed-environment-result.json");
+    assertEquals(
+        DevelopmentValidation.REJECTED,
+        DevelopmentValidation.run(
+            "compare",
+            run.registration().toString(),
+            run.source().toString(),
+            run.tuning().toString(),
+            first.toString(),
+            mixedEnvironmentRun.toString(),
+            environmentRejected.toString()));
+    assertTrue(
+        JSON.readTree(Files.readAllBytes(environmentRejected))
+            .get("reasons")
+            .toString()
+            .contains("runtime"));
   }
 
   private static JsonNode period(JsonNode evidence, String periodId) {
