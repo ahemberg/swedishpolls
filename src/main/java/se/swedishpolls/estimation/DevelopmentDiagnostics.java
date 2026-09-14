@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
 import se.swedishpolls.source.PollCsv;
@@ -377,7 +378,8 @@ public final class DevelopmentDiagnostics {
       ModelValues mean,
       ModelValues covariance,
       Rules rules,
-      String stream) {
+      String stream,
+      BiConsumer<String, double[][]> retainDraws) {
     final int dimension = mean.getNumRows();
     final double[][] matrix = new double[dimension][dimension];
     for (int r = 0; r < dimension; r++)
@@ -420,6 +422,7 @@ public final class DevelopmentDiagnostics {
       for (int component = 0; component < components; component++)
         draws[component][draw] = shares[component];
     }
+    retainDraws.accept(stream, draws);
     final java.util.Map<java.lang.String, java.lang.Double> observed =
         PollObservations.shares(batch, observation.ilr());
     final java.util.ArrayList<java.lang.Boolean> covered95 = new ArrayList<Boolean>(components);
@@ -605,7 +608,8 @@ public final class DevelopmentDiagnostics {
         candidateParameters,
         reference.parameters(),
         reference.gridBoundaries(),
-        rules);
+        rules,
+        (stream, draws) -> {});
   }
 
   static Folded fold(
@@ -616,7 +620,8 @@ public final class DevelopmentDiagnostics {
       DailyStateSpace.Parameters candidateParameters,
       DailyStateSpace.Parameters referenceParameters,
       List<String> referenceBoundaries,
-      Rules rules) {
+      Rules rules,
+      BiConsumer<String, double[][]> retainDraws) {
     if (!fold.scoreThrough().isBefore(RESERVED_FROM))
       throw new IllegalArgumentException("Fold scores into the reserved comparison");
     final List<PollCsv.Poll> trainingPolls = DevelopmentTuning.training(polls, fold);
@@ -647,9 +652,11 @@ public final class DevelopmentDiagnostics {
             java.util.List<se.swedishpolls.estimation.DevelopmentDiagnostics.Scored>>
         scored = new LinkedHashMap<String, List<Scored>>();
     scored.put(
-        CANDIDATE, scoreAll(heldOut, observations, candidatePredictions, fold, CANDIDATE, rules));
+        CANDIDATE,
+        scoreAll(heldOut, observations, candidatePredictions, fold, CANDIDATE, rules, retainDraws));
     scored.put(
-        REFERENCE, scoreAll(heldOut, observations, referencePredictions, fold, REFERENCE, rules));
+        REFERENCE,
+        scoreAll(heldOut, observations, referencePredictions, fold, REFERENCE, rules, retainDraws));
     final java.util.ArrayList<se.swedishpolls.estimation.DevelopmentDiagnostics.Scored>
         baselineScored = new ArrayList<Scored>();
     for (se.swedishpolls.estimation.PollObservations.Observation observation : observations)
@@ -660,7 +667,8 @@ public final class DevelopmentDiagnostics {
               baseline.mean(),
               RecencyBaseline.predictiveCovariance(heldOut, baseline, observation),
               rules,
-              stream(period.id(), fold, BASELINE, observation)));
+              stream(period.id(), fold, BASELINE, observation),
+              retainDraws));
     scored.put(BASELINE, List.copyOf(baselineScored));
     final java.util.LinkedHashMap<java.lang.String, java.lang.Double> meanLogScore =
         new LinkedHashMap<String, Double>();
@@ -700,7 +708,8 @@ public final class DevelopmentDiagnostics {
       WindowFilter.Scored predictions,
       DevelopmentTuning.Fold fold,
       String candidate,
-      Rules rules) {
+      Rules rules,
+      BiConsumer<String, double[][]> retainDraws) {
     if (predictions.predictions().size() != observations.size())
       throw new IllegalStateException("Every held-out poll is predicted exactly once");
     // Predictions come back in the order their windows resolve, which is not the order the polls
@@ -725,7 +734,8 @@ public final class DevelopmentDiagnostics {
               prediction.mean(),
               prediction.covariance(),
               rules,
-              stream(heldOut.period().id(), fold, candidate, observation)));
+              stream(heldOut.period().id(), fold, candidate, observation),
+              retainDraws));
     }
     return List.copyOf(scored);
   }

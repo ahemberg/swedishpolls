@@ -206,7 +206,8 @@ public final class DevelopmentValidation {
     result.set("grid", evidenceGrid);
     final ArrayNode reasons = result.putArray("reasons");
     final ArrayNode folds = result.putArray("folds");
-    final DevelopmentPredictiveEvidence predictive = new DevelopmentPredictiveEvidence();
+    final DevelopmentPredictiveEvidence predictive =
+        new DevelopmentPredictiveEvidence(resultFile.toAbsolutePath().getParent());
     boolean passed = true;
     for (JsonNode manifest : checked.folds()) {
       final ObjectNode foldResult = folds.addObject();

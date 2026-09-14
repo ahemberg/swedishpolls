@@ -1,6 +1,14 @@
 package se.swedishpolls.estimation;
 
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
@@ -23,10 +31,13 @@ final class DevelopmentPredictiveEvidence {
   private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final List<String> METHODS = List.of("midpoint", "ilr_window", "recency");
   private final DevelopmentDiagnostics.Rules rules;
+  private final Path directory;
+  private final Map<String, ObjectNode> drawArtifacts = new LinkedHashMap<>();
   private final Map<String, List<DevelopmentDiagnostics.Folded>> periods = new LinkedHashMap<>();
   private final Map<String, List<String>> components = new LinkedHashMap<>();
 
-  DevelopmentPredictiveEvidence() {
+  DevelopmentPredictiveEvidence(Path directory) {
+    this.directory = directory;
     rules =
         new DevelopmentDiagnostics.Rules(
             20260908,
@@ -67,7 +78,8 @@ final class DevelopmentPredictiveEvidence {
               parameters(searches.get(0)),
               parameters(searches.get(1)),
               searches.get(1).get("gridBoundaries").valueStream().map(JsonNode::asString).toList(),
-              rules);
+              rules,
+              this::retainDraws);
       final List<DevelopmentDiagnostics.Scored> candidate = scored.scored().get("midpoint");
       final List<Integer> actual = candidate.stream().map(row -> row.poll().rowNumber()).toList();
       final List<Integer> expected =
@@ -113,6 +125,7 @@ final class DevelopmentPredictiveEvidence {
           evidence.put("draws", rules.scoreDraws());
           evidence.put("seed", rules.seed());
           evidence.put("stream", prediction.stream());
+          evidence.set("drawArtifact", drawArtifacts.get(prediction.stream()));
           evidence.set("whitenedIlrResiduals", JSON.valueToTree(prediction.whitened()));
           evidence.set("components", JSON.valueToTree(prediction.components()));
         }
@@ -124,6 +137,48 @@ final class DevelopmentPredictiveEvidence {
       retained.add(scored);
     } catch (RuntimeException e) {
       unavailable(result, e.getMessage());
+    }
+  }
+
+  private void retainDraws(String stream, double[][] draws) {
+    final MessageDigest digest = sha256();
+    final String filename =
+        "predictive-draws/"
+            + HexFormat.of().formatHex(digest.digest(stream.getBytes(StandardCharsets.UTF_8)))
+            + ".bin";
+    final Path file = directory.resolve(filename);
+    final ObjectNode artifact = JSON.createObjectNode();
+    artifact.put("path", filename);
+    artifact.put("stream", stream);
+    artifact.put("draws", draws[0].length);
+    artifact.put("components", draws.length);
+    artifact.put("encoding", "big-endian IEEE-754 binary64; draw-major, then component order");
+    artifact.put("status", "incomplete");
+    drawArtifacts.put(stream, artifact);
+    try {
+      Files.createDirectories(file.getParent());
+      try (final DataOutputStream output =
+          new DataOutputStream(
+              new BufferedOutputStream(
+                  new DigestOutputStream(
+                      Files.newOutputStream(file, StandardOpenOption.CREATE_NEW), digest)))) {
+        for (int draw = 0; draw < draws[0].length; draw++)
+          for (double[] component : draws) output.writeDouble(component[draw]);
+      }
+      artifact.put("sha256", HexFormat.of().formatHex(digest.digest()));
+      artifact.put("bytes", Files.size(file));
+      artifact.put("status", "complete");
+    } catch (IOException e) {
+      artifact.put("reason", e.toString());
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private static MessageDigest sha256() {
+    try {
+      return MessageDigest.getInstance("SHA-256");
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException(e);
     }
   }
 
@@ -141,6 +196,7 @@ final class DevelopmentPredictiveEvidence {
   }
 
   void finish(ObjectNode result) {
+    result.set("drawArtifacts", JSON.valueToTree(drawArtifacts.values()));
     final ArrayNode reasons = (ArrayNode) result.get("reasons");
     boolean complete = true;
     for (JsonNode fold : result.get("folds")) {
@@ -552,13 +608,9 @@ final class DevelopmentPredictiveEvidence {
   }
 
   private static String rowDigest(PollCsv.Poll poll) {
-    try {
-      return HexFormat.of()
-          .formatHex(
-              MessageDigest.getInstance("SHA-256")
-                  .digest(String.join(",", poll.raw().values()).getBytes(StandardCharsets.UTF_8)));
-    } catch (NoSuchAlgorithmException e) {
-      throw new IllegalStateException(e);
-    }
+    return HexFormat.of()
+        .formatHex(
+            sha256()
+                .digest(String.join(",", poll.raw().values()).getBytes(StandardCharsets.UTF_8)));
   }
 }

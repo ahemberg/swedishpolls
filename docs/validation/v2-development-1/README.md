@@ -5,7 +5,7 @@ training-only searches for both fitted methods, then scores the common held-out
 rows with their selected parameters and the unchanged recency baseline. The output
 contains the searches, manifests, per-poll evidence, fold and subgroup summaries,
 statistical failures and available comparisons with the v1 archive in one JSON
-file. `tune` remains available for search evidence alone.
+file, with predictive draws beside it. `tune` remains available for search evidence alone.
 
 ```text
 diagnose <registration.json> <source.csv> <new-output-directory>/diagnostics.json
@@ -31,7 +31,11 @@ Each poll retains its physical row and SHA-256, roster, cutoff, institute, metho
 era, inclusive fieldwork span, sample size, zero count and original and transformed
 compositions. Each method retains one joint log score, the registered stream,
 4,000-draw marginal intervals, standardized composition residuals and whitened ilr
-residuals. Fold means and subgroup counts come from those same rows. Party
+residuals. Each stream writes a `predictive-draws/<stream-hash>.bin` file containing
+big-endian IEEE-754 doubles in draw order, then component order. The JSON records
+its relative path, SHA-256, byte count and dimensions. This preserves the joint
+draws before marginal sorting; reproduction compares these files across runs.
+Fold means and subgroup counts come from those same rows. Party
 breakdowns have coverage and residuals, with no party-specific joint score.
 
 The paired gate weights folds equally within a roster and uses the registered

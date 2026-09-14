@@ -344,6 +344,25 @@ class DevelopmentValidationTest {
       assertEquals(10, method.get("components").size());
       assertEquals(4000, method.get("draws").intValue());
       assertTrue(method.get("stream").asString().contains("fi|2014-05-15|"));
+      final JsonNode artifact = method.get("drawArtifact");
+      assertEquals("complete", artifact.get("status").asString());
+      final Path draws = evidence.resolve(artifact.get("path").asString());
+      assertEquals(4000 * 10 * Double.BYTES, Files.size(draws));
+      assertEquals(DevelopmentGates.sha256(draws), artifact.get("sha256").asString());
+      try (final java.io.DataInputStream values =
+          new java.io.DataInputStream(
+              new java.io.BufferedInputStream(Files.newInputStream(draws)))) {
+        for (int draw = 0; draw < 4000; draw++) {
+          double sum = 0;
+          for (int index = 0; index < 10; index++) {
+            final double value = values.readDouble();
+            assertTrue(value >= 0 && value <= 100);
+            sum += value;
+          }
+          assertEquals(100, sum, 1e-9);
+        }
+        assertEquals(-1, values.read());
+      }
       final JsonNode component = method.get("components").get(0);
       assertTrue(component.get("lower95").doubleValue() <= component.get("lower50").doubleValue());
       assertTrue(component.get("upper95").doubleValue() >= component.get("upper50").doubleValue());
