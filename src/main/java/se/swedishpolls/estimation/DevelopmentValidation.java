@@ -56,6 +56,9 @@ public final class DevelopmentValidation {
           + " src/test/resources/polls/audit.csv"
           + " docs/validation/v2-development-1/evidence/run-1/tuning.json'";
 
+  private static final String DIAGNOSE_COMMAND =
+      TUNE_COMMAND.replace("'tune ", "'diagnose ").replace("/tuning.json", "/diagnostics.json");
+
   private DevelopmentValidation() {}
 
   public static void main(String[] args) {
@@ -69,10 +72,11 @@ public final class DevelopmentValidation {
     if (args.length != 4
         || (!args[0].equals("prepare")
             && !args[0].equals("preflight")
-            && !args[0].equals("tune"))) {
+            && !args[0].equals("tune")
+            && !args[0].equals("diagnose"))) {
       System.err.println(
           "Usage: prepare <plan.json> <source.csv> <registration.json> | preflight"
-              + " <registration.json> <source.csv> <result.json> | tune"
+              + " <registration.json> <source.csv> <result.json> | tune/diagnose"
               + " <registration.json> <source.csv> <evidence.json>");
       return REJECTED;
     }
@@ -82,7 +86,10 @@ public final class DevelopmentValidation {
     try {
       if (args[0].equals("prepare")) prepare(registrationInput, source, output);
       else if (args[0].equals("preflight")) preflight(registrationInput, source, output);
-      else return tune(registrationInput, source, output) ? SUCCESS : BLOCKED;
+      else
+        return tune(registrationInput, source, output, args[0].equals("diagnose"))
+            ? SUCCESS
+            : BLOCKED;
       return SUCCESS;
     } catch (RuntimeException e) {
       rejected(output, e.getMessage());
@@ -167,7 +174,8 @@ public final class DevelopmentValidation {
     return new CheckedRegistration(registration, plan, rebuilt, sha256(registrationBytes));
   }
 
-  private static boolean tune(Path registrationFile, Path sourceFile, Path resultFile) {
+  private static boolean tune(
+      Path registrationFile, Path sourceFile, Path resultFile, boolean diagnose) {
     refuseExisting(resultFile);
     final CheckedRegistration checked = check(registrationFile, sourceFile);
     verifyEvidenceLocation(checked.plan(), resultFile);
@@ -185,6 +193,12 @@ public final class DevelopmentValidation {
     result.put("registrationSha256", checked.registrationSha256());
     result.put("sourceSha256", digest(sourceFile));
     result.put("fitEvidence", "complete");
+    result
+        .putArray("command")
+        .add(diagnose ? "diagnose" : "tune")
+        .add(registrationFile.toString())
+        .add(sourceFile.toString())
+        .add(resultFile.toString());
     final ObjectNode evidenceGrid = ((ObjectNode) required(checked.plan(), "grid")).deepCopy();
     evidenceGrid.put(
         "interpretation",
@@ -192,10 +206,12 @@ public final class DevelopmentValidation {
     result.set("grid", evidenceGrid);
     final ArrayNode reasons = result.putArray("reasons");
     final ArrayNode folds = result.putArray("folds");
+    final DevelopmentPredictiveEvidence predictive = new DevelopmentPredictiveEvidence();
     boolean passed = true;
     for (JsonNode manifest : checked.folds()) {
       final ObjectNode foldResult = folds.addObject();
       copy(manifest, foldResult, "periodId", "cutoff", "scoreThrough", "active");
+      copy(manifest, foldResult, "scoringRows", "scoringRowsSha256", "scoringExclusions");
       foldResult.set("trainingObservationRows", manifest.get("trainingObservationRows"));
       foldResult.put(
           "trainingObservationRowsSha256",
@@ -221,6 +237,17 @@ public final class DevelopmentValidation {
                 periodId + " " + fold.cutoff() + " " + method.id + ": " + reason.asString());
         }
       }
+      if (diagnose) predictive.score(foldResult, manifest, periods.get(periodId), polls, elections);
+    }
+    if (diagnose) {
+      predictive.finish(result);
+      final JsonNode archived = checked.plan().get("archivedDiagnostics");
+      final JsonNode oldTuning = checked.plan().get("archivedTuning");
+      DevelopmentPredictiveEvidence.compareHistorical(
+          result,
+          archived == null ? null : read(Path.of(archived.asString())),
+          oldTuning == null ? null : read(Path.of(oldTuning.asString())));
+      passed = reasons.isEmpty();
     }
     result.put("gatePassed", passed);
     result.put("status", passed ? "complete" : "blocked");
@@ -529,7 +556,8 @@ public final class DevelopmentValidation {
                     20260915)),
         "Approved precision seeds mismatch");
     require(
-        strings(plan, "commands").equals(List.of(PREPARE_COMMAND, PREFLIGHT_COMMAND, TUNE_COMMAND)),
+        strings(plan, "commands")
+            .equals(List.of(PREPARE_COMMAND, PREFLIGHT_COMMAND, TUNE_COMMAND, DIAGNOSE_COMMAND)),
         "Approved commands mismatch");
     require(
         required(plan, "outputLocation")
@@ -542,6 +570,9 @@ public final class DevelopmentValidation {
     require(
         required(plan, "archivedDiagnostics").asString().equals("docs/validation/diagnostics.json"),
         "Approved diagnostic source mismatch");
+    require(
+        required(plan, "archivedTuning").asString().equals("docs/validation/tuning.json"),
+        "Approved tuning source mismatch");
     final Set<String> identities = new HashSet<>();
     for (JsonNode identity : required(plan, "identities")) {
       identities.add(required(identity, "path").asString());
@@ -550,6 +581,10 @@ public final class DevelopmentValidation {
         List.of(
             "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java",
             "src/main/java/se/swedishpolls/estimation/DevelopmentTuning.java",
+            "src/main/java/se/swedishpolls/estimation/DevelopmentPredictiveEvidence.java",
+            "src/main/java/se/swedishpolls/estimation/PredictiveComparison.java",
+            "src/main/java/se/swedishpolls/estimation/RecencyBaseline.java",
+            "src/main/java/se/swedishpolls/estimation/JointUncertainty.java",
             "src/main/java/se/swedishpolls/estimation/DevelopmentDiagnostics.java",
             "src/main/java/se/swedishpolls/estimation/PollObservations.java",
             "src/main/java/se/swedishpolls/estimation/DailyStateSpace.java",

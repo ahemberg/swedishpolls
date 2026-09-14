@@ -353,7 +353,19 @@ public final class DevelopmentDiagnostics {
       List<Double> whitened,
       List<Double> standardized,
       List<Boolean> covered95,
-      List<Boolean> covered50) {}
+      List<Boolean> covered50,
+      List<ComponentPrediction> components,
+      String stream) {}
+
+  record ComponentPrediction(
+      String component,
+      double observed,
+      double mean,
+      double lower95,
+      double upper95,
+      double lower50,
+      double upper50,
+      double standardizedResidual) {}
 
   /**
    * The predictive log density of the poll's own transformed composition, its whitened residual and
@@ -379,6 +391,8 @@ public final class DevelopmentDiagnostics {
     final double logScore =
         -0.5
             * (dimension * Math.log(2 * Math.PI) + WindowFilter.logDeterminant(factor) + quadratic);
+    if (!Double.isFinite(logScore))
+      throw new IllegalArgumentException("Nonfinite joint predictive log score");
     final java.util.ArrayList<java.lang.Double> whitened = new ArrayList<Double>(dimension);
     for (int r = 0; r < dimension; r++) {
       double value = innovation[r];
@@ -411,6 +425,7 @@ public final class DevelopmentDiagnostics {
     final java.util.ArrayList<java.lang.Boolean> covered95 = new ArrayList<Boolean>(components);
     final java.util.ArrayList<java.lang.Boolean> covered50 = new ArrayList<Boolean>(components);
     final java.util.ArrayList<java.lang.Double> standardized = new ArrayList<Double>(components);
+    final List<ComponentPrediction> componentPredictions = new ArrayList<>();
     for (int component = 0; component < components; component++) {
       final double[] column = draws[component];
       double total = 0;
@@ -421,7 +436,19 @@ public final class DevelopmentDiagnostics {
       variance /= column.length - 1;
       Arrays.sort(column);
       final double share = observed.get(batch.components().get(component));
-      standardized.add(variance > 0 ? (share - drawnMean) / Math.sqrt(variance) : 0);
+      if (!Double.isFinite(variance) || variance <= 0)
+        throw new IllegalArgumentException("Invalid predictive composition variance");
+      standardized.add((share - drawnMean) / Math.sqrt(variance));
+      componentPredictions.add(
+          new ComponentPrediction(
+              batch.components().get(component),
+              share,
+              drawnMean,
+              JointUncertainty.quantile(column, (1 - 0.95) / 2),
+              JointUncertainty.quantile(column, (1 + 0.95) / 2),
+              JointUncertainty.quantile(column, 0.25),
+              JointUncertainty.quantile(column, 0.75),
+              standardized.getLast()));
       covered95.add(inside(column, share, 0.95));
       covered50.add(inside(column, share, 0.5));
     }
@@ -434,7 +461,9 @@ public final class DevelopmentDiagnostics {
         List.copyOf(whitened),
         List.copyOf(standardized),
         List.copyOf(covered95),
-        List.copyOf(covered50));
+        List.copyOf(covered50),
+        List.copyOf(componentPredictions),
+        stream);
   }
 
   private static boolean inside(double[] sorted, double value, double level) {
@@ -566,10 +595,37 @@ public final class DevelopmentDiagnostics {
         PollObservations.prepare(period, heldOutPolls);
     if (heldOut.observations().isEmpty())
       throw new IllegalArgumentException("no held-out observation the period can compose");
-    final java.util.List<se.swedishpolls.estimation.PollObservations.Observation> observations =
-        heldOut.observations();
-    final se.swedishpolls.estimation.DevelopmentTuning.Resolved reference =
+    final DevelopmentTuning.Resolved reference =
         tuneReference(training, period.id(), fold, elections, grid);
+    return fold(
+        period,
+        polls,
+        elections,
+        fold,
+        candidateParameters,
+        reference.parameters(),
+        reference.gridBoundaries(),
+        rules);
+  }
+
+  static Folded fold(
+      Roster.CoveragePeriod period,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      DevelopmentTuning.Fold fold,
+      DailyStateSpace.Parameters candidateParameters,
+      DailyStateSpace.Parameters referenceParameters,
+      List<String> referenceBoundaries,
+      Rules rules) {
+    if (!fold.scoreThrough().isBefore(RESERVED_FROM))
+      throw new IllegalArgumentException("Fold scores into the reserved comparison");
+    final List<PollCsv.Poll> trainingPolls = DevelopmentTuning.training(polls, fold);
+    final PollObservations.Batch training = PollObservations.prepare(period, trainingPolls);
+    final PollObservations.Batch heldOut =
+        PollObservations.prepare(period, heldOut(polls, fold, rules));
+    final List<PollObservations.Observation> observations = heldOut.observations();
+    if (training.observations().isEmpty() || observations.isEmpty())
+      throw new IllegalArgumentException("Unexpected empty active fold");
     final se.swedishpolls.estimation.WindowFilter.Scored candidatePredictions =
         WindowFilter.score(
             training,
@@ -582,7 +638,7 @@ public final class DevelopmentDiagnostics {
             training,
             observations,
             elections,
-            reference.parameters(),
+            referenceParameters,
             WindowFilter.Convention.FIELDWORK);
     final se.swedishpolls.estimation.RecencyBaseline.Fit baseline =
         RecencyBaseline.fit(training, fold.cutoff());
@@ -632,8 +688,8 @@ public final class DevelopmentDiagnostics {
             rowsSha256(trainingPolls),
             rowsSha256(observations.stream().map(PollObservations.Observation::poll).toList()),
             candidateParameters,
-            reference.parameters(),
-            reference.gridBoundaries(),
+            referenceParameters,
+            referenceBoundaries,
             meanLogScore),
         Map.copyOf(scored));
   }
