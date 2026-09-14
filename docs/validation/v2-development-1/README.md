@@ -64,6 +64,27 @@ leave-one-institute-out fit. A movement above ten percentage points carries a
 disclosure in that sensitivity entry. A disclosure does not clear another failure.
 Candidate-period outcomes remain unavailable until that coverage period is validated.
 
+Issue #159 adds three operator actions. `measure` runs the same estimator path as
+`estimate`, then records snapshot perturbations, wall time and peak used heap. Its
+measurement starts after registration, source and tuning verification and ends after
+coverage, corrected history, joint uncertainty, repeated-seed probabilities,
+comparable remainder and sensitivity. The ten-second target is reported and does not
+block the run. The separate 30-minute host requirement remains unevaluated because
+this development run does not accept a deployment host.
+
+`reproduce` writes the final-day retained draws as big-endian IEEE-754 doubles beside
+an architecture-specific JSON manifest. The manifest records the frozen registration,
+source, tuning, implementation, parameters, draw stream, Java, EJML, runtime image and
+platform identities. Run it once on each registered platform. `compare` rejects mixed
+or stale identities before comparing the files in draw and component order. Missing
+amd64 or arm64 evidence is unevaluated; a difference above 2e-14 percentage points
+fails the check. Existing files are never replaced.
+
+The synthetic tests exercise both platform manifests, missing evidence, identity
+rejection and the numerical limit. No arm64 runtime is available in this checkout, so
+an actual two-platform execution remains incomplete. The final experiment must run the
+registered amd64 and arm64 commands and retain both artifacts before comparison.
+
 Publication remains blocked. This command neither changes the shipped freeze nor
 reruns the once-only election audit. The old audit is development evidence for the
 revised method, and the method missed the 2026-09-12 prospective cutoff.
