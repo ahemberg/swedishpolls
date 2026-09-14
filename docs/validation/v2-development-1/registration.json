@@ -4,7 +4,7 @@
   "registeredOn" : "2026-09-13",
   "planIdentity" : {
     "path" : "docs/validation/v2-development-1/registration-plan.json",
-    "sha256" : "77d653e771e2b635b0c0d11c9fc0492fccdbfba64474f9c9b7d92ea090ec4a18"
+    "sha256" : "362b6cac3955991a27ec7cb1bcacb922e3a9ee85775dc8c5622da4366cd74e0c"
   },
   "plan" : {
     "version" : "v2-development-1",
@@ -39,7 +39,7 @@
       "sha256" : "b7db0e30c83eb4f04f03fa6eee862dc4ba309742b475072570f88cecb17fe8f2"
     }, {
       "path" : "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java",
-      "sha256" : "125477a92d06277d7667f68a7006b0ce80713f11da489713beb61518b9008282"
+      "sha256" : "60672ba02f85e909e6aa87930d4732949069aa06edf7a4819c77a887ea455c96"
     }, {
       "path" : "src/main/java/se/swedishpolls/estimation/DevelopmentTuning.java",
       "sha256" : "af76ea1981c2c263115f2ab693d77f6578026b01bd80fe6cfca9d05f135dae6e"
@@ -161,6 +161,10 @@
       "houseScales" : [ 0.01, 0.02, 0.05, 0.1, 0.2 ],
       "covarianceMultipliers" : [ 0.5, 0.75, 1.0, 1.5, 2.0, 3.0 ],
       "interpretation" : "values below one are development-only underdispersion relative to nominal multinomial covariance"
+    },
+    "parameterSelection" : {
+      "method" : "midpoint_candidate",
+      "fold" : "latest_resolved_active_cutoff"
     },
     "coverage" : {
       "developmentThrough" : "2021-10-05",

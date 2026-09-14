@@ -64,8 +64,10 @@ public final class DevelopmentValidation {
           + " docs/validation/v2-development-1/evidence/run-1/tuning.json"
           + " docs/validation/v2-development-1/evidence/run-1/estimation.json'";
 
-  /** The fitted method the estimator itself publishes, so the one whose tuned point it consumes. */
-  private static final String ESTIMATOR_METHOD = "midpoint_candidate";
+  /** The approved fitted method and fold rule the registration must name for the estimator. */
+  private static final String APPROVED_METHOD = "midpoint_candidate";
+
+  private static final String APPROVED_FOLD_RULE = "latest_resolved_active_cutoff";
 
   private static final String PASSED = "passed";
   private static final String FAILED = "failed";
@@ -272,7 +274,9 @@ public final class DevelopmentValidation {
     verifyEvidenceLocation(checked.plan(), tuningFile);
     final JsonNode tuningEvidence = read(tuningFile);
     verifyTuningProvenance(checked, sourceFile, tuningEvidence);
-    final DevelopmentTuning.Tuning tuning = tuned(checked, tuningEvidence);
+    final JsonNode selection = required(checked.plan(), "parameterSelection");
+    final String method = required(selection, "method").asString();
+    final DevelopmentTuning.Tuning tuning = tuned(checked, tuningEvidence, method);
 
     final List<PollCsv.Poll> polls = PollCsv.parse(bytes(sourceFile));
     final List<LocalDate> elections = dates(checked.plan(), "electionCycleDates");
@@ -290,11 +294,12 @@ public final class DevelopmentValidation {
     final ObjectNode provenance = result.putObject("tunedParameters");
     provenance.put("path", tuningFile.toString());
     provenance.put("sha256", digest(tuningFile));
-    provenance.put("method", ESTIMATOR_METHOD);
+    provenance.put("method", method);
+    provenance.put("foldRule", required(selection, "fold").asString());
     provenance.put(
         "selection",
-        "the resolved active fold with the latest cutoff in each coverage period, taken from this"
-            + " run's tuning evidence");
+        "the registered fitted method and fold rule, resolved from this run's tuning evidence"
+            + " rather than from any v1 fitted output");
     provenance.put("resolvedFolds", tuning.resolved().size());
     provenance.put("unresolvedFolds", tuning.unresolved().size());
     final ObjectNode selected = provenance.putObject("selectedParameters");
@@ -547,7 +552,8 @@ public final class DevelopmentValidation {
    * Rebuilds the tuned fits from this run's evidence, keeping every registered fold disposition. An
    * unresolved or inactive fold is listed, never dropped, so the selection stays explicit.
    */
-  private static DevelopmentTuning.Tuning tuned(CheckedRegistration checked, JsonNode evidence) {
+  private static DevelopmentTuning.Tuning tuned(
+      CheckedRegistration checked, JsonNode evidence, String method) {
     final Map<String, JsonNode> registered = new LinkedHashMap<>();
     for (JsonNode manifest : checked.folds()) registered.put(key(manifest), manifest);
     final List<DevelopmentTuning.Resolved> resolved = new ArrayList<>();
@@ -574,8 +580,8 @@ public final class DevelopmentValidation {
                 periodId, identity, required(fold, "reason").asString()));
         continue;
       }
-      final JsonNode method = method(fold);
-      if (!required(method, "numericallyAvailable").booleanValue()) {
+      final JsonNode fitted = fitted(fold, method);
+      if (!required(fitted, "numericallyAvailable").booleanValue()) {
         unresolved.add(
             new DevelopmentTuning.Unresolved(
                 periodId, identity, "no parameter point resolved finitely"));
@@ -585,13 +591,13 @@ public final class DevelopmentValidation {
           new DevelopmentTuning.Resolved(
               periodId,
               identity,
-              point(required(method, "selectedParameters")),
-              required(method, "selectedLogLikelihood").doubleValue(),
+              point(required(fitted, "selectedParameters")),
+              required(fitted, "selectedLogLikelihood").doubleValue(),
               manifest.get("trainingRows").size(),
               manifest.get("trainingObservationRows").size(),
               manifest.get("trainingExclusions").size(),
               exclusionReasons(manifest),
-              strings(method, "gridBoundaries")));
+              strings(fitted, "gridBoundaries")));
     }
     require(!resolved.isEmpty(), "Tuning evidence resolved no fold, so nothing can be estimated");
     final List<String> reasons = new ArrayList<>(strings(evidence, "reasons"));
@@ -603,11 +609,11 @@ public final class DevelopmentValidation {
         unresolved);
   }
 
-  private static JsonNode method(JsonNode fold) {
-    for (JsonNode method : required(fold, "methods"))
-      if (required(method, "method").asString().equals(ESTIMATOR_METHOD)) return method;
+  private static JsonNode fitted(JsonNode fold, String method) {
+    for (JsonNode candidate : required(fold, "methods"))
+      if (required(candidate, "method").asString().equals(method)) return candidate;
     throw new IllegalArgumentException(
-        "Tuning evidence holds no " + ESTIMATOR_METHOD + " fit for " + key(fold));
+        "Tuning evidence holds no " + method + " fit for " + key(fold));
   }
 
   private static Map<String, Integer> exclusionReasons(JsonNode manifest) {
@@ -980,6 +986,11 @@ public final class DevelopmentValidation {
             && Double.compare(required(coverage, "maxStabilityShiftPoints").doubleValue(), 0.5)
                 == 0,
         "Approved coverage limits mismatch");
+    final JsonNode selection = required(plan, "parameterSelection");
+    require(
+        required(selection, "method").asString().equals(APPROVED_METHOD)
+            && required(selection, "fold").asString().equals(APPROVED_FOLD_RULE),
+        "Approved parameter selection mismatch");
     final JsonNode uncertainty = required(plan, "uncertainty");
     require(
         required(uncertainty, "draws").intValue() == 10000

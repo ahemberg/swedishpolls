@@ -190,6 +190,13 @@ class DevelopmentValidationTest {
     assertEquals(4, registration.get("plan").get("commands").size());
     assertTrue(registration.get("plan").get("commands").get(2).asString().contains("'tune "));
     assertTrue(registration.get("plan").get("commands").get(3).asString().contains("'estimate "));
+    // The estimator's parameter selection is named by the registration, never by the code alone.
+    assertEquals(
+        "midpoint_candidate",
+        registration.get("plan").get("parameterSelection").get("method").asString());
+    assertEquals(
+        "latest_resolved_active_cutoff",
+        registration.get("plan").get("parameterSelection").get("fold").asString());
     assertTrue(
         registration
             .get("plan")
@@ -443,6 +450,21 @@ class DevelopmentValidationTest {
 
     // Each coverage period keeps its own separately fitted history.
     assertEquals(2, evidence.get("coverage").get("periods").size());
+    final JsonNode eight = period(evidence, "eight");
+    final JsonNode candidate = period(evidence, "fi");
+    assertEquals("2014-01-01", eight.get("support").get("from").asString());
+    assertEquals("2014-04-09", candidate.get("support").get("from").asString());
+    // An unsupported gap is measured inside the supported window rather than hidden.
+    assertEquals(88, eight.get("support").get("largestGap").get("days").intValue());
+
+    // Every registered boundary shift is refitted, and the separate-fit step at the candidate
+    // boundary is recorded as a change of modeled membership rather than suppressed.
+    assertEquals(1, eight.get("stability").size());
+    assertEquals(7, eight.get("stability").get(0).get("shiftDays").intValue());
+    final JsonNode boundary = evidence.get("coverage").get("boundaryEffects").get(0);
+    assertEquals("2014-04-09", boundary.get("date").asString());
+    assertEquals("fi", boundary.get("periodId").asString());
+    assertEquals("eight", boundary.get("againstPeriodId").asString());
 
     // Only the validated roster draws; the FI candidate period publishes nothing.
     assertEquals(1, evidence.get("uncertainty").get("periods").size());
@@ -512,6 +534,16 @@ class DevelopmentValidationTest {
             run.tuning().toString(),
             run.result().toString()));
     assertArrayEquals(retained, Files.readAllBytes(run.result()));
+  }
+
+  private static JsonNode period(JsonNode evidence, String periodId) {
+    return evidence
+        .get("coverage")
+        .get("periods")
+        .valueStream()
+        .filter(entry -> entry.get("periodId").asString().equals(periodId))
+        .findFirst()
+        .orElseThrow();
   }
 
   private static JsonNode check(JsonNode evidence, String name) {
@@ -611,6 +643,7 @@ class DevelopmentValidationTest {
             "houseScales": [0.01],
             "covarianceMultipliers": [0.5]
           },
+          "parameterSelection": {"method": "midpoint_candidate", "fold": "latest_resolved_active_cutoff"},
           "coverage": {
             "developmentThrough": "2014-12-31",
             "minObservations": 1,
