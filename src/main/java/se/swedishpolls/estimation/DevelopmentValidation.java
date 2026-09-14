@@ -25,6 +25,7 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.ejml.simple.SimpleMatrix;
 import se.swedishpolls.model.NationalAllocationRule;
@@ -236,7 +237,7 @@ public final class DevelopmentValidation {
     }
     writeDraws(artifactFile, draws);
     final ObjectNode artifact = result.putObject("artifact");
-    artifact.put("path", artifactFile.getFileName().toString());
+    artifact.put("path", Objects.requireNonNull(artifactFile.getFileName()).toString());
     artifact.put("sha256", digest(artifactFile));
     artifact.put("values", values);
     artifact.put("bytes", fileSize(artifactFile));
@@ -475,7 +476,7 @@ public final class DevelopmentValidation {
 
   private static ObjectNode runIdentity(Path file, JsonNode run) {
     final ObjectNode identity = JSON.createObjectNode();
-    identity.put("path", file.getFileName().toString());
+    identity.put("path", Objects.requireNonNull(file.getFileName()).toString());
     identity.put("sha256", digest(file));
     identity.put("architecture", required(run, "architecture").asString());
     identity.put("platform", required(run, "platform").asString());
@@ -489,9 +490,11 @@ public final class DevelopmentValidation {
 
   private static Path artifact(Path manifest, JsonNode run) {
     final JsonNode declared = required(run, "artifact");
-    final Path parent = manifest.toAbsolutePath().normalize().getParent();
+    final Path parent = Objects.requireNonNull(manifest.toAbsolutePath().normalize().getParent());
     final Path path = parent.resolve(required(declared, "path").asString()).normalize();
-    require(path.getParent().equals(parent), "Draw artifact must stay beside its manifest");
+    require(
+        Objects.requireNonNull(path.getParent()).equals(parent),
+        "Draw artifact must stay beside its manifest");
     require(Files.isRegularFile(path), "Draw artifact is missing");
     require(
         required(declared, "sha256").asString().equals(digest(path)),
@@ -525,7 +528,7 @@ public final class DevelopmentValidation {
   }
 
   private static Path drawArtifact(Path manifest) {
-    final String name = manifest.getFileName().toString();
+    final String name = Objects.requireNonNull(manifest.getFileName()).toString();
     final String stem = name.endsWith(".json") ? name.substring(0, name.length() - 5) : name;
     return manifest.resolveSibling(stem + ".draws");
   }
