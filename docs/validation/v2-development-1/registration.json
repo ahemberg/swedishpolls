@@ -4,12 +4,12 @@
   "registeredOn" : "2026-09-14",
   "planIdentity" : {
     "path" : "docs/validation/v2-development-1/registration-plan.json",
-    "sha256" : "3f3f9be8c5b7a77fba3d3c42b75cff3fd901546c03eae4343fa85d45013608ae"
+    "sha256" : "0351052dfa7856527fecef6c345272ceb71a9b7d5a14c777648ff5791356b5ff"
   },
   "plan" : {
     "version" : "v2-development-1",
     "registeredOn" : "2026-09-14",
-    "implementationCommit" : "330642083174a51c7472ac2a630edded684bf74a",
+    "implementationCommit" : "4aead47b05cb6819f8415f472fe40218b23e830f",
     "authority" : {
       "proposal" : "v2-development-1-proposal-1",
       "proposalCommit" : "d5699e82fd537ddc6bad817c4884c36a62752401",
@@ -39,7 +39,7 @@
       "sha256" : "b7db0e30c83eb4f04f03fa6eee862dc4ba309742b475072570f88cecb17fe8f2"
     }, {
       "path" : "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java",
-      "sha256" : "3a099274a1436b5724c68f7b911a2387c2457393fb172910be36e12a5c0e0362"
+      "sha256" : "782029d2b479bd1927280c2ff43e7fb7ec1ce6e6b246eaa115232293b7d9316a"
     }, {
       "path" : "src/main/java/se/swedishpolls/estimation/DevelopmentPredictiveEvidence.java",
       "sha256" : "78f267b78d3210710f21aff9b2f8b41aca9278161917477a7b133733f1405889"
