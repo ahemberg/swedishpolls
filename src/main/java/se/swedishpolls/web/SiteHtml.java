@@ -1701,7 +1701,7 @@ public final class SiteHtml {
     note(html, text.text("method.model.hyper"));
     note(html, text.text("method.model.draws"));
     validation(html, bootstrap, text);
-    reproduction(html, bootstrap, text, language);
+    reproduction(html, bootstrap, text);
     html.append("<h2>").append(escape(text.text("method.seats.title"))).append("</h2>\n");
     note(
         html,
@@ -1846,9 +1846,8 @@ public final class SiteHtml {
         .append("</td></tr>\n");
   }
 
-  /** What it takes to rerun this deployment: seed, draws, resolution, drift bound and versions. */
-  private static void reproduction(
-      StringBuilder html, ObjectNode bootstrap, SiteText text, String language) {
+  /** What it takes to rerun this deployment: seed, draws, resolution and versions. */
+  private static void reproduction(StringBuilder html, ObjectNode bootstrap, SiteText text) {
     final JsonNode draws = bootstrap.get("data").get("method").get("draws");
     final JsonNode estimator = bootstrap.get("data").get("method").get("estimator");
     html.append("<h2>").append(escape(text.text("method.reproduction.title"))).append("</h2>\n");
@@ -1870,12 +1869,6 @@ public final class SiteHtml {
             text.text("method.reproduction.decimals"),
             "decimals",
             Integer.toString(draws.get("decimals").asInt())));
-    note(
-        html,
-        SiteText.fill(
-            text.text("method.reproduction.drift"),
-            "points",
-            SiteFormat.decimal(draws.get("maxDriftPoints").asDouble(), language)));
     note(
         html,
         SiteText.fill(

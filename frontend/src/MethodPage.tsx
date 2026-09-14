@@ -208,11 +208,9 @@ function Validation({
 }
 
 function Reproduction({
-  page,
   data,
   t,
 }: {
-  readonly page: Bootstrap;
   readonly data: MethodData;
   readonly t: Translate;
 }): JSX.Element {
@@ -221,11 +219,6 @@ function Reproduction({
       <p>{t("method.reproduction.seed", { seed: String(data.draws.seed) })}</p>
       <p>{t("method.reproduction.draws", { draws: String(data.draws.count) })}</p>
       <p>{t("method.reproduction.decimals", { decimals: String(data.draws.decimals) })}</p>
-      <p>
-        {t("method.reproduction.drift", {
-          points: decimal(data.draws.maxDriftPoints, page.language),
-        })}
-      </p>
       <p>
         {t("method.reproduction.estimator", {
           version: data.estimator.version,
@@ -268,7 +261,7 @@ function MethodPage({ page, t }: Props): JSX.Element | null {
       <Coverage page={page} t={t} />
       <Model t={t} />
       <Validation page={page} data={data} t={t} />
-      <Reproduction page={page} data={data} t={t} />
+      <Reproduction data={data} t={t} />
       <Seats page={page} t={t} />
     </div>
   );

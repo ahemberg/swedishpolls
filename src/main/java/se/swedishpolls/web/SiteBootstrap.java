@@ -531,7 +531,6 @@ public final class SiteBootstrap {
     draws.put("seed", freeze.uncertainty().seed());
     draws.put("count", freeze.uncertainty().draws());
     draws.put("decimals", freeze.resolution().decimals());
-    draws.put("maxDriftPoints", freeze.maxDriftPoints());
     final ArrayNode levels = draws.putArray("intervalLevels");
     freeze.uncertainty().intervalLevels().forEach(levels::add);
 

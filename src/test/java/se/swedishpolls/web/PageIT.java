@@ -1199,8 +1199,6 @@ class PageIT {
     assertEquals(freeze.uncertainty().seed(), method.get("draws").get("seed").asLong());
     assertEquals(freeze.uncertainty().draws(), method.get("draws").get("count").asInt());
     assertEquals(freeze.resolution().decimals(), method.get("draws").get("decimals").asInt());
-    assertEquals(
-        freeze.maxDriftPoints(), method.get("draws").get("maxDriftPoints").asDouble(), 0.0);
     assertEquals(freeze.estimatorVersion(), method.get("estimator").get("version").asString());
     assertTrue(page.contains("Seed: " + freeze.uncertainty().seed()), "the seed, spelled out");
     assertTrue(page.contains("Joint draws: " + freeze.uncertainty().draws()), "the draw count");

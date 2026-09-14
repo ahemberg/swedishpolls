@@ -41,7 +41,6 @@ public final class ModelFreeze {
   private final JointUncertainty.Rules uncertainty;
   private final CoverageValidation.Rules coverage;
   private final EstimateHistory.Publication resolution;
-  private final double maxDriftPoints;
   private final Map<String, Period> periods;
   private final String estimatorVersion;
   private final String numericalLibrary;
@@ -55,7 +54,6 @@ public final class ModelFreeze {
       JointUncertainty.Rules uncertainty,
       CoverageValidation.Rules coverage,
       EstimateHistory.Publication resolution,
-      double maxDriftPoints,
       Map<String, Period> periods,
       String estimatorVersion,
       String numericalLibrary,
@@ -67,7 +65,6 @@ public final class ModelFreeze {
     this.uncertainty = uncertainty;
     this.coverage = coverage;
     this.resolution = resolution;
-    this.maxDriftPoints = maxDriftPoints;
     this.periods = Map.copyOf(periods);
     this.estimatorVersion = estimatorVersion;
     this.numericalLibrary = numericalLibrary;
@@ -125,9 +122,9 @@ public final class ModelFreeze {
             required(root, "seed").longValue(),
             required(root, "draws").intValue(),
             levels,
-            // Repeated-seed precision belongs to the audit. A publication draws one seed, so
-            // this carries the smallest study the rules admit and no publication reads it.
-            2),
+            // A publication draws the registered seed once. Repeated-seed precision belongs to
+            // the development study, which reads its own registered repeat count.
+            1),
         new CoverageValidation.Rules(
             LocalDate.parse(required(rules, "development_through").asString()),
             required(rules, "min_observations").intValue(),
@@ -137,7 +134,6 @@ public final class ModelFreeze {
             required(rules, "stability_burn_in_days").intValue(),
             required(rules, "max_stability_shift_points").doubleValue()),
         new EstimateHistory.Publication(required(root, "publicationDecimals").intValue()),
-        required(root, "maxDriftPoints").doubleValue(),
         periods,
         required(root, "estimatorVersion").asString(),
         required(root, "numericalLibrary").asString(),
@@ -206,11 +202,6 @@ public final class ModelFreeze {
   /** The registered resolution a published number is quoted at. */
   public EstimateHistory.Publication resolution() {
     return resolution;
-  }
-
-  /** How far a component's published share may move between two publications before it blocks. */
-  public double maxDriftPoints() {
-    return maxDriftPoints;
   }
 
   public CoverageValidation.Rules developmentCoverage() {

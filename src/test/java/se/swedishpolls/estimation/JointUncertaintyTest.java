@@ -48,7 +48,7 @@ class JointUncertaintyTest {
     for (org.junit.jupiter.api.function.Executable inadmissible :
         List.<org.junit.jupiter.api.function.Executable>of(
             () -> new JointUncertainty.Rules(1, 1, List.of(0.95), 2),
-            () -> new JointUncertainty.Rules(1, 10, List.of(0.95), 1),
+            () -> new JointUncertainty.Rules(1, 10, List.of(0.95), 0),
             () -> new JointUncertainty.Rules(1, 10, List.of(), 2),
             () -> new JointUncertainty.Rules(1, 10, List.of(0.0), 2),
             () -> new JointUncertainty.Rules(1, 10, List.of(1.0), 2),
@@ -59,6 +59,22 @@ class JointUncertaintyTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> JointUncertainty.rules(Path.of("docs", "validation", "tuning.json")));
+  }
+
+  /**
+   * A publication draws one seed and runs no repeated-seed study. The rules admit that, and the
+   * study itself is what refuses to run on fewer than two seeds rather than silently reporting one.
+   */
+  @Test
+  void oneSeedIsAdmissibleRulesButNeverARepeatedSeedPrecisionStudy() {
+    final JointUncertainty.Rules single = new JointUncertainty.Rules(1, 10, List.of(0.95), 1);
+
+    assertEquals(1, single.precisionRepeats());
+    assertEquals(1, single.withSeed(7).precisionRepeats());
+    assertThrows(IllegalArgumentException.class, () -> JointUncertainty.precisionSeeds(single));
+    assertEquals(
+        List.of(1L, 2L),
+        JointUncertainty.precisionSeeds(new JointUncertainty.Rules(1, 10, List.of(0.95), 2)));
   }
 
   @Test

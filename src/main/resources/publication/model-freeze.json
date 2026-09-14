@@ -14,7 +14,6 @@
     0.95
   ],
   "publicationDecimals": 1,
-  "maxDriftPoints": 10.0,
   "coverageValidation": {
     "development_through": "2021-10-05",
     "min_observations": 30,

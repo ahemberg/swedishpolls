@@ -192,7 +192,6 @@ public class Publisher {
             allocationRules.all());
     checkInvariants(results);
     checkReproduction(results, polls);
-    checkDrift(results);
 
     final Instant publishedAt = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
     final String publicationId = PUBLICATION_ID.format(publishedAt);
@@ -309,39 +308,6 @@ public class Publisher {
                 + period.period().id()
                 + " differs by "
                 + reproduced.maxAbsoluteDifference());
-      }
-    }
-  }
-
-  /** A published share that jumps further than the registered tolerance blocks the update. */
-  private void checkDrift(PublicationRun.Results results) {
-    final Optional<CurrentPublication> current = store.current();
-    if (current.isEmpty()) {
-      return;
-    }
-    final Optional<String> previous =
-        store.document(
-            current.get().publicationId(),
-            PublicationDocuments.latestSurface(results.headline().period().id()),
-            Translations.ENGLISH);
-    if (previous.isEmpty()) {
-      return;
-    }
-    final EstimateHistory.Day day = PublicationDocuments.lastDay(results.headline().history());
-    for (final tools.jackson.databind.JsonNode component :
-        JSON.readTree(previous.get()).get("components")) {
-      final EstimateHistory.Estimate estimate =
-          day.components().get(component.get("component").asString());
-      if (estimate == null) {
-        continue;
-      }
-      final double moved = Math.abs(estimate.mean() - component.get("mean").doubleValue());
-      if (moved > freeze.maxDriftPoints()) {
-        throw new IllegalStateException(
-            component.get("component").asString()
-                + " moved "
-                + moved
-                + " points against the previous publication");
       }
     }
   }

@@ -21,7 +21,7 @@
           "mean": 0.4,
           "lower": 0.0,
           "upper": 0.8,
-          "shrunk": false
+          "shrunk": true
         },
         {
           "electionCycle": "2022-2026",
@@ -29,7 +29,7 @@
           "mean": -0.3,
           "lower": -0.7,
           "upper": 0.1,
-          "shrunk": false
+          "shrunk": true
         }
       ]
     },

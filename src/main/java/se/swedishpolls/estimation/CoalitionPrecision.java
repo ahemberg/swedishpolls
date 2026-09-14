@@ -116,7 +116,8 @@ public final class CoalitionPrecision {
       DailyStateSpace.Day day,
       int count,
       long seed) {
-    final JointUncertainty.Rules rules = new JointUncertainty.Rules(seed, count, List.of(0.95), 2);
+    // One seed per run; the study's own seed list, not this field, sets how many runs there are.
+    final JointUncertainty.Rules rules = new JointUncertainty.Rules(seed, count, List.of(0.95), 1);
     return CoalitionHistory.aggregate(
         JointUncertainty.retained(
             span.batch(),

@@ -29,9 +29,11 @@ estimate is for, `sourceCheckedAt` is when the source was last read successfully
    failure and does not make the current publication stale.
 3. A blocked release verdict records a `blocked` attempt and stops. Nothing is published.
 4. Run the frozen estimator once over the snapshot's polls, then check it: every day's
-   composition sums to 100, every allocation assigns 349 seats, the retained draws reproduce
-   exactly at the registered seed, and no published share moves further than
-   `maxDriftPoints` against the previous publication.
+   composition sums to 100, every allocation assigns 349 seats, and the retained draws reproduce
+   exactly at the registered seed. Movement against the previous publication is not a check:
+   weeks of new fieldwork can move a share as far as the polls do, and
+   [issue #113](https://github.com/ahemberg/swedishpolls/issues/113) removed the unregistered
+   bound that blocked it.
 5. Write the candidate's `model_run` and `publication` rows, its documents, and its cards into a
    private staging directory, reading every card back against its digest.
 6. Move the staging directory into place with one atomic rename, verify the moved bytes, then

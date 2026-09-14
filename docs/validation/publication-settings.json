@@ -1,0 +1,120 @@
+{
+  "issue": "https://github.com/ahemberg/swedishpolls/issues/113",
+  "resource": "src/main/resources/publication/model-freeze.json",
+  "scope": "Statistical parameters, publication thresholds, seeds, draw counts and rounding precision. Ordinary implementation constants, such as array indices, are out of scope and never reach this resource.",
+  "rule": "Every field of the shipped resource, nested fields included, is listed here with either the registered evidence it is copied from or the derivation it follows from. A field that is neither is not shippable.",
+  "settings": [
+    {
+      "path": "developmentProtocolVersion",
+      "source": "protocol.json#/version"
+    },
+    {
+      "path": "releaseProtocolVersion",
+      "source": "release-audit.json#/frozen/version"
+    },
+    {
+      "path": "release/status",
+      "source": "release-audit.json#/verdict/status"
+    },
+    {
+      "path": "release/failedBlockingGates",
+      "derivation": "The audited gates that are blocking, did not pass and carry no waiver, in release-audit.json#/verdict/gates. ModelFreezeTest.theReleaseVerdictTravelsWithTheFreezeAndCurrentlyBlocksPublication rebuilds the list from that evidence."
+    },
+    {
+      "path": "seed",
+      "source": "protocol.json#/seed"
+    },
+    {
+      "path": "draws",
+      "source": "protocol.json#/final_draws"
+    },
+    {
+      "path": "intervalLevels",
+      "source": "protocol.json#/uncertainty/interval_levels"
+    },
+    {
+      "path": "publicationDecimals",
+      "source": "protocol.json#/publication/decimals"
+    },
+    {
+      "path": "coverageValidation/development_through",
+      "source": "protocol.json#/coverage_validation/development_through"
+    },
+    {
+      "path": "coverageValidation/min_observations",
+      "source": "protocol.json#/coverage_validation/min_observations"
+    },
+    {
+      "path": "coverageValidation/min_institutes",
+      "source": "protocol.json#/coverage_validation/min_institutes"
+    },
+    {
+      "path": "coverageValidation/max_internal_gap_days",
+      "source": "protocol.json#/coverage_validation/max_internal_gap_days"
+    },
+    {
+      "path": "coverageValidation/boundary_shift_days",
+      "source": "protocol.json#/coverage_validation/boundary_shift_days"
+    },
+    {
+      "path": "coverageValidation/stability_burn_in_days",
+      "source": "protocol.json#/coverage_validation/stability_burn_in_days"
+    },
+    {
+      "path": "coverageValidation/max_stability_shift_points",
+      "source": "protocol.json#/coverage_validation/max_stability_shift_points"
+    },
+    {
+      "path": "periods[]/periodId",
+      "source": "coverage.json#/periods/{}/periodId"
+    },
+    {
+      "path": "periods[]/supported",
+      "source": "coverage.json#/periods/{}/supported"
+    },
+    {
+      "path": "periods[]/parameters/walkVariance",
+      "source": "coverage.json#/periods/{}/parameters/walkVariance"
+    },
+    {
+      "path": "periods[]/parameters/houseScale",
+      "source": "coverage.json#/periods/{}/parameters/houseScale"
+    },
+    {
+      "path": "periods[]/parameters/covarianceMultiplier",
+      "source": "coverage.json#/periods/{}/parameters/covarianceMultiplier"
+    },
+    {
+      "path": "estimatorVersion",
+      "derivation": "The estimator ADR 0001 names, at the development protocol version this freeze carries: 'midpoint-ilr-state-space/' followed by protocol.json#/version. An identity, not a tuned quantity."
+    },
+    {
+      "path": "numericalLibrary",
+      "derivation": "The pinned Maven coordinate of the linear-algebra dependency in pom.xml, recorded so an archived run names the numerics it ran on. An identity, not a tuned quantity."
+    },
+    {
+      "path": "coalitionHistoryPrecision/draws",
+      "source": "coalition-history-protocol.json#/draws"
+    },
+    {
+      "path": "coalitionHistoryPrecision/seeds",
+      "source": "coalition-history-protocol.json#/seeds"
+    },
+    {
+      "path": "coalitionHistoryPrecision/referenceDraws",
+      "source": "coalition-history-protocol.json#/referenceDraws"
+    },
+    {
+      "path": "coalitionHistoryPrecision/referenceSeed",
+      "source": "coalition-history-protocol.json#/referenceSeed"
+    },
+    {
+      "path": "coalitionHistoryPrecision/maxMeanErrorPoints",
+      "source": "coalition-history-protocol.json#/maxMeanErrorPoints"
+    },
+    {
+      "path": "coalitionHistoryPrecision/maxEndpointErrorPoints",
+      "source": "coalition-history-protocol.json#/maxEndpointErrorPoints"
+    }
+  ]
+}
