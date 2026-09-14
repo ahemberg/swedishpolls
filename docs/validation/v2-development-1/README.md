@@ -51,6 +51,19 @@ remain unavailable. Changed row sets cannot be reconstructed from old aggregate
 summaries. Corrected-snapshot timing and causal-attribution limitations remain in
 the report. Failures never authorize a different grid, estimator or fallback.
 
+Issue #158 extends `estimate` with national seats, coalition outcomes, probability
+precision and sensitivity evidence. Each allocation totals 349 seats. Threshold,
+coalition and pairwise results use one retained draw stream. The eight registered
+seeds record their derived day seed, draw count, probabilities and worst Monte Carlo
+standard error. The run applies separate 0.03 spread limits to threshold and majority
+probabilities.
+
+The sensitivity evidence pairs component movement with threshold and majority
+movement on the last day both fits estimate. It covers poll-count centering and every
+leave-one-institute-out fit. A movement above ten percentage points carries a
+disclosure in that sensitivity entry. A disclosure does not clear another failure.
+Candidate-period outcomes remain unavailable until that coverage period is validated.
+
 Publication remains blocked. This command neither changes the shipped freeze nor
 reruns the once-only election audit. The old audit is development evidence for the
 revised method, and the method missed the 2026-09-12 prospective cutoff.

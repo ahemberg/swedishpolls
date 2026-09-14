@@ -863,6 +863,10 @@ class DevelopmentValidationTest {
     assertEquals(
         "failed",
         check(evidence, "probability_monte_carlo_standard_error").get("status").asString());
+    assertEquals(
+        "failed", check(evidence, "threshold_probability_precision").get("status").asString());
+    assertEquals(
+        "failed", check(evidence, "majority_probability_precision").get("status").asString());
     assertTrue(
         evidence.get("reasons").toString().contains("probability Monte Carlo standard error"));
   }
@@ -960,11 +964,11 @@ class DevelopmentValidationTest {
     Files.write(
         source,
         PollCsvFixtures.csv(
-            row("2014-01-10", "2014-01-01", "2014-01-09", "NA")
+            outcomeRow("2014-01-10", "2014-01-01", "2014-01-09", "NA", "Ipsos")
                 + biasedRow("2014-01-16", "2014-01-10", "2014-01-14", "NA")
-                + row("2014-04-12", "2014-04-09", "2014-04-11", "1")
+                + outcomeRow("2014-04-12", "2014-04-09", "2014-04-11", "1", "Ipsos")
                 + biasedRow("2014-05-10", "2014-05-01", "2014-05-05", "1")
-                + row("2014-05-16", "2014-04-20", "2014-04-30", "1")
+                + outcomeRow("2014-05-16", "2014-04-20", "2014-04-30", "1", "Ipsos")
                 + biasedRow("2014-06-01", "2014-05-20", "2014-05-30", "1")));
     final Path identity = temp.resolve(name + "-implementation.txt");
     Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
@@ -1029,7 +1033,15 @@ class DevelopmentValidationTest {
   }
 
   private static String biasedRow(String published, String from, String to, String fi) {
-    return row(published, from, to, fi, "Novus").replace("20,5,8,5,30,8,5,17", "5,5,8,5,45,8,5,17");
+    return outcomeRow(published, from, to, fi, "Novus")
+        .replace("20,4,8,5,30,8,5,17", "5,4,8,5,45,8,5,17");
+  }
+
+  private static String outcomeRow(
+      String published, String from, String to, String fi, String institute) {
+    return row(published, from, to, fi, institute)
+        .replace("20,5,8,5,30,8,5,17", "20,4,8,5,30,8,5,17")
+        .replace(",10,1000,", ",11,1000,");
   }
 
   private static String plan(Path source, Path identity, Path output) throws Exception {
@@ -1067,8 +1079,8 @@ class DevelopmentValidationTest {
           },
           "outcomes": {
             "maxMonteCarloStandardError": 0.005,
-            "maxThresholdProbabilitySpread": 0.03,
-            "maxMajorityProbabilitySpread": 0.03,
+            "maxThresholdProbabilitySpread": 0.0,
+            "maxMajorityProbabilitySpread": 0.0,
             "sensitivityDisclosurePoints": 10.0,
             "allocationRules": [
               {
