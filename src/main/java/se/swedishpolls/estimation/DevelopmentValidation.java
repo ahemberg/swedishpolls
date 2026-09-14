@@ -49,31 +49,31 @@ public final class DevelopmentValidation {
       "./mvnw -DskipTests spring-boot:run"
           + " -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation"
           + " -Dspring-boot.run.arguments='prepare"
-          + " docs/validation/v2-development-1/registration-plan.json"
+          + " docs/validation/v2-development-1/registration-plan-run-2.json"
           + " src/test/resources/polls/audit.csv"
-          + " docs/validation/v2-development-1/registration.json'";
+          + " docs/validation/v2-development-1/registration-run-2.json'";
   private static final String PREFLIGHT_COMMAND =
       "./mvnw -DskipTests spring-boot:run"
           + " -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation"
           + " -Dspring-boot.run.arguments='preflight"
-          + " docs/validation/v2-development-1/registration.json"
+          + " docs/validation/v2-development-1/registration-run-2.json"
           + " src/test/resources/polls/audit.csv"
-          + " docs/validation/v2-development-1/preflight.json'";
+          + " docs/validation/v2-development-1/preflight-run-2.json'";
   private static final String TUNE_COMMAND =
       "./mvnw -DskipTests spring-boot:run"
           + " -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation"
           + " -Dspring-boot.run.arguments='tune"
-          + " docs/validation/v2-development-1/registration.json"
+          + " docs/validation/v2-development-1/registration-run-2.json"
           + " src/test/resources/polls/audit.csv"
-          + " docs/validation/v2-development-1/evidence/run-1/tuning.json'";
+          + " docs/validation/v2-development-1/evidence/run-2/tuning.json'";
   private static final String ESTIMATE_COMMAND =
       "./mvnw -DskipTests spring-boot:run"
           + " -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation"
           + " -Dspring-boot.run.arguments='estimate"
-          + " docs/validation/v2-development-1/registration.json"
+          + " docs/validation/v2-development-1/registration-run-2.json"
           + " src/test/resources/polls/audit.csv"
-          + " docs/validation/v2-development-1/evidence/run-1/tuning.json"
-          + " docs/validation/v2-development-1/evidence/run-1/estimation.json'";
+          + " docs/validation/v2-development-1/evidence/run-2/tuning.json"
+          + " docs/validation/v2-development-1/evidence/run-2/estimation.json'";
   private static final String MEASURE_COMMAND =
       ESTIMATE_COMMAND
           .replace("'estimate ", "'measure ")
@@ -88,12 +88,12 @@ public final class DevelopmentValidation {
       "./mvnw -DskipTests spring-boot:run"
           + " -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation"
           + " -Dspring-boot.run.arguments='compare"
-          + " docs/validation/v2-development-1/registration.json"
+          + " docs/validation/v2-development-1/registration-run-2.json"
           + " src/test/resources/polls/audit.csv"
-          + " docs/validation/v2-development-1/evidence/run-1/tuning.json"
-          + " docs/validation/v2-development-1/evidence/run-1/reproduction-amd64.json"
-          + " docs/validation/v2-development-1/evidence/run-1/reproduction-arm64.json"
-          + " docs/validation/v2-development-1/evidence/run-1/cross-architecture.json'";
+          + " docs/validation/v2-development-1/evidence/run-2/tuning.json"
+          + " docs/validation/v2-development-1/evidence/run-2/reproduction-amd64.json"
+          + " docs/validation/v2-development-1/evidence/run-2/reproduction-arm64.json"
+          + " docs/validation/v2-development-1/evidence/run-2/cross-architecture.json'";
 
   /** The approved fitted method and fold rule the registration must name for the estimator. */
   private static final String APPROVED_METHOD = "midpoint_candidate";
@@ -660,7 +660,7 @@ public final class DevelopmentValidation {
   private static boolean tune(
       Path registrationFile, Path sourceFile, Path resultFile, boolean diagnose) {
     refuseExisting(resultFile);
-    final CheckedRegistration checked = check(registrationFile, sourceFile);
+    final CheckedRegistration checked = check(registrationFile, sourceFile, false);
     verifyEvidenceLocation(checked.plan(), resultFile);
     final List<PollCsv.Poll> polls = PollCsv.parse(bytes(sourceFile));
     final DevelopmentTuning.Grid grid = grid(checked.plan());
@@ -2171,7 +2171,7 @@ public final class DevelopmentValidation {
     require(
         required(plan, "outputLocation")
             .asString()
-            .equals("docs/validation/v2-development-1/evidence/run-1"),
+            .equals("docs/validation/v2-development-1/evidence/run-2"),
         "Approved output location mismatch");
     require(
         required(plan, "foldsFrom").asString().equals("docs/validation/protocol.json"),
@@ -2557,7 +2557,9 @@ public final class DevelopmentValidation {
   private static void verifyFrozenLocation(JsonNode plan, Path registration) {
     if (!VERSION.equals(required(plan, "version").asString())) return;
     final Path frozen =
-        Path.of("docs/validation/v2-development-1/registration.json").toAbsolutePath().normalize();
+        Path.of("docs/validation/v2-development-1/registration-run-2.json")
+            .toAbsolutePath()
+            .normalize();
     require(
         registration.toAbsolutePath().normalize().equals(frozen),
         "Production preflight requires the committed registration location");

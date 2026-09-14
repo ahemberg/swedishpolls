@@ -15,9 +15,9 @@ import tools.jackson.databind.node.ObjectNode;
 class DevelopmentValidationTest {
   private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final Path REGISTRATION =
-      Path.of("docs", "validation", "v2-development-1", "registration.json");
+      Path.of("docs", "validation", "v2-development-1", "registration-run-2.json");
   private static final Path PREFLIGHT =
-      Path.of("docs", "validation", "v2-development-1", "preflight.json");
+      Path.of("docs", "validation", "v2-development-1", "preflight-run-2.json");
 
   @TempDir Path temp;
 
@@ -365,11 +365,18 @@ class DevelopmentValidationTest {
         DevelopmentValidation.SUCCESS,
         DevelopmentValidation.run(
             "prepare", plan.toString(), source.toString(), registration.toString()));
+    final Path tuning = evidence.resolve("tuning.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "tune", registration.toString(), source.toString(), tuning.toString()));
+    final byte[] retainedTuning = Files.readAllBytes(tuning);
     final Path result = evidence.resolve("diagnostics.json");
     assertEquals(
         DevelopmentValidation.BLOCKED,
         DevelopmentValidation.run(
             "diagnose", registration.toString(), source.toString(), result.toString()));
+    assertArrayEquals(retainedTuning, Files.readAllBytes(tuning));
     final JsonNode report = JSON.readTree(Files.readAllBytes(result));
     assertEquals("complete", report.get("diagnosticEvidence").asString());
     assertFalse(report.get("gatePassed").booleanValue());
