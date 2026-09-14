@@ -1,7 +1,15 @@
 package se.swedishpolls.estimation;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryType;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -11,6 +19,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -64,6 +73,26 @@ public final class DevelopmentValidation {
           + " src/test/resources/polls/audit.csv"
           + " docs/validation/v2-development-1/evidence/run-1/tuning.json"
           + " docs/validation/v2-development-1/evidence/run-1/estimation.json'";
+  private static final String MEASURE_COMMAND =
+      ESTIMATE_COMMAND
+          .replace("'estimate ", "'measure ")
+          .replace("/estimation.json", "/measurement.json");
+  private static final String REPRODUCE_AMD64_COMMAND =
+      ESTIMATE_COMMAND
+          .replace("'estimate ", "'reproduce ")
+          .replace("/estimation.json", "/reproduction-amd64.json");
+  private static final String REPRODUCE_ARM64_COMMAND =
+      REPRODUCE_AMD64_COMMAND.replace("reproduction-amd64.json", "reproduction-arm64.json");
+  private static final String COMPARE_COMMAND =
+      "./mvnw -DskipTests spring-boot:run"
+          + " -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation"
+          + " -Dspring-boot.run.arguments='compare"
+          + " docs/validation/v2-development-1/registration.json"
+          + " src/test/resources/polls/audit.csv"
+          + " docs/validation/v2-development-1/evidence/run-1/tuning.json"
+          + " docs/validation/v2-development-1/evidence/run-1/reproduction-amd64.json"
+          + " docs/validation/v2-development-1/evidence/run-1/reproduction-arm64.json"
+          + " docs/validation/v2-development-1/evidence/run-1/cross-architecture.json'";
 
   /** The approved fitted method and fold rule the registration must name for the estimator. */
   private static final String APPROVED_METHOD = "midpoint_candidate";
@@ -89,17 +118,28 @@ public final class DevelopmentValidation {
   public static int run(String... args) {
     final String command = args.length == 0 ? "" : args[0];
     final boolean estimating = command.equals("estimate");
-    if (args.length != (estimating ? 5 : 4)
+    final boolean measuring = command.equals("measure");
+    final boolean reproducing = command.equals("reproduce");
+    final boolean comparing = command.equals("compare");
+    final int expectedArguments = comparing ? 7 : estimating || measuring || reproducing ? 5 : 4;
+    if (args.length != expectedArguments
         || (!command.equals("prepare")
             && !command.equals("preflight")
             && !command.equals("tune")
             && !command.equals("diagnose")
-            && !estimating)) {
+            && !estimating
+            && !measuring
+            && !reproducing
+            && !comparing)) {
       System.err.println(
           "Usage: prepare <plan.json> <source.csv> <registration.json> | preflight"
               + " <registration.json> <source.csv> <result.json> | tune/diagnose"
               + " <registration.json> <source.csv> <evidence.json> | estimate"
-              + " <registration.json> <source.csv> <tuning.json> <evidence.json>");
+              + " <registration.json> <source.csv> <tuning.json> <evidence.json> | measure"
+              + " <registration.json> <source.csv> <tuning.json> <evidence.json> | reproduce"
+              + " <registration.json> <source.csv> <tuning.json> <evidence.json> | compare"
+              + " <registration.json> <source.csv> <tuning.json> <first.json> <second.json>"
+              + " <evidence.json>");
       return REJECTED;
     }
     final Path registrationInput = Path.of(args[1]);
@@ -108,8 +148,22 @@ public final class DevelopmentValidation {
     try {
       if (command.equals("prepare")) prepare(registrationInput, source, output);
       else if (command.equals("preflight")) preflight(registrationInput, source, output);
-      else if (estimating)
-        return estimate(registrationInput, source, Path.of(args[3]), output) ? SUCCESS : BLOCKED;
+      else if (estimating || measuring)
+        return estimate(registrationInput, source, Path.of(args[3]), output, measuring)
+            ? SUCCESS
+            : BLOCKED;
+      else if (reproducing)
+        return reproduce(registrationInput, source, Path.of(args[3]), output) ? SUCCESS : BLOCKED;
+      else if (comparing)
+        return compare(
+                registrationInput,
+                source,
+                Path.of(args[3]),
+                Path.of(args[4]),
+                Path.of(args[5]),
+                output)
+            ? SUCCESS
+            : BLOCKED;
       else
         return tune(registrationInput, source, output, command.equals("diagnose"))
             ? SUCCESS
@@ -120,6 +174,379 @@ public final class DevelopmentValidation {
       System.err.println(e.getMessage());
       return REJECTED;
     }
+  }
+
+  private static boolean reproduce(
+      Path registrationFile, Path sourceFile, Path tuningFile, Path resultFile) {
+    refuseExisting(resultFile);
+    final Path artifactFile = drawArtifact(resultFile);
+    refuseExisting(artifactFile);
+    final CheckedRegistration checked = check(registrationFile, sourceFile, false, true);
+    verifyEvidenceLocation(checked.plan(), resultFile);
+    verifyEvidenceLocation(checked.plan(), tuningFile);
+    final JsonNode tuningEvidence = read(tuningFile);
+    verifyTuningProvenance(checked, sourceFile, tuningEvidence);
+    final String method =
+        required(required(checked.plan(), "parameterSelection"), "method").asString();
+    final DevelopmentTuning.Tuning tuning = tuned(checked, tuningEvidence, method);
+    final List<PollCsv.Poll> polls = PollCsv.parse(bytes(sourceFile));
+    final List<LocalDate> elections = dates(checked.plan(), "electionCycleDates");
+    final List<Roster.CoveragePeriod> periods = new ArrayList<>();
+    for (JsonNode declared : required(checked.plan(), "periods")) periods.add(period(declared));
+    final CoverageValidation.Rules coverageRules = coverageRules(checked.plan());
+    final CoverageValidation.Report coverage =
+        CoverageValidation.validateAll(periods, polls, elections, tuning, coverageRules);
+    final JointUncertainty.Rules uncertaintyRules = uncertaintyRules(checked.plan());
+    final Map<String, CoverageValidation.Validated> validated = new LinkedHashMap<>();
+    for (CoverageValidation.Validated period : coverage.periods())
+      validated.put(period.periodId(), period);
+    final List<JointUncertainty.FinalDay> draws = new ArrayList<>();
+    for (Roster.CoveragePeriod period : periods) {
+      if (!period.supportValidated()) continue;
+      final CoverageValidation.Validated support = validated.get(period.id());
+      if (support == null || !support.supported()) continue;
+      draws.add(
+          JointUncertainty.finalDay(
+              period, polls, elections, support.parameters(), coverageRules, uncertaintyRules));
+    }
+
+    final ObjectNode result = JSON.createObjectNode();
+    reproductionIdentity(result, checked, sourceFile, tuningFile);
+    final ArrayNode reasons = result.putArray("reasons");
+    final ArrayNode published = result.putArray("periods");
+    long values = 0;
+    for (JointUncertainty.FinalDay period : draws) {
+      final ObjectNode entry = published.addObject();
+      entry.put("periodId", period.periodId());
+      entry.put("date", period.draws().date().toString());
+      entry.set("components", JSON.valueToTree(period.draws().components()));
+      entry.put("daySeed", period.draws().daySeed());
+      entry.put("draws", period.draws().count());
+      entry.put("offsetValues", values);
+      entry.put("values", (long) period.draws().count() * period.draws().components().size());
+      entry.set("reproduction", JSON.valueToTree(period.reproduction()));
+      values += (long) period.draws().count() * period.draws().components().size();
+    }
+    if (draws.isEmpty()) {
+      reasons.add("no supported coverage period produced retained draws");
+      result.put("status", "incomplete");
+      result.put("releaseAuthorized", false);
+      writeNew(resultFile, pretty(result));
+      return false;
+    }
+    writeDraws(artifactFile, draws);
+    final ObjectNode artifact = result.putObject("artifact");
+    artifact.put("path", artifactFile.getFileName().toString());
+    artifact.put("sha256", digest(artifactFile));
+    artifact.put("values", values);
+    artifact.put("bytes", fileSize(artifactFile));
+    result.put("status", "complete");
+    result.put("releaseAuthorized", false);
+    writeNew(resultFile, pretty(result));
+    return true;
+  }
+
+  private static boolean compare(
+      Path registrationFile,
+      Path sourceFile,
+      Path tuningFile,
+      Path firstFile,
+      Path secondFile,
+      Path resultFile) {
+    refuseExisting(resultFile);
+    final CheckedRegistration checked = check(registrationFile, sourceFile, false);
+    verifyEvidenceLocation(checked.plan(), resultFile);
+    verifyEvidenceLocation(checked.plan(), tuningFile);
+    verifyTuningProvenance(checked, sourceFile, read(tuningFile));
+    if (!Files.isRegularFile(firstFile) || !Files.isRegularFile(secondFile)) {
+      final ObjectNode result = JSON.createObjectNode();
+      reproductionIdentity(result, checked, sourceFile, tuningFile);
+      final ArrayNode checks = result.putArray("checks");
+      final ArrayNode reasons = result.putArray("reasons");
+      check(
+          checks,
+          "cross_architecture_reproduction",
+          UNEVALUATED,
+          "both registered architecture runs are required");
+      reasons.add(
+          "cross-architecture reproduction is incomplete because an architecture run is missing");
+      return finish(result, checks, reasons, resultFile);
+    }
+    verifyEvidenceLocation(checked.plan(), firstFile);
+    verifyEvidenceLocation(checked.plan(), secondFile);
+    final JsonNode first = read(firstFile);
+    final JsonNode second = read(secondFile);
+    verifyReproduction(first, checked, sourceFile, tuningFile);
+    verifyReproduction(second, checked, sourceFile, tuningFile);
+    final List<String> expectedArchitectures =
+        strings(
+            required(required(checked.plan(), "measurements"), "reproduction"), "architectures");
+    final List<String> actualArchitectures =
+        List.of(
+                required(first, "architecture").asString(),
+                required(second, "architecture").asString())
+            .stream()
+            .sorted()
+            .toList();
+    require(
+        actualArchitectures.equals(expectedArchitectures.stream().sorted().toList()),
+        "Cross-architecture evidence does not contain every registered architecture");
+    verifySameDrawIdentities(required(first, "periods"), required(second, "periods"));
+    final Path firstArtifact = artifact(firstFile, first);
+    final Path secondArtifact = artifact(secondFile, second);
+    final long values = required(required(first, "artifact"), "values").longValue();
+    require(
+        values == required(required(second, "artifact"), "values").longValue(),
+        "Cross-architecture artifacts contain different value counts");
+    long differing = 0;
+    double maximum = 0;
+    try (final DataInputStream firstValues =
+            new DataInputStream(new BufferedInputStream(Files.newInputStream(firstArtifact)));
+        final DataInputStream secondValues =
+            new DataInputStream(new BufferedInputStream(Files.newInputStream(secondArtifact)))) {
+      for (long index = 0; index < values; index++) {
+        final double left = firstValues.readDouble();
+        final double right = secondValues.readDouble();
+        if (Double.doubleToLongBits(left) != Double.doubleToLongBits(right)) differing++;
+        maximum = Math.max(maximum, Math.abs(left - right));
+      }
+      require(
+          firstValues.read() == -1 && secondValues.read() == -1,
+          "Draw artifact has trailing values");
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    final double limit =
+        required(
+                required(required(checked.plan(), "measurements"), "reproduction"),
+                "maxDifferencePoints")
+            .doubleValue();
+    final ObjectNode result = JSON.createObjectNode();
+    reproductionIdentity(result, checked, sourceFile, tuningFile);
+    result.put("comparedValues", values);
+    result.put("differingValues", differing);
+    result.put("maxAbsoluteDifferencePoints", maximum);
+    final ArrayNode runs = result.putArray("runs");
+    runs.add(runIdentity(firstFile, first));
+    runs.add(runIdentity(secondFile, second));
+    final ArrayNode checks = result.putArray("checks");
+    final ArrayNode reasons = result.putArray("reasons");
+    final boolean passed = maximum <= limit;
+    check(
+        checks,
+        "cross_architecture_reproduction",
+        passed ? PASSED : FAILED,
+        "largest retained-draw difference: "
+            + maximum
+            + " points against a "
+            + limit
+            + " point limit");
+    if (!passed) reasons.add("cross-architecture retained draws differ by " + maximum + " points");
+    return finish(result, checks, reasons, resultFile);
+  }
+
+  private static void reproductionIdentity(
+      ObjectNode result, CheckedRegistration checked, Path sourceFile, Path tuningFile) {
+    final String architecture = canonicalArchitecture(System.getProperty("os.arch"));
+    result.put("protocolVersion", required(checked.registration(), "version").asString());
+    result.put("registrationSha256", checked.registrationSha256());
+    result.put("sourceSha256", digest(sourceFile));
+    result.put("tuningSha256", digest(tuningFile));
+    result.put("implementationIdentitySha256", identitiesSha256(checked.plan()));
+    result.put("architecture", architecture);
+    result.put("platform", "linux/" + architecture);
+    result.put("javaVersion", System.getProperty("java.version"));
+    result.put("javaRuntime", Runtime.version().toString());
+    result.put(
+        "vm",
+        ManagementFactory.getRuntimeMXBean().getVmName()
+            + " "
+            + ManagementFactory.getRuntimeMXBean().getVmVersion());
+    result.put("os", System.getProperty("os.name") + " " + System.getProperty("os.version"));
+    final JsonNode environment = required(checked.plan(), "environment");
+    result.put(
+        "runtimeImage",
+        environment.has("runtimeImage")
+            ? environment.get("runtimeImage").asString()
+            : "test-runtime");
+  }
+
+  private static void verifyReproduction(
+      JsonNode run, CheckedRegistration checked, Path sourceFile, Path tuningFile) {
+    require(
+        required(run, "status").asString().equals("complete"), "Architecture run is incomplete");
+    require(
+        required(run, "protocolVersion")
+            .asString()
+            .equals(required(checked.registration(), "version").asString()),
+        "Reproduction protocol identity mismatch");
+    require(
+        required(run, "registrationSha256").asString().equals(checked.registrationSha256()),
+        "Reproduction registration identity mismatch");
+    require(
+        required(run, "sourceSha256").asString().equals(digest(sourceFile)),
+        "Reproduction source identity mismatch");
+    require(
+        required(run, "tuningSha256").asString().equals(digest(tuningFile)),
+        "Reproduction tuning identity mismatch");
+    require(
+        required(run, "implementationIdentitySha256")
+            .asString()
+            .equals(identitiesSha256(checked.plan())),
+        "Reproduction implementation identity mismatch");
+    final List<String> architectures =
+        strings(
+            required(required(checked.plan(), "measurements"), "reproduction"), "architectures");
+    require(
+        architectures.contains(required(run, "architecture").asString()),
+        "Unregistered reproduction architecture");
+    require(
+        required(run, "platform")
+            .asString()
+            .equals("linux/" + required(run, "architecture").asString()),
+        "Reproduction platform identity mismatch");
+    final JsonNode reproductionRules =
+        required(required(checked.plan(), "measurements"), "reproduction");
+    if (reproductionRules.has("platforms"))
+      require(
+          strings(reproductionRules, "platforms").contains(required(run, "platform").asString()),
+          "Unregistered reproduction platform");
+    require(
+        required(run, "javaVersion")
+            .asString()
+            .equals(required(required(checked.plan(), "environment"), "javaVersion").asString()),
+        "Reproduction Java identity mismatch");
+    final JsonNode environment = required(checked.plan(), "environment");
+    if (environment.has("runtimeImage"))
+      require(
+          required(run, "runtimeImage")
+              .asString()
+              .equals(environment.get("runtimeImage").asString()),
+          "Reproduction runtime image mismatch");
+    for (JsonNode period : required(run, "periods")) {
+      final JsonNode reproduction = required(period, "reproduction");
+      require(
+          canonicalArchitecture(required(reproduction, "osArch").asString())
+              .equals(required(run, "architecture").asString()),
+          "Retained draws carry another architecture identity");
+      require(
+          required(reproduction, "osName")
+              .asString()
+              .equals(required(environment, "osName").asString()),
+          "Retained draws carry another operating-system identity");
+      if (environment.has("ejmlVersion"))
+        require(
+            required(reproduction, "linearAlgebraVersion")
+                .asString()
+                .equals(environment.get("ejmlVersion").asString()),
+            "Retained draws carry another linear-algebra identity");
+    }
+  }
+
+  private static void verifySameDrawIdentities(JsonNode first, JsonNode second) {
+    require(first.size() == second.size(), "Cross-architecture runs retained different periods");
+    for (int index = 0; index < first.size(); index++) {
+      final JsonNode left = first.get(index);
+      final JsonNode right = second.get(index);
+      for (String field :
+          List.of("periodId", "date", "components", "daySeed", "draws", "offsetValues", "values"))
+        require(
+            required(left, field).equals(required(right, field)),
+            "Cross-architecture runs used different draw identities: " + field);
+      final JsonNode leftReproduction = required(left, "reproduction");
+      final JsonNode rightReproduction = required(right, "reproduction");
+      for (String field :
+          List.of(
+              "seed",
+              "draws",
+              "periodId",
+              "components",
+              "basisSha256",
+              "inputRowsSha256",
+              "inputRows",
+              "parameters",
+              "implementationSha256",
+              "linearAlgebraVersion"))
+        require(
+            required(leftReproduction, field).equals(required(rightReproduction, field)),
+            "Cross-architecture runs used different fitted identities: " + field);
+    }
+  }
+
+  private static ObjectNode runIdentity(Path file, JsonNode run) {
+    final ObjectNode identity = JSON.createObjectNode();
+    identity.put("path", file.getFileName().toString());
+    identity.put("sha256", digest(file));
+    identity.put("architecture", required(run, "architecture").asString());
+    identity.put("platform", required(run, "platform").asString());
+    identity.put("javaRuntime", required(run, "javaRuntime").asString());
+    identity.put("vm", required(run, "vm").asString());
+    identity.put("os", required(run, "os").asString());
+    identity.put("runtimeImage", required(run, "runtimeImage").asString());
+    identity.set("artifact", required(run, "artifact"));
+    return identity;
+  }
+
+  private static Path artifact(Path manifest, JsonNode run) {
+    final JsonNode declared = required(run, "artifact");
+    final Path parent = manifest.toAbsolutePath().normalize().getParent();
+    final Path path = parent.resolve(required(declared, "path").asString()).normalize();
+    require(path.getParent().equals(parent), "Draw artifact must stay beside its manifest");
+    require(Files.isRegularFile(path), "Draw artifact is missing");
+    require(
+        required(declared, "sha256").asString().equals(digest(path)),
+        "Draw artifact checksum mismatch");
+    require(
+        fileSize(path) == required(declared, "bytes").longValue(), "Draw artifact size mismatch");
+    return path;
+  }
+
+  private static long fileSize(Path path) {
+    try {
+      return Files.size(path);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private static void writeDraws(Path artifact, List<JointUncertainty.FinalDay> periods) {
+    try (final DataOutputStream output =
+        new DataOutputStream(
+            new BufferedOutputStream(
+                Files.newOutputStream(
+                    artifact, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)))) {
+      for (JointUncertainty.FinalDay period : periods)
+        for (int draw = 0; draw < period.draws().count(); draw++)
+          for (int component = 0; component < period.draws().components().size(); component++)
+            output.writeDouble(period.draws().shares().get(draw, component));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private static Path drawArtifact(Path manifest) {
+    final String name = manifest.getFileName().toString();
+    final String stem = name.endsWith(".json") ? name.substring(0, name.length() - 5) : name;
+    return manifest.resolveSibling(stem + ".draws");
+  }
+
+  private static String canonicalArchitecture(String architecture) {
+    return switch (architecture) {
+      case "x86_64" -> "amd64";
+      case "aarch64" -> "arm64";
+      default -> architecture;
+    };
+  }
+
+  private static String identitiesSha256(JsonNode plan) {
+    final StringBuilder identities = new StringBuilder();
+    for (JsonNode identity : required(plan, "identities"))
+      identities
+          .append(required(identity, "path").asString())
+          .append(':')
+          .append(required(identity, "sha256").asString())
+          .append('\n');
+    return sha256(identities.toString().getBytes(StandardCharsets.UTF_8));
   }
 
   private static void prepare(Path planFile, Path sourceFile, Path registrationFile) {
@@ -184,6 +611,11 @@ public final class DevelopmentValidation {
    */
   private static CheckedRegistration check(
       Path registrationFile, Path sourceFile, boolean freshEvidence) {
+    return check(registrationFile, sourceFile, freshEvidence, false);
+  }
+
+  private static CheckedRegistration check(
+      Path registrationFile, Path sourceFile, boolean freshEvidence, boolean reproductionPlatform) {
     final byte[] registrationBytes = bytes(registrationFile);
     final String expected = text(checksum(registrationFile)).trim();
     require(expected.equals(sha256(registrationBytes)), "Registration checksum mismatch");
@@ -196,7 +628,7 @@ public final class DevelopmentValidation {
     verifySource(plan, sourceFile);
     verifyIdentities(plan);
     verifyImplementationCommit(plan);
-    verifyEnvironment(plan);
+    verifyEnvironment(plan, reproductionPlatform);
     verifyOutputLocation(plan, freshEvidence);
     grid(plan);
     final ArrayNode rebuilt = manifests(plan, sourceFile);
@@ -296,7 +728,7 @@ public final class DevelopmentValidation {
    * fitted output.
    */
   private static boolean estimate(
-      Path registrationFile, Path sourceFile, Path tuningFile, Path resultFile) {
+      Path registrationFile, Path sourceFile, Path tuningFile, Path resultFile, boolean measuring) {
     refuseExisting(resultFile);
     final CheckedRegistration checked = check(registrationFile, sourceFile, false);
     verifyEvidenceLocation(checked.plan(), resultFile);
@@ -314,6 +746,14 @@ public final class DevelopmentValidation {
     final CoverageValidation.Rules coverageRules = coverageRules(checked.plan());
     final JointUncertainty.Rules uncertaintyRules = uncertaintyRules(checked.plan());
     final List<Long> seeds = precisionSeeds(checked.plan(), uncertaintyRules);
+    final List<MemoryPoolMXBean> heapPools =
+        measuring
+            ? ManagementFactory.getMemoryPoolMXBeans().stream()
+                .filter(pool -> pool.getType() == MemoryType.HEAP)
+                .toList()
+            : List.of();
+    for (MemoryPoolMXBean pool : heapPools) pool.resetPeakUsage();
+    final long started = measuring ? System.nanoTime() : 0;
 
     final ObjectNode result = JSON.createObjectNode();
     result.put("protocolVersion", required(checked.registration(), "version").asString());
@@ -376,6 +816,22 @@ public final class DevelopmentValidation {
           coverage,
           uncertaintyRules,
           seeds);
+      if (measuring)
+        measurements(
+            result,
+            checks,
+            reasons,
+            checked.plan(),
+            sourceFile,
+            periods,
+            polls,
+            elections,
+            coverage,
+            coverageRules,
+            uncertaintyRules,
+            uncertainty,
+            started,
+            heapPools);
       return finish(result, checks, reasons, resultFile);
     }
     reproduction(checks, reasons, uncertainty);
@@ -402,7 +858,258 @@ public final class DevelopmentValidation {
         coverage,
         uncertaintyRules,
         seeds);
+    if (measuring)
+      measurements(
+          result,
+          checks,
+          reasons,
+          checked.plan(),
+          sourceFile,
+          periods,
+          polls,
+          elections,
+          coverage,
+          coverageRules,
+          uncertaintyRules,
+          uncertainty,
+          started,
+          heapPools);
     return finish(result, checks, reasons, resultFile);
+  }
+
+  private static void measurements(
+      ObjectNode result,
+      ArrayNode checks,
+      ArrayNode reasons,
+      JsonNode plan,
+      Path sourceFile,
+      List<Roster.CoveragePeriod> periods,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      CoverageValidation.Report coverage,
+      CoverageValidation.Rules coverageRules,
+      JointUncertainty.Rules uncertaintyRules,
+      JointUncertainty.Report uncertainty,
+      long started,
+      List<MemoryPoolMXBean> heapPools) {
+    final JsonNode registered = required(plan, "measurements");
+    final JsonNode resourceRules = required(registered, "resources");
+    final long runtimeMillis = Math.max(1, (System.nanoTime() - started) / 1_000_000);
+    final long peakHeapBytes =
+        heapPools.stream().mapToLong(pool -> pool.getPeakUsage().getUsed()).sum();
+    final ObjectNode resources = result.putObject("resources");
+    resources.put("runtimeMillis", runtimeMillis);
+    resources.put("peakHeapBytes", peakHeapBytes);
+    resources.put(
+        "runtimeTargetMillis", required(resourceRules, "runtimeTargetMillis").longValue());
+    resources.put(
+        "runtimeTargetMet",
+        runtimeMillis <= required(resourceRules, "runtimeTargetMillis").longValue());
+    resources.put(
+        "runtimeTargetBlocking", required(resourceRules, "runtimeTargetBlocking").booleanValue());
+    resources.put(
+        "hostPipelineRequirementMillis",
+        required(resourceRules, "hostPipelineRequirementMillis").longValue());
+    resources.put("hostPipelineRequirementStatus", UNEVALUATED);
+    resources.put(
+        "hostPipelineRequirementReason", "no deployment host is accepted by this development run");
+    resources.put("inputPolls", polls.size());
+    resources.put(
+        "estimatedDays",
+        uncertainty.periods().stream().mapToInt(JointUncertainty.Published::estimatedDays).sum());
+    resources.put("finalDraws", uncertaintyRules.draws());
+    resources.put("architecture", System.getProperty("os.arch"));
+    resources.put("javaRuntime", Runtime.version().toString());
+    resources.put(
+        "vm",
+        ManagementFactory.getRuntimeMXBean().getVmName()
+            + " "
+            + ManagementFactory.getRuntimeMXBean().getVmVersion());
+    resources.put("os", System.getProperty("os.name") + " " + System.getProperty("os.version"));
+    resources.put("measurementBoundary", required(resourceRules, "measurementBoundary").asString());
+
+    snapshotDrift(
+        result,
+        checks,
+        reasons,
+        required(registered, "snapshot"),
+        sourceFile,
+        periods,
+        polls,
+        elections,
+        coverage,
+        coverageRules,
+        uncertaintyRules);
+  }
+
+  private static void snapshotDrift(
+      ObjectNode result,
+      ArrayNode checks,
+      ArrayNode reasons,
+      JsonNode rules,
+      Path sourceFile,
+      List<Roster.CoveragePeriod> periods,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      CoverageValidation.Report coverage,
+      CoverageValidation.Rules coverageRules,
+      JointUncertainty.Rules uncertaintyRules) {
+    require(
+        required(rules, "rowSelection").asString().equals("latest_eligible_poll_per_institute"),
+        "Unsupported snapshot row selection");
+    require(
+        required(rules, "correctionFrom").asString().equals("OTHER")
+            && required(rules, "correctionTo").asString().equals("M"),
+        "Unsupported snapshot correction");
+    final BigDecimal correction =
+        BigDecimal.valueOf(required(rules, "correctionPoints").doubleValue());
+    final double limit = required(rules, "maxShiftPoints").doubleValue();
+    require(
+        correction.signum() > 0 && Double.isFinite(limit) && limit >= 0, "Invalid snapshot limits");
+    final Map<String, CoverageValidation.Validated> validated = new LinkedHashMap<>();
+    for (CoverageValidation.Validated period : coverage.periods())
+      validated.put(period.periodId(), period);
+    final ObjectNode evidence = result.putObject("snapshotDrift");
+    evidence.put("inputSha256", digest(sourceFile));
+    evidence.put("rowSelection", required(rules, "rowSelection").asString());
+    evidence.put("correctionFrom", "OTHER");
+    evidence.put("correctionTo", "M");
+    evidence.put("correctionPoints", correction.doubleValue());
+    final ArrayNode perturbations = evidence.putArray("perturbations");
+    double maximum = 0;
+    for (Roster.CoveragePeriod period : periods) {
+      if (!period.supportValidated()) continue;
+      final CoverageValidation.Validated support = validated.get(period.id());
+      if (support == null || !support.supported()) continue;
+      final EstimateHistory.Estimated baseline =
+          EstimateHistory.estimate(
+              period, polls, elections, support.parameters(), coverageRules, uncertaintyRules);
+      final Map<String, PollObservations.Observation> latest = new LinkedHashMap<>();
+      final PollObservations.Batch eligible =
+          PollObservations.prepare(
+              CoverageValidation.supported(
+                  period, CoverageValidation.support(period, polls, coverageRules)),
+              polls);
+      final Comparator<PollObservations.Observation> order =
+          Comparator.comparing(PollObservations.Observation::midpoint)
+              .thenComparingInt(observation -> observation.poll().rowNumber());
+      for (PollObservations.Observation observation : eligible.observations())
+        latest.merge(
+            observation.poll().institute(),
+            observation,
+            (first, second) -> order.compare(first, second) < 0 ? second : first);
+      for (PollObservations.Observation observation : latest.values()) {
+        final PollCsv.Poll changed = observation.poll();
+        final List<PollCsv.Poll> removed =
+            polls.stream().filter(poll -> poll.rowNumber() != changed.rowNumber()).toList();
+        maximum =
+            addPerturbation(
+                perturbations,
+                period,
+                changed,
+                baseline,
+                EstimateHistory.estimate(
+                    period,
+                    removed,
+                    elections,
+                    support.parameters(),
+                    coverageRules,
+                    uncertaintyRules),
+                "addition_deletion",
+                maximum);
+        final List<PollCsv.Poll> corrected =
+            polls.stream()
+                .map(
+                    poll ->
+                        poll.rowNumber() == changed.rowNumber()
+                            ? corrected(poll, correction)
+                            : poll)
+                .toList();
+        maximum =
+            addPerturbation(
+                perturbations,
+                period,
+                changed,
+                baseline,
+                EstimateHistory.estimate(
+                    period,
+                    corrected,
+                    elections,
+                    support.parameters(),
+                    coverageRules,
+                    uncertaintyRules),
+                "correction",
+                maximum);
+      }
+    }
+    evidence.put("maxShiftPoints", maximum);
+    evidence.put("limitPoints", limit);
+    if (perturbations.isEmpty()) {
+      check(checks, "snapshot_drift", UNEVALUATED, "no supported period produced perturbations");
+      reasons.add("snapshot drift was not measured, so it is not a passed check");
+      return;
+    }
+    final boolean passed = maximum <= limit;
+    check(
+        checks,
+        "snapshot_drift",
+        passed ? PASSED : FAILED,
+        "largest registered source-row perturbation shift: "
+            + maximum
+            + " points against a "
+            + limit
+            + " point limit");
+    if (!passed)
+      reasons.add("snapshot perturbation shift of " + maximum + " points exceeds " + limit);
+  }
+
+  private static double addPerturbation(
+      ArrayNode evidence,
+      Roster.CoveragePeriod period,
+      PollCsv.Poll changed,
+      EstimateHistory.Estimated baseline,
+      EstimateHistory.Estimated perturbed,
+      String kind,
+      double maximum) {
+    final DevelopmentGates.Perturbation compared =
+        DevelopmentGates.compare(kind, changed, baseline, perturbed);
+    final ObjectNode result = evidence.addObject();
+    result.put("periodId", period.id());
+    result.put("kind", kind);
+    result.put("rowNumber", changed.rowNumber());
+    result.put("institute", changed.institute());
+    result.put("publicationDate", changed.publicationDate().toString());
+    result.put("collectionFrom", changed.collectionFrom().toString());
+    result.put("collectionTo", changed.collectionTo().toString());
+    result.put("comparedValues", compared.comparedValues());
+    result.put("maxShiftPoints", compared.maxShiftPoints());
+    result.put("maxShiftOn", compared.maxShiftOn().toString());
+    result.put("component", compared.component());
+    return Math.max(maximum, compared.maxShiftPoints());
+  }
+
+  private static PollCsv.Poll corrected(PollCsv.Poll poll, BigDecimal amount) {
+    require(
+        poll.remainder().compareTo(amount) >= 0,
+        "Correction exceeds OTHER in row " + poll.rowNumber());
+    final Map<String, BigDecimal> shares = new LinkedHashMap<>(poll.shares());
+    shares.put("M", shares.get("M").add(amount));
+    return new PollCsv.Poll(
+        poll.rowNumber(),
+        poll.raw(),
+        poll.company(),
+        poll.institute(),
+        poll.methodEra(),
+        poll.methodEvidence(),
+        poll.surveyType(),
+        poll.denominatorNote(),
+        poll.publicationDate(),
+        poll.collectionFrom(),
+        poll.collectionTo(),
+        poll.sampleSize(),
+        shares,
+        poll.remainder().subtract(amount),
+        poll.exclusionReasons());
   }
 
   private static boolean validatedPublishes(
@@ -1409,7 +2116,11 @@ public final class DevelopmentValidation {
                     PREFLIGHT_COMMAND,
                     TUNE_COMMAND,
                     ESTIMATE_COMMAND,
-                    DIAGNOSE_COMMAND)),
+                    DIAGNOSE_COMMAND,
+                    MEASURE_COMMAND,
+                    REPRODUCE_AMD64_COMMAND,
+                    REPRODUCE_ARM64_COMMAND,
+                    COMPARE_COMMAND)),
         "Approved commands mismatch");
     final JsonNode coverage = required(plan, "coverage");
     require(
@@ -1473,6 +2184,7 @@ public final class DevelopmentValidation {
             "src/main/java/se/swedishpolls/estimation/EstimateHistory.java",
             "src/main/java/se/swedishpolls/estimation/JointUncertainty.java",
             "src/main/java/se/swedishpolls/estimation/ComparableRemainder.java",
+            "src/main/java/se/swedishpolls/estimation/DevelopmentGates.java",
             "src/main/java/se/swedishpolls/estimation/NationalSeats.java",
             "src/main/java/se/swedishpolls/estimation/SeatOutcomes.java",
             "src/main/java/se/swedishpolls/estimation/Coalitions.java",
@@ -1584,6 +2296,32 @@ public final class DevelopmentValidation {
                                 .equals(
                                     "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf")),
         "Approved allocation rules mismatch");
+    final JsonNode measurements = required(plan, "measurements");
+    final JsonNode snapshot = required(measurements, "snapshot");
+    require(
+        required(snapshot, "rowSelection").asString().equals("latest_eligible_poll_per_institute")
+            && required(snapshot, "correctionFrom").asString().equals("OTHER")
+            && required(snapshot, "correctionTo").asString().equals("M")
+            && Double.compare(required(snapshot, "correctionPoints").doubleValue(), 0.1) == 0
+            && Double.compare(required(snapshot, "maxShiftPoints").doubleValue(), 0.44) == 0,
+        "Approved snapshot measurement mismatch");
+    final JsonNode reproduction = required(measurements, "reproduction");
+    require(
+        strings(reproduction, "architectures").equals(List.of("amd64", "arm64"))
+            && strings(reproduction, "platforms").equals(List.of("linux/amd64", "linux/arm64"))
+            && required(reproduction, "runtimeImage")
+                .asString()
+                .equals(required(required(plan, "environment"), "runtimeImage").asString())
+            && Double.compare(required(reproduction, "maxDifferencePoints").doubleValue(), 2e-14)
+                == 0,
+        "Approved cross-architecture measurement mismatch");
+    final JsonNode resources = required(measurements, "resources");
+    require(
+        required(resources, "runtimeTargetMillis").longValue() == 10_000
+            && !required(resources, "runtimeTargetBlocking").booleanValue()
+            && required(resources, "hostPipelineRequirementMillis").longValue() == 1_800_000
+            && !required(resources, "measurementBoundary").asString().isBlank(),
+        "Approved resource measurement mismatch");
   }
 
   private static void verifyApprovedManifest(JsonNode plan, ArrayNode manifests) {
@@ -1691,10 +2429,20 @@ public final class DevelopmentValidation {
   }
 
   private static void verifyEnvironment(JsonNode plan) {
+    verifyEnvironment(plan, false);
+  }
+
+  private static void verifyEnvironment(JsonNode plan, boolean reproductionPlatform) {
     final JsonNode environment = required(plan, "environment");
     environment(environment, "javaVersion", "java.version");
     environment(environment, "osName", "os.name");
-    environment(environment, "osArch", "os.arch");
+    if (reproductionPlatform) {
+      final List<String> architectures =
+          strings(required(required(plan, "measurements"), "reproduction"), "architectures");
+      require(
+          architectures.contains(canonicalArchitecture(System.getProperty("os.arch"))),
+          "Environment identity mismatch: unregistered reproduction architecture");
+    } else environment(environment, "osArch", "os.arch");
     if (!VERSION.equals(required(plan, "version").asString())) return;
     final Path mavenDistribution =
         Path.of(

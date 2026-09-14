@@ -924,6 +924,168 @@ class DevelopmentValidationTest {
     assertArrayEquals(retained, Files.readAllBytes(run.result()));
   }
 
+  @Test
+  void measuresSnapshotDriftAndResourcesThroughTheValidationEntryPoint() throws Exception {
+    final Estimated run = estimate("measured");
+    final Path result = run.evidenceDirectory().resolve("measurement.json");
+
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "measure",
+            run.registration().toString(),
+            run.source().toString(),
+            run.tuning().toString(),
+            result.toString()));
+
+    final JsonNode evidence = JSON.readTree(Files.readAllBytes(result));
+    assertEquals("blocked", evidence.get("status").asString());
+    assertEquals("passed", check(evidence, "snapshot_drift").get("status").asString());
+    final JsonNode perturbations = evidence.get("snapshotDrift").get("perturbations");
+    assertEquals(4, perturbations.size());
+    for (JsonNode perturbation : perturbations) {
+      assertTrue(
+          java.util.Set.of("addition_deletion", "correction")
+              .contains(perturbation.get("kind").asString()));
+      assertTrue(perturbation.get("rowNumber").intValue() > 0);
+      assertFalse(perturbation.get("institute").asString().isBlank());
+      assertFalse(perturbation.get("collectionFrom").asString().isBlank());
+      assertFalse(perturbation.get("collectionTo").asString().isBlank());
+      assertFalse(perturbation.get("maxShiftOn").asString().isBlank());
+      assertFalse(perturbation.get("component").asString().isBlank());
+      assertTrue(perturbation.get("comparedValues").longValue() > 0);
+      assertTrue(perturbation.get("maxShiftPoints").doubleValue() >= 0);
+    }
+    assertEquals(
+        "latest_eligible_poll_per_institute",
+        evidence.get("snapshotDrift").get("rowSelection").asString());
+    final JsonNode resources = evidence.get("resources");
+    assertTrue(resources.get("runtimeMillis").longValue() > 0);
+    assertTrue(resources.get("peakHeapBytes").longValue() > 0);
+    assertEquals(10_000, resources.get("runtimeTargetMillis").longValue());
+    assertFalse(resources.get("runtimeTargetBlocking").booleanValue());
+    assertEquals(1_800_000, resources.get("hostPipelineRequirementMillis").longValue());
+    assertEquals("unevaluated", resources.get("hostPipelineRequirementStatus").asString());
+    assertTrue(resources.get("inputPolls").intValue() > 0);
+    assertTrue(resources.get("estimatedDays").intValue() > 0);
+    assertEquals(64, resources.get("finalDraws").intValue());
+    assertFalse(resources.get("measurementBoundary").asString().isBlank());
+  }
+
+  @Test
+  void retainsAndComparesSyntheticDrawsWithoutReplacingEitherRun() throws Exception {
+    final Estimated run = estimate("architecture");
+    final Path first = run.evidenceDirectory().resolve("reproduction-amd64.json");
+    final Path second = run.evidenceDirectory().resolve("reproduction-arm64.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "reproduce",
+            run.registration().toString(),
+            run.source().toString(),
+            run.tuning().toString(),
+            first.toString()));
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "reproduce",
+            run.registration().toString(),
+            run.source().toString(),
+            run.tuning().toString(),
+            second.toString()));
+    final JsonNode firstRun = JSON.readTree(Files.readAllBytes(first));
+    final ObjectNode secondRun = (ObjectNode) JSON.readTree(Files.readAllBytes(second));
+    assertEquals("complete", firstRun.get("status").asString());
+    assertEquals(1, firstRun.get("periods").size());
+    assertEquals(64 * 9, firstRun.get("artifact").get("values").intValue());
+    assertTrue(
+        Files.isRegularFile(
+            run.evidenceDirectory().resolve(firstRun.get("artifact").get("path").asString())));
+
+    secondRun.put("architecture", "arm64");
+    secondRun.put("platform", "linux/arm64");
+    for (JsonNode period : secondRun.get("periods"))
+      ((ObjectNode) period.get("reproduction")).put("osArch", "arm64");
+    Files.writeString(second, JSON.writeValueAsString(secondRun), StandardCharsets.UTF_8);
+    final Path compared = run.evidenceDirectory().resolve("cross-architecture.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "compare",
+            run.registration().toString(),
+            run.source().toString(),
+            run.tuning().toString(),
+            first.toString(),
+            second.toString(),
+            compared.toString()));
+    final JsonNode comparison = JSON.readTree(Files.readAllBytes(compared));
+    assertEquals(
+        "passed", check(comparison, "cross_architecture_reproduction").get("status").asString());
+    assertEquals(64 * 9, comparison.get("comparedValues").intValue());
+    assertEquals(0, comparison.get("maxAbsoluteDifferencePoints").doubleValue());
+    assertEquals(2, comparison.get("runs").size());
+
+    final Path secondArtifact =
+        run.evidenceDirectory().resolve(secondRun.get("artifact").get("path").asString());
+    final byte[] shiftedDraws = Files.readAllBytes(secondArtifact);
+    final java.nio.ByteBuffer shifted = java.nio.ByteBuffer.wrap(shiftedDraws);
+    shifted.putDouble(0, shifted.getDouble(0) + 1e-12);
+    Files.write(secondArtifact, shiftedDraws);
+    ((ObjectNode) secondRun.get("artifact")).put("sha256", DevelopmentGates.sha256(secondArtifact));
+    Files.writeString(second, JSON.writeValueAsString(secondRun), StandardCharsets.UTF_8);
+    final Path failed = run.evidenceDirectory().resolve("cross-architecture-failed.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "compare",
+            run.registration().toString(),
+            run.source().toString(),
+            run.tuning().toString(),
+            first.toString(),
+            second.toString(),
+            failed.toString()));
+    assertEquals(
+        "failed",
+        check(JSON.readTree(Files.readAllBytes(failed)), "cross_architecture_reproduction")
+            .get("status")
+            .asString());
+
+    final Path missingResult = run.evidenceDirectory().resolve("missing-architecture.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "compare",
+            run.registration().toString(),
+            run.source().toString(),
+            run.tuning().toString(),
+            first.toString(),
+            run.evidenceDirectory().resolve("missing.json").toString(),
+            missingResult.toString()));
+    assertEquals(
+        "unevaluated",
+        check(JSON.readTree(Files.readAllBytes(missingResult)), "cross_architecture_reproduction")
+            .get("status")
+            .asString());
+
+    final ObjectNode mixed = secondRun.deepCopy();
+    mixed.put("sourceSha256", "0".repeat(64));
+    final Path mixedRun = run.evidenceDirectory().resolve("mixed.json");
+    Files.writeString(mixedRun, JSON.writeValueAsString(mixed), StandardCharsets.UTF_8);
+    final Path rejected = run.evidenceDirectory().resolve("mixed-result.json");
+    assertEquals(
+        DevelopmentValidation.REJECTED,
+        DevelopmentValidation.run(
+            "compare",
+            run.registration().toString(),
+            run.source().toString(),
+            run.tuning().toString(),
+            first.toString(),
+            mixedRun.toString(),
+            rejected.toString()));
+    assertTrue(
+        JSON.readTree(Files.readAllBytes(rejected)).get("reasons").toString().contains("source"));
+  }
+
   private static JsonNode period(JsonNode evidence, String periodId) {
     return evidence
         .get("coverage")
@@ -1097,6 +1259,25 @@ class DevelopmentValidationTest {
                 "sourceUrl": "https://www.val.se/"
               }
             ]
+          },
+          "measurements": {
+            "snapshot": {
+              "rowSelection": "latest_eligible_poll_per_institute",
+              "correctionFrom": "OTHER",
+              "correctionTo": "M",
+              "correctionPoints": 0.1,
+              "maxShiftPoints": 100.0
+            },
+            "reproduction": {
+              "architectures": ["amd64", "arm64"],
+              "maxDifferencePoints": 2e-14
+            },
+            "resources": {
+              "runtimeTargetMillis": 10000,
+              "runtimeTargetBlocking": false,
+              "hostPipelineRequirementMillis": 1800000,
+              "measurementBoundary": "coverage through corrected history, joint uncertainty, repeated-seed probabilities and comparable remainder"
+            }
           },
           "seeds": {"master": 20260908, "precision": [20260908, 20260909]},
           "periods": [
