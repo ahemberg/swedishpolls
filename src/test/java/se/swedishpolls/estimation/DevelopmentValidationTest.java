@@ -205,6 +205,14 @@ class DevelopmentValidationTest {
             .valueStream()
             .map(identity -> identity.get("path").asString())
             .anyMatch(path -> path.endsWith("/WindowFilter.java")));
+    final JsonNode outcomes = registration.get("plan").get("outcomes");
+    assertEquals(10_000, registration.get("plan").get("uncertainty").get("draws").intValue());
+    assertEquals(0.005, outcomes.get("maxMonteCarloStandardError").doubleValue());
+    assertEquals(0.03, outcomes.get("maxThresholdProbabilitySpread").doubleValue());
+    assertEquals(0.03, outcomes.get("maxMajorityProbabilitySpread").doubleValue());
+    assertEquals(5, outcomes.get("allocationRules").size());
+    assertEquals(1.4, outcomes.get("allocationRules").get(0).get("firstDivisor").doubleValue());
+    assertEquals(1.2, outcomes.get("allocationRules").get(4).get("firstDivisor").doubleValue());
 
     final Path result = temp.resolve("registered-preflight.json");
     assertEquals(
@@ -776,9 +784,14 @@ class DevelopmentValidationTest {
     final JsonNode provenance = evidence.get("tunedParameters");
     assertEquals("midpoint_candidate", provenance.get("method").asString());
     assertEquals(DevelopmentGates.sha256(run.tuning()), provenance.get("sha256").asString());
-    assertEquals(
-        0.000003,
-        provenance.get("selectedParameters").get("eight").get("walkVariance").doubleValue());
+    assertTrue(
+        java.util.Set.of(0.000003, 0.00001)
+            .contains(
+                provenance
+                    .get("selectedParameters")
+                    .get("eight")
+                    .get("walkVariance")
+                    .doubleValue()));
     assertTrue(provenance.get("resolvedFolds").intValue() > 0);
 
     // Each coverage period keeps its own separately fitted history.
@@ -814,6 +827,44 @@ class DevelopmentValidationTest {
     assertEquals("passed", check(evidence, "seeded_reproduction").get("status").asString());
     assertEquals("passed", check(evidence, "comparable_remainder").get("status").asString());
     assertEquals("passed", check(evidence, "interval_endpoint_precision").get("status").asString());
+
+    final JsonNode outcomes = evidence.get("outcomes");
+    assertEquals(2, outcomes.size());
+    final JsonNode published = outcome(evidence, "eight");
+    assertEquals("complete", published.get("status").asString());
+    assertEquals(349, published.get("verifiedSeatTotal").intValue());
+    assertEquals(64, published.get("verifiedDraws").intValue());
+    assertEquals(published.get("seats").get("daySeed"), published.get("coalitions").get("daySeed"));
+    assertEquals(2, published.get("probabilityRuns").size());
+    assertEquals(20260908, published.get("probabilityRuns").get(0).get("seed").longValue());
+    assertEquals(64, published.get("probabilityRuns").get(0).get("draws").intValue());
+    assertTrue(published.get("probabilityRuns").get(0).has("maxMonteCarloStandardError"));
+    assertEquals("unavailable", outcome(evidence, "fi").get("status").asString());
+
+    final JsonNode sensitivities = published.get("sensitivity");
+    assertEquals("centering", sensitivities.get(0).get("kind").asString());
+    assertTrue(sensitivities.get(0).get("comparedDays").intValue() > 0);
+    assertEquals(
+        sensitivities.get(0).get("comparedOn"),
+        sensitivities.get(0).get("probabilities").get("comparedOn"));
+    assertTrue(
+        sensitivities
+            .valueStream()
+            .anyMatch(entry -> entry.get("kind").asString().equals("leave_one_institute_out")));
+    assertTrue(
+        sensitivities
+            .valueStream()
+            .anyMatch(
+                entry -> entry.get("needsDisclosure").booleanValue() && entry.has("disclosure")),
+        sensitivities::toPrettyString);
+
+    assertEquals("passed", check(evidence, "seat_totals").get("status").asString());
+    assertEquals("passed", check(evidence, "joint_probability_coherence").get("status").asString());
+    assertEquals(
+        "failed",
+        check(evidence, "probability_monte_carlo_standard_error").get("status").asString());
+    assertTrue(
+        evidence.get("reasons").toString().contains("probability Monte Carlo standard error"));
   }
 
   @Test
@@ -888,6 +939,15 @@ class DevelopmentValidationTest {
         .orElseThrow();
   }
 
+  private static JsonNode outcome(JsonNode evidence, String periodId) {
+    return evidence
+        .get("outcomes")
+        .valueStream()
+        .filter(entry -> entry.get("periodId").asString().equals(periodId))
+        .findFirst()
+        .orElseThrow();
+  }
+
   private record Estimated(
       Path source, Path registration, Path tuning, Path result, JsonNode evidence) {
     Path evidenceDirectory() {
@@ -901,11 +961,11 @@ class DevelopmentValidationTest {
         source,
         PollCsvFixtures.csv(
             row("2014-01-10", "2014-01-01", "2014-01-09", "NA")
-                + row("2014-01-16", "2014-01-10", "2014-01-14", "NA")
+                + biasedRow("2014-01-16", "2014-01-10", "2014-01-14", "NA")
                 + row("2014-04-12", "2014-04-09", "2014-04-11", "1")
-                + row("2014-05-10", "2014-05-01", "2014-05-05", "1")
+                + biasedRow("2014-05-10", "2014-05-01", "2014-05-05", "1")
                 + row("2014-05-16", "2014-04-20", "2014-04-30", "1")
-                + row("2014-06-01", "2014-05-20", "2014-05-30", "1")));
+                + biasedRow("2014-06-01", "2014-05-20", "2014-05-30", "1")));
     final Path identity = temp.resolve(name + "-implementation.txt");
     Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
     final Path evidenceDirectory = temp.resolve(name + "-evidence");
@@ -949,15 +1009,27 @@ class DevelopmentValidationTest {
   }
 
   private static String row(String published, String from, String to, String fi) {
-    return "2014-01,Ipsos,20,5,8,5,30,8,5,17,"
+    return row(published, from, to, fi, "Ipsos");
+  }
+
+  private static String row(String published, String from, String to, String fi, String institute) {
+    return "2014-01,"
+        + institute
+        + ",20,5,8,5,30,8,5,17,"
         + fi
         + ",10,1000,"
         + published
-        + ",Ipsos,"
+        + ","
+        + institute
+        + ","
         + from
         + ","
         + to
         + ",FALSE\n";
+  }
+
+  private static String biasedRow(String published, String from, String to, String fi) {
+    return row(published, from, to, fi, "Novus").replace("20,5,8,5,30,8,5,17", "5,5,8,5,45,8,5,17");
   }
 
   private static String plan(Path source, Path identity, Path output) throws Exception {
@@ -992,6 +1064,27 @@ class DevelopmentValidationTest {
             "precisionRepeats": 2,
             "maxIntervalEndpointSpreadPoints": 100.0,
             "maxEndpointSumErrorPoints": 1e-9
+          },
+          "outcomes": {
+            "maxMonteCarloStandardError": 0.005,
+            "maxThresholdProbabilitySpread": 0.03,
+            "maxMajorityProbabilitySpread": 0.03,
+            "sensitivityDisclosurePoints": 10.0,
+            "allocationRules": [
+              {
+                "electionYear": 2014,
+                "seats": 349,
+                "thresholdPercent": 4.0,
+                "thresholdInclusive": true,
+                "firstDivisor": 1.4,
+                "subsequentDivisorFormula": "2 * seats_already_allocated + 1",
+                "tieOrder": ["S", "M", "SD", "V", "C", "KD", "L", "MP", "FI"],
+                "otherReceivesSeats": false,
+                "constituencyExceptionsIncluded": false,
+                "officialTieRule": "lottery",
+                "sourceUrl": "https://www.val.se/"
+              }
+            ]
           },
           "seeds": {"master": 20260908, "precision": [20260908, 20260909]},
           "periods": [

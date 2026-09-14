@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.ejml.simple.SimpleMatrix;
+import se.swedishpolls.model.NationalAllocationRule;
 import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.Roster;
 import tools.jackson.databind.JsonNode;
@@ -364,6 +365,17 @@ public final class DevelopmentValidation {
           checks, "interval_endpoint_precision", UNEVALUATED, "no coverage period produced draws");
       check(checks, "comparable_remainder", UNEVALUATED, "no coverage period produced draws");
       result.putArray("remainder");
+      outcomes(
+          checks,
+          reasons,
+          result,
+          checked.plan(),
+          periods,
+          polls,
+          elections,
+          coverage,
+          uncertaintyRules,
+          seeds);
       return finish(result, checks, reasons, resultFile);
     }
     reproduction(checks, reasons, uncertainty);
@@ -379,6 +391,17 @@ public final class DevelopmentValidation {
         coverageRules,
         uncertaintyRules,
         maxSumError(checked.plan()));
+    outcomes(
+        checks,
+        reasons,
+        result,
+        checked.plan(),
+        periods,
+        polls,
+        elections,
+        coverage,
+        uncertaintyRules,
+        seeds);
     return finish(result, checks, reasons, resultFile);
   }
 
@@ -533,6 +556,385 @@ public final class DevelopmentValidation {
               + worst
               + " points exceeds the registered "
               + limit);
+  }
+
+  /** Seats, coalition probabilities and sensitivity all read the same fitted draw streams. */
+  private static void outcomes(
+      ArrayNode checks,
+      ArrayNode reasons,
+      ObjectNode result,
+      JsonNode plan,
+      List<Roster.CoveragePeriod> periods,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      CoverageValidation.Report coverage,
+      JointUncertainty.Rules uncertainty,
+      List<Long> seeds) {
+    final JsonNode registered = required(plan, "outcomes");
+    final double monteCarloLimit = required(registered, "maxMonteCarloStandardError").doubleValue();
+    final double thresholdLimit =
+        required(registered, "maxThresholdProbabilitySpread").doubleValue();
+    final double majorityLimit = required(registered, "maxMajorityProbabilitySpread").doubleValue();
+    final double disclosure = required(registered, "sensitivityDisclosurePoints").doubleValue();
+    require(
+        Double.isFinite(monteCarloLimit)
+            && monteCarloLimit >= 0
+            && Double.isFinite(thresholdLimit)
+            && thresholdLimit >= 0
+            && Double.isFinite(majorityLimit)
+            && majorityLimit >= 0
+            && Double.isFinite(disclosure)
+            && disclosure >= 0,
+        "Invalid outcome limits");
+    final List<NationalAllocationRule> allocationRules = allocationRules(registered);
+    final Map<String, CoverageValidation.Validated> validated = new LinkedHashMap<>();
+    for (CoverageValidation.Validated period : coverage.periods())
+      validated.put(period.periodId(), period);
+
+    final ArrayNode evidence = result.putArray("outcomes");
+    double worstMonteCarlo = 0;
+    double worstThresholdSpread = 0;
+    double worstMajoritySpread = 0;
+    boolean measured = false;
+    for (Roster.CoveragePeriod period : periods) {
+      final ObjectNode published = evidence.addObject();
+      published.put("periodId", period.id());
+      if (!period.supportValidated()) {
+        published.put("status", "unavailable");
+        published.put("reason", "the candidate coverage period is not validated");
+        continue;
+      }
+      final CoverageValidation.Validated support = validated.get(period.id());
+      require(support != null, "No recorded coverage evidence for " + period.id());
+      if (!support.supported()) {
+        published.put("status", UNEVALUATED);
+        published.put("reason", "coverage evidence failed, so no outcomes are drawn");
+        continue;
+      }
+
+      final List<NationalSeats.SeatDraws> repeats = new ArrayList<>();
+      final ArrayNode runs = published.putArray("probabilityRuns");
+      NationalAllocationRule allocation = null;
+      for (long seed : seeds) {
+        final JointUncertainty.Draws draws =
+            JointUncertainty.finalDay(
+                    period,
+                    polls,
+                    elections,
+                    support.parameters(),
+                    coverage.rules(),
+                    uncertainty.withSeed(seed))
+                .draws();
+        final NationalAllocationRule runRule = allocationRule(allocationRules, draws.date());
+        if (allocation == null) allocation = runRule;
+        require(allocation.equals(runRule), "Precision runs selected different allocation rules");
+        final NationalSeats.SeatDraws allocated = NationalSeats.allocateDraws(draws, allocation);
+        repeats.add(allocated);
+        final SeatOutcomes.Headline headline = SeatOutcomes.headline(allocated);
+        final double error = monteCarloStandardError(headline, allocated.count());
+        worstMonteCarlo = Math.max(worstMonteCarlo, error);
+        final ObjectNode run = runs.addObject();
+        run.put("seed", seed);
+        run.put("daySeed", allocated.daySeed());
+        run.put("draws", allocated.count());
+        run.put("maxMonteCarloStandardError", error);
+        run.set("thresholdProbabilities", JSON.valueToTree(headline.thresholdProbabilities()));
+        run.set("majorityProbabilities", JSON.valueToTree(headline.majorityProbabilities()));
+      }
+      final NationalSeats.SeatDraws drawn = repeats.getFirst();
+      final NationalSeats.Summary seatSummary =
+          NationalSeats.summarize(drawn, uncertainty.intervalLevels().getLast());
+      final Coalitions.Result coalitionSummary =
+          Coalitions.summarize(drawn, uncertainty.intervalLevels().getLast());
+      require(seatSummary.totalPointSeats() == allocation.seats(), "Point allocation lost a seat");
+      require(
+          coalitionSummary.daySeed() == seatSummary.daySeed()
+              && coalitionSummary.draws() == seatSummary.draws(),
+          "Coalitions did not use the seat draw stream");
+      for (Coalitions.Comparison comparison : coalitionSummary.comparison())
+        require(
+            Math.abs(comparison.leftLeads() + comparison.rightLeads() + comparison.tied() - 1)
+                <= 1e-12,
+            "A coalition comparison is not jointly coherent");
+      published.put("status", "complete");
+      published.put("verifiedSeatTotal", seatSummary.totalPointSeats());
+      published.put("verifiedDraws", drawn.count());
+      published.set("allocationRule", JSON.valueToTree(allocation));
+      published.set("seats", JSON.valueToTree(seatSummary));
+      published.set("coalitions", JSON.valueToTree(coalitionSummary));
+      final List<SeatOutcomes.Precision> precision = SeatOutcomes.precision(repeats);
+      published.set("precision", JSON.valueToTree(precision));
+      worstThresholdSpread =
+          Math.max(worstThresholdSpread, probabilitySpread(precision, "threshold:"));
+      worstMajoritySpread =
+          Math.max(worstMajoritySpread, probabilitySpread(precision, "majority:"));
+      sensitivity(
+          published.putArray("sensitivity"),
+          period,
+          polls,
+          elections,
+          support.parameters(),
+          coverage.rules(),
+          uncertainty,
+          allocation,
+          drawn,
+          disclosure);
+      measured = true;
+    }
+    outcomeCheck(checks, reasons, "seat_totals", measured, 0, 0, "every draw totals 349 seats");
+    outcomeCheck(
+        checks,
+        reasons,
+        "joint_probability_coherence",
+        measured,
+        0,
+        0,
+        "threshold, coalition and pairwise outcomes use the same draws");
+    outcomeCheck(
+        checks,
+        reasons,
+        "probability_monte_carlo_standard_error",
+        measured,
+        worstMonteCarlo,
+        monteCarloLimit,
+        "worst probability Monte Carlo standard error");
+    outcomeCheck(
+        checks,
+        reasons,
+        "threshold_probability_precision",
+        measured,
+        worstThresholdSpread,
+        thresholdLimit,
+        "largest registered-seed threshold probability spread");
+    outcomeCheck(
+        checks,
+        reasons,
+        "majority_probability_precision",
+        measured,
+        worstMajoritySpread,
+        majorityLimit,
+        "largest registered-seed majority probability spread");
+  }
+
+  private static void sensitivity(
+      ArrayNode evidence,
+      Roster.CoveragePeriod period,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      DailyStateSpace.Parameters parameters,
+      CoverageValidation.Rules coverage,
+      JointUncertainty.Rules uncertainty,
+      NationalAllocationRule allocation,
+      NationalSeats.SeatDraws published,
+      double disclosureLimit) {
+    final SeatOutcomes.Headline headline = SeatOutcomes.headline(published);
+    final DevelopmentDiagnostics.CenteringShift centering =
+        DevelopmentDiagnostics.centering(period, polls, elections, parameters, coverage);
+    final SeatOutcomes.Sensitivity centeringProbability =
+        SeatOutcomes.sensitivity(
+            "centering",
+            SeatOutcomes.POLL_COUNT,
+            headline,
+            SeatOutcomes.headline(
+                SeatOutcomes.drawsOn(
+                    period,
+                    polls,
+                    elections,
+                    parameters,
+                    coverage,
+                    uncertainty,
+                    DailyStateSpace.Centering.POLL_COUNT,
+                    allocation,
+                    centering.headlineDate())));
+    sensitivity(
+        evidence,
+        "centering",
+        SeatOutcomes.POLL_COUNT,
+        centering.headlineDate(),
+        centering.comparedDays(),
+        centering.headlineShiftPoints(),
+        centering.maxHeadlineShiftPoints(),
+        centering.maxDailyShiftPoints(),
+        null,
+        centeringProbability,
+        parameters,
+        uncertainty,
+        allocation,
+        disclosureLimit);
+
+    for (DevelopmentDiagnostics.LeftOut left :
+        DevelopmentDiagnostics.leaveOneInstituteOut(
+            period, polls, elections, parameters, coverage)) {
+      final List<PollCsv.Poll> kept =
+          polls.stream().filter(poll -> !left.institute().equals(poll.institute())).toList();
+      final SeatOutcomes.Headline base =
+          left.comparedOn().equals(published.date())
+              ? headline
+              : SeatOutcomes.headline(
+                  SeatOutcomes.drawsOn(
+                      period,
+                      polls,
+                      elections,
+                      parameters,
+                      coverage,
+                      uncertainty,
+                      DailyStateSpace.Centering.EQUAL_INSTITUTE,
+                      allocation,
+                      left.comparedOn()));
+      final SeatOutcomes.Sensitivity probability =
+          SeatOutcomes.sensitivity(
+              "leave_one_institute_out",
+              "without_" + left.institute(),
+              base,
+              SeatOutcomes.headline(
+                  SeatOutcomes.drawsOn(
+                      period,
+                      kept,
+                      elections,
+                      parameters,
+                      coverage,
+                      uncertainty,
+                      DailyStateSpace.Centering.EQUAL_INSTITUTE,
+                      allocation,
+                      left.comparedOn())));
+      sensitivity(
+          evidence,
+          "leave_one_institute_out",
+          "without_" + left.institute(),
+          left.comparedOn(),
+          left.comparedDays(),
+          left.shiftPoints(),
+          left.maxShiftPoints(),
+          left.maxDailyShiftPoints(),
+          left.institute(),
+          probability,
+          parameters,
+          uncertainty,
+          allocation,
+          disclosureLimit);
+    }
+  }
+
+  private static void sensitivity(
+      ArrayNode evidence,
+      String kind,
+      String label,
+      LocalDate comparedOn,
+      int comparedDays,
+      Map<String, Double> componentShiftPoints,
+      double maxComponentShiftPoints,
+      double maxDailyComponentShiftPoints,
+      String droppedInstitute,
+      SeatOutcomes.Sensitivity probability,
+      DailyStateSpace.Parameters parameters,
+      JointUncertainty.Rules uncertainty,
+      NationalAllocationRule allocation,
+      double disclosureLimit) {
+    final ObjectNode entry = evidence.addObject();
+    entry.put("kind", kind);
+    entry.put("label", label);
+    entry.put("comparedOn", comparedOn.toString());
+    entry.put("comparedDays", comparedDays);
+    entry.set("componentShiftPoints", JSON.valueToTree(componentShiftPoints));
+    entry.put("maxComponentShiftPoints", maxComponentShiftPoints);
+    entry.put("maxDailyComponentShiftPoints", maxDailyComponentShiftPoints);
+    final ObjectNode probabilities = entry.putObject("probabilities");
+    probabilities.put("comparedOn", comparedOn.toString());
+    probabilities.set(
+        "thresholdDifferencePoints", JSON.valueToTree(probability.thresholdDifferencePoints()));
+    probabilities.set(
+        "majorityDifferencePoints", JSON.valueToTree(probability.majorityDifferencePoints()));
+    probabilities.put("maxAbsoluteDifferencePoints", probability.maxAbsoluteDifferencePoints());
+    probabilities.put("largestMovement", probability.largestMovement());
+    final ObjectNode provenance = entry.putObject("provenance");
+    provenance.put("baselineCentering", SeatOutcomes.PUBLISHED);
+    provenance.put("alternative", label);
+    if (droppedInstitute != null) provenance.put("droppedInstitute", droppedInstitute);
+    provenance.set("parameters", JSON.valueToTree(parameters));
+    provenance.put("seed", uncertainty.seed());
+    provenance.put("draws", uncertainty.draws());
+    provenance.put("allocationElectionYear", allocation.electionYear());
+    final double movement =
+        Math.max(maxDailyComponentShiftPoints, probability.maxAbsoluteDifferencePoints());
+    final boolean disclosed = movement > disclosureLimit;
+    entry.put("needsDisclosure", disclosed);
+    if (disclosed)
+      entry.put(
+          "disclosure",
+          label + " moves a component or headline probability by " + movement + " points");
+  }
+
+  private static double monteCarloStandardError(SeatOutcomes.Headline headline, int draws) {
+    double worst = 0;
+    for (double probability : headline.thresholdProbabilities().values())
+      worst = Math.max(worst, Math.sqrt(probability * (1 - probability) / draws));
+    for (double probability : headline.majorityProbabilities().values())
+      worst = Math.max(worst, Math.sqrt(probability * (1 - probability) / draws));
+    return worst;
+  }
+
+  private static double probabilitySpread(List<SeatOutcomes.Precision> precision, String prefix) {
+    return precision.stream()
+        .filter(entry -> entry.quantity().startsWith(prefix))
+        .mapToDouble(SeatOutcomes.Precision::spread)
+        .max()
+        .orElse(0);
+  }
+
+  private static void outcomeCheck(
+      ArrayNode checks,
+      ArrayNode reasons,
+      String name,
+      boolean measured,
+      double observed,
+      double limit,
+      String description) {
+    if (!measured) {
+      check(checks, name, UNEVALUATED, description + " was not measured");
+      reasons.add(description + " was not measured, so it is not a passed check");
+      return;
+    }
+    final boolean passed = observed <= limit;
+    check(
+        checks,
+        name,
+        passed ? PASSED : FAILED,
+        description + ": " + observed + " against a " + limit + " limit");
+    if (!passed) reasons.add(description + " of " + observed + " exceeds the registered " + limit);
+  }
+
+  private static List<NationalAllocationRule> allocationRules(JsonNode outcomes) {
+    final List<NationalAllocationRule> rules = new ArrayList<>();
+    for (JsonNode rule : required(outcomes, "allocationRules")) {
+      rules.add(
+          new NationalAllocationRule(
+              required(rule, "electionYear").intValue(),
+              required(rule, "seats").intValue(),
+              required(rule, "thresholdPercent").doubleValue(),
+              required(rule, "thresholdInclusive").booleanValue(),
+              required(rule, "firstDivisor").doubleValue(),
+              required(rule, "subsequentDivisorFormula").asString(),
+              strings(rule, "tieOrder"),
+              required(rule, "otherReceivesSeats").booleanValue(),
+              required(rule, "constituencyExceptionsIncluded").booleanValue(),
+              required(rule, "officialTieRule").asString(),
+              required(rule, "sourceUrl").asString()));
+    }
+    require(!rules.isEmpty(), "No allocation rules registered");
+    require(
+        rules.stream().map(NationalAllocationRule::electionYear).distinct().count() == rules.size(),
+        "Allocation rule years must be unique");
+    return rules.stream()
+        .sorted(java.util.Comparator.comparingInt(NationalAllocationRule::electionYear))
+        .toList();
+  }
+
+  private static NationalAllocationRule allocationRule(
+      List<NationalAllocationRule> rules, LocalDate date) {
+    return rules.stream()
+        .filter(rule -> rule.electionYear() >= date.getYear())
+        .findFirst()
+        .orElse(rules.getLast());
   }
 
   /** A drawn remainder day must stay a finite share of a composition. */
@@ -1071,6 +1473,10 @@ public final class DevelopmentValidation {
             "src/main/java/se/swedishpolls/estimation/EstimateHistory.java",
             "src/main/java/se/swedishpolls/estimation/JointUncertainty.java",
             "src/main/java/se/swedishpolls/estimation/ComparableRemainder.java",
+            "src/main/java/se/swedishpolls/estimation/NationalSeats.java",
+            "src/main/java/se/swedishpolls/estimation/SeatOutcomes.java",
+            "src/main/java/se/swedishpolls/estimation/Coalitions.java",
+            "src/main/java/se/swedishpolls/model/NationalAllocationRule.java",
             "docs/validation/protocol.json",
             "docs/validation/diagnostics.json",
             "docs/validation/coverage.json",
@@ -1137,6 +1543,47 @@ public final class DevelopmentValidation {
         doubles(required(plan, "grid"), "covarianceMultipliers")
             .equals(List.of(0.5, 0.75, 1.0, 1.5, 2.0, 3.0)),
         "Approved covariance grid mismatch");
+    final JsonNode outcomes = required(plan, "outcomes");
+    require(
+        Double.compare(required(outcomes, "maxMonteCarloStandardError").doubleValue(), 0.005) == 0
+            && Double.compare(
+                    required(outcomes, "maxThresholdProbabilitySpread").doubleValue(), 0.03)
+                == 0
+            && Double.compare(
+                    required(outcomes, "maxMajorityProbabilitySpread").doubleValue(), 0.03)
+                == 0
+            && Double.compare(
+                    required(outcomes, "sensitivityDisclosurePoints").doubleValue(),
+                    SeatOutcomes.DISCLOSED_SHIFT_POINTS)
+                == 0,
+        "Approved outcome limits mismatch");
+    final List<NationalAllocationRule> rules = allocationRules(outcomes);
+    require(
+        rules.stream()
+                .map(NationalAllocationRule::electionYear)
+                .toList()
+                .equals(List.of(2010, 2014, 2018, 2022, 2026))
+            && rules.stream()
+                .map(NationalAllocationRule::firstDivisor)
+                .toList()
+                .equals(List.of(1.4, 1.4, 1.2, 1.2, 1.2))
+            && rules.stream().allMatch(rule -> rule.seats() == 349)
+            && rules.stream().allMatch(rule -> rule.thresholdPercent() == 4)
+            && rules.stream().allMatch(NationalAllocationRule::thresholdInclusive)
+            && rules.stream()
+                .allMatch(
+                    rule ->
+                        rule.tieOrder()
+                            .equals(List.of("S", "M", "SD", "V", "C", "KD", "L", "MP", "FI")))
+            && rules.stream()
+                .allMatch(
+                    rule ->
+                        rule.subsequentDivisorFormula().equals("2 * seats_already_allocated + 1")
+                            && rule.officialTieRule().equals("lottery")
+                            && rule.sourceUrl()
+                                .equals(
+                                    "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf")),
+        "Approved allocation rules mismatch");
   }
 
   private static void verifyApprovedManifest(JsonNode plan, ArrayNode manifests) {
