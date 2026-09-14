@@ -187,9 +187,10 @@ class DevelopmentValidationTest {
         grid.get("walkVariances").size()
             * grid.get("houseScales").size()
             * grid.get("covarianceMultipliers").size());
-    assertEquals(4, registration.get("plan").get("commands").size());
+    assertEquals(5, registration.get("plan").get("commands").size());
     assertTrue(registration.get("plan").get("commands").get(2).asString().contains("'tune "));
     assertTrue(registration.get("plan").get("commands").get(3).asString().contains("'estimate "));
+    assertTrue(registration.get("plan").get("commands").get(4).asString().contains("'diagnose "));
     // The estimator's parameter selection is named by the registration, never by the code alone.
     assertEquals(
         "midpoint_candidate",
@@ -307,6 +308,338 @@ class DevelopmentValidationTest {
   }
 
   @Test
+  void retainsPredictiveRowsAndBlockedDiagnosticsThroughTheOperatorEntryPoint() throws Exception {
+    final Path source = temp.resolve("diagnostic-polls.csv");
+    Files.write(
+        source,
+        PollCsvFixtures.csv(
+            row("2014-01-10", "2014-01-01", "2014-01-09", "NA")
+                + row("2014-01-16", "2014-01-10", "2014-01-14", "NA")
+                + row("2014-04-12", "2014-04-09", "2014-04-11", "1")
+                + row("2014-05-10", "2014-05-01", "2014-05-05", "1")
+                + row("2014-05-16", "2014-04-20", "2014-04-30", "1")
+                + row("2014-06-01", "2014-05-20", "2014-05-30", "1")));
+    final Path identity = temp.resolve("implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final Path evidence = temp.resolve("diagnostic-evidence");
+    final Path plan = temp.resolve("plan.json");
+    Files.writeString(plan, plan(source, identity, evidence), StandardCharsets.UTF_8);
+    final Path registration = temp.resolve("registration.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+    final Path result = evidence.resolve("diagnostics.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "diagnose", registration.toString(), source.toString(), result.toString()));
+    final JsonNode report = JSON.readTree(Files.readAllBytes(result));
+    assertEquals("complete", report.get("diagnosticEvidence").asString());
+    assertFalse(report.get("gatePassed").booleanValue());
+    assertTrue(report.get("reasons").toString().contains("grid boundary"));
+    final JsonNode diagnostic = fold(report, "fi", "2014-05-15");
+    assertEquals(2, diagnostic.get("polls").size());
+    assertEquals(2, diagnostic.get("scoredPolls").intValue());
+    final JsonNode poll = diagnostic.get("polls").get(0);
+    assertEquals(5, poll.get("rowNumber").intValue());
+    assertEquals(11, poll.get("fieldworkDays").intValue());
+    assertEquals(1000, poll.get("sampleSize").intValue());
+    assertEquals(3, poll.get("methods").size());
+    assertEquals(10, poll.get("observedComposition").size());
+    for (JsonNode method : poll.get("methods")) {
+      assertTrue(Double.isFinite(method.get("jointLogScore").doubleValue()));
+      assertEquals(9, method.get("whitenedIlrResiduals").size());
+      assertEquals(10, method.get("components").size());
+      assertEquals(4000, method.get("draws").intValue());
+      assertTrue(method.get("stream").asString().contains("fi|2014-05-15|"));
+      final JsonNode artifact = method.get("drawArtifact");
+      assertEquals("complete", artifact.get("status").asString());
+      final Path draws = evidence.resolve(artifact.get("path").asString());
+      assertEquals(4000 * 10 * Double.BYTES, Files.size(draws));
+      assertEquals(DevelopmentGates.sha256(draws), artifact.get("sha256").asString());
+      try (final java.io.DataInputStream values =
+          new java.io.DataInputStream(
+              new java.io.BufferedInputStream(Files.newInputStream(draws)))) {
+        for (int draw = 0; draw < 4000; draw++) {
+          double sum = 0;
+          for (int index = 0; index < 10; index++) {
+            final double value = values.readDouble();
+            assertTrue(value >= 0 && value <= 100);
+            sum += value;
+          }
+          assertEquals(100, sum, 1e-9);
+        }
+        assertEquals(-1, values.read());
+      }
+      final JsonNode component = method.get("components").get(0);
+      assertTrue(component.get("lower95").doubleValue() <= component.get("lower50").doubleValue());
+      assertTrue(component.get("upper95").doubleValue() >= component.get("upper50").doubleValue());
+    }
+    assertEquals(2, report.get("diagnostics").size());
+    assertEquals(
+        "unevaluated", report.get("diagnostics").get(0).get("paired").get("status").asString());
+    final ObjectNode archive = JSON.createObjectNode();
+    final tools.jackson.databind.node.ArrayNode oldFolds = archive.putArray("folds");
+    final JsonNode frozen = JSON.readTree(Files.readAllBytes(registration));
+    for (JsonNode manifest : frozen.get("folds")) {
+      if (!manifest.get("active").booleanValue()) continue;
+      final ObjectNode old = oldFolds.addObject();
+      old.set("periodId", manifest.get("periodId"));
+      old.set("cutoff", manifest.get("cutoff"));
+      old.set("trainingRowsSha256", manifest.get("trainingRowsSha256"));
+      old.set("scoredRowsSha256", manifest.get("scoringRowsSha256"));
+      old.put("scoredPolls", manifest.get("scoringRows").size());
+      old.putObject("meanLogScore").put("midpoint", 1).put("recency", 0).put("ilr_window", 2);
+      old.putObject("candidateParameters").put("walkVariance", 0.001);
+      old.putObject("referenceParameters").put("walkVariance", 0.001);
+    }
+    final tools.jackson.databind.node.ArrayNode oldMisfit = archive.putArray("misfit");
+    for (JsonNode summary : report.get("diagnostics"))
+      for (JsonNode misfit : summary.get("misfit")) {
+        if (!misfit.get("candidate").asString().equals("midpoint")) continue;
+        final ObjectNode old = (ObjectNode) misfit.deepCopy();
+        old.put("coverage95", 0.95);
+        oldMisfit.add(old);
+      }
+    final Path archiveFile = temp.resolve("old-diagnostics.json");
+    Files.writeString(archiveFile, JSON.writeValueAsString(archive), StandardCharsets.UTF_8);
+    final ObjectNode comparisonPlan = (ObjectNode) JSON.readTree(Files.readAllBytes(plan));
+    comparisonPlan.put("archivedDiagnostics", archiveFile.toString());
+    ((tools.jackson.databind.node.ArrayNode) comparisonPlan.get("identities"))
+        .addObject()
+        .put("path", archiveFile.toString())
+        .put("sha256", DevelopmentGates.sha256(archiveFile));
+    comparisonPlan.put("outputLocation", temp.resolve("comparison-evidence").toString());
+    final Path comparisonPlanFile = temp.resolve("comparison-plan.json");
+    Files.writeString(
+        comparisonPlanFile, JSON.writeValueAsString(comparisonPlan), StandardCharsets.UTF_8);
+    final Path comparisonRegistration = temp.resolve("comparison-registration.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "prepare",
+            comparisonPlanFile.toString(),
+            source.toString(),
+            comparisonRegistration.toString()));
+    final Path comparisonResult = temp.resolve("comparison-evidence/diagnostics.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "diagnose",
+            comparisonRegistration.toString(),
+            source.toString(),
+            comparisonResult.toString()));
+    final JsonNode comparisonReport = JSON.readTree(Files.readAllBytes(comparisonResult));
+    assertEquals(report.get("folds"), comparisonReport.get("folds"));
+    final JsonNode comparison = comparisonReport.get("historicalComparison");
+    assertEquals("compared", comparison.get("folds").get(0).get("status").asString());
+    assertEquals(
+        1.0, comparison.get("folds").get(0).get("oldMeanLogScore").get("midpoint").doubleValue());
+    assertEquals(
+        0.95,
+        comparison.get("midpointSummaries").get(0).get("old").get("coverage95").doubleValue());
+    assertTrue(comparison.get("referenceSubgroups").asString().contains("unavailable"));
+    final byte[] retained = Files.readAllBytes(result);
+    assertEquals(
+        DevelopmentValidation.REJECTED,
+        DevelopmentValidation.run(
+            "diagnose", registration.toString(), source.toString(), result.toString()));
+    assertArrayEquals(retained, Files.readAllBytes(result));
+  }
+
+  @Test
+  void pairedScoresWeightFoldsEquallyAndSubgroupFailureSurvivesPooledCoverage() throws Exception {
+    final Path source = temp.resolve("paired-polls.csv");
+    final java.time.LocalDate start = java.time.LocalDate.of(2014, 1, 1);
+    final java.util.Random random = new java.util.Random(156);
+    final StringBuilder rows = new StringBuilder();
+    final String[] institutes = {"Ipsos", "Novus", "Sifo", "Demoskop", "SCB"};
+    for (int day = 0; day < 20; day++)
+      rows.append(syntheticRow(start.plusDays(day), institutes[day % 5], random, false));
+    for (int fold = 0; fold < 8; fold++) {
+      final int count = fold == 0 ? 30 : 20;
+      for (int poll = 0; poll < count; poll++)
+        rows.append(
+            syntheticRow(
+                start.plusDays(21 + 40 * fold + poll),
+                institutes[poll % 5],
+                random,
+                poll % 5 == 0));
+    }
+    Files.write(source, PollCsvFixtures.csv(rows.toString()));
+    final Path identity = temp.resolve("paired-implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final Path evidence = temp.resolve("paired-evidence");
+    final ObjectNode declaration = (ObjectNode) JSON.readTree(tiePlan(source, identity, evidence));
+    final ObjectNode period = (ObjectNode) declaration.get("periods").get(0);
+    period.put("activeFrom", start.plusDays(20).toString());
+    period.put("activeThrough", start.plusDays(300).toString());
+    final tools.jackson.databind.node.ArrayNode folds = declaration.putArray("folds");
+    for (int fold = 0; fold < 8; fold++) {
+      final java.time.LocalDate cutoff = start.plusDays(20 + fold * 40);
+      folds
+          .addObject()
+          .put("cutoff", cutoff.toString())
+          .put("scoreThrough", cutoff.plusDays(35).toString());
+    }
+    final ObjectNode grid = (ObjectNode) declaration.get("grid");
+    grid.putArray("walkVariances").add(0.000003);
+    grid.putArray("houseScales").add(0.01);
+    grid.putArray("covarianceMultipliers").add(1.0);
+    final Path plan = temp.resolve("paired-plan.json");
+    Files.writeString(plan, JSON.writeValueAsString(declaration), StandardCharsets.UTF_8);
+    final Path registration = temp.resolve("paired-registration.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+    final Path result = evidence.resolve("diagnostics.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "diagnose", registration.toString(), source.toString(), result.toString()));
+    final JsonNode report = JSON.readTree(Files.readAllBytes(result));
+    final JsonNode summary = report.get("diagnostics").get(0);
+    final JsonNode paired = summary.get("paired");
+    assertEquals(8, paired.get("scoredFolds").intValue());
+    assertEquals(3, paired.get("standardErrorByLag").size());
+    double equalFoldMean = 0;
+    double pollWeighted = 0;
+    int totalPolls = 0;
+    for (JsonNode fold : paired.get("folds")) {
+      final double difference =
+          fold.get("midpoint").doubleValue() - fold.get("recency").doubleValue();
+      equalFoldMean += difference / 8;
+      pollWeighted += difference * fold.get("polls").intValue();
+      totalPolls += fold.get("polls").intValue();
+    }
+    assertEquals(170, totalPolls);
+    assertEquals(
+        170, report.get("folds").valueStream().mapToInt(fold -> fold.get("polls").size()).sum());
+    for (JsonNode fold : report.get("folds")) {
+      assertEquals(fold.get("scoringRows").size(), fold.get("polls").size());
+      for (String method : java.util.List.of("midpoint", "ilr_window", "recency")) {
+        final double rowMean =
+            fold.get("polls")
+                .valueStream()
+                .mapToDouble(
+                    poll ->
+                        poll.get("methods")
+                            .valueStream()
+                            .filter(
+                                prediction -> prediction.get("method").asString().equals(method))
+                            .findFirst()
+                            .orElseThrow()
+                            .get("jointLogScore")
+                            .doubleValue())
+                .average()
+                .orElseThrow();
+        assertEquals(rowMean, fold.get("meanLogScore").get(method).doubleValue(), 1e-12);
+      }
+    }
+    assertEquals(equalFoldMean, paired.get("baselineDifference").doubleValue(), 1e-12);
+    assertNotEquals(
+        pollWeighted / totalPolls, paired.get("baselineDifference").doubleValue(), 1e-6);
+    final JsonNode pooled =
+        summary
+            .get("misfit")
+            .valueStream()
+            .filter(
+                row ->
+                    row.get("scope").asString().equals("all")
+                        && row.get("candidate").asString().equals("midpoint"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(1530, pooled.get("cases").intValue());
+    assertTrue(
+        pooled.get("coverage95").doubleValue() >= 0.90
+            && pooled.get("coverage95").doubleValue() <= 0.98,
+        pooled.toPrettyString());
+    assertTrue(
+        pooled.get("coverage50").doubleValue() >= 0.40
+            && pooled.get("coverage50").doubleValue() <= 0.60,
+        pooled.toPrettyString());
+    assertTrue(
+        summary
+            .get("misfit")
+            .valueStream()
+            .anyMatch(
+                row ->
+                    row.get("required").booleanValue()
+                        && !row.get("scope").asString().equals("all")
+                        && row.get("status").asString().equals("fail")));
+    for (JsonNode row : summary.get("misfit")) {
+      if (row.get("scope").asString().contains("party")) assertFalse(row.has("meanLogScore"));
+      if (row.get("cases").intValue() < 100 && !row.get("scope").asString().equals("all"))
+        assertEquals("unevaluated", row.get("status").asString());
+    }
+  }
+
+  private static String syntheticRow(
+      java.time.LocalDate date, String institute, java.util.Random random, boolean biased) {
+    final double[] shares = {20, 5, 8, 5, 30, 8, 5, 12, 7};
+    final double[] noise = new double[shares.length];
+    double sum = 0;
+    for (int i = 0; i < shares.length; i++) {
+      noise[i] = random.nextGaussian() * Math.sqrt(shares[i] / 100 / 1000) * 100;
+      sum += noise[i];
+    }
+    final StringBuilder row = new StringBuilder("2014-01," + institute);
+    for (int i = 0; i < shares.length - 1; i++) {
+      final double bias = biased ? (i == 0 ? 2 : i == 4 ? -2 : 0) : 0;
+      row.append(',')
+          .append(
+              String.format(
+                  java.util.Locale.ROOT,
+                  "%.5f",
+                  shares[i] + noise[i] - shares[i] / 100 * sum + bias));
+    }
+    return row + ",NA,10,1000," + date + "," + institute + "," + date + "," + date + ",FALSE\n";
+  }
+
+  @Test
+  void unavailableFitsLeaveDiagnosticsIncompleteAndRetainEveryFailedSearch() throws Exception {
+    final Path source = temp.resolve("unavailable-polls.csv");
+    Files.write(
+        source,
+        PollCsvFixtures.csv(
+            row("2014-01-01", "2014-01-01", "2014-01-01", "NA")
+                + row("2014-01-02", "2014-01-02", "2014-01-02", "NA")
+                + row("2014-01-03", "2014-01-03", "2014-01-03", "NA")));
+    final Path identity = temp.resolve("implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final Path evidence = temp.resolve("unavailable-evidence");
+    final Path plan = temp.resolve("unavailable-plan.json");
+    Files.writeString(
+        plan,
+        tiePlan(source, identity, evidence)
+            .replace("[0.000003, 0.00001]", "[1.7976931348623157E308]"),
+        StandardCharsets.UTF_8);
+    final Path registration = temp.resolve("unavailable-registration.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+    final Path result = evidence.resolve("diagnostics.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "diagnose", registration.toString(), source.toString(), result.toString()));
+    final JsonNode report = JSON.readTree(Files.readAllBytes(result));
+    assertEquals("incomplete", report.get("diagnosticEvidence").asString());
+    final JsonNode fold = report.get("folds").get(0);
+    assertEquals("unevaluated", fold.get("diagnosticStatus").asString());
+    assertFalse(fold.has("polls"));
+    for (JsonNode search : fold.get("methods")) {
+      assertEquals("failed", search.get("attempts").get(0).get("status").asString());
+      assertFalse(search.get("numericallyAvailable").booleanValue());
+    }
+    assertTrue(report.get("reasons").toString().contains("diagnostics unevaluated"));
+    assertFalse(report.get("releaseAuthorized").booleanValue());
+  }
+
+  @Test
   void aFailedGridPointIsRetainedWithoutErasingTheAvailableSelection() throws Exception {
     final Path source = temp.resolve("failing-polls.csv");
     Files.write(
@@ -337,7 +670,7 @@ class DevelopmentValidationTest {
     assertEquals(
         DevelopmentValidation.BLOCKED,
         DevelopmentValidation.run(
-            "tune", registration.toString(), source.toString(), result.toString()));
+            "diagnose", registration.toString(), source.toString(), result.toString()));
 
     final JsonNode method =
         fold(JSON.readTree(Files.readAllBytes(result)), "eight", "2014-05-15")
