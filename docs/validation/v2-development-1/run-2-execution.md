@@ -41,3 +41,12 @@ This container invocation replaces the Maven launcher for the two reproduction s
 only. Both invoke the same registered Java entry point and arguments. Transfer the
 arm64 manifest and draw file back before the registered comparison command. Retain
 all original blocking reasons, new failures and unavailable checks in the final report.
+
+The local Docker cache already associates the index digest with arm64 and refuses to
+replace that association. On amd64, resolve the same registered index to its native
+child manifest and use
+`eclipse-temurin@sha256:8c6736fa623090b057a5bbd36d42f90c9de4c7d2d4b6c285921a4f85ce65a445`
+in the command above. The retained `image-index.json` proves its membership in the
+registered index. Its arm64 child is
+`sha256:6c3e50fade4ae5257eed863323b1efe19162a913446cd3dd166747eac8f76298`.
+This resolution was recorded before any real-data fit.
