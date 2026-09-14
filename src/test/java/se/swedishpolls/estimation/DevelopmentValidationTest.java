@@ -15,9 +15,9 @@ import tools.jackson.databind.node.ObjectNode;
 class DevelopmentValidationTest {
   private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final Path REGISTRATION =
-      Path.of("docs", "validation", "v2-development-1", "registration-run-2.json");
+      Path.of("docs", "validation", "v2-development-1", "registration.json");
   private static final Path PREFLIGHT =
-      Path.of("docs", "validation", "v2-development-1", "preflight-run-2.json");
+      Path.of("docs", "validation", "v2-development-1", "preflight.json");
 
   @TempDir Path temp;
 
