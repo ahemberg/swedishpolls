@@ -187,10 +187,13 @@ class DevelopmentValidationTest {
         grid.get("walkVariances").size()
             * grid.get("houseScales").size()
             * grid.get("covarianceMultipliers").size());
-    assertEquals(5, registration.get("plan").get("commands").size());
+    assertEquals(9, registration.get("plan").get("commands").size());
     assertTrue(registration.get("plan").get("commands").get(2).asString().contains("'tune "));
     assertTrue(registration.get("plan").get("commands").get(3).asString().contains("'estimate "));
     assertTrue(registration.get("plan").get("commands").get(4).asString().contains("'diagnose "));
+    assertTrue(registration.get("plan").get("commands").get(5).asString().contains("'measure "));
+    assertTrue(registration.get("plan").get("commands").get(6).asString().contains("'reproduce "));
+    assertTrue(registration.get("plan").get("commands").get(8).asString().contains("'compare "));
     // The estimator's parameter selection is named by the registration, never by the code alone.
     assertEquals(
         "midpoint_candidate",
@@ -213,6 +216,20 @@ class DevelopmentValidationTest {
     assertEquals(5, outcomes.get("allocationRules").size());
     assertEquals(1.4, outcomes.get("allocationRules").get(0).get("firstDivisor").doubleValue());
     assertEquals(1.2, outcomes.get("allocationRules").get(4).get("firstDivisor").doubleValue());
+    final JsonNode measurements = registration.get("plan").get("measurements");
+    assertEquals(0.44, measurements.get("snapshot").get("maxShiftPoints").doubleValue());
+    assertEquals(2e-14, measurements.get("reproduction").get("maxDifferencePoints").doubleValue());
+    assertEquals(
+        java.util.List.of("linux/amd64", "linux/arm64"),
+        measurements
+            .get("reproduction")
+            .get("platforms")
+            .valueStream()
+            .map(JsonNode::asString)
+            .toList());
+    assertFalse(measurements.get("resources").get("runtimeTargetBlocking").booleanValue());
+    assertEquals(
+        1_800_000, measurements.get("resources").get("hostPipelineRequirementMillis").longValue());
 
     final Path result = temp.resolve("registered-preflight.json");
     assertEquals(
