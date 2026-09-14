@@ -252,7 +252,10 @@ class DevelopmentValidationTest {
     // refuses before the output location does. That the run cannot be repeated is the invariant.
     assertFalse(JSON.readTree(Files.readAllBytes(result)).get("reasons").isEmpty());
 
-    final JsonNode wrongToolchain = registration.deepCopy();
+    final JsonNode wrongToolchain =
+        JSON.readTree(
+            Files.readAllBytes(
+                Path.of("docs", "validation", "v2-development-1", "registration-run-2.json")));
     ((ObjectNode) wrongToolchain.get("plan").get("environment")).put("npmVersion", "wrong");
     final Path wrongToolchainRegistration = temp.resolve("wrong-toolchain.json");
     Files.writeString(
