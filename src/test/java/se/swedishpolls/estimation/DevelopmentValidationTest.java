@@ -239,6 +239,17 @@ class DevelopmentValidationTest {
         DevelopmentGates.sha256(REGISTRATION), preflight.get("registrationSha256").asString());
     assertEquals(75, preflight.get("activeFolds").intValue());
 
+    final Path result = temp.resolve("registered-preflight.json");
+    assertEquals(
+        DevelopmentValidation.REJECTED,
+        DevelopmentValidation.run(
+            "preflight",
+            REGISTRATION.toString(),
+            Path.of("src", "test", "resources", "polls", "audit.csv").toString(),
+            result.toString()));
+    assertTrue(
+        JSON.readTree(Files.readAllBytes(result)).get("reasons").toString().contains("exists"));
+
     final JsonNode wrongToolchain = registration.deepCopy();
     ((ObjectNode) wrongToolchain.get("plan").get("environment")).put("npmVersion", "wrong");
     final Path wrongToolchainRegistration = temp.resolve("wrong-toolchain.json");

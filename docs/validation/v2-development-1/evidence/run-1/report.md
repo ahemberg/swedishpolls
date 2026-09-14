@@ -34,7 +34,7 @@ locations.
 
 | Stage | Exit | Maven time | Result |
 | --- | ---: | ---: | --- |
-| Model-validation profile | 0 | 22:59 | 244 unit tests and 142 expanded model-validation tests passed, with one skip |
+| Model-validation profile | 0 | 20:39 | 244 unit tests and 142 expanded model-validation tests passed, with one skip |
 | Preflight | 0 | 12.7 s | Registration, source, implementation, environment, inherited evidence, and output location accepted |
 | Tune | 1 | 59:24 | Complete fit evidence, blocked by two boundary selections |
 | Estimate | 1 | 19:05 | All 9 executed checks passed; upstream tuning block retained |
@@ -44,8 +44,11 @@ locations.
 | Reproduce arm64 | 1 | under 1 s | Pinned image failed with `exec format error`; no arm64 artifact was written |
 | Compare | 1 | 12.598 s | Cross-architecture check unevaluated because arm64 evidence is missing |
 
-The stage logs are in `logs/`. The generated JSON files retain their status,
-failure reasons, summaries, numerical evidence, and environment identities.
+The available stage logs and the final model-validation profile log are in `logs/`.
+The original preflight console log was not captured, so that log is missing
+evidence. `preflight.json` retains its ready status, hashes, and fold counts. The
+generated JSON files retain their status, failure reasons, summaries, numerical
+evidence, and environment identities.
 
 ## Search and measurement results
 
@@ -77,9 +80,11 @@ amd64 to arm64 comparison is unevaluated.
 ## Original reason aggregate
 
 The immutable `docs/validation/remediation-inventory.json` supplies each original
-release-reason identity, evidence group, kind, and propagation relationships. This
-table joins every identity to the new run by its registered evidence group. Ranges
-are inclusive. Inactive and unevaluated entries do not count as passes.
+release-reason identity, evidence group, kind, and propagation relationships.
+`development-aggregate.json` copies all 50 identities one by one and records each
+revised disposition, evidence pointer, detail, and propagated dependent check. The
+table below summarizes that machine-readable aggregate. Ranges are inclusive.
+Inactive and unevaluated entries do not count as passes.
 
 | Release reason indices | Count | Evidence group | Revised disposition | New evidence |
 | --- | ---: | --- | --- | --- |
@@ -102,7 +107,8 @@ reproduction unevaluated. No omitted requirement is recorded as a pass.
 
 ## Preserved release evidence
 
-All 15 registered protected locations were byte-identical after the run. This
+All 15 registered protected locations were byte-identical after the run.
+`protected-before.sha256` and `protected-after.sha256` retain both hash sets. This
 includes the original v1 evidence, the source, the registration inputs, and the
 shipped model freeze. The original 2022 audit remains at
 `docs/validation/release-audit.json` with its blocked verdict and SHA-256
