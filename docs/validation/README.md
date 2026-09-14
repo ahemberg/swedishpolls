@@ -1103,6 +1103,49 @@ Recompute equal-weight versus poll-count centering and leave-one-institute-out
 headline probabilities. Publish differences. A movement over 10 percentage points
 requires disclosure next to the number; it does not itself block release.
 
+## Publication-time settings, issue #113
+
+[Issue #21](https://github.com/ahemberg/swedishpolls/issues/21) introduced three numbers
+into the publication path that no decision had registered.
+[Issue #113](https://github.com/ahemberg/swedishpolls/issues/113) resolved them. ADR 0007
+makes this evidence the shipped freeze's source of truth, so what follows is where those
+three numbers now stand.
+
+**Movement against the previous publication is not a check.** The worker used to block a
+candidate whose headline share moved more than 10 points against the publication before it.
+Two publications are separated by weeks of new fieldwork, and a share can legitimately move
+as far as the polls do, so a bound on that distance is a claim about opinion rather than
+about the estimator. The check and its `maxDriftPoints` setting are removed. The registered
+`snapshot_drift_points` of 0.44 in [protocol.json](protocol.json) is a different quantity —
+how far the estimate moves when the same snapshot is perturbed — and is unchanged. The
+publication-time checks that remain are the composition sum, the seat total and exact
+seeded reproduction of the retained draws.
+
+**`shrunk` means the model applies shrinkage toward zero.** The published per-effect flag
+used to be set when the posterior standard deviation exceeded half the house scale, which
+read as a verdict on whether an institute had enough polls to be believed. No evidence
+established that threshold or that reading. The flag now follows from the registered prior:
+house effects are fitted under a zero-centred prior with a strictly positive house scale, so
+for every effect this model produces it is true. It says the prior applies. How much the
+polls say is the interval beside the number, and a sparse institute is not reliably the one
+with the wider interval. Retained publications keep the values they were published with.
+
+**A publication draws one seed.** `JointUncertainty.Rules` used to refuse a repeat count
+below two, so the publication path carried a fabricated count of two that no publication
+read. One seed is now admissible in the rules, and `precisionSeeds` — the repeated-seed
+study itself — is what refuses fewer than two. The registered `precision_repeats` of 8
+stands and no required precision study can run on a single seed.
+
+**Registration covers every shipped setting.** Statistical parameters, publication
+thresholds, seeds, draw counts and rounding precision need a registered source or a written
+derivation; ordinary implementation constants, such as array indices, do not and never reach
+the shipped resource. [publication-settings.json](publication-settings.json) lists every
+field of `src/main/resources/publication/model-freeze.json`, nested fields included, against
+the evidence it is copied from or the derivation it follows from. `ModelFreezeTest` fails on
+a shipped field that is in neither, on a registered field that stops being shipped, and on a
+shipped value that disagrees with its registered one. A running application reads only the
+shipped resource; the evidence stays in this repository.
+
 ## Reserved 2022 comparison and prior exposure
 
 The manifest pins the exact CSV bytes, deterministic candidate-row selection,

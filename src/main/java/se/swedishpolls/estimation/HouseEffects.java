@@ -180,9 +180,9 @@ public final class HouseEffects {
         sampled[component][draw] = shares[component] - reference[component];
       }
     }
-    // A posterior still close to its prior scale says the cycle has too few polls of this
-    // institute to move it. The reader sees that rather than a confident number.
-    final boolean shrunk = largestStandardDeviation(covariance) > 0.5 * against.houseScale;
+    // The flag says the model applied its zero-centred prior to this effect, which a strictly
+    // positive house scale is. It is not a claim about how much evidence the institute has.
+    final boolean shrunk = against.houseScale > 0;
     final List<Effect> effects = new ArrayList<>(components.size());
     for (int component = 0; component < components.size(); component++) {
       final double[] column = sampled[component];
@@ -206,14 +206,6 @@ public final class HouseEffects {
       total[i] = left[i] + right[i];
     }
     return total;
-  }
-
-  private static double largestStandardDeviation(double[][] covariance) {
-    double largest = 0;
-    for (int i = 0; i < covariance.length; i++) {
-      largest = Math.max(largest, Math.sqrt(covariance[i][i]));
-    }
-    return largest;
   }
 
   private static double[][] block(ModelValues covariance, int effect, int dimension) {

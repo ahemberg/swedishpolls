@@ -11,6 +11,7 @@ import se.swedishpolls.estimation.CoverageValidation;
 import se.swedishpolls.estimation.ReleaseAudit;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 /** The shipped frozen model must stay the development evidence, not a second opinion of it. */
 class ModelFreezeTest {
@@ -113,6 +114,54 @@ class ModelFreezeTest {
     assertFalse(
         freeze.released(),
         "The audited verdict blocks release, so a deployment publishes nothing until it changes");
+  }
+
+  private static JsonNode shipped() throws Exception {
+    try (final java.io.InputStream input =
+        ModelFreeze.class.getResourceAsStream(ModelFreeze.RESOURCE)) {
+      return JSON.readTree(input.readAllBytes());
+    }
+  }
+
+  @Test
+  void everyShippedSettingCarriesARegisteredSourceOrAWrittenDerivation() throws Exception {
+    assertEquals(List.of(), FreezeRegistration.check(shipped()));
+  }
+
+  @Test
+  void aShippedFieldWithoutARegisteredBasisFailsWhereverItIsAdded() throws Exception {
+    final ObjectNode added = (ObjectNode) shipped();
+    added.put("maxDriftPoints", 10.0);
+    assertEquals(
+        List.of("maxDriftPoints"),
+        FreezeRegistration.check(added).stream().map(FreezeRegistration.Failure::path).toList());
+
+    final ObjectNode nested = (ObjectNode) shipped();
+    ((ObjectNode) nested.get("periods").get(0).get("parameters")).put("perInstituteVariance", 0.2);
+    assertEquals(
+        List.of("periods[]/parameters/perInstituteVariance"),
+        FreezeRegistration.check(nested).stream().map(FreezeRegistration.Failure::path).toList());
+  }
+
+  @Test
+  void aShippedSettingThatDisagreesWithItsRegisteredValueFails() throws Exception {
+    final ObjectNode changed = (ObjectNode) shipped();
+    changed.put("draws", 40000);
+    ((ObjectNode) changed.get("periods").get(1).get("parameters")).put("houseScale", 0.2);
+
+    assertEquals(
+        List.of("draws", "periods[]/parameters/houseScale"),
+        FreezeRegistration.check(changed).stream().map(FreezeRegistration.Failure::path).toList());
+  }
+
+  @Test
+  void aRegisteredSettingThatStopsBeingShippedFails() throws Exception {
+    final ObjectNode removed = (ObjectNode) shipped();
+    removed.remove("seed");
+
+    assertEquals(
+        List.of("seed"),
+        FreezeRegistration.check(removed).stream().map(FreezeRegistration.Failure::path).toList());
   }
 
   @Test

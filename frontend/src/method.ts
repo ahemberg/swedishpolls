@@ -21,7 +21,6 @@ export interface MethodData {
     readonly count: number;
     readonly decimals: number;
     readonly intervalLevels: readonly number[];
-    readonly maxDriftPoints: number;
   };
   readonly coverage: {
     readonly developmentThrough: string;

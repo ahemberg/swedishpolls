@@ -325,13 +325,14 @@ public final class SiteText {
     text.put(
         "pollsters.intervalCaption",
         "Samma effekter som tabell, med intervall: en rad per institut och parti.");
-    text.put("pollsters.shrunk", "skjuten mot noll");
     text.put("pollsters.shrunkCell", "{effect} (skjuten mot noll)");
     text.put(
         "pollsters.shrunkNote",
-        "En effekt märkt \u201dskjuten mot noll\u201d kommer från ett institut med få"
-            + " mätningar i perioden; modellen drar då effekten mot genomsnittet istället"
-            + " för att läsa av den rakt av.");
+        "En effekt märkt \u201dskjuten mot noll\u201d är skattad under modellens prior med"
+            + " noll som väntevärde, som drar varje effekt mot institutsgenomsnittet."
+            + " Märkningen säger att priorn tillämpas, inte att institutet har få mätningar"
+            + " eller svagt underlag; intervallet bredvid talet visar hur mycket mätningarna"
+            + " säger.");
 
     text.put(
         "method.lead",
@@ -398,8 +399,8 @@ public final class SiteText {
             + " gäller den sista fältarbetsdagen och skrivs aldrig framåt i tiden.");
     text.put(
         "method.model.house",
-        "Institutseffekter nollställs per mandatperiod, skjuts mot noll för institut med få"
-            + " mätningar och centreras med lika vikt per institut. De mäter avvikelsen"
+        "Institutseffekter nollställs per mandatperiod, skjuts mot noll av en prior med noll"
+            + " som väntevärde och centreras med lika vikt per institut. De mäter avvikelsen"
             + " från institutsgenomsnittet i perioden, inte från den sanna opinionen.");
     text.put(
         "method.model.overdispersion",
@@ -462,10 +463,6 @@ public final class SiteText {
     text.put("method.reproduction.draws", "Gemensamma dragningar: {draws}");
     text.put(
         "method.reproduction.decimals", "Publicerade andelar avrundas till {decimals} decimal.");
-    text.put(
-        "method.reproduction.drift",
-        "Störst tillåten rörelse mellan två publiceringar är {points} procentenheter; en"
-            + " större rörelse stoppar publiceringen.");
     text.put("method.reproduction.estimator", "Estimator {version}, numerik {library}.");
     text.put(
         "method.reproduction.protocols",
@@ -907,13 +904,13 @@ public final class SiteText {
     text.put(
         "pollsters.intervalCaption",
         "The same effects as a table, with intervals: one row per pollster and party.");
-    text.put("pollsters.shrunk", "shrunk toward zero");
     text.put("pollsters.shrunkCell", "{effect} (shrunk toward zero)");
     text.put(
         "pollsters.shrunkNote",
-        "An effect marked \u201cshrunk toward zero\u201d comes from a pollster with few polls"
-            + " in the cycle; the model then pulls the effect toward the ensemble rather than"
-            + " reading it off directly.");
+        "An effect marked \u201cshrunk toward zero\u201d is estimated under the model's"
+            + " zero-centred prior, which pulls every effect toward the pollster ensemble. The"
+            + " mark says the prior applies, not that the pollster has few polls or weak"
+            + " evidence; the interval beside the number carries what the polls say.");
 
     text.put(
         "method.lead",
@@ -978,8 +975,8 @@ public final class SiteText {
             + " refers to the last fieldwork day and is never projected forward.");
     text.put(
         "method.model.house",
-        "House effects reset every election cycle, are shrunk toward zero for pollsters with"
-            + " few polls, and are centred with equal weight per pollster. They measure the"
+        "House effects reset every election cycle, are shrunk toward zero by a zero-centred"
+            + " prior, and are centred with equal weight per pollster. They measure the"
             + " deviation from the cycle's institute ensemble, not from true opinion.");
     text.put(
         "method.model.overdispersion",
@@ -1037,10 +1034,6 @@ public final class SiteText {
     text.put("method.reproduction.draws", "Joint draws: {draws}");
     text.put(
         "method.reproduction.decimals", "Published shares are quoted to {decimals} decimal place.");
-    text.put(
-        "method.reproduction.drift",
-        "The largest allowed movement between two publications is {points} percentage points;"
-            + " a larger one stops the publication.");
     text.put("method.reproduction.estimator", "Estimator {version}, numerics {library}.");
     text.put(
         "method.reproduction.protocols",

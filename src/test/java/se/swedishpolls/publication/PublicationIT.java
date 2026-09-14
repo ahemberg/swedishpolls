@@ -326,6 +326,47 @@ class PublicationIT {
   }
 
   /**
+   * Movement against the previous publication is not a check. Weeks of new fieldwork can move a
+   * share as far as the polls do, and an otherwise valid candidate publishes on its own evidence.
+   */
+  @Test
+  void aHeadlineThatMovesFarAgainstThePreviousPublicationStillPublishes() {
+    final Publisher publisher = publisher();
+    final Publisher.Attempt first = publisher.publish();
+    assertEquals(PublicationOutcome.PUBLISHED, first.outcome(), first.detail());
+
+    TestPublication.serve(
+        wireMock, TestPublication.moved(TestPublication.polls(TestPublication.FROM), 15.0));
+    final Publisher.Attempt second = publisher.publish();
+
+    assertEquals(PublicationOutcome.PUBLISHED, second.outcome(), second.detail());
+    assertTrue(
+        movement(first.publicationId(), second.publicationId(), "S") > 10.0,
+        "The fixture has to move further than the removed bound for this to mean anything");
+    assertEquals(second.publicationId(), store.current().orElseThrow().publicationId());
+    assertFalse(store.current().orElseThrow().stale());
+  }
+
+  /** How far one component's published share moved between two publications, in points. */
+  private double movement(String before, String after, String component) {
+    return Math.abs(mean(after, component) - mean(before, component));
+  }
+
+  private double mean(String publicationId, String component) {
+    final JsonNode document =
+        JSON.readTree(
+            store
+                .document(publicationId, PublicationDocuments.latestSurface(PERIOD), "en")
+                .orElseThrow());
+    for (final JsonNode entry : document.get("components")) {
+      if (component.equals(entry.get("component").asString())) {
+        return entry.get("mean").doubleValue();
+      }
+    }
+    throw new AssertionError("No published share for " + component);
+  }
+
+  /**
    * What the poll page and its download promise: a publication pins a snapshot, so a correction
    * that publishes while a reader is filtering cannot change the rows they are counting or the file
    * they are about to save.

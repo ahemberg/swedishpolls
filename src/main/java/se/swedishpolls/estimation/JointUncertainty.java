@@ -49,8 +49,8 @@ public final class JointUncertainty {
   public record Rules(long seed, int draws, List<Double> intervalLevels, int precisionRepeats) {
     public Rules {
       if (draws < 2) throw new IllegalArgumentException("A joint summary needs at least two draws");
-      if (precisionRepeats < 2)
-        throw new IllegalArgumentException("A precision study needs at least two seeds");
+      // A publication draws one seed. The repeated-seed study is what refuses a single run.
+      if (precisionRepeats < 1) throw new IllegalArgumentException("A run needs at least one seed");
       intervalLevels = List.copyOf(intervalLevels);
       if (intervalLevels.isEmpty())
         throw new IllegalArgumentException("At least one interval level is required");
@@ -297,6 +297,8 @@ public final class JointUncertainty {
 
   /** The seeds of the repeated-seed precision study: the registered seed and its successors. */
   public static List<Long> precisionSeeds(Rules rules) {
+    if (rules.precisionRepeats() < 2)
+      throw new IllegalArgumentException("A precision study needs at least two seeds");
     final java.util.ArrayList<java.lang.Long> seeds = new ArrayList<Long>();
     for (int repeat = 0; repeat < rules.precisionRepeats(); repeat++)
       seeds.add(rules.seed() + repeat);

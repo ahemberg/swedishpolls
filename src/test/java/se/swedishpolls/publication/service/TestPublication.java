@@ -110,6 +110,26 @@ public final class TestPublication {
     }
   }
 
+  /** The fixture with {@code points} moved from S to M in every row, so the headline jumps. */
+  public static byte[] moved(byte[] csv, double points) {
+    final List<String> lines = List.of(new String(csv, StandardCharsets.UTF_8).split("\n", -1));
+    final List<String> header = List.of(lines.getFirst().split(",", -1));
+    final int from = header.indexOf("S");
+    final int to = header.indexOf("M");
+    final List<String> rewritten = new ArrayList<String>();
+    rewritten.add(lines.getFirst());
+    for (final String line : lines.subList(1, lines.size())) {
+      if (line.isBlank()) {
+        continue;
+      }
+      final String[] values = line.split(",", -1);
+      values[from] = String.valueOf(Double.parseDouble(values[from]) - points);
+      values[to] = String.valueOf(Double.parseDouble(values[to]) + points);
+      rewritten.add(String.join(",", values));
+    }
+    return String.join("\n", rewritten).concat("\n").getBytes(StandardCharsets.UTF_8);
+  }
+
   /** Serves the fixture over HTTP, so a test exercises the production source client. */
   public static StubMapping serve(WireMockServer wireMock, byte[] body) {
     return wireMock.stubFor(
