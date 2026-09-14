@@ -1,7 +1,7 @@
 {
   "version": "v2-development-1",
   "registeredOn": "2026-09-13",
-  "implementationCommit": "42bd3b98ed717039af5750d9a629f9d5119d2ced",
+  "implementationCommit": "c2876d3ea99086c734e54f96dc74fb4fa88a4a69",
   "authority": {
     "proposal": "v2-development-1-proposal-1",
     "proposalCommit": "d5699e82fd537ddc6bad817c4884c36a62752401",

@@ -4,12 +4,12 @@
   "registeredOn" : "2026-09-13",
   "planIdentity" : {
     "path" : "docs/validation/v2-development-1/registration-plan.json",
-    "sha256" : "362b6cac3955991a27ec7cb1bcacb922e3a9ee85775dc8c5622da4366cd74e0c"
+    "sha256" : "fb6b061503fe95de52b2db85564e581071d5aeb53c3ef88ee16faad2b73cbf62"
   },
   "plan" : {
     "version" : "v2-development-1",
     "registeredOn" : "2026-09-13",
-    "implementationCommit" : "42bd3b98ed717039af5750d9a629f9d5119d2ced",
+    "implementationCommit" : "c2876d3ea99086c734e54f96dc74fb4fa88a4a69",
     "authority" : {
       "proposal" : "v2-development-1-proposal-1",
       "proposalCommit" : "d5699e82fd537ddc6bad817c4884c36a62752401",
