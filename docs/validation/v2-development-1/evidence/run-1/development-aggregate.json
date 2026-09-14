@@ -1,0 +1,986 @@
+{
+  "protocolVersion": "v2-development-1",
+  "status": "blocked_incomplete",
+  "releaseAuthorized": false,
+  "inventory": {
+    "path": "docs/validation/remediation-inventory.json",
+    "sha256": "fb4a0d251ab43fb05eeb58b74c5864ba766f398cc1ea990fac25365250e0fcb5",
+    "reasonCount": 50
+  },
+  "counts": {
+    "inactive": 24,
+    "evaluatedPass": 1,
+    "evaluatedFail": 4,
+    "unevaluatedPrerequisite": 21
+  },
+  "newFailures": [
+    "midpoint_candidate selected the lower walk-variance and house-scale boundaries for fi_candidate_2014_2018 at 2014-05-15",
+    "ilr_window_reference selected the lower walk-variance and house-scale boundaries for fi_candidate_2014_2018 at 2014-05-15",
+    "diagnose was rejected because the registered evidence directory already existed",
+    "arm64 execution was unavailable, leaving cross-architecture reproduction unevaluated"
+  ],
+  "reasons": [
+    {
+      "release_reason_index": 0,
+      "development_reason_index": null,
+      "reason": "development_gates: 49 development gate reasons stand",
+      "evidence_group": null,
+      "kind": "aggregate_wrapper",
+      "propagation": [],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json",
+        "report.md#original-reason-aggregate"
+      ],
+      "revisedDetail": "The complete diagnostic aggregate was not produced."
+    },
+    {
+      "release_reason_index": 1,
+      "development_reason_index": 0,
+      "reason": "development_gates: coverage: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails",
+      "evidence_group": "candidate-grid",
+      "kind": "reported_failure",
+      "propagation": [
+        "tuning",
+        "coverage",
+        "history",
+        "uncertainty",
+        "remainder",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "evaluated_fail",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "One active candidate fold still selects lower grid boundaries."
+    },
+    {
+      "release_reason_index": 2,
+      "development_reason_index": 1,
+      "reason": "development_gates: coverage: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol",
+      "evidence_group": "fi-no-training",
+      "kind": "reported_failure",
+      "propagation": [
+        "tuning",
+        "coverage",
+        "history",
+        "uncertainty",
+        "remainder",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because training observations are unavailable."
+    },
+    {
+      "release_reason_index": 3,
+      "development_reason_index": 2,
+      "reason": "development_gates: uncertainty: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails",
+      "evidence_group": "candidate-grid",
+      "kind": "propagated",
+      "propagation": [
+        "tuning",
+        "coverage",
+        "history",
+        "uncertainty",
+        "remainder",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "evaluated_fail",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "One active candidate fold still selects lower grid boundaries."
+    },
+    {
+      "release_reason_index": 4,
+      "development_reason_index": 3,
+      "reason": "development_gates: uncertainty: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol",
+      "evidence_group": "fi-no-training",
+      "kind": "propagated",
+      "propagation": [
+        "tuning",
+        "coverage",
+        "history",
+        "uncertainty",
+        "remainder",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because training observations are unavailable."
+    },
+    {
+      "release_reason_index": 5,
+      "development_reason_index": 4,
+      "reason": "development_gates: diagnostics: coverage validation: development tuning: 38 of 94 resolved folds sit on a grid boundary, which needs a documented grid expansion and a repeat of every affected development check, or the gate fails",
+      "evidence_group": "candidate-grid",
+      "kind": "propagated",
+      "propagation": [
+        "tuning",
+        "coverage",
+        "history",
+        "uncertainty",
+        "remainder",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "evaluated_fail",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "One active candidate fold still selects lower grid boundaries."
+    },
+    {
+      "release_reason_index": 6,
+      "development_reason_index": 5,
+      "reason": "development_gates: diagnostics: coverage validation: development tuning: 2 folds did not resolve and need a reviewed reason and a revised development protocol",
+      "evidence_group": "fi-no-training",
+      "kind": "propagated",
+      "propagation": [
+        "tuning",
+        "coverage",
+        "history",
+        "uncertainty",
+        "remainder",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because training observations are unavailable."
+    },
+    {
+      "release_reason_index": 7,
+      "development_reason_index": 6,
+      "reason": "development_gates: diagnostics: eight_party_2010: the midpoint candidate loses to the ilr-window reference by 0.023579124341236275, beyond the paired standard error of 0.011921334731399268",
+      "evidence_group": "reference-loss",
+      "kind": "reported_failure",
+      "propagation": [
+        "paired_comparison",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 8,
+      "development_reason_index": 7,
+      "reason": "development_gates: diagnostics: eight_party_2010: the ilr-window reference resolved on a grid boundary in 18 folds, which needs the same documented expansion as the candidate's",
+      "evidence_group": "reference-grid:eight_party_2010",
+      "kind": "reported_failure",
+      "propagation": [
+        "reference_tuning",
+        "paired_comparison",
+        "reference_misfit",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "evaluated_pass",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "Every active reference selection in this period is interior."
+    },
+    {
+      "release_reason_index": 9,
+      "development_reason_index": 8,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018: the ilr-window reference resolved on a grid boundary in 17 folds, which needs the same documented expansion as the candidate's",
+      "evidence_group": "reference-grid:fi_candidate_2014_2018",
+      "kind": "reported_failure",
+      "propagation": [
+        "reference_tuning",
+        "paired_comparison",
+        "reference_misfit",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "evaluated_fail",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "One active reference fold still selects lower grid boundaries."
+    },
+    {
+      "release_reason_index": 10,
+      "development_reason_index": 9,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2014-01-15 scored nothing: the tuning run resolved no parameters for this fold",
+      "evidence_group": "fi-no-training",
+      "kind": "propagated",
+      "propagation": [
+        "tuning",
+        "coverage",
+        "history",
+        "uncertainty",
+        "remainder",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because training observations are unavailable."
+    },
+    {
+      "release_reason_index": 11,
+      "development_reason_index": 10,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2014-03-16 scored nothing: the tuning run resolved no parameters for this fold",
+      "evidence_group": "fi-no-training",
+      "kind": "propagated",
+      "propagation": [
+        "tuning",
+        "coverage",
+        "history",
+        "uncertainty",
+        "remainder",
+        "diagnostics",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because training observations are unavailable."
+    },
+    {
+      "release_reason_index": 12,
+      "development_reason_index": 11,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2018-10-21 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 13,
+      "development_reason_index": 12,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2018-12-20 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 14,
+      "development_reason_index": 13,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-02-18 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 15,
+      "development_reason_index": 14,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-04-19 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 16,
+      "development_reason_index": 15,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-06-18 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 17,
+      "development_reason_index": 16,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-08-17 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 18,
+      "development_reason_index": 17,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-10-16 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 19,
+      "development_reason_index": 18,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2019-12-15 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 20,
+      "development_reason_index": 19,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-02-13 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 21,
+      "development_reason_index": 20,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-04-13 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 22,
+      "development_reason_index": 21,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-06-12 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 23,
+      "development_reason_index": 22,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-08-11 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 24,
+      "development_reason_index": 23,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-10-10 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 25,
+      "development_reason_index": 24,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2020-12-09 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 26,
+      "development_reason_index": 25,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2021-02-07 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 27,
+      "development_reason_index": 26,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2021-04-08 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 28,
+      "development_reason_index": 27,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2021-06-07 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 29,
+      "development_reason_index": 28,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2021-08-06 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 30,
+      "development_reason_index": 29,
+      "reason": "development_gates: diagnostics: fi_candidate_2014_2018 fold 2021-10-05 scored nothing: no held-out observation the period can compose",
+      "evidence_group": "fi-no-heldout",
+      "kind": "reported_failure",
+      "propagation": [
+        "diagnostics",
+        "development_gates",
+        "individual_fi_availability",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "inactive",
+      "revisedEvidence": [
+        "tuning.json"
+      ],
+      "revisedDetail": "The registered folds remain inactive because held-out compositions are unavailable."
+    },
+    {
+      "release_reason_index": 31,
+      "development_reason_index": 30,
+      "reason": "development_gates: eight_party_2010 party S has unexplained subgroup coverage 95/50=0.9837837837837838/0.6405405405405405",
+      "evidence_group": "subgroup:eight_party_2010:party:S",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:party:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 32,
+      "development_reason_index": 31,
+      "reason": "development_gates: eight_party_2010 party KD has unexplained subgroup coverage 95/50=0.8648648648648649/0.4189189189189189",
+      "evidence_group": "subgroup:eight_party_2010:party:KD",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:party:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 33,
+      "development_reason_index": 32,
+      "reason": "development_gates: eight_party_2010 party KD has root-mean-square standardized residual 1.8415414088541135",
+      "evidence_group": "subgroup:eight_party_2010:party:KD",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:party:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 34,
+      "development_reason_index": 33,
+      "reason": "development_gates: eight_party_2010 party OTHER has unexplained subgroup coverage 95/50=0.8486486486486486/0.3918918918918919",
+      "evidence_group": "subgroup:eight_party_2010:party:OTHER",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:party:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 35,
+      "development_reason_index": 34,
+      "reason": "development_gates: eight_party_2010 institute Sifo has unexplained subgroup coverage 95/50=0.8977072310405644/0.5114638447971781",
+      "evidence_group": "subgroup:eight_party_2010:institute:Sifo",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:institute:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 36,
+      "development_reason_index": 35,
+      "reason": "development_gates: eight_party_2010 institute Skop has unexplained subgroup coverage 95/50=0.8275862068965517/0.42528735632183906",
+      "evidence_group": "subgroup:eight_party_2010:institute:Skop",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:institute:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 37,
+      "development_reason_index": 36,
+      "reason": "development_gates: eight_party_2010 institute Skop has root-mean-square standardized residual 1.6927416450632502",
+      "evidence_group": "subgroup:eight_party_2010:institute:Skop",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:institute:eight_party_2010",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 38,
+      "development_reason_index": 37,
+      "reason": "development_gates: fi_candidate_2014_2018 party S has unexplained subgroup coverage 95/50=0.985/0.63",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:S",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:party:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 39,
+      "development_reason_index": 38,
+      "reason": "development_gates: fi_candidate_2014_2018 party KD has unexplained subgroup coverage 95/50=0.855/0.41",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:KD",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:party:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 40,
+      "development_reason_index": 39,
+      "reason": "development_gates: fi_candidate_2014_2018 party KD has absolute mean standardized residual 0.5153675945957608",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:KD",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:party:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 41,
+      "development_reason_index": 40,
+      "reason": "development_gates: fi_candidate_2014_2018 party KD has root-mean-square standardized residual 2.04693378853195",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:KD",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:party:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 42,
+      "development_reason_index": 41,
+      "reason": "development_gates: fi_candidate_2014_2018 party FI has unexplained subgroup coverage 95/50=0.895/0.48",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:FI",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:party:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 43,
+      "development_reason_index": 42,
+      "reason": "development_gates: fi_candidate_2014_2018 party RESIDUAL has unexplained subgroup coverage 95/50=0.825/0.345",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:RESIDUAL",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:party:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 44,
+      "development_reason_index": 43,
+      "reason": "development_gates: fi_candidate_2014_2018 party RESIDUAL has root-mean-square standardized residual 1.8642180365539271",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:party:RESIDUAL",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:party:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 45,
+      "development_reason_index": 44,
+      "reason": "development_gates: fi_candidate_2014_2018 institute Inizio has unexplained subgroup coverage 95/50=0.8952380952380953/0.4857142857142857",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:institute:Inizio",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:institute:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 46,
+      "development_reason_index": 45,
+      "reason": "development_gates: fi_candidate_2014_2018 institute Sifo has unexplained subgroup coverage 95/50=0.8837837837837837/0.46756756756756757",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:institute:Sifo",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:institute:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 47,
+      "development_reason_index": 46,
+      "reason": "development_gates: fi_candidate_2014_2018 institute Skop has unexplained subgroup coverage 95/50=0.8181818181818182/0.34545454545454546",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:institute:Skop",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:institute:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 48,
+      "development_reason_index": 47,
+      "reason": "development_gates: fi_candidate_2014_2018 institute Skop has root-mean-square standardized residual 1.837189673272659",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:institute:Skop",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:institute:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    },
+    {
+      "release_reason_index": 49,
+      "development_reason_index": 48,
+      "reason": "development_gates: fi_candidate_2014_2018 fieldwork_days 1-7 has unexplained subgroup coverage 95/50=0.8985915492957747/0.44647887323943664",
+      "evidence_group": "subgroup:fi_candidate_2014_2018:fieldwork_days:1-7",
+      "kind": "reported_failure",
+      "propagation": [
+        "systematic_misfit:fieldwork_days:fi_candidate_2014_2018",
+        "development_gates",
+        "release_verdict",
+        "publication"
+      ],
+      "revisedDisposition": "unevaluated_prerequisite",
+      "revisedEvidence": [
+        "diagnostics.json"
+      ],
+      "revisedDetail": "The registered diagnostic command was rejected before per-poll, paired, dependence, or subgroup scoring."
+    }
+  ]
+}

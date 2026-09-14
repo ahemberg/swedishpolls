@@ -1,0 +1,2 @@
+exec /__cacert_entrypoint.sh: exec format error
+exit_status=1

@@ -16,6 +16,8 @@ class DevelopmentValidationTest {
   private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final Path REGISTRATION =
       Path.of("docs", "validation", "v2-development-1", "registration.json");
+  private static final Path PREFLIGHT =
+      Path.of("docs", "validation", "v2-development-1", "preflight.json");
 
   @TempDir Path temp;
 
@@ -231,15 +233,22 @@ class DevelopmentValidationTest {
     assertEquals(
         1_800_000, measurements.get("resources").get("hostPipelineRequirementMillis").longValue());
 
+    final JsonNode preflight = JSON.readTree(Files.readAllBytes(PREFLIGHT));
+    assertEquals("ready", preflight.get("status").asString());
+    assertEquals(
+        DevelopmentGates.sha256(REGISTRATION), preflight.get("registrationSha256").asString());
+    assertEquals(75, preflight.get("activeFolds").intValue());
+
     final Path result = temp.resolve("registered-preflight.json");
     assertEquals(
-        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.REJECTED,
         DevelopmentValidation.run(
             "preflight",
             REGISTRATION.toString(),
             Path.of("src", "test", "resources", "polls", "audit.csv").toString(),
             result.toString()));
-    assertEquals("ready", JSON.readTree(Files.readAllBytes(result)).get("status").asString());
+    assertTrue(
+        JSON.readTree(Files.readAllBytes(result)).get("reasons").toString().contains("exists"));
 
     final JsonNode wrongToolchain = registration.deepCopy();
     ((ObjectNode) wrongToolchain.get("plan").get("environment")).put("npmVersion", "wrong");

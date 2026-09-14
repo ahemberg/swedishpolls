@@ -1,0 +1,5 @@
+{
+  "status" : "rejected",
+  "reasons" : [ "Registered evidence output already exists: /home/alex/.t3/worktrees/swedishpolls/t3code-2f428618/docs/validation/v2-development-1/evidence/run-1" ],
+  "fitEvidence" : "not_run"
+}

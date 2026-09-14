@@ -1,0 +1,2374 @@
+{
+  "protocolVersion" : "v2-development-1",
+  "registrationSha256" : "47a34a57188e522923b0aa49d0fa7e71874812c38e90218a207ad5a1081e14b7",
+  "sourceSha256" : "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+  "fitEvidence" : "complete",
+  "tunedParameters" : {
+    "path" : "docs/validation/v2-development-1/evidence/run-1/tuning.json",
+    "sha256" : "7b1c65bd77f3199e2722a05783bf21fb8517f7474ba6d1b181f025db294ae97e",
+    "method" : "midpoint_candidate",
+    "foldRule" : "latest_resolved_active_cutoff",
+    "selection" : "the registered fitted method and fold rule, resolved from this run's tuning evidence rather than from any v1 fitted output",
+    "resolvedFolds" : 75,
+    "unresolvedFolds" : 21,
+    "selectedParameters" : {
+      "eight_party_2010" : {
+        "walkVariance" : 1.0E-4,
+        "houseScale" : 0.1,
+        "covarianceMultiplier" : 1.5
+      },
+      "fi_candidate_2014_2018" : {
+        "walkVariance" : 1.0E-4,
+        "houseScale" : 0.1,
+        "covarianceMultiplier" : 1.5
+      }
+    }
+  },
+  "checks" : [ {
+    "check" : "coverage_support",
+    "status" : "passed",
+    "detail" : "registered observation, institute, gap, boundary-shift and stability limits"
+  }, {
+    "check" : "seeded_reproduction",
+    "status" : "passed",
+    "detail" : "largest retained-draw difference of a rerun at the registered seed: 0.0 points"
+  }, {
+    "check" : "interval_endpoint_precision",
+    "status" : "passed",
+    "detail" : "largest interval endpoint spread across the registered seeds: 0.11533204035550426 points against a 0.12 point limit"
+  }, {
+    "check" : "comparable_remainder",
+    "status" : "passed",
+    "detail" : "largest interval endpoint composition sum error: 0.0 points against a 1.0E-9 point limit"
+  }, {
+    "check" : "seat_totals",
+    "status" : "passed",
+    "detail" : "every draw totals 349 seats: 0.0 against a 0.0 limit"
+  }, {
+    "check" : "joint_probability_coherence",
+    "status" : "passed",
+    "detail" : "threshold, coalition and pairwise outcomes use the same draws: 0.0 against a 0.0 limit"
+  }, {
+    "check" : "probability_monte_carlo_standard_error",
+    "status" : "passed",
+    "detail" : "worst probability Monte Carlo standard error: 0.004955981840160434 against a 0.005 limit"
+  }, {
+    "check" : "threshold_probability_precision",
+    "status" : "passed",
+    "detail" : "largest registered-seed threshold probability spread: 0.016699999999999993 against a 0.03 limit"
+  }, {
+    "check" : "majority_probability_precision",
+    "status" : "passed",
+    "detail" : "largest registered-seed majority probability spread: 0.015199999999999991 against a 0.03 limit"
+  } ],
+  "reasons" : [ "development tuning: fi_candidate_2014_2018 2014-05-15 midpoint_candidate: selected parameters sit on a grid boundary", "development tuning: fi_candidate_2014_2018 2014-05-15 ilr_window_reference: selected parameters sit on a grid boundary" ],
+  "coverage" : {
+    "protocolVersion" : "v2-development-1",
+    "rules" : {
+      "developmentThrough" : "2021-10-05",
+      "minObservations" : 30,
+      "minInstitutes" : 5,
+      "maxInternalGapDays" : 45,
+      "boundaryShiftDays" : [ 7, 14, 30 ],
+      "stabilityBurnInDays" : 60,
+      "maxStabilityShiftPoints" : 0.5
+    },
+    "gate" : {
+      "blocked" : true,
+      "reasons" : [ "development tuning: fi_candidate_2014_2018 2014-05-15 midpoint_candidate: selected parameters sit on a grid boundary", "development tuning: fi_candidate_2014_2018 2014-05-15 ilr_window_reference: selected parameters sit on a grid boundary" ]
+    },
+    "periods" : [ {
+      "periodId" : "eight_party_2010",
+      "supported" : true,
+      "parameters" : {
+        "walkVariance" : 1.0E-4,
+        "houseScale" : 0.1,
+        "covarianceMultiplier" : 1.5
+      },
+      "support" : {
+        "from" : "2010-01-04",
+        "to" : "2021-10-03",
+        "observations" : 1038,
+        "institutes" : 10,
+        "excludedPolls" : 872,
+        "exclusionReasons" : {
+          "missing_sample_size" : 58,
+          "missing_collectPeriodFrom" : 2,
+          "publication_before_collection_end" : 27,
+          "exit_or_election_day" : 8,
+          "outside_supported_history" : 848,
+          "missing_share:MP" : 61,
+          "missing_share:KD" : 35,
+          "outside_coverage_period:eight_party_2010" : 850,
+          "missing_share:SD" : 664
+        },
+        "largestGap" : {
+          "from" : "2016-07-01",
+          "to" : "2016-08-13",
+          "days" : 43
+        }
+      },
+      "stability" : [ {
+        "shiftDays" : 7,
+        "from" : "2010-03-12",
+        "to" : "2021-07-28",
+        "comparedDays" : 4157,
+        "maxShiftPoints" : {
+          "SD" : 0.014105160483184775,
+          "S" : 0.04415657149201735,
+          "M" : 0.02330255409062687,
+          "L" : 0.011769945239660018,
+          "OTHER" : 0.03812073556754303,
+          "MP" : 0.05016244040548301,
+          "KD" : 0.004892772374796905,
+          "C" : 0.026074078210537976,
+          "V" : 0.019035506183663564
+        }
+      }, {
+        "shiftDays" : 14,
+        "from" : "2010-03-19",
+        "to" : "2021-07-21",
+        "comparedDays" : 4143,
+        "maxShiftPoints" : {
+          "SD" : 0.014182882197471436,
+          "S" : 0.043165964587508654,
+          "M" : 0.036583814031423856,
+          "L" : 0.012486889897104447,
+          "OTHER" : 0.02185311370868459,
+          "MP" : 0.03457712968105753,
+          "KD" : 0.009003262594963424,
+          "C" : 0.019587774474656428,
+          "V" : 0.017313943410933064
+        }
+      }, {
+        "shiftDays" : 30,
+        "from" : "2010-04-04",
+        "to" : "2021-07-05",
+        "comparedDays" : 4111,
+        "maxShiftPoints" : {
+          "SD" : 0.010689477004625303,
+          "S" : 0.04795261837335474,
+          "M" : 0.038529680352255014,
+          "L" : 0.02331505278510093,
+          "OTHER" : 0.010716682483818296,
+          "MP" : 0.020913710716948586,
+          "KD" : 0.016832870921882126,
+          "C" : 0.014041056504582983,
+          "V" : 0.017906479100339823
+        }
+      } ],
+      "failures" : [ ]
+    }, {
+      "periodId" : "fi_candidate_2014_2018",
+      "supported" : true,
+      "parameters" : {
+        "walkVariance" : 1.0E-4,
+        "houseScale" : 0.1,
+        "covarianceMultiplier" : 1.5
+      },
+      "support" : {
+        "from" : "2014-04-09",
+        "to" : "2018-09-07",
+        "observations" : 388,
+        "institutes" : 10,
+        "excludedPolls" : 1522,
+        "exclusionReasons" : {
+          "missing_share:SD" : 664,
+          "missing_sample_size" : 58,
+          "outside_supported_history" : 848,
+          "missing_share:KD" : 35,
+          "publication_before_collection_end" : 27,
+          "missing_collectPeriodFrom" : 2,
+          "missing_share:MP" : 61,
+          "exit_or_election_day" : 8,
+          "outside_coverage_period:fi_candidate_2014_2018" : 1468,
+          "missing_share:FI" : 1518
+        },
+        "largestGap" : {
+          "from" : "2016-07-01",
+          "to" : "2016-08-13",
+          "days" : 43
+        }
+      },
+      "stability" : [ {
+        "shiftDays" : 7,
+        "from" : "2014-06-15",
+        "to" : "2018-07-02",
+        "comparedDays" : 1479,
+        "maxShiftPoints" : {
+          "KD" : 0.028744659214735346,
+          "MP" : 0.016851143397003554,
+          "C" : 0.06062288981242858,
+          "V" : 0.031356995261467624,
+          "FI" : 0.03266376273216798,
+          "S" : 0.06151705500543514,
+          "RESIDUAL" : 0.07301550053305839,
+          "SD" : 0.051925213790148916,
+          "M" : 0.03462135790047327,
+          "L" : 0.02356897598335639
+        }
+      }, {
+        "shiftDays" : 14,
+        "from" : "2014-06-22",
+        "to" : "2018-06-25",
+        "comparedDays" : 1465,
+        "maxShiftPoints" : {
+          "KD" : 0.1492717389084448,
+          "MP" : 0.027214599091137437,
+          "C" : 0.10273753320938006,
+          "V" : 0.027403741782758395,
+          "FI" : 0.09425599584007327,
+          "S" : 0.0814848486086035,
+          "RESIDUAL" : 0.048914790558276966,
+          "SD" : 0.14264797055318112,
+          "M" : 0.04562204244392376,
+          "L" : 0.02269831980163417
+        }
+      }, {
+        "shiftDays" : 30,
+        "from" : "2014-07-08",
+        "to" : "2018-06-09",
+        "comparedDays" : 1433,
+        "maxShiftPoints" : {
+          "KD" : 0.13610246462017983,
+          "MP" : 0.3110466841708259,
+          "C" : 0.1374670222273231,
+          "V" : 0.09696554715823602,
+          "FI" : 0.11560091574797315,
+          "S" : 0.4252180277614137,
+          "RESIDUAL" : 0.052369772983734464,
+          "SD" : 0.17408823579020094,
+          "M" : 0.11407917607646567,
+          "L" : 0.08877296727000505
+        }
+      } ],
+      "failures" : [ ]
+    } ],
+    "boundaryEffects" : [ {
+      "date" : "2014-04-09",
+      "periodId" : "fi_candidate_2014_2018",
+      "againstPeriodId" : "eight_party_2010",
+      "stepPoints" : {
+        "C" : 0.4595734577254609,
+        "S" : -0.9191330578044514,
+        "M" : -0.8344205965381732,
+        "L" : 0.011507519093797214,
+        "MP" : -0.31069056170835907,
+        "KD" : 0.34332597066040016,
+        "REMAINDER" : 1.322225359114395,
+        "SD" : -0.07702803057292051,
+        "V" : 0.00463994002983803
+      }
+    }, {
+      "date" : "2018-09-05",
+      "periodId" : "fi_candidate_2014_2018",
+      "againstPeriodId" : "eight_party_2010",
+      "stepPoints" : {
+        "C" : -0.02921208251834706,
+        "S" : -1.1345184780063633,
+        "M" : -0.7485091056503137,
+        "L" : -0.03598417267056764,
+        "MP" : 0.07728576640527862,
+        "KD" : 0.05855581280443012,
+        "REMAINDER" : 0.7271254389986508,
+        "SD" : 0.7854900375847897,
+        "V" : 0.2997667830524158
+      }
+    } ]
+  },
+  "uncertainty" : {
+    "protocolVersion" : "v2-development-1",
+    "gate" : {
+      "blocked" : true,
+      "reasons" : [ "development tuning: fi_candidate_2014_2018 2014-05-15 midpoint_candidate: selected parameters sit on a grid boundary", "development tuning: fi_candidate_2014_2018 2014-05-15 ilr_window_reference: selected parameters sit on a grid boundary" ]
+    },
+    "rules" : {
+      "seed" : 20260908,
+      "draws" : 10000,
+      "intervalLevels" : [ 0.5, 0.95 ],
+      "precisionRepeats" : 8
+    },
+    "periods" : [ {
+      "periodId" : "eight_party_2010",
+      "reproduction" : {
+        "seed" : 20260908,
+        "draws" : 10000,
+        "periodId" : "eight_party_2010",
+        "components" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER" ],
+        "basisSha256" : "4bfa062453f30fabc7986f2f6a774d87cea6da4899fa646d315f2154d11ca913",
+        "inputRowsSha256" : "8c3b3db1648d6a61a0f078e2155a9b139be94920a1a7e2c8b8fd8a0d99df04d5",
+        "inputRows" : 1038,
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "implementationSha256" : "d29102353c149718aa5b5b32e774a9de29da628babaa282e49a97feb6e5ebbc3",
+        "javaRuntimeVersion" : "25.0.4+7-1-24.04-Ubuntu",
+        "javaVmVersion" : "25.0.4+7-1-24.04-Ubuntu",
+        "osName" : "Linux",
+        "osArch" : "amd64",
+        "linearAlgebraVersion" : "0.46.1"
+      },
+      "headline" : {
+        "date" : "2021-09-20",
+        "components" : [ {
+          "component" : "S",
+          "mean" : 25.556263572946772,
+          "stateMean" : 25.55423621887048,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 25.151956741210846,
+            "upper" : 25.959673549612887
+          }, {
+            "level" : 0.95,
+            "lower" : 24.398396494066166,
+            "upper" : 26.735237892848183
+          } ]
+        }, {
+          "component" : "M",
+          "mean" : 22.065201224007463,
+          "stateMean" : 22.067389754739406,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 21.677385718631868,
+            "upper" : 22.443533275644686
+          }, {
+            "level" : 0.95,
+            "lower" : 20.96540643454833,
+            "upper" : 23.164979354542712
+          } ]
+        }, {
+          "component" : "SD",
+          "mean" : 20.046394458253438,
+          "stateMean" : 20.048592719086038,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 19.687012098308124,
+            "upper" : 20.39894337748244
+          }, {
+            "level" : 0.95,
+            "lower" : 19.029479861945546,
+            "upper" : 21.098443742553926
+          } ]
+        }, {
+          "component" : "V",
+          "mean" : 10.593046744967692,
+          "stateMean" : 10.599296285742097,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 10.34992782892923,
+            "upper" : 10.830923895582123
+          }, {
+            "level" : 0.95,
+            "lower" : 9.893590010613906,
+            "upper" : 11.330085312435434
+          } ]
+        }, {
+          "component" : "C",
+          "mean" : 8.665475498742165,
+          "stateMean" : 8.66120399792608,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 8.448959032877466,
+            "upper" : 8.87158107756883
+          }, {
+            "level" : 0.95,
+            "lower" : 8.054948461636988,
+            "upper" : 9.3076550577453
+          } ]
+        }, {
+          "component" : "KD",
+          "mean" : 4.811457935795639,
+          "stateMean" : 4.809630551051207,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 4.663362787175741,
+            "upper" : 4.9545656428811835
+          }, {
+            "level" : 0.95,
+            "lower" : 4.395739261049781,
+            "upper" : 5.243879605207193
+          } ]
+        }, {
+          "component" : "L",
+          "mean" : 2.7307731164189075,
+          "stateMean" : 2.730151713851602,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 2.630524066017702,
+            "upper" : 2.828615864023366
+          }, {
+            "level" : 0.95,
+            "lower" : 2.4524586720788837,
+            "upper" : 3.0335006411142453
+          } ]
+        }, {
+          "component" : "MP",
+          "mean" : 3.96374266514349,
+          "stateMean" : 3.962992591939603,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 3.833320772949131,
+            "upper" : 4.089805985230449
+          }, {
+            "level" : 0.95,
+            "lower" : 3.602141324479658,
+            "upper" : 4.35137837778781
+          } ]
+        }, {
+          "component" : "OTHER",
+          "mean" : 1.5676447837245695,
+          "stateMean" : 1.566506166793498,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 1.4964457994818547,
+            "upper" : 1.633519717783358
+          }, {
+            "level" : 0.95,
+            "lower" : 1.376953054646518,
+            "upper" : 1.7786933940802212
+          } ]
+        } ]
+      },
+      "segmentEdges" : [ {
+        "date" : "2010-01-04",
+        "components" : [ {
+          "component" : "S",
+          "mean" : 35.08270360308064,
+          "stateMean" : 35.09234856566843,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 34.47551563536793,
+            "upper" : 35.694612075300604
+          }, {
+            "level" : 0.95,
+            "lower" : 33.314619966425305,
+            "upper" : 36.8576993263497
+          } ]
+        }, {
+          "component" : "M",
+          "mean" : 26.561545155405316,
+          "stateMean" : 26.5682183956171,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 26.02621555751271,
+            "upper" : 27.096176939221056
+          }, {
+            "level" : 0.95,
+            "lower" : 24.968820038303644,
+            "upper" : 28.133574553679235
+          } ]
+        }, {
+          "component" : "SD",
+          "mean" : 4.754534197765952,
+          "stateMean" : 4.747938651615267,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 4.582437800630377,
+            "upper" : 4.91958246922069
+          }, {
+            "level" : 0.95,
+            "lower" : 4.2797434252288875,
+            "upper" : 5.264098426728596
+          } ]
+        }, {
+          "component" : "V",
+          "mean" : 5.296953914995424,
+          "stateMean" : 5.291544613282413,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 5.101254052040176,
+            "upper" : 5.480722365677151
+          }, {
+            "level" : 0.95,
+            "lower" : 4.770113373861895,
+            "upper" : 5.87551020801634
+          } ]
+        }, {
+          "component" : "C",
+          "mean" : 4.73243057422023,
+          "stateMean" : 4.736018425740114,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 4.554868554499247,
+            "upper" : 4.902149176175159
+          }, {
+            "level" : 0.95,
+            "lower" : 4.248011585014136,
+            "upper" : 5.256196201449166
+          } ]
+        }, {
+          "component" : "KD",
+          "mean" : 4.473042793582053,
+          "stateMean" : 4.4680016220107985,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 4.308027822183447,
+            "upper" : 4.6323249801736335
+          }, {
+            "level" : 0.95,
+            "lower" : 4.0228982220529605,
+            "upper" : 4.968177766503675
+          } ]
+        }, {
+          "component" : "L",
+          "mean" : 6.4857735942959485,
+          "stateMean" : 6.489037128765416,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 6.2647719140599465,
+            "upper" : 6.696369826701892
+          }, {
+            "level" : 0.95,
+            "lower" : 5.890825947026618,
+            "upper" : 7.1329002542056585
+          } ]
+        }, {
+          "component" : "MP",
+          "mean" : 10.558847480889124,
+          "stateMean" : 10.553169994014103,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 10.24011810287194,
+            "upper" : 10.867179548867483
+          }, {
+            "level" : 0.95,
+            "lower" : 9.673546777815,
+            "upper" : 11.47714772405836
+          } ]
+        }, {
+          "component" : "OTHER",
+          "mean" : 2.0541686857652715,
+          "stateMean" : 2.053722603286354,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 1.9609070850218964,
+            "upper" : 2.142548724826815
+          }, {
+            "level" : 0.95,
+            "lower" : 1.8022273541331848,
+            "upper" : 2.3354689368524855
+          } ]
+        } ]
+      }, {
+        "date" : "2021-09-20",
+        "components" : [ {
+          "component" : "S",
+          "mean" : 25.556263572946772,
+          "stateMean" : 25.55423621887048,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 25.151956741210846,
+            "upper" : 25.959673549612887
+          }, {
+            "level" : 0.95,
+            "lower" : 24.398396494066166,
+            "upper" : 26.735237892848183
+          } ]
+        }, {
+          "component" : "M",
+          "mean" : 22.065201224007463,
+          "stateMean" : 22.067389754739406,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 21.677385718631868,
+            "upper" : 22.443533275644686
+          }, {
+            "level" : 0.95,
+            "lower" : 20.96540643454833,
+            "upper" : 23.164979354542712
+          } ]
+        }, {
+          "component" : "SD",
+          "mean" : 20.046394458253438,
+          "stateMean" : 20.048592719086038,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 19.687012098308124,
+            "upper" : 20.39894337748244
+          }, {
+            "level" : 0.95,
+            "lower" : 19.029479861945546,
+            "upper" : 21.098443742553926
+          } ]
+        }, {
+          "component" : "V",
+          "mean" : 10.593046744967692,
+          "stateMean" : 10.599296285742097,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 10.34992782892923,
+            "upper" : 10.830923895582123
+          }, {
+            "level" : 0.95,
+            "lower" : 9.893590010613906,
+            "upper" : 11.330085312435434
+          } ]
+        }, {
+          "component" : "C",
+          "mean" : 8.665475498742165,
+          "stateMean" : 8.66120399792608,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 8.448959032877466,
+            "upper" : 8.87158107756883
+          }, {
+            "level" : 0.95,
+            "lower" : 8.054948461636988,
+            "upper" : 9.3076550577453
+          } ]
+        }, {
+          "component" : "KD",
+          "mean" : 4.811457935795639,
+          "stateMean" : 4.809630551051207,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 4.663362787175741,
+            "upper" : 4.9545656428811835
+          }, {
+            "level" : 0.95,
+            "lower" : 4.395739261049781,
+            "upper" : 5.243879605207193
+          } ]
+        }, {
+          "component" : "L",
+          "mean" : 2.7307731164189075,
+          "stateMean" : 2.730151713851602,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 2.630524066017702,
+            "upper" : 2.828615864023366
+          }, {
+            "level" : 0.95,
+            "lower" : 2.4524586720788837,
+            "upper" : 3.0335006411142453
+          } ]
+        }, {
+          "component" : "MP",
+          "mean" : 3.96374266514349,
+          "stateMean" : 3.962992591939603,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 3.833320772949131,
+            "upper" : 4.089805985230449
+          }, {
+            "level" : 0.95,
+            "lower" : 3.602141324479658,
+            "upper" : 4.35137837778781
+          } ]
+        }, {
+          "component" : "OTHER",
+          "mean" : 1.5676447837245695,
+          "stateMean" : 1.566506166793498,
+          "intervals" : [ {
+            "level" : 0.5,
+            "lower" : 1.4964457994818547,
+            "upper" : 1.633519717783358
+          }, {
+            "level" : 0.95,
+            "lower" : 1.376953054646518,
+            "upper" : 1.7786933940802212
+          } ]
+        } ]
+      } ],
+      "estimatedDays" : 4278,
+      "maxStateMeanShiftPoints" : 0.02824229159802627,
+      "reproduced" : {
+        "daySeed" : 5416840566589286126,
+        "comparedValues" : 90000,
+        "maxAbsoluteDifference" : 0.0
+      },
+      "precision" : [ {
+        "component" : "S",
+        "level" : 0.5,
+        "meanSpreadPoints" : 0.041059221080267605,
+        "lowerSpreadPoints" : 0.05788495899114565,
+        "upperSpreadPoints" : 0.0579923779535747,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "S",
+        "level" : 0.95,
+        "meanSpreadPoints" : 0.041059221080267605,
+        "lowerSpreadPoints" : 0.11419896135512886,
+        "upperSpreadPoints" : 0.11533204035550426,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "M",
+        "level" : 0.5,
+        "meanSpreadPoints" : 0.04073442416942541,
+        "lowerSpreadPoints" : 0.05656832979920878,
+        "upperSpreadPoints" : 0.04996376403890679,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "M",
+        "level" : 0.95,
+        "meanSpreadPoints" : 0.04073442416942541,
+        "lowerSpreadPoints" : 0.11240038425034271,
+        "upperSpreadPoints" : 0.10460919605388597,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "SD",
+        "level" : 0.5,
+        "meanSpreadPoints" : 0.03343909490350683,
+        "lowerSpreadPoints" : 0.04570021116288103,
+        "upperSpreadPoints" : 0.043263422685932085,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "SD",
+        "level" : 0.95,
+        "meanSpreadPoints" : 0.03343909490350683,
+        "lowerSpreadPoints" : 0.09973431659703991,
+        "upperSpreadPoints" : 0.1018361123530731,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "V",
+        "level" : 0.5,
+        "meanSpreadPoints" : 0.018517614552196804,
+        "lowerSpreadPoints" : 0.02570851569502608,
+        "upperSpreadPoints" : 0.026523525248233426,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "V",
+        "level" : 0.95,
+        "meanSpreadPoints" : 0.018517614552196804,
+        "lowerSpreadPoints" : 0.046964902370286055,
+        "upperSpreadPoints" : 0.05911766158781262,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "C",
+        "level" : 0.5,
+        "meanSpreadPoints" : 0.020233050620458215,
+        "lowerSpreadPoints" : 0.02469140669096248,
+        "upperSpreadPoints" : 0.027684877247093453,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "C",
+        "level" : 0.95,
+        "meanSpreadPoints" : 0.020233050620458215,
+        "lowerSpreadPoints" : 0.04786943152385881,
+        "upperSpreadPoints" : 0.06459251614729133,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "KD",
+        "level" : 0.5,
+        "meanSpreadPoints" : 0.01801176540023519,
+        "lowerSpreadPoints" : 0.02184613230657817,
+        "upperSpreadPoints" : 0.022927346359027823,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "KD",
+        "level" : 0.95,
+        "meanSpreadPoints" : 0.01801176540023519,
+        "lowerSpreadPoints" : 0.043009183461197864,
+        "upperSpreadPoints" : 0.05423547512094551,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "L",
+        "level" : 0.5,
+        "meanSpreadPoints" : 0.01450979545794695,
+        "lowerSpreadPoints" : 0.02065401801420297,
+        "upperSpreadPoints" : 0.020625059127376666,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "L",
+        "level" : 0.95,
+        "meanSpreadPoints" : 0.01450979545794695,
+        "lowerSpreadPoints" : 0.03729910206699927,
+        "upperSpreadPoints" : 0.04478701691236253,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "MP",
+        "level" : 0.5,
+        "meanSpreadPoints" : 0.01937303179273009,
+        "lowerSpreadPoints" : 0.025284938163858683,
+        "upperSpreadPoints" : 0.02392639997172452,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "MP",
+        "level" : 0.95,
+        "meanSpreadPoints" : 0.01937303179273009,
+        "lowerSpreadPoints" : 0.04670011181561762,
+        "upperSpreadPoints" : 0.05307517028884767,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "OTHER",
+        "level" : 0.5,
+        "meanSpreadPoints" : 0.008464033419647965,
+        "lowerSpreadPoints" : 0.012193449859559724,
+        "upperSpreadPoints" : 0.012093852021171081,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      }, {
+        "component" : "OTHER",
+        "level" : 0.95,
+        "meanSpreadPoints" : 0.008464033419647965,
+        "lowerSpreadPoints" : 0.02298402122812826,
+        "upperSpreadPoints" : 0.029583080903372583,
+        "comparedDays" : 4278,
+        "seeds" : 8
+      } ]
+    } ],
+    "proposedTolerances" : [ {
+      "name" : "eight_party_2010:seeded_reproduction",
+      "units" : "percentage points between retained draws of two runs at the same seed",
+      "maxObservedError" : 0.0,
+      "cases" : 90000,
+      "seeds" : [ 20260908 ],
+      "rationale" : "A rerun of the same seed on the same implementation must return every draw unchanged, so the proposed bound is exactly zero. Cross-architecture reproduction uses a separately resolved bound."
+    }, {
+      "name" : "eight_party_2010:interval_endpoint_precision",
+      "units" : "percentage points between the extreme interval endpoints of runs differing only in seed",
+      "maxObservedError" : 0.11533204035550426,
+      "cases" : 77004,
+      "seeds" : [ 20260908, 20260909, 20260910, 20260911, 20260912, 20260913, 20260914, 20260915 ],
+      "rationale" : "The Monte Carlo error of a published interval endpoint at 10000 draws per day. It bounds how much of a reported interval is sampling noise rather than estimated uncertainty, and it is measured, never enlarged afterwards."
+    } ]
+  },
+  "remainder" : [ {
+    "periodId" : "eight_party_2010",
+    "status" : "drawn",
+    "members" : [ "OTHER" ],
+    "boundaries" : [ {
+      "kind" : "coverage_period_start",
+      "date" : "2010-01-04",
+      "periodId" : "eight_party_2010",
+      "note" : "A separate fit starts here with its own diffuse prior; the step at this date is a change of modeled membership, never voter movement."
+    }, {
+      "kind" : "centering_reference_change",
+      "date" : "2010-09-19",
+      "periodId" : "eight_party_2010",
+      "note" : "The institutes the level is centered on changed at this cycle reset, so the level can step against a changed reference rather than against voter movement."
+    }, {
+      "kind" : "centering_reference_change",
+      "date" : "2014-09-14",
+      "periodId" : "eight_party_2010",
+      "note" : "The institutes the level is centered on changed at this cycle reset, so the level can step against a changed reference rather than against voter movement."
+    }, {
+      "kind" : "centering_reference_change",
+      "date" : "2018-09-09",
+      "periodId" : "eight_party_2010",
+      "note" : "The institutes the level is centered on changed at this cycle reset, so the level can step against a changed reference rather than against voter movement."
+    } ],
+    "maxEndpointSumErrorPoints" : 0.0,
+    "segmentEdges" : [ {
+      "date" : "2010-01-04",
+      "mean" : 2.0541686857652715,
+      "intervals" : [ {
+        "level" : 0.5,
+        "lower" : 1.9609070850218964,
+        "upper" : 2.142548724826815
+      }, {
+        "level" : 0.95,
+        "lower" : 1.8022273541331848,
+        "upper" : 2.3354689368524855
+      } ]
+    }, {
+      "date" : "2021-09-20",
+      "mean" : 1.5676447837245695,
+      "intervals" : [ {
+        "level" : 0.5,
+        "lower" : 1.4964457994818547,
+        "upper" : 1.633519717783358
+      }, {
+        "level" : 0.95,
+        "lower" : 1.376953054646518,
+        "upper" : 1.7786933940802212
+      } ]
+    } ],
+    "estimatedDays" : 4278
+  } ],
+  "outcomes" : [ {
+    "periodId" : "eight_party_2010",
+    "probabilityRuns" : [ {
+      "seed" : 20260908,
+      "daySeed" : 5416840566589286126,
+      "draws" : 10000,
+      "maxMonteCarloStandardError" : 0.004933295450304999,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4113
+      },
+      "majorityProbabilities" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 0.5814,
+        "opposition" : 0.4186,
+        "s_c_mp" : 0.0,
+        "s_m" : 0.7019,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 0.5814,
+        "s_sd" : 0.2027,
+        "m_sd" : 0.0
+      }
+    }, {
+      "seed" : 20260909,
+      "daySeed" : 448590695220502106,
+      "draws" : 10000,
+      "maxMonteCarloStandardError" : 0.004955981840160434,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4273
+      },
+      "majorityProbabilities" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 0.5662,
+        "opposition" : 0.4338,
+        "s_c_mp" : 0.0,
+        "s_m" : 0.6927,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 0.5662,
+        "s_sd" : 0.1932,
+        "m_sd" : 0.0
+      }
+    }, {
+      "seed" : 20260910,
+      "daySeed" : -584427216390346262,
+      "draws" : 10000,
+      "maxMonteCarloStandardError" : 0.004943429983321297,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4174
+      },
+      "majorityProbabilities" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 0.575,
+        "opposition" : 0.425,
+        "s_c_mp" : 0.0,
+        "s_m" : 0.6962,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 0.575,
+        "s_sd" : 0.196,
+        "m_sd" : 0.0
+      }
+    }, {
+      "seed" : 20260911,
+      "daySeed" : 6952681995056680177,
+      "draws" : 10000,
+      "maxMonteCarloStandardError" : 0.004945086349094422,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4216
+      },
+      "majorityProbabilities" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 0.5739,
+        "opposition" : 0.4261,
+        "s_c_mp" : 0.0,
+        "s_m" : 0.7012,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 0.5739,
+        "s_sd" : 0.2049,
+        "m_sd" : 0.0
+      }
+    }, {
+      "seed" : 20260912,
+      "daySeed" : -4995667146678965717,
+      "draws" : 10000,
+      "maxMonteCarloStandardError" : 0.004947742818700261,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4185
+      },
+      "majorityProbabilities" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 0.5721,
+        "opposition" : 0.4279,
+        "s_c_mp" : 0.0,
+        "s_m" : 0.7009,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 0.5721,
+        "s_sd" : 0.2046,
+        "m_sd" : 0.0
+      }
+    }, {
+      "seed" : 20260913,
+      "daySeed" : 1250143597821762791,
+      "draws" : 10000,
+      "maxMonteCarloStandardError" : 0.004954906659060289,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 0.9999,
+        "L" : 0.0,
+        "MP" : 0.428
+      },
+      "majorityProbabilities" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 0.567,
+        "opposition" : 0.433,
+        "s_c_mp" : 0.0,
+        "s_m" : 0.6919,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 0.567,
+        "s_sd" : 0.1948,
+        "m_sd" : 0.0
+      }
+    }, {
+      "seed" : 20260914,
+      "daySeed" : 4911952252385749396,
+      "draws" : 10000,
+      "maxMonteCarloStandardError" : 0.004938627238413525,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 1.0,
+        "L" : 0.0,
+        "MP" : 0.4149
+      },
+      "majorityProbabilities" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 0.5781,
+        "opposition" : 0.4219,
+        "s_c_mp" : 0.0,
+        "s_m" : 0.6989,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 0.5781,
+        "s_sd" : 0.198,
+        "m_sd" : 0.0
+      }
+    }, {
+      "seed" : 20260915,
+      "daySeed" : -2584237970511981199,
+      "draws" : 10000,
+      "maxMonteCarloStandardError" : 0.004949905453642524,
+      "thresholdProbabilities" : {
+        "S" : 1.0,
+        "M" : 1.0,
+        "SD" : 1.0,
+        "V" : 1.0,
+        "C" : 1.0,
+        "KD" : 0.9999,
+        "L" : 0.0,
+        "MP" : 0.4218
+      },
+      "majorityProbabilities" : {
+        "left" : 0.0,
+        "right" : 0.0,
+        "tido" : 0.5706,
+        "opposition" : 0.4294,
+        "s_c_mp" : 0.0,
+        "s_m" : 0.6971,
+        "c_l_mp_s" : 0.0,
+        "m_kd_sd" : 0.5706,
+        "s_sd" : 0.2029,
+        "m_sd" : 0.0
+      }
+    } ],
+    "status" : "complete",
+    "verifiedSeatTotal" : 349,
+    "verifiedDraws" : 10000,
+    "allocationRule" : {
+      "electionYear" : 2022,
+      "seats" : 349,
+      "thresholdPercent" : 4.0,
+      "thresholdInclusive" : true,
+      "firstDivisor" : 1.2,
+      "subsequentDivisorFormula" : "2 * seats_already_allocated + 1",
+      "tieOrder" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "FI" ],
+      "otherReceivesSeats" : false,
+      "constituencyExceptionsIncluded" : false,
+      "officialTieRule" : "lottery",
+      "sourceUrl" : "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+    },
+    "seats" : {
+      "periodId" : "eight_party_2010",
+      "date" : "2021-09-20",
+      "rules" : {
+        "electionYear" : 2022,
+        "seats" : 349,
+        "thresholdPercent" : 4.0,
+        "thresholdInclusive" : true,
+        "firstDivisor" : 1.2,
+        "subsequentDivisorFormula" : "2 * seats_already_allocated + 1",
+        "tieOrder" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "FI" ],
+        "otherReceivesSeats" : false,
+        "constituencyExceptionsIncluded" : false,
+        "officialTieRule" : "lottery",
+        "sourceUrl" : "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      },
+      "intervalLevel" : 0.95,
+      "draws" : 10000,
+      "daySeed" : 5416840566589286126,
+      "parties" : [ {
+        "component" : "S",
+        "meanSupport" : 25.556263572946772,
+        "pointSeats" : 98,
+        "meanSeats" : 95.4839,
+        "lowerSeats" : 90,
+        "upperSeats" : 101,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "M",
+        "meanSupport" : 22.065201224007463,
+        "pointSeats" : 84,
+        "meanSeats" : 82.439,
+        "lowerSeats" : 77,
+        "upperSeats" : 88,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "SD",
+        "meanSupport" : 20.046394458253438,
+        "pointSeats" : 76,
+        "meanSeats" : 74.9006,
+        "lowerSeats" : 70,
+        "upperSeats" : 80,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "V",
+        "meanSupport" : 10.593046744967692,
+        "pointSeats" : 40,
+        "meanSeats" : 39.5826,
+        "lowerSeats" : 37,
+        "upperSeats" : 43,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "C",
+        "meanSupport" : 8.665475498742165,
+        "pointSeats" : 33,
+        "meanSeats" : 32.373,
+        "lowerSeats" : 30,
+        "upperSeats" : 35,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "KD",
+        "meanSupport" : 4.811457935795639,
+        "pointSeats" : 18,
+        "meanSeats" : 17.9761,
+        "lowerSeats" : 16,
+        "upperSeats" : 20,
+        "thresholdProbability" : 1.0
+      }, {
+        "component" : "L",
+        "meanSupport" : 2.7307731164189075,
+        "pointSeats" : 0,
+        "meanSeats" : 0.0,
+        "lowerSeats" : 0,
+        "upperSeats" : 0,
+        "thresholdProbability" : 0.0
+      }, {
+        "component" : "MP",
+        "meanSupport" : 3.96374266514349,
+        "pointSeats" : 0,
+        "meanSeats" : 6.2448,
+        "lowerSeats" : 0,
+        "upperSeats" : 16,
+        "thresholdProbability" : 0.4113
+      } ],
+      "excludedFromAllocation" : [ "OTHER" ],
+      "unavailable" : [ {
+        "component" : "FI",
+        "reason" : "no_validated_coverage_period"
+      } ],
+      "tieBrokenPointSeats" : 0,
+      "note" : "A national seat approximation from national shares. It omits constituency rules, including the 12% constituency exception, the split into 310 fixed and 39 adjustment seats and the return of excess fixed seats, and it is not an official allocation.",
+      "tieNote" : "An exact quotient tie is resolved by the fixed party order recorded with the rule, which makes a run reproducible. The official rule draws lots, so this is an approximation of that rule and not the legal tie procedure."
+    },
+    "coalitions" : {
+      "periodId" : "eight_party_2010",
+      "date" : "2021-09-20",
+      "majoritySeats" : 175,
+      "intervalLevel" : 0.95,
+      "draws" : 10000,
+      "daySeed" : 5416840566589286126,
+      "overviewDefaults" : [ "tido", "opposition", "left", "s_m" ],
+      "coalitions" : [ {
+        "id" : "left",
+        "parties" : [ "S", "V", "MP" ],
+        "pointSeats" : 138,
+        "meanSeats" : 141.3113,
+        "lowerSeats" : 134,
+        "upperSeats" : 150,
+        "majorityProbability" : 0.0
+      }, {
+        "id" : "right",
+        "parties" : [ "M", "L", "C", "KD" ],
+        "pointSeats" : 135,
+        "meanSeats" : 132.7881,
+        "lowerSeats" : 126,
+        "upperSeats" : 139,
+        "majorityProbability" : 0.0
+      }, {
+        "id" : "tido",
+        "parties" : [ "M", "L", "KD", "SD" ],
+        "pointSeats" : 178,
+        "meanSeats" : 175.3157,
+        "lowerSeats" : 167,
+        "upperSeats" : 183,
+        "majorityProbability" : 0.5814
+      }, {
+        "id" : "opposition",
+        "parties" : [ "S", "C", "V", "MP" ],
+        "pointSeats" : 171,
+        "meanSeats" : 173.6843,
+        "lowerSeats" : 166,
+        "upperSeats" : 182,
+        "majorityProbability" : 0.4186
+      }, {
+        "id" : "s_c_mp",
+        "parties" : [ "S", "C", "MP" ],
+        "pointSeats" : 131,
+        "meanSeats" : 134.1017,
+        "lowerSeats" : 126,
+        "upperSeats" : 143,
+        "majorityProbability" : 0.0
+      }, {
+        "id" : "s_m",
+        "parties" : [ "S", "M" ],
+        "pointSeats" : 182,
+        "meanSeats" : 177.9229,
+        "lowerSeats" : 170,
+        "upperSeats" : 185,
+        "majorityProbability" : 0.7019
+      }, {
+        "id" : "c_l_mp_s",
+        "parties" : [ "C", "L", "MP", "S" ],
+        "pointSeats" : 131,
+        "meanSeats" : 134.1017,
+        "lowerSeats" : 126,
+        "upperSeats" : 143,
+        "majorityProbability" : 0.0
+      }, {
+        "id" : "m_kd_sd",
+        "parties" : [ "M", "KD", "SD" ],
+        "pointSeats" : 178,
+        "meanSeats" : 175.3157,
+        "lowerSeats" : 167,
+        "upperSeats" : 183,
+        "majorityProbability" : 0.5814
+      }, {
+        "id" : "s_sd",
+        "parties" : [ "S", "SD" ],
+        "pointSeats" : 174,
+        "meanSeats" : 170.3845,
+        "lowerSeats" : 162,
+        "upperSeats" : 178,
+        "majorityProbability" : 0.2027
+      }, {
+        "id" : "m_sd",
+        "parties" : [ "M", "SD" ],
+        "pointSeats" : 160,
+        "meanSeats" : 157.3396,
+        "lowerSeats" : 150,
+        "upperSeats" : 164,
+        "majorityProbability" : 0.0
+      } ],
+      "comparison" : [ {
+        "left" : "left",
+        "right" : "right",
+        "leftLeads" : 0.8062,
+        "rightLeads" : 0.1465,
+        "tied" : 0.0473
+      }, {
+        "left" : "left",
+        "right" : "tido",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "left",
+        "right" : "opposition",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "left",
+        "right" : "s_c_mp",
+        "leftLeads" : 0.9997,
+        "rightLeads" : 1.0E-4,
+        "tied" : 2.0E-4
+      }, {
+        "left" : "left",
+        "right" : "s_m",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "left",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 0.9997,
+        "rightLeads" : 1.0E-4,
+        "tied" : 2.0E-4
+      }, {
+        "left" : "left",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "left",
+        "right" : "s_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "left",
+        "right" : "m_sd",
+        "leftLeads" : 0.0242,
+        "rightLeads" : 0.9648,
+        "tied" : 0.011
+      }, {
+        "left" : "right",
+        "right" : "tido",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "right",
+        "right" : "opposition",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "right",
+        "right" : "s_c_mp",
+        "leftLeads" : 0.5183,
+        "rightLeads" : 0.4541,
+        "tied" : 0.0276
+      }, {
+        "left" : "right",
+        "right" : "s_m",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "right",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 0.5183,
+        "rightLeads" : 0.4541,
+        "tied" : 0.0276
+      }, {
+        "left" : "right",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "right",
+        "right" : "s_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "right",
+        "right" : "m_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "tido",
+        "right" : "opposition",
+        "leftLeads" : 0.5814,
+        "rightLeads" : 0.4186,
+        "tied" : 0.0
+      }, {
+        "left" : "tido",
+        "right" : "s_c_mp",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "tido",
+        "right" : "s_m",
+        "leftLeads" : 0.1961,
+        "rightLeads" : 0.7249,
+        "tied" : 0.079
+      }, {
+        "left" : "tido",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "tido",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 0.0,
+        "tied" : 1.0
+      }, {
+        "left" : "tido",
+        "right" : "s_sd",
+        "leftLeads" : 0.882,
+        "rightLeads" : 0.0725,
+        "tied" : 0.0455
+      }, {
+        "left" : "tido",
+        "right" : "m_sd",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "opposition",
+        "right" : "s_c_mp",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "opposition",
+        "right" : "s_m",
+        "leftLeads" : 0.3865,
+        "rightLeads" : 0.6006,
+        "tied" : 0.0129
+      }, {
+        "left" : "opposition",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "opposition",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.4186,
+        "rightLeads" : 0.5814,
+        "tied" : 0.0
+      }, {
+        "left" : "opposition",
+        "right" : "s_sd",
+        "leftLeads" : 0.4816,
+        "rightLeads" : 0.4731,
+        "tied" : 0.0453
+      }, {
+        "left" : "opposition",
+        "right" : "m_sd",
+        "leftLeads" : 0.9888,
+        "rightLeads" : 0.0072,
+        "tied" : 0.004
+      }, {
+        "left" : "s_c_mp",
+        "right" : "s_m",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "s_c_mp",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 0.0,
+        "rightLeads" : 0.0,
+        "tied" : 1.0
+      }, {
+        "left" : "s_c_mp",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "s_c_mp",
+        "right" : "s_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "s_c_mp",
+        "right" : "m_sd",
+        "leftLeads" : 3.0E-4,
+        "rightLeads" : 0.9994,
+        "tied" : 3.0E-4
+      }, {
+        "left" : "s_m",
+        "right" : "c_l_mp_s",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "s_m",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.7249,
+        "rightLeads" : 0.1961,
+        "tied" : 0.079
+      }, {
+        "left" : "s_m",
+        "right" : "s_sd",
+        "leftLeads" : 0.9842,
+        "rightLeads" : 0.0084,
+        "tied" : 0.0074
+      }, {
+        "left" : "s_m",
+        "right" : "m_sd",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "c_l_mp_s",
+        "right" : "m_kd_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "c_l_mp_s",
+        "right" : "s_sd",
+        "leftLeads" : 0.0,
+        "rightLeads" : 1.0,
+        "tied" : 0.0
+      }, {
+        "left" : "c_l_mp_s",
+        "right" : "m_sd",
+        "leftLeads" : 3.0E-4,
+        "rightLeads" : 0.9994,
+        "tied" : 3.0E-4
+      }, {
+        "left" : "m_kd_sd",
+        "right" : "s_sd",
+        "leftLeads" : 0.882,
+        "rightLeads" : 0.0725,
+        "tied" : 0.0455
+      }, {
+        "left" : "m_kd_sd",
+        "right" : "m_sd",
+        "leftLeads" : 1.0,
+        "rightLeads" : 0.0,
+        "tied" : 0.0
+      }, {
+        "left" : "s_sd",
+        "right" : "m_sd",
+        "leftLeads" : 0.9998,
+        "rightLeads" : 1.0E-4,
+        "tied" : 1.0E-4
+      } ],
+      "note" : "A label states which parties are counted together and implies no agreement to govern together. Probabilities come from the same joint draws as the seat allocation.",
+      "tie" : "neither_side_wins"
+    },
+    "precision" : [ {
+      "quantity" : "threshold:S",
+      "minimum" : 1.0,
+      "maximum" : 1.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:M",
+      "minimum" : 1.0,
+      "maximum" : 1.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:SD",
+      "minimum" : 1.0,
+      "maximum" : 1.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:V",
+      "minimum" : 1.0,
+      "maximum" : 1.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:C",
+      "minimum" : 1.0,
+      "maximum" : 1.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:KD",
+      "minimum" : 0.9999,
+      "maximum" : 1.0,
+      "spread" : 9.999999999998899E-5,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:L",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "threshold:MP",
+      "minimum" : 0.4113,
+      "maximum" : 0.428,
+      "spread" : 0.016699999999999993,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:left",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:right",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:tido",
+      "minimum" : 0.5662,
+      "maximum" : 0.5814,
+      "spread" : 0.015199999999999991,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:opposition",
+      "minimum" : 0.4186,
+      "maximum" : 0.4338,
+      "spread" : 0.015199999999999991,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:s_c_mp",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:s_m",
+      "minimum" : 0.6919,
+      "maximum" : 0.7019,
+      "spread" : 0.010000000000000009,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:c_l_mp_s",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:m_kd_sd",
+      "minimum" : 0.5662,
+      "maximum" : 0.5814,
+      "spread" : 0.015199999999999991,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:s_sd",
+      "minimum" : 0.1932,
+      "maximum" : 0.2049,
+      "spread" : 0.011699999999999988,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    }, {
+      "quantity" : "majority:m_sd",
+      "minimum" : 0.0,
+      "maximum" : 0.0,
+      "spread" : 0.0,
+      "seeds" : 8,
+      "drawsPerSeed" : 10000
+    } ],
+    "sensitivity" : [ {
+      "kind" : "centering",
+      "label" : "poll_count_centering",
+      "comparedOn" : "2021-09-20",
+      "comparedDays" : 4278,
+      "componentShiftPoints" : {
+        "S" : -0.18960887114711156,
+        "M" : -0.07228232590557937,
+        "SD" : 0.2777903621577771,
+        "V" : 0.010510415742798429,
+        "C" : -0.004989039828316777,
+        "KD" : -0.038407134698802636,
+        "L" : -0.017006182499460287,
+        "MP" : 0.014099092102018762,
+        "OTHER" : 0.01989368407667258
+      },
+      "maxComponentShiftPoints" : 0.2777903621577771,
+      "maxDailyComponentShiftPoints" : 0.3315186520916562,
+      "probabilities" : {
+        "comparedOn" : "2021-09-20",
+        "thresholdDifferencePoints" : {
+          "S" : 0.0,
+          "M" : 0.0,
+          "SD" : 0.0,
+          "V" : 0.0,
+          "C" : 0.0,
+          "KD" : 0.0,
+          "L" : 0.0,
+          "MP" : 2.7500000000000027
+        },
+        "majorityDifferencePoints" : {
+          "left" : 0.0,
+          "right" : 0.0,
+          "tido" : 0.19000000000000128,
+          "opposition" : -0.19000000000000128,
+          "s_c_mp" : 0.0,
+          "s_m" : -7.26,
+          "c_l_mp_s" : 0.0,
+          "m_kd_sd" : 0.19000000000000128,
+          "s_sd" : 2.4800000000000018,
+          "m_sd" : 0.0
+        },
+        "maxAbsoluteDifferencePoints" : 7.26,
+        "largestMovement" : "majority:s_m"
+      },
+      "provenance" : {
+        "baselineCentering" : "equal_institute_centering",
+        "alternative" : "poll_count_centering",
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "seed" : 20260908,
+        "draws" : 10000,
+        "allocationElectionYear" : 2022
+      },
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Demoskop",
+      "comparedOn" : "2021-09-20",
+      "comparedDays" : 4231,
+      "componentShiftPoints" : {
+        "S" : 0.013060581600615961,
+        "M" : -0.10193724491308842,
+        "SD" : -0.06784186615313814,
+        "V" : 0.2882563896478967,
+        "C" : -0.10049211102708178,
+        "KD" : -0.11712942542131888,
+        "L" : -0.05465671325780885,
+        "MP" : 0.04951036030491629,
+        "OTHER" : 0.09123002921899492
+      },
+      "maxComponentShiftPoints" : 0.2882563896478967,
+      "maxDailyComponentShiftPoints" : 0.9891755914148774,
+      "probabilities" : {
+        "comparedOn" : "2021-09-20",
+        "thresholdDifferencePoints" : {
+          "S" : 0.0,
+          "M" : 0.0,
+          "SD" : 0.0,
+          "V" : 0.0,
+          "C" : 0.0,
+          "KD" : -0.029999999999996696,
+          "L" : 0.0,
+          "MP" : 9.760000000000002
+        },
+        "majorityDifferencePoints" : {
+          "left" : 0.0,
+          "right" : 0.0,
+          "tido" : -12.860000000000005,
+          "opposition" : 12.86,
+          "s_c_mp" : 0.0,
+          "s_m" : -7.689999999999997,
+          "c_l_mp_s" : 0.0,
+          "m_kd_sd" : -12.860000000000005,
+          "s_sd" : -3.1699999999999977,
+          "m_sd" : 0.0
+        },
+        "maxAbsoluteDifferencePoints" : 12.860000000000005,
+        "largestMovement" : "majority:tido"
+      },
+      "provenance" : {
+        "baselineCentering" : "equal_institute_centering",
+        "alternative" : "without_Demoskop",
+        "droppedInstitute" : "Demoskop",
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "seed" : 20260908,
+        "draws" : 10000,
+        "allocationElectionYear" : 2022
+      },
+      "needsDisclosure" : true,
+      "disclosure" : "without_Demoskop moves a component or headline probability by 12.860000000000005 points"
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Inizio",
+      "comparedOn" : "2021-09-20",
+      "comparedDays" : 4278,
+      "componentShiftPoints" : {
+        "S" : 0.11396427186187807,
+        "M" : -0.08405036968748547,
+        "SD" : -9.888055954654362E-4,
+        "V" : 0.1472235739521235,
+        "C" : -0.17569121847487423,
+        "KD" : -0.04018202100365631,
+        "L" : 0.0044541564685798285,
+        "MP" : 0.038426058880761005,
+        "OTHER" : -0.0031556464018664965
+      },
+      "maxComponentShiftPoints" : 0.17569121847487423,
+      "maxDailyComponentShiftPoints" : 0.6176310432726382,
+      "probabilities" : {
+        "comparedOn" : "2021-09-20",
+        "thresholdDifferencePoints" : {
+          "S" : 0.0,
+          "M" : 0.0,
+          "SD" : 0.0,
+          "V" : 0.0,
+          "C" : 0.0,
+          "KD" : 0.0,
+          "L" : 0.0,
+          "MP" : 7.8100000000000005
+        },
+        "majorityDifferencePoints" : {
+          "left" : 0.0,
+          "right" : 0.0,
+          "tido" : -8.800000000000002,
+          "opposition" : 8.800000000000002,
+          "s_c_mp" : 0.0,
+          "s_m" : -3.9200000000000013,
+          "c_l_mp_s" : 0.0,
+          "m_kd_sd" : -8.800000000000002,
+          "s_sd" : 1.5300000000000007,
+          "m_sd" : 0.0
+        },
+        "maxAbsoluteDifferencePoints" : 8.800000000000002,
+        "largestMovement" : "majority:tido"
+      },
+      "provenance" : {
+        "baselineCentering" : "equal_institute_centering",
+        "alternative" : "without_Inizio",
+        "droppedInstitute" : "Inizio",
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "seed" : 20260908,
+        "draws" : 10000,
+        "allocationElectionYear" : 2022
+      },
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Ipsos",
+      "comparedOn" : "2021-09-16",
+      "comparedDays" : 4274,
+      "componentShiftPoints" : {
+        "S" : 0.09575170385977216,
+        "M" : 0.03411152038896148,
+        "SD" : -0.11349596487315239,
+        "V" : -0.03605420199175491,
+        "C" : 0.09585934334614699,
+        "KD" : 0.09693390541569613,
+        "L" : -0.02986932119372243,
+        "MP" : -0.03466428991395487,
+        "OTHER" : -0.10857269503801614
+      },
+      "maxComponentShiftPoints" : 0.11349596487315239,
+      "maxDailyComponentShiftPoints" : 1.0195992295844505,
+      "probabilities" : {
+        "comparedOn" : "2021-09-16",
+        "thresholdDifferencePoints" : {
+          "S" : 0.0,
+          "M" : 0.0,
+          "SD" : 0.0,
+          "V" : 0.0,
+          "C" : 0.0,
+          "KD" : 0.0,
+          "L" : 0.0,
+          "MP" : -6.75
+        },
+        "majorityDifferencePoints" : {
+          "left" : 0.0,
+          "right" : 0.0,
+          "tido" : 4.779999999999996,
+          "opposition" : -4.780000000000001,
+          "s_c_mp" : 0.0,
+          "s_m" : 5.75,
+          "c_l_mp_s" : 0.0,
+          "m_kd_sd" : 4.779999999999996,
+          "s_sd" : -1.4800000000000009,
+          "m_sd" : 0.0
+        },
+        "maxAbsoluteDifferencePoints" : 6.75,
+        "largestMovement" : "threshold:MP"
+      },
+      "provenance" : {
+        "baselineCentering" : "equal_institute_centering",
+        "alternative" : "without_Ipsos",
+        "droppedInstitute" : "Ipsos",
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "seed" : 20260908,
+        "draws" : 10000,
+        "allocationElectionYear" : 2022
+      },
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Novus",
+      "comparedOn" : "2021-09-20",
+      "comparedDays" : 4278,
+      "componentShiftPoints" : {
+        "S" : -0.09092296818028345,
+        "M" : -0.18194968145639834,
+        "SD" : 0.1470236435549559,
+        "V" : -0.042562145358619574,
+        "C" : -0.01445127393460055,
+        "KD" : 0.03827772555942133,
+        "L" : 0.07435142394462879,
+        "MP" : 0.00810767284109204,
+        "OTHER" : 0.062125603029801635
+      },
+      "maxComponentShiftPoints" : 0.18194968145639834,
+      "maxDailyComponentShiftPoints" : 0.855536036103544,
+      "probabilities" : {
+        "comparedOn" : "2021-09-20",
+        "thresholdDifferencePoints" : {
+          "S" : 0.0,
+          "M" : 0.0,
+          "SD" : 0.0,
+          "V" : 0.0,
+          "C" : 0.0,
+          "KD" : -0.009999999999998899,
+          "L" : 0.0,
+          "MP" : 2.2500000000000018
+        },
+        "majorityDifferencePoints" : {
+          "left" : 0.0,
+          "right" : 0.0,
+          "tido" : -1.0700000000000043,
+          "opposition" : 1.0699999999999987,
+          "s_c_mp" : 0.0,
+          "s_m" : -5.049999999999999,
+          "c_l_mp_s" : 0.0,
+          "m_kd_sd" : -1.0700000000000043,
+          "s_sd" : 4.450000000000001,
+          "m_sd" : 0.0
+        },
+        "maxAbsoluteDifferencePoints" : 5.049999999999999,
+        "largestMovement" : "majority:s_m"
+      },
+      "provenance" : {
+        "baselineCentering" : "equal_institute_centering",
+        "alternative" : "without_Novus",
+        "droppedInstitute" : "Novus",
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "seed" : 20260908,
+        "draws" : 10000,
+        "allocationElectionYear" : 2022
+      },
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_SCB",
+      "comparedOn" : "2021-09-20",
+      "comparedDays" : 4278,
+      "componentShiftPoints" : {
+        "S" : -0.26774515360640905,
+        "M" : -0.06872360396125288,
+        "SD" : 0.17481205628534013,
+        "V" : 0.06362671028854194,
+        "C" : 0.1047653231994694,
+        "KD" : -0.0010144762624806347,
+        "L" : 0.0026753464024449336,
+        "MP" : -0.04235804996932391,
+        "OTHER" : 0.0339618476236605
+      },
+      "maxComponentShiftPoints" : 0.26774515360640905,
+      "maxDailyComponentShiftPoints" : 0.7467855191880197,
+      "probabilities" : {
+        "comparedOn" : "2021-09-20",
+        "thresholdDifferencePoints" : {
+          "S" : 0.0,
+          "M" : 0.0,
+          "SD" : 0.0,
+          "V" : 0.0,
+          "C" : 0.0,
+          "KD" : 0.0,
+          "L" : 0.0,
+          "MP" : -8.05
+        },
+        "majorityDifferencePoints" : {
+          "left" : 0.0,
+          "right" : 0.0,
+          "tido" : 8.909999999999997,
+          "opposition" : -8.910000000000002,
+          "s_c_mp" : 0.0,
+          "s_m" : 0.31999999999999806,
+          "c_l_mp_s" : 0.0,
+          "m_kd_sd" : 8.909999999999997,
+          "s_sd" : -0.7199999999999984,
+          "m_sd" : 0.0
+        },
+        "maxAbsoluteDifferencePoints" : 8.910000000000002,
+        "largestMovement" : "majority:opposition"
+      },
+      "provenance" : {
+        "baselineCentering" : "equal_institute_centering",
+        "alternative" : "without_SCB",
+        "droppedInstitute" : "SCB",
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "seed" : 20260908,
+        "draws" : 10000,
+        "allocationElectionYear" : 2022
+      },
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Sentio",
+      "comparedOn" : "2021-09-20",
+      "comparedDays" : 4278,
+      "componentShiftPoints" : {
+        "S" : 0.19693285647327485,
+        "M" : 0.10774659688016186,
+        "SD" : -0.4353194751635243,
+        "V" : -0.06987648654827616,
+        "C" : 0.26950075575029864,
+        "KD" : 0.005844671987617289,
+        "L" : 0.025182413418309846,
+        "MP" : -0.015095920407071972,
+        "OTHER" : -0.08491541239080114
+      },
+      "maxComponentShiftPoints" : 0.4353194751635243,
+      "maxDailyComponentShiftPoints" : 0.8660870469406845,
+      "probabilities" : {
+        "comparedOn" : "2021-09-20",
+        "thresholdDifferencePoints" : {
+          "S" : 0.0,
+          "M" : 0.0,
+          "SD" : 0.0,
+          "V" : 0.0,
+          "C" : 0.0,
+          "KD" : 0.0,
+          "L" : 0.0,
+          "MP" : -3.049999999999997
+        },
+        "majorityDifferencePoints" : {
+          "left" : 0.0,
+          "right" : 0.0,
+          "tido" : -3.9100000000000024,
+          "opposition" : 3.9099999999999966,
+          "s_c_mp" : 0.0,
+          "s_m" : 8.540000000000003,
+          "c_l_mp_s" : 0.0,
+          "m_kd_sd" : -3.9100000000000024,
+          "s_sd" : -7.829999999999999,
+          "m_sd" : 0.0
+        },
+        "maxAbsoluteDifferencePoints" : 8.540000000000003,
+        "largestMovement" : "majority:s_m"
+      },
+      "provenance" : {
+        "baselineCentering" : "equal_institute_centering",
+        "alternative" : "without_Sentio",
+        "droppedInstitute" : "Sentio",
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "seed" : 20260908,
+        "draws" : 10000,
+        "allocationElectionYear" : 2022
+      },
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Sifo",
+      "comparedOn" : "2021-09-20",
+      "comparedDays" : 4278,
+      "componentShiftPoints" : {
+        "S" : 0.028744354443809073,
+        "M" : 0.07296767930507997,
+        "SD" : 0.13779327870924618,
+        "V" : -0.07024624136913715,
+        "C" : -0.10622038959044922,
+        "KD" : 0.08558281218653807,
+        "L" : -0.05744268780912032,
+        "MP" : -0.1008947648971108,
+        "OTHER" : 0.009715959021141751
+      },
+      "maxComponentShiftPoints" : 0.13779327870924618,
+      "maxDailyComponentShiftPoints" : 0.8574312636044681,
+      "probabilities" : {
+        "comparedOn" : "2021-09-20",
+        "thresholdDifferencePoints" : {
+          "S" : 0.0,
+          "M" : 0.0,
+          "SD" : 0.0,
+          "V" : 0.0,
+          "C" : 0.0,
+          "KD" : 0.0,
+          "L" : 0.0,
+          "MP" : -15.54
+        },
+        "majorityDifferencePoints" : {
+          "left" : 0.0,
+          "right" : 0.0,
+          "tido" : 16.799999999999994,
+          "opposition" : -16.800000000000004,
+          "s_c_mp" : 0.0,
+          "s_m" : 11.720000000000008,
+          "c_l_mp_s" : 0.0,
+          "m_kd_sd" : 16.799999999999994,
+          "s_sd" : 9.889999999999999,
+          "m_sd" : 0.0
+        },
+        "maxAbsoluteDifferencePoints" : 16.800000000000004,
+        "largestMovement" : "majority:opposition"
+      },
+      "provenance" : {
+        "baselineCentering" : "equal_institute_centering",
+        "alternative" : "without_Sifo",
+        "droppedInstitute" : "Sifo",
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "seed" : 20260908,
+        "draws" : 10000,
+        "allocationElectionYear" : 2022
+      },
+      "needsDisclosure" : true,
+      "disclosure" : "without_Sifo moves a component or headline probability by 16.800000000000004 points"
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_Skop",
+      "comparedOn" : "2021-09-20",
+      "comparedDays" : 4278,
+      "componentShiftPoints" : {
+        "S" : -0.03432795639413655,
+        "M" : 0.006708031395739056,
+        "SD" : 0.2554009185708459,
+        "V" : -0.16979830743245117,
+        "C" : -0.10657008373481247,
+        "KD" : -0.031709002382005025,
+        "L" : -0.013635707821473275,
+        "MP" : 0.06590032285270375,
+        "OTHER" : 0.02803178494558689
+      },
+      "maxComponentShiftPoints" : 0.2554009185708459,
+      "maxDailyComponentShiftPoints" : 0.524799033451032,
+      "probabilities" : {
+        "comparedOn" : "2021-09-20",
+        "thresholdDifferencePoints" : {
+          "S" : 0.0,
+          "M" : 0.0,
+          "SD" : 0.0,
+          "V" : 0.0,
+          "C" : 0.0,
+          "KD" : 0.0,
+          "L" : 0.0,
+          "MP" : 13.670000000000005
+        },
+        "majorityDifferencePoints" : {
+          "left" : 0.0,
+          "right" : 0.0,
+          "tido" : -8.000000000000007,
+          "opposition" : 7.9999999999999964,
+          "s_c_mp" : 0.0,
+          "s_m" : -9.160000000000002,
+          "c_l_mp_s" : 0.0,
+          "m_kd_sd" : -8.000000000000007,
+          "s_sd" : 3.1,
+          "m_sd" : 0.0
+        },
+        "maxAbsoluteDifferencePoints" : 13.670000000000005,
+        "largestMovement" : "threshold:MP"
+      },
+      "provenance" : {
+        "baselineCentering" : "equal_institute_centering",
+        "alternative" : "without_Skop",
+        "droppedInstitute" : "Skop",
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "seed" : 20260908,
+        "draws" : 10000,
+        "allocationElectionYear" : 2022
+      },
+      "needsDisclosure" : true,
+      "disclosure" : "without_Skop moves a component or headline probability by 13.670000000000005 points"
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_United Minds",
+      "comparedOn" : "2021-09-20",
+      "comparedDays" : 4278,
+      "componentShiftPoints" : {
+        "S" : -1.4739960484178027E-5,
+        "M" : 6.91407779953579E-5,
+        "SD" : -2.293279696274908E-5,
+        "V" : 4.372880732539386E-5,
+        "C" : 3.4850536552610833E-5,
+        "KD" : -7.528107816945351E-5,
+        "L" : -4.462957887607644E-5,
+        "MP" : 3.652543482068893E-5,
+        "OTHER" : -2.6662142194489036E-5
+      },
+      "maxComponentShiftPoints" : 7.528107816945351E-5,
+      "maxDailyComponentShiftPoints" : 0.5641596992599567,
+      "probabilities" : {
+        "comparedOn" : "2021-09-20",
+        "thresholdDifferencePoints" : {
+          "S" : 0.0,
+          "M" : 0.0,
+          "SD" : 0.0,
+          "V" : 0.0,
+          "C" : 0.0,
+          "KD" : 0.0,
+          "L" : 0.0,
+          "MP" : 0.019999999999997797
+        },
+        "majorityDifferencePoints" : {
+          "left" : 0.0,
+          "right" : 0.0,
+          "tido" : -0.019999999999997797,
+          "opposition" : 0.019999999999997797,
+          "s_c_mp" : 0.0,
+          "s_m" : -0.019999999999997797,
+          "c_l_mp_s" : 0.0,
+          "m_kd_sd" : -0.019999999999997797,
+          "s_sd" : -0.02999999999999947,
+          "m_sd" : 0.0
+        },
+        "maxAbsoluteDifferencePoints" : 0.02999999999999947,
+        "largestMovement" : "majority:s_sd"
+      },
+      "provenance" : {
+        "baselineCentering" : "equal_institute_centering",
+        "alternative" : "without_United Minds",
+        "droppedInstitute" : "United Minds",
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "seed" : 20260908,
+        "draws" : 10000,
+        "allocationElectionYear" : 2022
+      },
+      "needsDisclosure" : false
+    }, {
+      "kind" : "leave_one_institute_out",
+      "label" : "without_YouGov",
+      "comparedOn" : "2021-09-20",
+      "comparedDays" : 4278,
+      "componentShiftPoints" : {
+        "S" : 5.050166529798616E-4,
+        "M" : 4.2266288812342623E-4,
+        "SD" : -0.0014172344037817197,
+        "V" : 9.336833372231013E-6,
+        "C" : 6.554224945816145E-4,
+        "KD" : 3.083276825464054E-4,
+        "L" : 1.8252858626777169E-4,
+        "MP" : 7.611069870789855E-4,
+        "OTHER" : -0.001427167721171907
+      },
+      "maxComponentShiftPoints" : 0.001427167721171907,
+      "maxDailyComponentShiftPoints" : 0.9629470299128009,
+      "probabilities" : {
+        "comparedOn" : "2021-09-20",
+        "thresholdDifferencePoints" : {
+          "S" : 0.0,
+          "M" : 0.0,
+          "SD" : 0.0,
+          "V" : 0.0,
+          "C" : 0.0,
+          "KD" : 0.0,
+          "L" : 0.0,
+          "MP" : 0.11999999999999789
+        },
+        "majorityDifferencePoints" : {
+          "left" : 0.0,
+          "right" : 0.0,
+          "tido" : -0.17000000000000348,
+          "opposition" : 0.16999999999999793,
+          "s_c_mp" : 0.0,
+          "s_m" : -0.08000000000000229,
+          "c_l_mp_s" : 0.0,
+          "m_kd_sd" : -0.17000000000000348,
+          "s_sd" : -0.10999999999999899,
+          "m_sd" : 0.0
+        },
+        "maxAbsoluteDifferencePoints" : 0.17000000000000348,
+        "largestMovement" : "majority:tido"
+      },
+      "provenance" : {
+        "baselineCentering" : "equal_institute_centering",
+        "alternative" : "without_YouGov",
+        "droppedInstitute" : "YouGov",
+        "parameters" : {
+          "walkVariance" : 1.0E-4,
+          "houseScale" : 0.1,
+          "covarianceMultiplier" : 1.5
+        },
+        "seed" : 20260908,
+        "draws" : 10000,
+        "allocationElectionYear" : 2022
+      },
+      "needsDisclosure" : false
+    } ]
+  }, {
+    "periodId" : "fi_candidate_2014_2018",
+    "status" : "unavailable",
+    "reason" : "the candidate coverage period is not validated"
+  } ],
+  "gatePassed" : false,
+  "status" : "blocked"
+}
