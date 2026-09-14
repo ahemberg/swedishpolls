@@ -239,13 +239,50 @@ public final class SeatOutcomes {
       NationalAllocationRule allocation) {
     final EstimateHistory.Fitted fitted =
         EstimateHistory.fitted(period, polls, elections, parameters, coverage, centering);
-    final EstimateHistory.Span last = fitted.spans().getLast();
-    final DailyStateSpace.Day day = last.fit().days().getLast();
-    final double[][] basis = PollObservations.transposedBasis(last.batch());
-    final double[][] transformed =
-        JointUncertainty.transformed(last.batch(), basis, period.id(), day, rules);
-    return NationalSeats.allocateDraws(
-        period.id(), day.date(), last.batch().components(), transformed, rules.seed(), allocation);
+    return drawsOn(
+        fitted,
+        period.id(),
+        fitted.spans().getLast().fit().days().getLast().date(),
+        rules,
+        allocation);
+  }
+
+  /** Draws one mutually estimated day for a sensitivity comparison. */
+  static NationalSeats.SeatDraws drawsOn(
+      Roster.CoveragePeriod period,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      DailyStateSpace.Parameters parameters,
+      CoverageValidation.Rules coverage,
+      JointUncertainty.Rules rules,
+      DailyStateSpace.Centering centering,
+      NationalAllocationRule allocation,
+      LocalDate date) {
+    return drawsOn(
+        EstimateHistory.fitted(period, polls, elections, parameters, coverage, centering),
+        period.id(),
+        date,
+        rules,
+        allocation);
+  }
+
+  private static NationalSeats.SeatDraws drawsOn(
+      EstimateHistory.Fitted fitted,
+      String periodId,
+      LocalDate date,
+      JointUncertainty.Rules rules,
+      NationalAllocationRule allocation) {
+    for (final EstimateHistory.Span span : fitted.spans()) {
+      for (final DailyStateSpace.Day day : span.fit().days()) {
+        if (!day.date().equals(date)) continue;
+        final double[][] basis = PollObservations.transposedBasis(span.batch());
+        final double[][] transformed =
+            JointUncertainty.transformed(span.batch(), basis, periodId, day, rules);
+        return NationalSeats.allocateDraws(
+            periodId, date, span.batch().components(), transformed, rules.seed(), allocation);
+      }
+    }
+    throw new IllegalArgumentException("The fit does not estimate " + date);
   }
 
   /** The threshold and majority probabilities one day's drawn allocations imply. */

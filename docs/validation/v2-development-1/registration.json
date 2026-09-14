@@ -4,12 +4,12 @@
   "registeredOn" : "2026-09-14",
   "planIdentity" : {
     "path" : "docs/validation/v2-development-1/registration-plan.json",
-    "sha256" : "778e10e9209c3e762feacdbfa26e7e68ec85c7921f05d250c70e5f5debb74498"
+    "sha256" : "4ed38eca4757f47af71de4b4b6d401a0deeb12a2483c41666f491fcad63e092f"
   },
   "plan" : {
     "version" : "v2-development-1",
     "registeredOn" : "2026-09-14",
-    "implementationCommit" : "987fefe64428e1fbf6704dd1065648ce1c49c841",
+    "implementationCommit" : "f89a4b81e3d5e80057fdd0ef73ecb266873bcb3c",
     "authority" : {
       "proposal" : "v2-development-1-proposal-1",
       "proposalCommit" : "d5699e82fd537ddc6bad817c4884c36a62752401",
@@ -39,7 +39,7 @@
       "sha256" : "b7db0e30c83eb4f04f03fa6eee862dc4ba309742b475072570f88cecb17fe8f2"
     }, {
       "path" : "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java",
-      "sha256" : "18fcfa5a4758339b2ab23fbae9d12a2edb91d93c369863b120f3a680e2b162d9"
+      "sha256" : "c32043f2227458071ccc1772b9240a3a45483662ab9d0f59f7005b8904965e27"
     }, {
       "path" : "src/main/java/se/swedishpolls/estimation/DevelopmentPredictiveEvidence.java",
       "sha256" : "78f267b78d3210710f21aff9b2f8b41aca9278161917477a7b133733f1405889"
@@ -142,6 +142,18 @@
     }, {
       "path" : "src/main/java/se/swedishpolls/estimation/ComparableRemainder.java",
       "sha256" : "48ae5da44ce2e1a87a5df1f757abb5a56af9431d60b896a6641d48d3c7320b44"
+    }, {
+      "path" : "src/main/java/se/swedishpolls/estimation/NationalSeats.java",
+      "sha256" : "e52aadff38b19eeff99be28cb9227f5acc468921799fdd4e0cac5bdb28948fa1"
+    }, {
+      "path" : "src/main/java/se/swedishpolls/estimation/SeatOutcomes.java",
+      "sha256" : "c21a179bb460125fe75efa8ffcd450e7e13fe618e267bdbdac2e44c702a8edfd"
+    }, {
+      "path" : "src/main/java/se/swedishpolls/estimation/Coalitions.java",
+      "sha256" : "5003aebf2511e473a13d4d0849b1854e56754e4e0d001e4eb25112dcb3900bba"
+    }, {
+      "path" : "src/main/java/se/swedishpolls/model/NationalAllocationRule.java",
+      "sha256" : "390cc683a5944d974b77526d2760cea604e3220355ca2026261b04164727e028"
     } ],
     "gateDefinitions" : {
       "protocol" : "docs/validation/protocol.json",
@@ -214,6 +226,73 @@
       "precisionRepeats" : 8,
       "maxIntervalEndpointSpreadPoints" : 0.12,
       "maxEndpointSumErrorPoints" : 1.0E-9
+    },
+    "outcomes" : {
+      "maxMonteCarloStandardError" : 0.005,
+      "maxThresholdProbabilitySpread" : 0.03,
+      "maxMajorityProbabilitySpread" : 0.03,
+      "sensitivityDisclosurePoints" : 10.0,
+      "allocationRules" : [ {
+        "electionYear" : 2010,
+        "seats" : 349,
+        "thresholdPercent" : 4.0,
+        "thresholdInclusive" : true,
+        "firstDivisor" : 1.4,
+        "subsequentDivisorFormula" : "2 * seats_already_allocated + 1",
+        "tieOrder" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "FI" ],
+        "otherReceivesSeats" : false,
+        "constituencyExceptionsIncluded" : false,
+        "officialTieRule" : "lottery",
+        "sourceUrl" : "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      }, {
+        "electionYear" : 2014,
+        "seats" : 349,
+        "thresholdPercent" : 4.0,
+        "thresholdInclusive" : true,
+        "firstDivisor" : 1.4,
+        "subsequentDivisorFormula" : "2 * seats_already_allocated + 1",
+        "tieOrder" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "FI" ],
+        "otherReceivesSeats" : false,
+        "constituencyExceptionsIncluded" : false,
+        "officialTieRule" : "lottery",
+        "sourceUrl" : "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      }, {
+        "electionYear" : 2018,
+        "seats" : 349,
+        "thresholdPercent" : 4.0,
+        "thresholdInclusive" : true,
+        "firstDivisor" : 1.2,
+        "subsequentDivisorFormula" : "2 * seats_already_allocated + 1",
+        "tieOrder" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "FI" ],
+        "otherReceivesSeats" : false,
+        "constituencyExceptionsIncluded" : false,
+        "officialTieRule" : "lottery",
+        "sourceUrl" : "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      }, {
+        "electionYear" : 2022,
+        "seats" : 349,
+        "thresholdPercent" : 4.0,
+        "thresholdInclusive" : true,
+        "firstDivisor" : 1.2,
+        "subsequentDivisorFormula" : "2 * seats_already_allocated + 1",
+        "tieOrder" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "FI" ],
+        "otherReceivesSeats" : false,
+        "constituencyExceptionsIncluded" : false,
+        "officialTieRule" : "lottery",
+        "sourceUrl" : "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      }, {
+        "electionYear" : 2026,
+        "seats" : 349,
+        "thresholdPercent" : 4.0,
+        "thresholdInclusive" : true,
+        "firstDivisor" : 1.2,
+        "subsequentDivisorFormula" : "2 * seats_already_allocated + 1",
+        "tieOrder" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "FI" ],
+        "otherReceivesSeats" : false,
+        "constituencyExceptionsIncluded" : false,
+        "officialTieRule" : "lottery",
+        "sourceUrl" : "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      } ]
     }
   },
   "folds" : [ {
