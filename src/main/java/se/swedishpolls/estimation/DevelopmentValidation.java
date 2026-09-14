@@ -55,6 +55,23 @@ public final class DevelopmentValidation {
           + " docs/validation/v2-development-1/registration.json"
           + " src/test/resources/polls/audit.csv"
           + " docs/validation/v2-development-1/evidence/run-1/tuning.json'";
+  private static final String ESTIMATE_COMMAND =
+      "./mvnw -DskipTests spring-boot:run"
+          + " -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation"
+          + " -Dspring-boot.run.arguments='estimate"
+          + " docs/validation/v2-development-1/registration.json"
+          + " src/test/resources/polls/audit.csv"
+          + " docs/validation/v2-development-1/evidence/run-1/tuning.json"
+          + " docs/validation/v2-development-1/evidence/run-1/estimation.json'";
+
+  /** The approved fitted method and fold rule the registration must name for the estimator. */
+  private static final String APPROVED_METHOD = "midpoint_candidate";
+
+  private static final String APPROVED_FOLD_RULE = "latest_resolved_active_cutoff";
+
+  private static final String PASSED = "passed";
+  private static final String FAILED = "failed";
+  private static final String UNEVALUATED = "unevaluated";
 
   private static final String DIAGNOSE_COMMAND =
       TUNE_COMMAND.replace("'tune ", "'diagnose ").replace("/tuning.json", "/diagnostics.json");
@@ -69,25 +86,31 @@ public final class DevelopmentValidation {
    * The operator entry point. Preparation never fits; preflight never creates the evidence path.
    */
   public static int run(String... args) {
-    if (args.length != 4
-        || (!args[0].equals("prepare")
-            && !args[0].equals("preflight")
-            && !args[0].equals("tune")
-            && !args[0].equals("diagnose"))) {
+    final String command = args.length == 0 ? "" : args[0];
+    final boolean estimating = command.equals("estimate");
+    if (args.length != (estimating ? 5 : 4)
+        || (!command.equals("prepare")
+            && !command.equals("preflight")
+            && !command.equals("tune")
+            && !command.equals("diagnose")
+            && !estimating)) {
       System.err.println(
           "Usage: prepare <plan.json> <source.csv> <registration.json> | preflight"
               + " <registration.json> <source.csv> <result.json> | tune/diagnose"
-              + " <registration.json> <source.csv> <evidence.json>");
+              + " <registration.json> <source.csv> <evidence.json> | estimate"
+              + " <registration.json> <source.csv> <tuning.json> <evidence.json>");
       return REJECTED;
     }
     final Path registrationInput = Path.of(args[1]);
     final Path source = Path.of(args[2]);
-    final Path output = Path.of(args[3]);
+    final Path output = Path.of(args[args.length - 1]);
     try {
-      if (args[0].equals("prepare")) prepare(registrationInput, source, output);
-      else if (args[0].equals("preflight")) preflight(registrationInput, source, output);
+      if (command.equals("prepare")) prepare(registrationInput, source, output);
+      else if (command.equals("preflight")) preflight(registrationInput, source, output);
+      else if (estimating)
+        return estimate(registrationInput, source, Path.of(args[3]), output) ? SUCCESS : BLOCKED;
       else
-        return tune(registrationInput, source, output, args[0].equals("diagnose"))
+        return tune(registrationInput, source, output, command.equals("diagnose"))
             ? SUCCESS
             : BLOCKED;
       return SUCCESS;
@@ -107,7 +130,7 @@ public final class DevelopmentValidation {
     verifyIdentities(plan);
     verifyImplementationCommit(plan);
     verifyEnvironment(plan);
-    verifyOutputLocation(plan);
+    verifyOutputLocation(plan, true);
     grid(plan);
     final ArrayNode folds = manifests(plan, sourceFile);
     compareArchived(plan, folds);
@@ -151,6 +174,15 @@ public final class DevelopmentValidation {
   }
 
   private static CheckedRegistration check(Path registrationFile, Path sourceFile) {
+    return check(registrationFile, sourceFile, true);
+  }
+
+  /**
+   * A later command in the same run reads an evidence directory its own earlier command created, so
+   * only the first evidence-producing command requires the registered location to be absent.
+   */
+  private static CheckedRegistration check(
+      Path registrationFile, Path sourceFile, boolean freshEvidence) {
     final byte[] registrationBytes = bytes(registrationFile);
     final String expected = text(checksum(registrationFile)).trim();
     require(expected.equals(sha256(registrationBytes)), "Registration checksum mismatch");
@@ -164,7 +196,7 @@ public final class DevelopmentValidation {
     verifyIdentities(plan);
     verifyImplementationCommit(plan);
     verifyEnvironment(plan);
-    verifyOutputLocation(plan);
+    verifyOutputLocation(plan, freshEvidence);
     grid(plan);
     final ArrayNode rebuilt = manifests(plan, sourceFile);
     require(rebuilt.equals(required(registration, "folds")), "Eligibility row manifest mismatch");
@@ -254,6 +286,417 @@ public final class DevelopmentValidation {
     result.put("status", passed ? "complete" : "blocked");
     writeNew(resultFile, pretty(result));
     return passed;
+  }
+
+  /**
+   * Extends the tuned fits to the separately fitted coverage-period histories, their joint
+   * component uncertainty and the comparable remainder drawn inside the same draws. Every
+   * downstream number reads the frozen registration and this run's own tuning evidence, never a v1
+   * fitted output.
+   */
+  private static boolean estimate(
+      Path registrationFile, Path sourceFile, Path tuningFile, Path resultFile) {
+    refuseExisting(resultFile);
+    final CheckedRegistration checked = check(registrationFile, sourceFile, false);
+    verifyEvidenceLocation(checked.plan(), resultFile);
+    verifyEvidenceLocation(checked.plan(), tuningFile);
+    final JsonNode tuningEvidence = read(tuningFile);
+    verifyTuningProvenance(checked, sourceFile, tuningEvidence);
+    final JsonNode selection = required(checked.plan(), "parameterSelection");
+    final String method = required(selection, "method").asString();
+    final DevelopmentTuning.Tuning tuning = tuned(checked, tuningEvidence, method);
+
+    final List<PollCsv.Poll> polls = PollCsv.parse(bytes(sourceFile));
+    final List<LocalDate> elections = dates(checked.plan(), "electionCycleDates");
+    final List<Roster.CoveragePeriod> periods = new ArrayList<>();
+    for (JsonNode declared : required(checked.plan(), "periods")) periods.add(period(declared));
+    final CoverageValidation.Rules coverageRules = coverageRules(checked.plan());
+    final JointUncertainty.Rules uncertaintyRules = uncertaintyRules(checked.plan());
+    final List<Long> seeds = precisionSeeds(checked.plan(), uncertaintyRules);
+
+    final ObjectNode result = JSON.createObjectNode();
+    result.put("protocolVersion", required(checked.registration(), "version").asString());
+    result.put("registrationSha256", checked.registrationSha256());
+    result.put("sourceSha256", digest(sourceFile));
+    result.put("fitEvidence", "complete");
+    final ObjectNode provenance = result.putObject("tunedParameters");
+    provenance.put("path", tuningFile.toString());
+    provenance.put("sha256", digest(tuningFile));
+    provenance.put("method", method);
+    provenance.put("foldRule", required(selection, "fold").asString());
+    provenance.put(
+        "selection",
+        "the registered fitted method and fold rule, resolved from this run's tuning evidence"
+            + " rather than from any v1 fitted output");
+    provenance.put("resolvedFolds", tuning.resolved().size());
+    provenance.put("unresolvedFolds", tuning.unresolved().size());
+    final ObjectNode selected = provenance.putObject("selectedParameters");
+    DevelopmentTuning.latestParameters(tuning)
+        .forEach((periodId, point) -> parameters(selected.putObject(periodId), point));
+
+    final ArrayNode checks = result.putArray("checks");
+    final ArrayNode reasons = result.putArray("reasons");
+    for (String reason : tuning.gate().reasons()) reasons.add("development tuning: " + reason);
+
+    final CoverageValidation.Report coverage =
+        CoverageValidation.validateAll(periods, polls, elections, tuning, coverageRules);
+    result.set("coverage", JSON.valueToTree(coverage));
+    for (CoverageValidation.Validated validated : coverage.periods())
+      for (String failure : validated.failures())
+        reasons.add("coverage " + validated.periodId() + ": " + failure);
+    final boolean anySupported =
+        coverage.periods().stream()
+            .anyMatch(validated -> validated.supported() && validatedPublishes(periods, validated));
+    check(
+        checks,
+        "coverage_support",
+        coverage.periods().stream().allMatch(CoverageValidation.Validated::supported)
+            ? PASSED
+            : FAILED,
+        "registered observation, institute, gap, boundary-shift and stability limits");
+
+    final JointUncertainty.Report uncertainty =
+        JointUncertainty.report(periods, polls, elections, coverage, uncertaintyRules, seeds);
+    result.set("uncertainty", JSON.valueToTree(uncertainty));
+    if (!anySupported) {
+      check(checks, "seeded_reproduction", UNEVALUATED, "no coverage period produced draws");
+      check(
+          checks, "interval_endpoint_precision", UNEVALUATED, "no coverage period produced draws");
+      check(checks, "comparable_remainder", UNEVALUATED, "no coverage period produced draws");
+      result.putArray("remainder");
+      return finish(result, checks, reasons, resultFile);
+    }
+    reproduction(checks, reasons, uncertainty);
+    precision(checks, reasons, uncertainty, maxSpread(checked.plan()));
+    remainder(
+        checks,
+        reasons,
+        result,
+        periods,
+        polls,
+        elections,
+        coverage,
+        coverageRules,
+        uncertaintyRules,
+        maxSumError(checked.plan()));
+    return finish(result, checks, reasons, resultFile);
+  }
+
+  private static boolean validatedPublishes(
+      List<Roster.CoveragePeriod> periods, CoverageValidation.Validated validated) {
+    return periods.stream()
+        .anyMatch(period -> period.id().equals(validated.periodId()) && period.supportValidated());
+  }
+
+  private static boolean finish(
+      ObjectNode result, ArrayNode checks, ArrayNode reasons, Path resultFile) {
+    final boolean passed =
+        reasons.isEmpty()
+            && checks
+                .valueStream()
+                .allMatch(entry -> entry.get("status").asString().equals(PASSED));
+    result.put("gatePassed", passed);
+    result.put("status", passed ? "complete" : "blocked");
+    writeNew(resultFile, pretty(result));
+    return passed;
+  }
+
+  /** An exact rerun at the registered seed must return every retained draw unchanged. */
+  private static void reproduction(
+      ArrayNode checks, ArrayNode reasons, JointUncertainty.Report uncertainty) {
+    double worst = 0;
+    for (JointUncertainty.Published published : uncertainty.periods())
+      worst = Math.max(worst, published.reproduced().maxAbsoluteDifference());
+    final boolean exact =
+        uncertainty.periods().stream().allMatch(published -> published.reproduced().exact());
+    check(
+        checks,
+        "seeded_reproduction",
+        exact ? PASSED : FAILED,
+        "largest retained-draw difference of a rerun at the registered seed: " + worst + " points");
+    if (!exact)
+      reasons.add(
+          "seeded reproduction moved a retained draw by "
+              + worst
+              + " points, so the run does not"
+              + " reproduce");
+  }
+
+  /** Eight seeds bound how much of a published interval endpoint is sampling noise. */
+  private static void precision(
+      ArrayNode checks, ArrayNode reasons, JointUncertainty.Report uncertainty, double limit) {
+    double worst = 0;
+    boolean measured = false;
+    for (JointUncertainty.Published published : uncertainty.periods())
+      for (JointUncertainty.Precision entry : published.precision()) {
+        measured = true;
+        worst = Math.max(worst, Math.max(entry.lowerSpreadPoints(), entry.upperSpreadPoints()));
+      }
+    if (!measured) {
+      check(
+          checks,
+          "interval_endpoint_precision",
+          UNEVALUATED,
+          "no repeated-seed run produced a comparable interval endpoint");
+      reasons.add("interval endpoint precision was not measured, so it is not a passed check");
+      return;
+    }
+    check(
+        checks,
+        "interval_endpoint_precision",
+        worst <= limit ? PASSED : FAILED,
+        "largest interval endpoint spread across the registered seeds: "
+            + worst
+            + " points against a "
+            + limit
+            + " point limit");
+    if (worst > limit)
+      reasons.add(
+          "interval endpoint spread of " + worst + " points exceeds the registered " + limit);
+  }
+
+  /**
+   * The comparable remainder combines its components inside each shared draw and only then takes
+   * the mean and the quantiles, so a summed marginal endpoint never appears.
+   */
+  private static void remainder(
+      ArrayNode checks,
+      ArrayNode reasons,
+      ObjectNode result,
+      List<Roster.CoveragePeriod> periods,
+      List<PollCsv.Poll> polls,
+      List<LocalDate> elections,
+      CoverageValidation.Report coverage,
+      CoverageValidation.Rules coverageRules,
+      JointUncertainty.Rules uncertaintyRules,
+      double limit) {
+    final Map<String, CoverageValidation.Validated> evidence = new LinkedHashMap<>();
+    for (CoverageValidation.Validated validated : coverage.periods())
+      evidence.put(validated.periodId(), validated);
+    final ArrayNode published = result.putArray("remainder");
+    double worst = 0;
+    boolean drawn = false;
+    for (Roster.CoveragePeriod period : periods) {
+      if (!period.supportValidated()) continue;
+      final CoverageValidation.Validated validated = evidence.get(period.id());
+      require(validated != null, "No recorded coverage evidence for " + period.id());
+      final ObjectNode entry = published.addObject();
+      entry.put("periodId", period.id());
+      if (!validated.supported()) {
+        entry.put("status", UNEVALUATED);
+        entry.put("reason", "coverage evidence failed, so no remainder is drawn");
+        continue;
+      }
+      final ComparableRemainder.Estimated estimated =
+          ComparableRemainder.estimate(
+              EstimateHistory.fitted(
+                  period, polls, elections, validated.parameters(), coverageRules),
+              period,
+              List.of(),
+              coverageRules,
+              uncertaintyRules);
+      drawn = true;
+      worst = Math.max(worst, estimated.maxEndpointSumErrorPoints());
+      entry.put("status", "drawn");
+      entry.set("members", JSON.valueToTree(estimated.members()));
+      entry.set("boundaries", JSON.valueToTree(estimated.boundaries()));
+      entry.put("maxEndpointSumErrorPoints", estimated.maxEndpointSumErrorPoints());
+      final ArrayNode segments = entry.putArray("segmentEdges");
+      int days = 0;
+      for (ComparableRemainder.Segment segment : estimated.segments()) {
+        days += segment.days().size();
+        for (ComparableRemainder.Day day :
+            List.of(segment.days().getFirst(), segment.days().getLast()))
+          segments.add(JSON.valueToTree(day));
+        for (ComparableRemainder.Day day : segment.days()) verifyDrawnDay(period, day);
+      }
+      entry.put("estimatedDays", days);
+    }
+    if (!drawn) {
+      check(
+          checks, "comparable_remainder", UNEVALUATED, "no supported period produced a remainder");
+      reasons.add("the comparable remainder was not drawn, so it is not a passed check");
+      return;
+    }
+    check(
+        checks,
+        "comparable_remainder",
+        worst <= limit ? PASSED : FAILED,
+        "largest interval endpoint composition sum error: "
+            + worst
+            + " points against a "
+            + limit
+            + " point limit");
+    if (worst > limit)
+      reasons.add(
+          "comparable remainder endpoint sum error of "
+              + worst
+              + " points exceeds the registered "
+              + limit);
+  }
+
+  /** A drawn remainder day must stay a finite share of a composition. */
+  private static void verifyDrawnDay(Roster.CoveragePeriod period, ComparableRemainder.Day day) {
+    require(
+        Double.isFinite(day.mean()) && day.mean() >= 0 && day.mean() <= 100,
+        "Remainder outside the composition range on " + period.id() + " " + day.date());
+    for (JointUncertainty.Interval interval : day.intervals())
+      require(
+          Double.isFinite(interval.lower())
+              && Double.isFinite(interval.upper())
+              && interval.lower() >= 0
+              && interval.upper() <= 100
+              && interval.lower() <= interval.upper(),
+          "Remainder interval outside the composition range on " + period.id() + " " + day.date());
+  }
+
+  private static void check(ArrayNode checks, String name, String status, String detail) {
+    final ObjectNode entry = checks.addObject();
+    entry.put("check", name);
+    entry.put("status", status);
+    entry.put("detail", detail);
+  }
+
+  /** The tuning evidence must come from this registration, this source and this run. */
+  private static void verifyTuningProvenance(
+      CheckedRegistration checked, Path sourceFile, JsonNode tuning) {
+    require(
+        required(tuning, "protocolVersion")
+            .asString()
+            .equals(required(checked.registration(), "version").asString()),
+        "Tuning evidence protocol version differs from the registration");
+    require(
+        required(tuning, "registrationSha256").asString().equals(checked.registrationSha256()),
+        "Tuning evidence was produced against another registration");
+    require(
+        required(tuning, "sourceSha256").asString().equals(digest(sourceFile)),
+        "Tuning evidence was produced against another source");
+    require(
+        required(tuning, "fitEvidence").asString().equals("complete"),
+        "Tuning evidence carries no completed fits");
+  }
+
+  /**
+   * Rebuilds the tuned fits from this run's evidence, keeping every registered fold disposition. An
+   * unresolved or inactive fold is listed, never dropped, so the selection stays explicit.
+   */
+  private static DevelopmentTuning.Tuning tuned(
+      CheckedRegistration checked, JsonNode evidence, String method) {
+    final Map<String, JsonNode> registered = new LinkedHashMap<>();
+    for (JsonNode manifest : checked.folds()) registered.put(key(manifest), manifest);
+    final List<DevelopmentTuning.Resolved> resolved = new ArrayList<>();
+    final List<DevelopmentTuning.Unresolved> unresolved = new ArrayList<>();
+    for (JsonNode fold : required(evidence, "folds")) {
+      final JsonNode manifest = registered.get(key(fold));
+      require(manifest != null, "Tuning evidence holds an unregistered fold: " + key(fold));
+      require(
+          manifest.get("active").booleanValue() == required(fold, "active").booleanValue(),
+          "Tuning evidence fold disposition differs from the registration: " + key(fold));
+      require(
+          manifest
+              .get("trainingObservationRowsSha256")
+              .equals(required(fold, "trainingObservationRowsSha256")),
+          "Tuning evidence training rows differ from the registration: " + key(fold));
+      final String periodId = required(fold, "periodId").asString();
+      final DevelopmentTuning.Fold identity =
+          new DevelopmentTuning.Fold(
+              LocalDate.parse(required(fold, "cutoff").asString()),
+              LocalDate.parse(required(fold, "scoreThrough").asString()));
+      if (!fold.get("active").booleanValue()) {
+        unresolved.add(
+            new DevelopmentTuning.Unresolved(
+                periodId, identity, required(fold, "reason").asString()));
+        continue;
+      }
+      final JsonNode fitted = fitted(fold, method);
+      if (!required(fitted, "numericallyAvailable").booleanValue()) {
+        unresolved.add(
+            new DevelopmentTuning.Unresolved(
+                periodId, identity, "no parameter point resolved finitely"));
+        continue;
+      }
+      resolved.add(
+          new DevelopmentTuning.Resolved(
+              periodId,
+              identity,
+              point(required(fitted, "selectedParameters")),
+              required(fitted, "selectedLogLikelihood").doubleValue(),
+              manifest.get("trainingRows").size(),
+              manifest.get("trainingObservationRows").size(),
+              manifest.get("trainingExclusions").size(),
+              exclusionReasons(manifest),
+              strings(fitted, "gridBoundaries")));
+    }
+    require(!resolved.isEmpty(), "Tuning evidence resolved no fold, so nothing can be estimated");
+    final List<String> reasons = new ArrayList<>(strings(evidence, "reasons"));
+    return new DevelopmentTuning.Tuning(
+        required(evidence, "protocolVersion").asString(),
+        grid(checked.plan()),
+        new DevelopmentTuning.Gate(!reasons.isEmpty(), reasons),
+        resolved,
+        unresolved);
+  }
+
+  private static JsonNode fitted(JsonNode fold, String method) {
+    for (JsonNode candidate : required(fold, "methods"))
+      if (required(candidate, "method").asString().equals(method)) return candidate;
+    throw new IllegalArgumentException(
+        "Tuning evidence holds no " + method + " fit for " + key(fold));
+  }
+
+  private static Map<String, Integer> exclusionReasons(JsonNode manifest) {
+    final Map<String, Integer> counts = new LinkedHashMap<>();
+    for (JsonNode exclusion : required(manifest, "trainingExclusions"))
+      for (JsonNode reason : required(exclusion, "reasons"))
+        counts.merge(reason.asString(), 1, Integer::sum);
+    return Map.copyOf(counts);
+  }
+
+  private static DailyStateSpace.Parameters point(JsonNode parameters) {
+    return new DailyStateSpace.Parameters(
+        required(parameters, "walkVariance").doubleValue(),
+        required(parameters, "houseScale").doubleValue(),
+        required(parameters, "covarianceMultiplier").doubleValue());
+  }
+
+  private static CoverageValidation.Rules coverageRules(JsonNode plan) {
+    final JsonNode coverage = required(plan, "coverage");
+    return new CoverageValidation.Rules(
+        LocalDate.parse(required(coverage, "developmentThrough").asString()),
+        required(coverage, "minObservations").intValue(),
+        required(coverage, "minInstitutes").intValue(),
+        required(coverage, "maxInternalGapDays").intValue(),
+        integers(coverage, "boundaryShiftDays"),
+        required(coverage, "stabilityBurnInDays").intValue(),
+        required(coverage, "maxStabilityShiftPoints").doubleValue());
+  }
+
+  private static JointUncertainty.Rules uncertaintyRules(JsonNode plan) {
+    final JsonNode uncertainty = required(plan, "uncertainty");
+    return new JointUncertainty.Rules(
+        required(required(plan, "seeds"), "master").longValue(),
+        required(uncertainty, "draws").intValue(),
+        doubles(uncertainty, "intervalLevels"),
+        required(uncertainty, "precisionRepeats").intValue());
+  }
+
+  private static double maxSpread(JsonNode plan) {
+    return required(required(plan, "uncertainty"), "maxIntervalEndpointSpreadPoints").doubleValue();
+  }
+
+  private static double maxSumError(JsonNode plan) {
+    return required(required(plan, "uncertainty"), "maxEndpointSumErrorPoints").doubleValue();
+  }
+
+  /** The registered repeat seeds, which must be the declared ones rather than a chosen subset. */
+  private static List<Long> precisionSeeds(JsonNode plan, JointUncertainty.Rules rules) {
+    final List<Long> declared = new ArrayList<>();
+    for (JsonNode seed : required(required(plan, "seeds"), "precision"))
+      declared.add(seed.longValue());
+    require(
+        declared.equals(JointUncertainty.precisionSeeds(rules)),
+        "Registered precision seeds must run from the master seed");
+    return List.copyOf(declared);
   }
 
   private static ObjectNode search(
@@ -558,8 +1001,42 @@ public final class DevelopmentValidation {
         "Approved precision seeds mismatch");
     require(
         strings(plan, "commands")
-            .equals(List.of(PREPARE_COMMAND, PREFLIGHT_COMMAND, TUNE_COMMAND, DIAGNOSE_COMMAND)),
+            .equals(
+                List.of(
+                    PREPARE_COMMAND,
+                    PREFLIGHT_COMMAND,
+                    TUNE_COMMAND,
+                    ESTIMATE_COMMAND,
+                    DIAGNOSE_COMMAND)),
         "Approved commands mismatch");
+    final JsonNode coverage = required(plan, "coverage");
+    require(
+        required(coverage, "developmentThrough").asString().equals("2021-10-05")
+            && required(coverage, "minObservations").intValue() == 30
+            && required(coverage, "minInstitutes").intValue() == 5
+            && required(coverage, "maxInternalGapDays").intValue() == 45
+            && integers(coverage, "boundaryShiftDays").equals(List.of(7, 14, 30))
+            && required(coverage, "stabilityBurnInDays").intValue() == 60
+            && Double.compare(required(coverage, "maxStabilityShiftPoints").doubleValue(), 0.5)
+                == 0,
+        "Approved coverage limits mismatch");
+    final JsonNode selection = required(plan, "parameterSelection");
+    require(
+        required(selection, "method").asString().equals(APPROVED_METHOD)
+            && required(selection, "fold").asString().equals(APPROVED_FOLD_RULE),
+        "Approved parameter selection mismatch");
+    final JsonNode uncertainty = required(plan, "uncertainty");
+    require(
+        required(uncertainty, "draws").intValue() == 10000
+            && doubles(uncertainty, "intervalLevels").equals(List.of(0.5, 0.95))
+            && required(uncertainty, "precisionRepeats").intValue() == 8
+            && Double.compare(
+                    required(uncertainty, "maxIntervalEndpointSpreadPoints").doubleValue(), 0.12)
+                == 0
+            && Double.compare(
+                    required(uncertainty, "maxEndpointSumErrorPoints").doubleValue(), 1e-9)
+                == 0,
+        "Approved uncertainty limits mismatch");
     require(
         required(plan, "outputLocation")
             .asString()
@@ -590,6 +1067,10 @@ public final class DevelopmentValidation {
             "src/main/java/se/swedishpolls/estimation/PollObservations.java",
             "src/main/java/se/swedishpolls/estimation/DailyStateSpace.java",
             "src/main/java/se/swedishpolls/estimation/WindowFilter.java",
+            "src/main/java/se/swedishpolls/estimation/CoverageValidation.java",
+            "src/main/java/se/swedishpolls/estimation/EstimateHistory.java",
+            "src/main/java/se/swedishpolls/estimation/JointUncertainty.java",
+            "src/main/java/se/swedishpolls/estimation/ComparableRemainder.java",
             "docs/validation/protocol.json",
             "docs/validation/diagnostics.json",
             "docs/validation/coverage.json",
@@ -811,10 +1292,11 @@ public final class DevelopmentValidation {
         "Environment identity mismatch: " + field);
   }
 
-  private static void verifyOutputLocation(JsonNode plan) {
+  private static void verifyOutputLocation(JsonNode plan, boolean fresh) {
     final Path output =
         Path.of(required(plan, "outputLocation").asString()).toAbsolutePath().normalize();
-    require(!Files.exists(output), "Registered evidence output already exists: " + output);
+    if (fresh)
+      require(!Files.exists(output), "Registered evidence output already exists: " + output);
     for (JsonNode protectedLocation : required(plan, "protectedLocations")) {
       final Path protectedPath = Path.of(protectedLocation.asString()).toAbsolutePath().normalize();
       require(
@@ -827,7 +1309,7 @@ public final class DevelopmentValidation {
     final Path evidence =
         Path.of(required(plan, "outputLocation").asString()).toAbsolutePath().normalize();
     final Path parent = result.toAbsolutePath().normalize().getParent();
-    require(evidence.equals(parent), "Tuning evidence must use the registered output location");
+    require(evidence.equals(parent), "Run evidence must use the registered output location");
   }
 
   private static String rowsSha256(List<PollCsv.Poll> polls) {
