@@ -1,7 +1,7 @@
 {
   "version": "v2-development-1",
   "registeredOn": "2026-09-14",
-  "implementationCommit": "4aead47b05cb6819f8415f472fe40218b23e830f",
+  "implementationCommit": "8368ff9b30e62fa0f0a7707b8c5794f00a7b2e42",
   "authority": {
     "proposal": "v2-development-1-proposal-1",
     "proposalCommit": "d5699e82fd537ddc6bad817c4884c36a62752401",
@@ -37,7 +37,7 @@
     },
     {
       "path": "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java",
-      "sha256": "782029d2b479bd1927280c2ff43e7fb7ec1ce6e6b246eaa115232293b7d9316a"
+      "sha256": "506a1d6c8eb1420317ab596b5a6ce4596273c703ce248897664985b4be9adc80"
     },
     {
       "path": "src/main/java/se/swedishpolls/estimation/DevelopmentPredictiveEvidence.java",
