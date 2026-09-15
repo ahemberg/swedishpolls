@@ -5,6 +5,7 @@ import { PollFilters } from "./poll-filters";
 import { PollRows } from "./poll-rows";
 import type { PollTable } from "./poll-table";
 import { pollQuery } from "./poll-table";
+import { SourceChart } from "./SourceChart";
 
 /**
  * The browsable poll table.
@@ -190,6 +191,7 @@ function PollsPage({ page, table, t }: Props): JSX.Element {
         </p>
       )}
       <PollFilters page={page} options={table.options} filters={table.filters} t={t} />
+      {page.sourceChart !== undefined && <SourceChart page={page} chart={page.sourceChart} t={t} />}
       <InvalidNotice table={table} t={t} />
       <EmptyNotice table={table} t={t} />
       {table.polls.length > 0 && (

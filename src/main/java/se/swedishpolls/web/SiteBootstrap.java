@@ -101,7 +101,88 @@ public final class SiteBootstrap {
       case POLLS -> pollTable(page, snapshot, periods, pollRequest);
       default -> throw new IllegalArgumentException("Source data cannot render " + route.family());
     }
+    sourceChart(snapshot, periods, pollRequest.filters(), SourceChart.DEFAULT_RANGE)
+        .ifPresent(chart -> page.set("sourceChart", chart));
     return page;
+  }
+
+  /**
+   * The source chart's markers for one window, built from the retained snapshot alone.
+   *
+   * <p>The window is selected the way the table and the download select rows, by overlap, so a poll
+   * whose interview period crosses the chosen boundary is a marker the chart clips rather than a
+   * row it drops. The table's date and institute filters are carried through and its party and
+   * include-excluded choices are not: the chart draws the reported parties a reader toggles in the
+   * chart itself, and an excluded observation is not an ordinary mark.
+   */
+  public Optional<ObjectNode> sourceChart(
+      Snapshot snapshot,
+      List<Roster.CoveragePeriod> periods,
+      PollQuery.Filters filters,
+      String rangeId) {
+    final PollQuery.Filters shared =
+        new PollQuery.Filters(
+            filters.from(), filters.to(), filters.institutes(), List.of(), null, false);
+    final List<PollQuery.Row> matching =
+        queries.query(snapshot.id(), periods, shared, 1, PollQuery.DEFAULT_PAGE_SIZE).matching();
+    final Optional<SourceChart.Range> extent = SourceChart.extent(matching);
+    if (extent.isEmpty()) {
+      return Optional.empty();
+    }
+    final Optional<SourceChart.Range> selected = SourceChart.range(extent.orElseThrow(), rangeId);
+    if (selected.isEmpty()) {
+      return Optional.empty();
+    }
+    final ObjectNode chart = JSON.createObjectNode();
+    chart.put("snapshotId", snapshot.id());
+    chart.put("defaultRange", SourceChart.DEFAULT_RANGE);
+    // The one query string a range change appends to. Building a second one is how a chart starts
+    // drawing polls the table beside it is not showing.
+    chart.put("query", String.join("&", PollFilters.query(shared)));
+    final ArrayNode ranges = chart.putArray("ranges");
+    for (final SourceChart.Range range : SourceChart.ranges(extent.orElseThrow())) {
+      window(ranges.addObject(), range);
+    }
+    window(chart.putObject("range"), selected.orElseThrow());
+    final ArrayNode components = chart.putArray("components");
+    PollQuery.COMPONENTS.forEach(components::add);
+    final ArrayNode observations = chart.putArray("observations");
+    for (final PollQuery.Row row : SourceChart.within(matching, selected.orElseThrow())) {
+      observation(observations.addObject(), row);
+    }
+    return Optional.of(chart);
+  }
+
+  private static void window(ObjectNode node, SourceChart.Range range) {
+    node.put("id", range.id());
+    node.put("from", range.from().toString());
+    node.put("to", range.to().toString());
+  }
+
+  /**
+   * One marker, at the source precision the snapshot archived. A share the institute never reported
+   * stays absent rather than becoming a zero, and the comparable remainder is not written here at
+   * all: it is not one of the nine reported parties and must not be drawn beside them.
+   */
+  private static void observation(ObjectNode node, PollQuery.Row row) {
+    node.put("pollId", row.pollId());
+    node.put("institute", row.poll().institute());
+    node.put("from", row.poll().collectionFrom().toString());
+    node.put("to", row.poll().collectionTo().toString());
+    node.put("approximatePeriod", row.approximatePeriod());
+    if (row.poll().sampleSize() == null) {
+      node.putNull("sampleSize");
+    } else {
+      node.put("sampleSize", row.poll().sampleSize());
+    }
+    final ObjectNode shares = node.putObject("shares");
+    for (final String component : PollQuery.COMPONENTS) {
+      if (row.poll().shares().get(component) == null) {
+        shares.putNull(component);
+      } else {
+        shares.put(component, row.poll().shares().get(component));
+      }
+    }
   }
 
   /**

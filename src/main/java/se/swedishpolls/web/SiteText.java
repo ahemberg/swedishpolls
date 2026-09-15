@@ -170,6 +170,31 @@ public final class SiteText {
             + " källans precision bevarad.");
     text.put("source.polls.snapshot", "Ögonblicksbild {snapshot}.");
 
+    text.put("source.chart.title", "Redovisade andelar");
+    text.put(
+        "source.chart.summary",
+        "Redovisade andelar {from} till {to} för {parties}, en markering per mätperiod.");
+    text.put("source.chart.cursor.label", "Välj mätning");
+    text.put("source.chart.sample", "Urval {sample}.");
+    text.put("source.chart.noSample", "Urvalsstorlek saknas.");
+    text.put("source.chart.empty", "Inga mätningar i det valda intervallet.");
+    text.put(
+        "source.chart.clipped",
+        "Mätperioden sträcker sig utanför det valda intervallet och är avkortad i diagrammet.");
+    text.put(
+        "source.chart.note",
+        "Varje markering sträcker sig över mätningens faktiska fältarbetsdagar. Dra i diagrammet,"
+            + " eller använd reglaget, för att läsa av en mätning.");
+    text.put(
+        "source.chart.approximateNote",
+        "Streckade markeringar har ungefärlig mätperiod; heldragna har redovisad period.");
+    text.put(
+        "source.chart.sourceNote",
+        "Detta är insamlade mätningar, inte en skattning. En andel som institutet inte redovisat"
+            + " saknar markering.");
+    text.put("source.chart.loading", "Hämtar mätningarna.");
+    text.put("source.chart.failed", "Mätningarna kunde inte hämtas.");
+
     text.put("timeline.title", "Utveckling över tid");
     text.put("timeline.range.oneYear", "Ett år");
     text.put("timeline.range.sinceElection", "Sedan valet {year}");
@@ -771,6 +796,31 @@ public final class SiteText {
         "The CSV contains every matching row from the same snapshot as the table, with source"
             + " precision preserved.");
     text.put("source.polls.snapshot", "Snapshot {snapshot}.");
+
+    text.put("source.chart.title", "Reported shares");
+    text.put(
+        "source.chart.summary",
+        "Reported shares from {from} to {to} for {parties}, one mark per interview period.");
+    text.put("source.chart.cursor.label", "Choose a poll");
+    text.put("source.chart.sample", "Sample {sample}.");
+    text.put("source.chart.noSample", "No sample size reported.");
+    text.put("source.chart.empty", "No polls in the chosen range.");
+    text.put(
+        "source.chart.clipped",
+        "The interview period reaches outside the chosen range and is clipped in the chart.");
+    text.put(
+        "source.chart.note",
+        "Each mark spans the poll's actual interview days. Drag on the chart, or use the slider,"
+            + " to read off a poll.");
+    text.put(
+        "source.chart.approximateNote",
+        "Dashed marks have an approximate interview period; solid marks have a reported one.");
+    text.put(
+        "source.chart.sourceNote",
+        "These are collected polls, not an estimate. A share the pollster did not report has no"
+            + " mark.");
+    text.put("source.chart.loading", "Fetching the polls.");
+    text.put("source.chart.failed", "The polls could not be fetched.");
 
     text.put("timeline.title", "Support over time");
     text.put("timeline.range.oneYear", "One year");

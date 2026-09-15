@@ -1,12 +1,28 @@
 import type { JSX } from "react";
-import type { RangeSpec, Series, Translate } from "./bootstrap";
+import type { Translate } from "./bootstrap";
 import { colour } from "./format";
 
-/** The timeline's controls: the offered ranges, the isolation select and the party toggles. */
+/**
+ * The timeline's controls: the offered ranges, the isolation select and the party toggles.
+ *
+ * They are written against the little each control needs rather than against a whole estimate
+ * series, so the source chart drives the same three controls from its own windows and components.
+ */
 
 const ALL_PARTIES = "";
 
-function rangeLabel(t: Translate, range: RangeSpec): string {
+/** One offered window, however the page that offers it names the rest of its own range. */
+interface RangeOption {
+  readonly id: string;
+  readonly year: number | null;
+}
+
+/** One party a control can isolate or hide. */
+interface Toggleable {
+  readonly component: string;
+}
+
+function rangeLabel(t: Translate, range: RangeOption): string {
   if (range.year === null) {
     return t(`timeline.range.${range.id}`);
   }
@@ -19,7 +35,7 @@ function Ranges({
   onSelect,
   t,
 }: {
-  readonly ranges: readonly RangeSpec[];
+  readonly ranges: readonly RangeOption[];
   readonly selected: string;
   readonly onSelect: (id: string) => void;
   readonly t: Translate;
@@ -51,7 +67,7 @@ function Isolation({
   t,
 }: {
   readonly id: string;
-  readonly series: readonly Series[];
+  readonly series: readonly Toggleable[];
   readonly isolated: string;
   readonly onIsolate: (component: string) => void;
   readonly label: (component: string) => string;
@@ -80,7 +96,7 @@ function PartyToggles({
   label,
   t,
 }: {
-  readonly series: readonly Series[];
+  readonly series: readonly Toggleable[];
   readonly hidden: readonly string[];
   readonly locked: boolean;
   readonly onToggle: (component: string) => void;
@@ -107,4 +123,5 @@ function PartyToggles({
   );
 }
 
+export type { RangeOption, Toggleable };
 export { ALL_PARTIES, Isolation, PartyToggles, Ranges };

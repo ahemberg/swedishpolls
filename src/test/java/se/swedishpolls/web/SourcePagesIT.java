@@ -163,6 +163,78 @@ class SourcePagesIT {
   }
 
   @Test
+  void theSourceChartDrawsIntervalMarkersOverActualFieldworkWithoutAnEstimate() throws Exception {
+    TestPublication.serve(wireMock, TestPublication.polls(TestPublication.FROM));
+    assertEquals(PublicationOutcome.BLOCKED, publisher.publish().outcome());
+
+    final JsonNode home = bootstrap(get("/").body());
+    final JsonNode chart = home.path("sourceChart");
+    assertEquals(home.path("source").path("snapshotId"), chart.path("snapshotId"));
+    assertEquals("oneYear", chart.path("defaultRange").asString());
+    assertEquals(
+        java.util.List.of("oneYear", "fourYears", "all"),
+        java.util.stream.StreamSupport.stream(chart.path("ranges").spliterator(), false)
+            .map(range -> range.path("id").asString())
+            .toList());
+    assertEquals("oneYear", chart.path("range").path("id").asString());
+    final LocalDate from = LocalDate.parse(chart.path("range").path("from").asString());
+    final LocalDate to = LocalDate.parse(chart.path("range").path("to").asString());
+    assertEquals(to.minusYears(1), from, "the chart opens on the last year");
+    assertEquals(PollQuery.COMPONENTS, componentsOf(chart), "every reported party, FI included");
+
+    assertFalse(chart.path("observations").isEmpty());
+    assertTrue(
+        chart.path("observations").size() > home.path("sourcePolls").path("polls").size(),
+        "the chart draws every overlapping poll, not the table page");
+    boolean missingShare = false;
+    for (final JsonNode observation : chart.path("observations")) {
+      final LocalDate start = LocalDate.parse(observation.path("from").asString());
+      final LocalDate end = LocalDate.parse(observation.path("to").asString());
+      assertFalse(end.isBefore(from), "a marker outside the window is not drawn");
+      assertFalse(start.isAfter(to), "a marker outside the window is not drawn");
+      assertTrue(observation.path("approximatePeriod").isBoolean());
+      assertFalse(observation.has("other"), "the comparable remainder is not a party");
+      assertEquals(PollQuery.COMPONENTS.size(), observation.path("shares").size());
+      missingShare = missingShare || observation.path("shares").path("FI").isNull();
+    }
+    assertTrue(missingShare, "an unreported share stays absent rather than becoming a zero");
+  }
+
+  @Test
+  void aChartWindowIsFetchedAgainstTheTablesOwnSnapshotAndFilters() throws Exception {
+    TestPublication.serve(wireMock, TestPublication.polls(TestPublication.FROM));
+    assertEquals(PublicationOutcome.BLOCKED, publisher.publish().outcome());
+
+    final JsonNode page = bootstrap(get("/en/polls?institute=Novus&includeExcluded=true").body());
+    final long snapshot = page.path("source").path("snapshotId").asLong();
+    final JsonNode chart = page.path("sourceChart");
+    assertEquals("institute=Novus", chart.path("query").asString());
+    assertEquals(
+        PollQuery.COMPONENTS, componentsOf(chart), "a table filter is not a chart control");
+    for (final JsonNode observation : chart.path("observations")) {
+      assertEquals("Novus", observation.path("institute").asString());
+    }
+
+    final HttpResponse<String> fetched =
+        get("/source/chart?snapshot=" + snapshot + "&range=all&institute=Novus");
+    assertEquals(200, fetched.statusCode());
+    final JsonNode all = JSON.readTree(fetched.body());
+    assertEquals("all", all.path("range").path("id").asString());
+    assertTrue(all.path("observations").size() > chart.path("observations").size());
+
+    assertEquals(
+        404, get("/source/chart?snapshot=" + snapshot + "&range=sinceElection").statusCode());
+    assertEquals(404, get("/source/chart?snapshot=999999999").statusCode());
+    assertEquals(400, get("/source/chart?from=yesterday").statusCode());
+  }
+
+  private static java.util.List<String> componentsOf(JsonNode chart) {
+    return java.util.stream.StreamSupport.stream(chart.path("components").spliterator(), false)
+        .map(JsonNode::asString)
+        .toList();
+  }
+
+  @Test
   void aCorrectionCannotChangeAnExistingVisitButARefreshSelectsTheActiveSnapshot()
       throws Exception {
     TestPublication.serve(wireMock, TestPublication.polls(TestPublication.FROM));
@@ -195,6 +267,7 @@ class SourcePagesIT {
     assertTrue(empty.body().contains("No polls available"));
     assertTrue(empty.body().contains(">Retry</a>"));
     assertEquals(2, bootstrap(empty.body()).path("navigation").size());
+    assertFalse(bootstrap(empty.body()).has("sourceChart"), "no retained polls, no chart");
 
     final HttpResponse<String> english = get("/en/seats");
     assertEquals(302, english.statusCode());
