@@ -17,6 +17,7 @@ import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.service.Publications;
 import se.swedishpolls.source.PollQuery;
 import se.swedishpolls.source.Roster;
+import se.swedishpolls.source.Snapshot;
 import se.swedishpolls.source.service.PollQueryService;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -76,6 +77,33 @@ public final class SiteBootstrap {
     return page;
   }
 
+  /** An empty source archive. Retrying this page only reads retained data again. */
+  public ObjectNode noSource(SiteRoutes.Route route) {
+    final ObjectNode page = shell(route, SiteRoutes.SOURCE_NAVIGATION);
+    page.put("noSource", true);
+    return page;
+  }
+
+  /** A source-only overview or poll table pinned to one retained snapshot. */
+  public ObjectNode sourcePage(SiteRoutes.Route route, Snapshot snapshot) {
+    return sourcePage(route, snapshot, PollRequest.unfiltered());
+  }
+
+  public ObjectNode sourcePage(SiteRoutes.Route route, Snapshot snapshot, PollRequest pollRequest) {
+    final ObjectNode page = shell(route, SiteRoutes.SOURCE_NAVIGATION);
+    source(page, snapshot);
+    final List<Roster.CoveragePeriod> periods = queries.periods();
+    switch (route.family()) {
+      case OVERVIEW ->
+          page.set(
+              "sourcePolls",
+              polls(snapshot.id(), periods, Translations.of(route.language()), LATEST_POLLS));
+      case POLLS -> pollTable(page, snapshot, periods, pollRequest);
+      default -> throw new IllegalArgumentException("Source data cannot render " + route.family());
+    }
+    return page;
+  }
+
   /**
    * The filter state one polls request declares: what it asked for, which page of it, and the
    * parameters that were rejected. A rejected parameter is carried rather than thrown, so the page
@@ -102,6 +130,26 @@ public final class SiteBootstrap {
         resolved,
         PollRequest.unfiltered(),
         new CoalitionHistoryQuery.Request(CoalitionSelection.preset(), null, null, LONG_STEP));
+  }
+
+  /**
+   * A current estimate page whose poll rows come from the source snapshot selected for the visit.
+   */
+  public ObjectNode page(
+      SiteRoutes.Route route, Publications.Resolved resolved, Snapshot sourceSnapshot) {
+    final ObjectNode page = page(route, resolved);
+    source(page, sourceSnapshot);
+    if (route.family() == SiteRoutes.Family.OVERVIEW) {
+      final ObjectNode sourcePolls =
+          polls(
+              sourceSnapshot.id(),
+              queries.periods(),
+              Translations.of(route.language()),
+              LATEST_POLLS);
+      page.set("sourcePolls", sourcePolls.deepCopy());
+      ((ObjectNode) page.get("data")).set("polls", sourcePolls);
+    }
+    return page;
   }
 
   public ObjectNode coalitionPage(
@@ -248,12 +296,45 @@ public final class SiteBootstrap {
    */
   private void pollTable(ObjectNode page, PublicationHeader header, PollRequest request) {
     final String language = page.get("language").asString();
-    final Translations labels = Translations.of(language);
     final List<Roster.CoveragePeriod> periods = periods(header, language);
+    pollTable(
+        page,
+        header.snapshotId(),
+        periods,
+        request,
+        PollFilters.csvLink(header.publicationId(), request.filters()),
+        publicationInstitutes(header, language),
+        false);
+  }
+
+  private void pollTable(
+      ObjectNode page,
+      Snapshot snapshot,
+      List<Roster.CoveragePeriod> periods,
+      PollRequest request) {
+    pollTable(
+        page,
+        snapshot.id(),
+        periods,
+        request,
+        PollFilters.sourceCsvLink(snapshot.id(), request.filters()),
+        queries.institutes(snapshot.id()),
+        true);
+  }
+
+  private void pollTable(
+      ObjectNode page,
+      long snapshotId,
+      List<Roster.CoveragePeriod> periods,
+      PollRequest request,
+      String csv,
+      List<String> institutes,
+      boolean source) {
+    final String language = page.get("language").asString();
+    final Translations labels = Translations.of(language);
     final PollQuery.Filters filters = request.filters();
     final PollQuery.Result result =
-        queries.query(
-            header.snapshotId(), periods, filters, request.page(), PollQuery.DEFAULT_PAGE_SIZE);
+        queries.query(snapshotId, periods, filters, request.page(), PollQuery.DEFAULT_PAGE_SIZE);
 
     final int pages = pages(result);
     // A page number past the end lands on the last page rather than on an empty table: the caption
@@ -267,7 +348,8 @@ public final class SiteBootstrap {
     table.put("page", number);
     table.put("pageSize", result.pageSize());
     table.put("pages", pages);
-    table.put("csv", PollFilters.csvLink(header.publicationId(), filters));
+    table.put("csv", csv);
+    table.put("source", source);
     // The one query string every link on this page appends to. Building a second one is how a
     // next-page link starts selecting rows the download beside it does not.
     table.put("query", String.join("&", PollFilters.query(filters)));
@@ -281,14 +363,18 @@ public final class SiteBootstrap {
       entry.put("name", rejected.name());
       entry.put("reason", rejected.reason());
     }
-    options(table.putObject("options"), header, periods, language);
+    options(
+        table.putObject("options"),
+        institutes,
+        source ? List.of() : periods,
+        source ? List.of() : PollQuery.COMPONENTS);
     final ObjectNode names = table.putObject("labels");
     for (final String component : PollQuery.COMPONENTS) {
       names.put(component, labels.component(component));
     }
     final ArrayNode published = table.putArray("polls");
     for (final PollQuery.Row row : rows) {
-      published.add(pollRow(row, periods, components));
+      published.add(pollRow(row, periods, components, source));
     }
   }
 
@@ -321,22 +407,28 @@ public final class SiteBootstrap {
   }
 
   /** What the controls may offer, taken from the pinned publication rather than from live data. */
-  private void options(
+  private static void options(
       ObjectNode node,
-      PublicationHeader header,
+      List<String> instituteNames,
       List<Roster.CoveragePeriod> periods,
-      String language) {
+      List<String> parties) {
     final ArrayNode institutes = node.putArray("institutes");
-    for (final JsonNode institute :
-        document(publications.institutes(header, language)).get("institutes")) {
-      institutes.add(institute.get("institute").asString());
-    }
+    instituteNames.forEach(institutes::add);
     final ArrayNode coveragePeriods = node.putArray("coveragePeriods");
     for (final Roster.CoveragePeriod period : periods) {
       coveragePeriods.addObject().put("id", period.id());
     }
-    final ArrayNode parties = node.putArray("parties");
-    PollQuery.COMPONENTS.forEach(parties::add);
+    final ArrayNode partyOptions = node.putArray("parties");
+    parties.forEach(partyOptions::add);
+  }
+
+  private List<String> publicationInstitutes(PublicationHeader header, String language) {
+    final List<String> names = new ArrayList<>();
+    for (final JsonNode institute :
+        document(publications.institutes(header, language)).get("institutes")) {
+      names.add(institute.get("institute").asString());
+    }
+    return List.copyOf(names);
   }
 
   /**
@@ -347,7 +439,10 @@ public final class SiteBootstrap {
    * renderings read the same answer instead of each re-deriving it.
    */
   private static ObjectNode pollRow(
-      PollQuery.Row row, List<Roster.CoveragePeriod> periods, List<String> components) {
+      PollQuery.Row row,
+      List<Roster.CoveragePeriod> periods,
+      List<String> components,
+      boolean source) {
     final ObjectNode node = JSON.createObjectNode();
     node.put("pollId", row.pollId());
     node.put("institute", row.poll().institute());
@@ -365,11 +460,17 @@ public final class SiteBootstrap {
       node.put("sampleSize", row.poll().sampleSize());
     }
     node.put("denominatorNote", row.poll().denominatorNote());
-    node.put("coveragePeriod", row.coveragePeriod());
+    if (source) {
+      node.putNull("coveragePeriod");
+    } else {
+      node.put("coveragePeriod", row.coveragePeriod());
+    }
     final ArrayNode unmodeled = node.putArray("unmodeled");
-    for (final String component : components) {
-      if (row.poll().shares().get(component) != null && outsideRoster(periods, row, component)) {
-        unmodeled.add(component);
+    if (!source) {
+      for (final String component : components) {
+        if (row.poll().shares().get(component) != null && outsideRoster(periods, row, component)) {
+          unmodeled.add(component);
+        }
       }
     }
     final ObjectNode shares = node.putObject("shares");
@@ -548,6 +649,10 @@ public final class SiteBootstrap {
 
   /** The shell every page carries: language, translated routes, wording and site identity. */
   private ObjectNode shell(SiteRoutes.Route route) {
+    return shell(route, SiteRoutes.NAVIGATION);
+  }
+
+  private ObjectNode shell(SiteRoutes.Route route, List<SiteRoutes.Family> families) {
     final String language = route.language();
     final SiteText text = SiteText.of(language);
     final Translations labels = Translations.of(language);
@@ -570,7 +675,7 @@ public final class SiteBootstrap {
     }
 
     final ArrayNode navigation = node.putArray("navigation");
-    for (final SiteRoutes.Family family : SiteRoutes.NAVIGATION) {
+    for (final SiteRoutes.Family family : families) {
       final ObjectNode entry = navigation.addObject();
       entry.put("family", family.name());
       entry.put("label", text.navigation(family));
@@ -598,6 +703,13 @@ public final class SiteBootstrap {
       partyPaths.put(component, SiteRoutes.path(SiteRoutes.Family.PARTY, language, component));
     }
     return node;
+  }
+
+  private static void source(ObjectNode page, Snapshot snapshot) {
+    final ObjectNode source = page.putObject("source");
+    source.put("snapshotId", snapshot.id());
+    source.put("sha256", snapshot.sha256());
+    source.put("capturedAt", snapshot.capturedAt().toString());
   }
 
   /** The publication identity every page carries, whichever family it belongs to. */
@@ -648,7 +760,9 @@ public final class SiteBootstrap {
     page.put("defaultRange", selected);
     data.set("history", sampled(history, ranges, selected));
 
-    data.set("polls", polls(header, labels));
+    data.set(
+        "polls",
+        polls(header.snapshotId(), periods(header, labels.language()), labels, LATEST_POLLS));
   }
 
   /** One party page, cut from the same documents and snapshot as the overview. */
@@ -820,11 +934,10 @@ public final class SiteBootstrap {
   }
 
   /** The most recently published polls of the pinned snapshot, in the poll table's own shape. */
-  private ObjectNode polls(PublicationHeader header, Translations labels) {
+  private ObjectNode polls(
+      long snapshotId, List<Roster.CoveragePeriod> periods, Translations labels, int pageSize) {
     final PollQuery.Filters filters = PollQuery.Filters.none();
-    final PollQuery.Result result =
-        queries.query(
-            header.snapshotId(), periods(header, labels.language()), filters, 1, LATEST_POLLS);
+    final PollQuery.Result result = queries.query(snapshotId, periods, filters, 1, pageSize);
     final ObjectNode node = JSON.createObjectNode();
     node.put("total", result.total());
     final ArrayNode rows = node.putArray("polls");

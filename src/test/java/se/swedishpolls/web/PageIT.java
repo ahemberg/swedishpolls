@@ -755,8 +755,8 @@ class PageIT {
     assertTrue(
         page.contains("<div class=\"scroll\">\n<table class=\"polls\">"),
         "the poll table is not inside a scroll container");
-    assertTrue(page.contains(SiteHtml.escape(text.text("head.title.polls"))), "the heading");
-    assertTrue(page.contains(SiteHtml.escape(text.text("polls.lead"))), "the lead");
+    assertTrue(page.contains(SiteHtml.escape(text.text("source.polls.title"))), "the heading");
+    assertTrue(page.contains(SiteHtml.escape(text.text("source.polls.lead"))), "the lead");
     assertTrue(table.get("total").asInt() > PollQuery.DEFAULT_PAGE_SIZE, "more than one page");
     assertEquals(PollQuery.DEFAULT_PAGE_SIZE, table.get("polls").size());
     final String rendered = table(page, "polls");
@@ -817,7 +817,7 @@ class PageIT {
 
   /**
    * The download is the table's own rows. Anything else would hand a reader a file that does not
-   * match what they were looking at, which is the whole point of pinning the publication.
+   * match what they were looking at, which is the whole point of pinning the source snapshot.
    */
   @Test
   void theDownloadSelectsExactlyTheRowsTheFilteredTableCounted() {
@@ -826,7 +826,7 @@ class PageIT {
     final JsonNode table = bootstrap(page).get("pollTable");
     assertTrue(table.get("total").asInt() > 0, "the fixture has Novus polls in this range");
     final String csv = table.get("csv").asString();
-    assertTrue(csv.contains("publication=" + publicationId), csv);
+    assertTrue(csv.contains("snapshot=1"), csv);
     assertTrue(csv.contains("institute=Novus"), csv);
     assertTrue(csv.contains("from=2015-01-01") && csv.contains("to=2019-12-31"), csv);
 
@@ -839,7 +839,7 @@ class PageIT {
 
   @Test
   void aPartyFilterNarrowsTheTableColumnsAndTheDownloadTogether() {
-    final String page = get("/en/polls?party=S").body();
+    final String page = get("/en/polls?publication=" + publicationId + "&party=S").body();
     final JsonNode table = bootstrap(page).get("pollTable");
     assertEquals(List.of("S"), columns(table));
     final String rendered = table(page, "polls");
@@ -881,35 +881,35 @@ class PageIT {
 
   @Test
   void anUnknownCoveragePeriodIsRejectedWithoutSilentlySelectingAnother() {
-    final JsonNode table = bootstrap(get("/matningar?coveragePeriod=1066").body()).get("pollTable");
+    final JsonNode table =
+        bootstrap(get("/matningar?publication=" + publicationId + "&coveragePeriod=1066").body())
+            .get("pollTable");
     assertEquals("coveragePeriod", table.get("invalid").get(0).get("name").asString());
     assertTrue(table.get("filters").get("coveragePeriod").isNull());
   }
 
   @Test
-  void pagingKeepsTheFilterAndStaysOnTheSamePublication() {
+  void pagingKeepsTheFilterAndStaysOnTheSameSnapshot() {
     final String first = get("/matningar?institute=Novus").body();
     final JsonNode table = bootstrap(first).get("pollTable");
     assertTrue(table.get("pages").asInt() > 1, "the fixture pages Novus polls");
     assertTrue(
-        first.contains(
-            "href=\"/matningar?publication=" + publicationId + "&amp;institute=Novus&amp;page=2\""),
-        "the next link keeps the resolved publication");
+        first.contains("href=\"/matningar?snapshot=1&amp;institute=Novus&amp;page=2\""),
+        "the next link keeps the resolved snapshot");
 
     final String second = get("/matningar?institute=Novus&page=2").body();
     final JsonNode paged = bootstrap(second).get("pollTable");
     assertEquals(2, paged.get("page").asInt());
     assertEquals(table.get("total").asInt(), paged.get("total").asInt());
     assertTrue(
-        paged.get("csv").asString().startsWith("/api/v1/polls.csv?publication=" + publicationId),
+        paged.get("csv").asString().startsWith("/source/polls.csv?snapshot=1"),
         paged.get("csv").asString());
     assertNotEquals(
         table.get("polls").get(0).get("pollId").asString(),
         paged.get("polls").get(0).get("pollId").asString());
     assertTrue(
-        second.contains(
-            "href=\"/matningar?publication=" + publicationId + "&amp;institute=Novus&amp;page=1\""),
-        "and back on the same publication");
+        second.contains("href=\"/matningar?snapshot=1&amp;institute=Novus&amp;page=1\""),
+        "and back on the same snapshot");
   }
 
   /**
@@ -943,7 +943,8 @@ class PageIT {
    */
   @Test
   void anObservationOutsideTheModeledRosterIsMarkedRatherThanPresentedAsAnEstimate() {
-    final String page = get("/matningar?party=FI&to=2018-12-31").body();
+    final String page =
+        get("/matningar?publication=" + publicationId + "&party=FI&to=2018-12-31").body();
     final JsonNode table = bootstrap(page).get("pollTable");
     final SiteText text = SiteText.of(Translations.SWEDISH);
     boolean reported = false;
@@ -984,27 +985,25 @@ class PageIT {
             "polls.filters",
             "polls.filter.from",
             "polls.filter.institute",
-            "polls.filter.coveragePeriod",
             "polls.filter.includeExcluded",
             "polls.filter.apply")) {
       assertTrue(page.contains(SiteHtml.escape(english.text(key))), key);
     }
-    final String own = english.text("head.description.polls");
+    final String own = english.text("source.description.polls");
     assertTrue(
-        page.contains(
-            "<meta name=\"description\" content=\""
-                + SiteHtml.escape(own.substring(0, own.indexOf('{')))),
+        page.contains("<meta name=\"description\" content=\"" + SiteHtml.escape(own)),
         "the polls page describes itself");
     assertTrue(page.contains("hreflang=\"sv\" href=\"" + ORIGIN + "/matningar\">"));
   }
 
   @Test
   void thePollsPageOffersTheFilterOptionsItsOwnPublicationCarries() {
-    final JsonNode options = bootstrap(get("/matningar").body()).get("pollTable").get("options");
+    final String path = "/matningar?publication=" + publicationId;
+    final JsonNode options = bootstrap(get(path).body()).get("pollTable").get("options");
     assertFalse(options.get("institutes").isEmpty(), "institutes to filter by");
     assertFalse(options.get("coveragePeriods").isEmpty(), "coverage periods to filter by");
     assertEquals(PollQuery.COMPONENTS.size(), options.get("parties").size());
-    final String page = get("/matningar").body();
+    final String page = get(path).body();
     for (final JsonNode institute : options.get("institutes")) {
       assertTrue(
           page.contains("<option value=\"" + SiteHtml.escape(institute.asString()) + "\""),

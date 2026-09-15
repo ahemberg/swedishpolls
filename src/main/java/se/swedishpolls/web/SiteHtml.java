@@ -11,6 +11,7 @@ import java.util.Set;
 import org.springframework.stereotype.Component;
 import se.swedishpolls.publication.ShareImages;
 import se.swedishpolls.publication.Translations;
+import se.swedishpolls.source.PollQuery;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
@@ -120,6 +121,9 @@ public final class SiteHtml {
 
   private static String title(ObjectNode bootstrap, SiteText text) {
     final SiteRoutes.Family family = family(bootstrap);
+    if (!bootstrap.has("publication")) {
+      return text.text(family == SiteRoutes.Family.POLLS ? "source.polls.title" : "source.title");
+    }
     if (family == SiteRoutes.Family.PARTY) {
       return partyName(bootstrap);
     }
@@ -132,7 +136,9 @@ public final class SiteHtml {
 
   private static String description(ObjectNode bootstrap, SiteText text) {
     if (!bootstrap.has("publication")) {
-      return text.text("unavailable.body");
+      return bootstrap.has("source")
+          ? text.text("source.description." + family(bootstrap).key())
+          : text.text("source.noPolls.body");
     }
     final SiteRoutes.Family family = family(bootstrap);
     if (family == SiteRoutes.Family.COALITIONS && bootstrap.path("data").has("coalitionHistory")) {
@@ -275,9 +281,7 @@ public final class SiteHtml {
     html.append("</nav>\n</header>\n");
     staleBanner(html, bootstrap, text);
     html.append("<main id=\"main\">\n");
-    if (!bootstrap.has("publication")) {
-      unavailable(html, bootstrap, text);
-    } else {
+    if (bootstrap.has("publication")) {
       // Exhaustive on purpose: a family this build has no rendering for yet still gets its own
       // title, and adding one has to be a deliberate choice here rather than a silent fallback.
       switch (family(bootstrap)) {
@@ -289,6 +293,14 @@ public final class SiteHtml {
         case POLLSTERS -> pollsters(html, bootstrap, text);
         case METHOD -> method(html, bootstrap, text);
       }
+    } else if (bootstrap.has("source")) {
+      switch (family(bootstrap)) {
+        case OVERVIEW -> sourceOverview(html, bootstrap, text);
+        case POLLS -> polls(html, bootstrap, text);
+        default -> throw new IllegalArgumentException("Source page for " + family(bootstrap));
+      }
+    } else {
+      noSource(html, bootstrap, text);
     }
     html.append("</main>\n");
     if (bootstrap.has("publication")) {
@@ -314,18 +326,20 @@ public final class SiteHtml {
         .append("</p>\n");
   }
 
-  private static void unavailable(StringBuilder html, ObjectNode bootstrap, SiteText text) {
-    html.append("<h1>").append(escape(text.text("unavailable.title"))).append("</h1>\n");
-    html.append("<p>").append(escape(text.text("unavailable.body"))).append("</p>\n");
-    final JsonNode checked = bootstrap.get("lastSourceCheck");
-    if (checked != null && !checked.isNull()) {
-      final String when =
-          SiteFormat.timestamp(
-              Instant.parse(checked.asString()), bootstrap.get("language").asString());
-      html.append("<p class=\"meta\">")
-          .append(escape(SiteText.fill(text.text("unavailable.lastCheck"), "timestamp", when)))
-          .append("</p>\n");
-    }
+  private static void noSource(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    html.append("<h1>").append(escape(text.text("source.noPolls.title"))).append("</h1>\n");
+    html.append("<p>").append(escape(text.text("source.noPolls.body"))).append("</p>\n");
+    html.append("<p><a class=\"btn primary\" href=\"")
+        .append(escape(bootstrap.get("route").get("path").asString()))
+        .append("\">")
+        .append(escape(text.text("source.retry")))
+        .append("</a></p>\n");
+  }
+
+  private static void sourceOverview(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    html.append("<h1>").append(escape(text.text("source.title"))).append("</h1>\n");
+    sourceUpdated(html, bootstrap, text);
+    sourceLatestPolls(html, bootstrap, text);
   }
 
   private void overview(StringBuilder html, ObjectNode bootstrap, SiteText text) {
@@ -360,6 +374,61 @@ public final class SiteHtml {
         .append("</a></p>\n");
     blocs(html, bootstrap, text);
     downloads(html, bootstrap, text);
+    if (bootstrap.has("sourcePolls")) {
+      sourceUpdated(html, bootstrap, text);
+      sourceLatestPolls(html, bootstrap, text);
+    }
+  }
+
+  private static void sourceUpdated(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final String updated =
+        SiteFormat.timestamp(
+            Instant.parse(bootstrap.get("source").get("capturedAt").asString()),
+            bootstrap.get("language").asString());
+    html.append("<p class=\"meta\">")
+        .append(escape(SiteText.fill(text.text("source.updated"), "timestamp", updated)))
+        .append("</p>\n");
+  }
+
+  /** The current source rows on the overview, complete before the script replaces them. */
+  private static void sourceLatestPolls(StringBuilder html, ObjectNode bootstrap, SiteText text) {
+    final JsonNode polls = bootstrap.get("sourcePolls");
+    final String language = bootstrap.get("language").asString();
+    html.append("<section class=\"sec o-polls\"><h2>")
+        .append(escape(text.text("polls.title")))
+        .append("</h2><div class=\"scroll\"><table><caption>")
+        .append(escape(text.text("polls.caption")))
+        .append("</caption><thead><tr><th scope=\"col\">")
+        .append(escape(text.text("polls.column.institute")))
+        .append("</th><th scope=\"col\">")
+        .append(escape(text.text("polls.column.fieldwork")))
+        .append("</th><th scope=\"col\" class=\"num\">")
+        .append(escape(text.text("polls.column.sample")))
+        .append("</th>");
+    for (final String component : PollQuery.COMPONENTS) {
+      html.append("<th scope=\"col\" class=\"num\" title=\"")
+          .append(escape(polls.get("labels").get(component).asString()))
+          .append("\">")
+          .append(escape(component))
+          .append("</th>");
+    }
+    html.append("</tr></thead><tbody>");
+    for (final JsonNode poll : polls.get("polls")) {
+      html.append("<tr><th scope=\"row\">")
+          .append(escape(poll.get("institute").asString()))
+          .append("</th><td>")
+          .append(escape(fieldwork(poll, language, text)))
+          .append("</td><td class=\"num\">")
+          .append(escape(sampleSize(poll.get("sampleSize"), language, text)))
+          .append("</td>");
+      for (final String component : PollQuery.COMPONENTS) {
+        html.append("<td class=\"num\">")
+            .append(escape(sourceShare(poll.get("shares").get(component), language, text)))
+            .append("</td>");
+      }
+      html.append("</tr>");
+    }
+    html.append("</tbody></table></div></section>\n");
   }
 
   /**
@@ -1007,10 +1076,18 @@ public final class SiteHtml {
    */
   private static void polls(StringBuilder html, ObjectNode bootstrap, SiteText text) {
     final JsonNode table = bootstrap.get("pollTable");
-    html.append("<h1>").append(escape(text.text("head.title.polls"))).append("</h1>\n");
-    html.append("<p class=\"meta\">").append(escape(text.text("polls.lead"))).append("</p>\n");
+    final boolean source = table.get("source").asBoolean();
+    html.append("<h1>")
+        .append(escape(text.text(source ? "source.polls.title" : "head.title.polls")))
+        .append("</h1>\n");
+    html.append("<p class=\"meta\">")
+        .append(escape(text.text(source ? "source.polls.lead" : "polls.lead")))
+        .append("</p>\n");
+    if (source) {
+      sourceUpdated(html, bootstrap, text);
+    }
     pollFilters(html, bootstrap, text, table);
-    pollNotices(html, text, table);
+    pollNotices(html, text, table, source);
     if (!table.get("polls").isEmpty()) {
       pollRows(html, bootstrap, text, table);
       pollPaging(html, bootstrap, text, table);
@@ -1022,8 +1099,13 @@ public final class SiteHtml {
   private static void pollFilters(
       StringBuilder html, ObjectNode bootstrap, SiteText text, JsonNode table) {
     final String path = bootstrap.get("route").get("path").asString();
-    final String publication = bootstrap.get("api").get("publication").asString();
-    final String clear = path + "?publication=" + publication;
+    final boolean source = table.get("source").asBoolean();
+    final String pinName = source ? "snapshot" : "publication";
+    final String pin =
+        source
+            ? bootstrap.get("source").get("snapshotId").asString()
+            : bootstrap.get("api").get("publication").asString();
+    final String clear = path + "?" + pinName + "=" + pin;
     final JsonNode filters = table.get("filters");
     final JsonNode options = table.get("options");
     html.append("<form class=\"filters\" method=\"get\" action=\"")
@@ -1031,7 +1113,7 @@ public final class SiteHtml {
         .append("\">\n<fieldset>\n<legend>")
         .append(escape(text.text("polls.filters")))
         .append("</legend>\n");
-    hidden(html, "publication", publication);
+    hidden(html, pinName, pin);
     dateFilter(html, text, "from", "polls.filter.from", filters.get("from"));
     dateFilter(html, text, "to", "polls.filter.to", filters.get("to"));
     selectFilter(
@@ -1042,23 +1124,30 @@ public final class SiteHtml {
         "polls.filter.anyInstitute",
         options.get("institutes"),
         first(filters.get("institute")));
-    selectFilter(
-        html,
-        text,
-        "party",
-        "polls.filter.party",
-        "polls.filter.allParties",
-        options.get("parties"),
-        first(filters.get("party")),
-        bootstrap.get("labels"));
-    periodFilter(html, text, options.get("coveragePeriods"), filters.get("coveragePeriod"));
+    if (!source) {
+      selectFilter(
+          html,
+          text,
+          "party",
+          "polls.filter.party",
+          "polls.filter.allParties",
+          options.get("parties"),
+          first(filters.get("party")),
+          bootstrap.get("labels"));
+      periodFilter(html, text, options.get("coveragePeriods"), filters.get("coveragePeriod"));
+    }
     html.append("<p class=\"check\"><label for=\"polls-includeExcluded\">")
         .append(
             "<input type=\"checkbox\" id=\"polls-includeExcluded\" name=\"includeExcluded\""
                 + " value=\"true\"")
         .append(filters.get("includeExcluded").asBoolean() ? " checked" : "")
         .append("> ")
-        .append(escape(text.text("polls.filter.includeExcluded")))
+        .append(
+            escape(
+                text.text(
+                    source
+                        ? "source.polls.filter.includeExcluded"
+                        : "polls.filter.includeExcluded")))
         .append("</label></p>\n");
     html.append("<p class=\"actions\"><button class=\"btn primary\" type=\"submit\">")
         .append(escape(text.text("polls.filter.apply")))
@@ -1161,7 +1250,8 @@ public final class SiteHtml {
   }
 
   /** What the page has to say before the table: a rejected filter, or nothing matching. */
-  private static void pollNotices(StringBuilder html, SiteText text, JsonNode table) {
+  private static void pollNotices(
+      StringBuilder html, SiteText text, JsonNode table, boolean source) {
     final JsonNode invalid = table.get("invalid");
     if (!invalid.isEmpty()) {
       final List<String> names = new ArrayList<>();
@@ -1175,7 +1265,7 @@ public final class SiteHtml {
     }
     if (table.get("polls").isEmpty()) {
       html.append("<p class=\"notice\" role=\"status\">")
-          .append(escape(text.text("polls.empty")))
+          .append(escape(text.text(source ? "source.polls.empty" : "polls.empty")))
           .append("</p>\n");
     }
   }
@@ -1186,6 +1276,7 @@ public final class SiteHtml {
     final String language = bootstrap.get("language").asString();
     final JsonNode filters = table.get("filters");
     final boolean eligibility = filters.get("includeExcluded").asBoolean();
+    final boolean source = table.get("source").asBoolean();
     final List<String> components = new ArrayList<>();
     for (final JsonNode component : table.get("columns")) {
       components.add(component.asString());
@@ -1212,13 +1303,19 @@ public final class SiteHtml {
           .append("</th>");
     }
     html.append("<th scope=\"col\" class=\"num\">")
-        .append(escape(text.text("polls.column.other")))
-        .append("</th><th scope=\"col\">")
-        .append(escape(text.text("polls.column.period")))
+        .append(escape(text.text(source ? "source.polls.column.other" : "polls.column.other")))
         .append("</th>");
+    if (!source) {
+      html.append("<th scope=\"col\">")
+          .append(escape(text.text("polls.column.period")))
+          .append("</th>");
+    }
     if (eligibility) {
       html.append("<th scope=\"col\">")
-          .append(escape(text.text("polls.column.eligibility")))
+          .append(
+              escape(
+                  text.text(
+                      source ? "source.polls.column.eligibility" : "polls.column.eligibility")))
           .append("</th>");
     }
     html.append("</tr></thead><tbody>\n");
@@ -1268,20 +1365,23 @@ public final class SiteHtml {
         final boolean flagged = outside.contains(component);
         html.append("<td class=\"num\">")
             .append(escape(sourceShare(share, language, text)))
-            .append(flagged ? escape(mark) : "")
+            .append(flagged && !source ? escape(mark) : "")
             .append("</td>");
       }
       html.append("<td class=\"num\">")
           .append(escape(sourceShare(poll.get("other"), language, text)))
-          .append("</td><td>")
-          .append(
-              escape(
-                  poll.get("coveragePeriod").isNull()
-                      ? text.text("polls.noPeriod")
-                      : poll.get("coveragePeriod").asString()))
           .append("</td>");
+      if (!source) {
+        html.append("<td>")
+            .append(
+                escape(
+                    poll.get("coveragePeriod").isNull()
+                        ? text.text("polls.noPeriod")
+                        : poll.get("coveragePeriod").asString()))
+            .append("</td>");
+      }
       if (eligibility) {
-        html.append("<td>").append(escape(eligibility(poll, text))).append("</td>");
+        html.append("<td>").append(escape(eligibility(poll, text, source))).append("</td>");
       }
       html.append("</tr>\n");
     }
@@ -1289,7 +1389,7 @@ public final class SiteHtml {
     html.append("<p class=\"footnote\">")
         .append(escape(text.text("polls.sourceNote")))
         .append("</p>\n");
-    if (unmodeled) {
+    if (unmodeled && !source) {
       html.append("<p class=\"footnote\">")
           .append(escape(text.text("polls.unmodeled")))
           .append("</p>\n");
@@ -1370,15 +1470,17 @@ public final class SiteHtml {
   }
 
   /** Why a row is or is not one of the polls the estimate was fitted to. */
-  private static String eligibility(JsonNode poll, SiteText text) {
+  private static String eligibility(JsonNode poll, SiteText text, boolean source) {
+    final String prefix = source ? "source." : "";
     if (poll.get("eligible").asBoolean()) {
-      return text.text("polls.eligible");
+      return text.text(prefix + "polls.eligible");
     }
     final List<String> reasons = new ArrayList<>();
     for (final JsonNode reason : poll.get("exclusionReasons")) {
       reasons.add(reason.asString());
     }
-    return SiteText.fill(text.text("polls.excluded"), "reasons", String.join(", ", reasons));
+    return SiteText.fill(
+        text.text(prefix + "polls.excluded"), "reasons", String.join(", ", reasons));
   }
 
   /** Plain links, so paging works with no script and every page keeps the filter and the pin. */
@@ -1412,7 +1514,11 @@ public final class SiteHtml {
   /** This page's own path with the declared filters and one page number on it. */
   private static String pollPageLink(ObjectNode bootstrap, JsonNode table, int page) {
     final List<String> query = new ArrayList<>();
-    query.add("publication=" + bootstrap.get("api").get("publication").asString());
+    if (table.get("source").asBoolean()) {
+      query.add("snapshot=" + bootstrap.get("source").get("snapshotId").asString());
+    } else {
+      query.add("publication=" + bootstrap.get("api").get("publication").asString());
+    }
     final String declared = table.get("query").asString();
     if (!declared.isEmpty()) {
       query.add(declared);
@@ -1424,21 +1530,37 @@ public final class SiteHtml {
   /** The download of exactly these rows, from exactly this publication. */
   private static void pollDownloads(
       StringBuilder html, ObjectNode bootstrap, SiteText text, JsonNode table) {
-    final String publication = bootstrap.get("api").get("publication").asString();
+    final boolean source = table.get("source").asBoolean();
     final String language = bootstrap.get("language").asString();
     html.append("<h2>")
         .append(escape(text.text("downloads.title")))
         .append("</h2>\n<ul class=\"downloads\">\n");
     link(html, table.get("csv").asString() + "&language=" + language, text.text("polls.download"));
-    link(
-        html,
-        "/api/v1/estimates/latest?publication=" + publication + "&language=" + language,
-        text.text("downloads.estimates"));
+    if (!source) {
+      final String publication = bootstrap.get("api").get("publication").asString();
+      link(
+          html,
+          "/api/v1/estimates/latest?publication=" + publication + "&language=" + language,
+          text.text("downloads.estimates"));
+    }
     html.append("</ul>\n<p class=\"footnote\">")
-        .append(escape(text.text("polls.downloadNote")))
-        .append("</p>\n<p class=\"meta\">")
-        .append(escape(SiteText.fill(text.text("downloads.pinned"), "publication", publication)))
+        .append(escape(text.text(source ? "source.polls.downloadNote" : "polls.downloadNote")))
         .append("</p>\n");
+    if (source) {
+      html.append("<p class=\"meta\">")
+          .append(
+              escape(
+                  SiteText.fill(
+                      text.text("source.polls.snapshot"),
+                      "snapshot",
+                      bootstrap.get("source").get("snapshotId").asString())))
+          .append("</p>\n");
+    } else {
+      final String publication = bootstrap.get("api").get("publication").asString();
+      html.append("<p class=\"meta\">")
+          .append(escape(SiteText.fill(text.text("downloads.pinned"), "publication", publication)))
+          .append("</p>\n");
+    }
   }
 
   // The pollsters page: institutes, their method eras and their house effects per cycle.

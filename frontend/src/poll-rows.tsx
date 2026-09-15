@@ -105,6 +105,27 @@ function eligibility(poll: PollRow, t: Translate): string {
   return t("polls.excluded", { reasons: poll.exclusionReasons.join(", ") });
 }
 
+function sourceEligibility(poll: PollRow, t: Translate): string {
+  if (poll.eligible) {
+    return t("source.polls.eligible");
+  }
+  return t("source.polls.excluded", { reasons: poll.exclusionReasons.join(", ") });
+}
+
+function pollText(sourceTable: boolean, published: string, source: string): string {
+  if (sourceTable) {
+    return source;
+  }
+  return published;
+}
+
+function rowEligibility(poll: PollRow, t: Translate, sourceTable: boolean): string {
+  if (sourceTable) {
+    return sourceEligibility(poll, t);
+  }
+  return eligibility(poll, t);
+}
+
 function caption(table: PollTable, t: Translate): string {
   const first = (table.page - 1) * table.pageSize + 1;
   return t("polls.tableCaption", {
@@ -119,15 +140,17 @@ function caption(table: PollTable, t: Translate): string {
 function Share({
   poll,
   component,
+  markUnmodeled,
   page,
   t,
 }: {
   readonly poll: PollRow;
   readonly component: string;
+  readonly markUnmodeled: boolean;
   readonly page: Bootstrap;
   readonly t: Translate;
 }): JSX.Element {
-  const flagged = poll.unmodeled.includes(component);
+  const flagged = markUnmodeled && poll.unmodeled.includes(component);
   return (
     <td className="num">
       {source(poll.displayShares[component], page, t)}
@@ -138,6 +161,7 @@ function Share({
 
 function PollRows({ page, table, t }: Props): JSX.Element {
   const eligible = table.filters.includeExcluded;
+  const sourceTable = table.source;
   return (
     <div className="scroll">
       <table className="polls">
@@ -157,10 +181,20 @@ function PollRows({ page, table, t }: Props): JSX.Element {
               </th>
             ))}
             <th scope="col" className="num">
-              {t("polls.column.other")}
+              {t(pollText(sourceTable, "polls.column.other", "source.polls.column.other"))}
             </th>
-            <th scope="col">{t("polls.column.period")}</th>
-            {eligible && <th scope="col">{t("polls.column.eligibility")}</th>}
+            {!sourceTable && <th scope="col">{t("polls.column.period")}</th>}
+            {eligible && (
+              <th scope="col">
+                {t(
+                  pollText(
+                    sourceTable,
+                    "polls.column.eligibility",
+                    "source.polls.column.eligibility",
+                  ),
+                )}
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -172,11 +206,18 @@ function PollRows({ page, table, t }: Props): JSX.Element {
               <td>{published(poll, page, t)}</td>
               <td className="num">{sampleCell(poll, page, t)}</td>
               {table.columns.map((component) => (
-                <Share key={component} poll={poll} component={component} page={page} t={t} />
+                <Share
+                  key={component}
+                  poll={poll}
+                  component={component}
+                  markUnmodeled={!sourceTable}
+                  page={page}
+                  t={t}
+                />
               ))}
               <td className="num">{source(poll.displayOther, page, t)}</td>
-              <td>{poll.coveragePeriod ?? t("polls.noPeriod")}</td>
-              {eligible && <td>{eligibility(poll, t)}</td>}
+              {!sourceTable && <td>{poll.coveragePeriod ?? t("polls.noPeriod")}</td>}
+              {eligible && <td>{rowEligibility(poll, t, sourceTable)}</td>}
             </tr>
           ))}
         </tbody>

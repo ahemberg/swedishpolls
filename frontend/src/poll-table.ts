@@ -91,6 +91,7 @@ export interface PollOptions {
  * estimate, the allocation and the memberships that every results page carries.
  */
 export interface PollTable {
+  readonly source: boolean;
   readonly total: number;
   readonly page: number;
   readonly pageSize: number;

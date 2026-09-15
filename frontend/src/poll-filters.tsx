@@ -66,6 +66,9 @@ function Choice({
 }
 
 function clearPath(page: Bootstrap): string {
+  if (page.source !== undefined) {
+    return `${page.route.path}?snapshot=${page.source.snapshotId}`;
+  }
   if (page.api !== undefined) {
     return `${page.route.path}?publication=${encodeURIComponent(page.api.publication)}`;
   }
@@ -73,10 +76,28 @@ function clearPath(page: Bootstrap): string {
 }
 
 function publicationPin(page: Bootstrap): JSX.Element | null {
+  if (page.source !== undefined) {
+    return <input type="hidden" name="snapshot" value={page.source.snapshotId} />;
+  }
   if (page.api === undefined) {
     return null;
   }
   return <input type="hidden" name="publication" value={page.api.publication} />;
+}
+
+function includeExcludedLabel(page: Bootstrap, t: Translate): string {
+  if (page.source !== undefined) {
+    return t("source.polls.filter.includeExcluded");
+  }
+  return t("polls.filter.includeExcluded");
+}
+
+function first(values: readonly string[]): string {
+  return values[0] ?? "";
+}
+
+function optional(value: string | null): string {
+  return value ?? "";
 }
 
 function PollFilters({ page, options, filters, t }: Props): JSX.Element {
@@ -91,26 +112,30 @@ function PollFilters({ page, options, filters, t }: Props): JSX.Element {
           name="institute"
           label={t("polls.filter.institute")}
           any={t("polls.filter.anyInstitute")}
-          value={filters.institute[0] ?? ""}
+          value={first(filters.institute)}
           values={options.institutes}
           display={(institute) => institute}
         />
-        <Choice
-          name="party"
-          label={t("polls.filter.party")}
-          any={t("polls.filter.allParties")}
-          value={filters.party[0] ?? ""}
-          values={options.parties}
-          display={(party) => componentName(page, party)}
-        />
-        <Choice
-          name="coveragePeriod"
-          label={t("polls.filter.coveragePeriod")}
-          any={t("polls.filter.anyPeriod")}
-          value={filters.coveragePeriod ?? ""}
-          values={options.coveragePeriods.map((period) => period.id)}
-          display={(period) => period}
-        />
+        {page.source === undefined && (
+          <>
+            <Choice
+              name="party"
+              label={t("polls.filter.party")}
+              any={t("polls.filter.allParties")}
+              value={first(filters.party)}
+              values={options.parties}
+              display={(party) => componentName(page, party)}
+            />
+            <Choice
+              name="coveragePeriod"
+              label={t("polls.filter.coveragePeriod")}
+              any={t("polls.filter.anyPeriod")}
+              value={optional(filters.coveragePeriod)}
+              values={options.coveragePeriods.map((period) => period.id)}
+              display={(period) => period}
+            />
+          </>
+        )}
         <p className="check">
           <label htmlFor="polls-includeExcluded">
             <input
@@ -120,7 +145,7 @@ function PollFilters({ page, options, filters, t }: Props): JSX.Element {
               value="true"
               defaultChecked={filters.includeExcluded}
             />{" "}
-            {t("polls.filter.includeExcluded")}
+            {includeExcludedLabel(page, t)}
           </label>
         </p>
         <p className="actions">

@@ -57,6 +57,9 @@ public final class SiteRoutes {
           Family.POLLS,
           Family.METHOD);
 
+  /** Pages that remain useful without model results. */
+  public static final List<Family> SOURCE_NAVIGATION = List.of(Family.OVERVIEW, Family.POLLS);
+
   private static final Map<Family, Map<String, String>> PATHS = paths();
   private static final Map<String, Map<String, String>> PARTY_SLUGS = partySlugs();
 
