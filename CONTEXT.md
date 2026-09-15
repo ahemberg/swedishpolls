@@ -102,6 +102,12 @@ correction that publishes mid-visit cannot change the rows being counted or the 
 saved. A filter a request declares but the page cannot read is named and left unapplied, never
 guessed.
 
+**Source poll view**:
+A view of collected source observations that is available independently of a validated estimate publication. Its observations may be newer than, or corrected since, those used by the latest published estimate.
+
+**Poll marker**:
+A graphical representation of one party's reported share in one poll. Its horizontal span represents the interview period, and its vertical position represents the reported percentage.
+
 **Headline date**:
 The last day the published estimate covers. It comes from the estimate rather than from the
 snapshot, so it can fall before the snapshot's last fieldwork date when the newest poll's midpoint
