@@ -86,7 +86,9 @@ public class PageController {
     if (resolved.isPresent()) {
       final Publications.Resolved selected = resolved.orElseThrow();
       page =
-          source.isPresent() && route.family() == SiteRoutes.Family.OVERVIEW
+          source.isPresent()
+                  && (route.family() == SiteRoutes.Family.OVERVIEW
+                      || route.family() == SiteRoutes.Family.PARTY)
               ? bootstrap.page(route, selected, source.orElseThrow())
               : page(route, selected, parameters);
     } else if (source.isPresent()) {

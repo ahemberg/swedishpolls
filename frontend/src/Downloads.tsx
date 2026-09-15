@@ -78,6 +78,19 @@ function pollsQuery(pin: string, component: string | null): string {
   return `${pin}&party=${component}`;
 }
 
+function pollsHref(page: Bootstrap, component: string | null): string {
+  if (page.source !== undefined) {
+    const pin = `?snapshot=${page.source.snapshotId}&language=${page.language}`;
+    return `/source/polls.csv${pollsQuery(pin, component)}`;
+  }
+  const { api } = page;
+  if (api === undefined) {
+    return "";
+  }
+  const pin = `?publication=${api.publication}&language=${api.language}`;
+  return `${api.base}/polls.csv${pollsQuery(pin, component)}`;
+}
+
 function estimatesPath(component: string | null): string {
   if (component === null) {
     return "estimates/latest";
@@ -92,13 +105,12 @@ function Downloads({ page, t, card = "overview" }: Props): JSX.Element | null {
   }
   const component = partyComponent(page);
   const pin = `?publication=${api.publication}&language=${api.language}`;
-  const polls = pollsQuery(pin, component);
   const estimates = estimatesPath(component);
   return (
     <section className="sec o-journalists">
       <h2>{t("downloads.title")}</h2>
       <ul className="downloads">
-        <Download href={`${api.base}/polls.csv${polls}`} label={t("downloads.polls")} />
+        <Download href={pollsHref(page, component)} label={t("downloads.polls")} />
         <Download href={`${api.base}/${estimates}${pin}`} label={t("downloads.estimates")} />
         <Download href={`${api.base}/seats${pin}`} label={t("downloads.seats")} />
         <Download href={`${api.base}/coalitions${pin}`} label={t("downloads.coalitions")} />

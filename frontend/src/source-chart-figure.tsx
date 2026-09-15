@@ -158,4 +158,4 @@ function SourceChartFigure({
   );
 }
 
-export { SourceChartFigure };
+export { Markers, Selection, SourceChartFigure, YearRules };

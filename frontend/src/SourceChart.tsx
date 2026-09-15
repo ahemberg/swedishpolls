@@ -44,16 +44,18 @@ function sample(observation: SourceObservation, locale: string, t: Translate): s
 /** Every detail one observation carries, in the order the readout and the label both say them. */
 function Details({
   page,
-  state,
+  drawn,
+  window,
   observation,
   t,
 }: {
   readonly page: Bootstrap;
-  readonly state: SourceChartState;
+  readonly drawn: readonly string[];
+  readonly window: SourceChartData["range"];
   readonly observation: SourceObservation;
   readonly t: Translate;
 }): JSX.Element {
-  const span = markerSpan(observation, state.data.range, PLOT);
+  const span = markerSpan(observation, window, PLOT);
   return (
     <p className="readout" aria-live="polite">
       <b>{observation.institute}</b>
@@ -61,7 +63,7 @@ function Details({
       {observation.approximatePeriod && <span>{t("polls.approximate")}</span>}
       {(span.clippedFrom || span.clippedTo) && <span>{t("source.chart.clipped")}</span>}
       <span>{sample(observation, page.locale, t)}</span>
-      {state.drawn.map((component) => {
+      {drawn.map((component) => {
         const share = observation.shares[component];
         if (share === undefined || share === null) {
           return null;
@@ -94,22 +96,36 @@ function Readout({
       </p>
     );
   }
-  return <Details page={page} state={state} observation={observation} t={t} />;
+  return (
+    <Details
+      page={page}
+      drawn={state.drawn}
+      window={state.data.range}
+      observation={observation}
+      t={t}
+    />
+  );
 }
 
 /** The one control that steps the selection, so a keyboard and a finger reach the same details. */
 function Cursor({
   id,
   page,
-  state,
+  observations,
+  index,
+  lastIndex,
+  setCursor,
   t,
 }: {
   readonly id: string;
   readonly page: Bootstrap;
-  readonly state: SourceChartState;
+  readonly observations: readonly SourceObservation[];
+  readonly index: number;
+  readonly lastIndex: number;
+  readonly setCursor: (index: number) => void;
   readonly t: Translate;
 }): JSX.Element | null {
-  const observation = state.observations[state.index];
+  const observation = observations[index];
   if (observation === undefined) {
     return null;
   }
@@ -120,11 +136,11 @@ function Cursor({
         id={id}
         type="range"
         min={0}
-        max={state.lastIndex}
+        max={lastIndex}
         step={1}
-        value={state.index}
+        value={index}
         aria-valuetext={`${observation.institute}, ${fieldwork(observation, page.locale)}`}
-        onChange={(event) => state.setCursor(Number(event.target.value))}
+        onChange={(event) => setCursor(Number(event.target.value))}
       />
     </p>
   );
@@ -166,7 +182,15 @@ function SourceChart({ page, chart, t }: Props): JSX.Element {
       />
       <Readout page={page} state={state} t={t} />
       <SourceChartFigure page={page} state={state} summary={summary} t={t} />
-      <Cursor id={`${ids}-cursor`} page={page} state={state} t={t} />
+      <Cursor
+        id={`${ids}-cursor`}
+        page={page}
+        observations={state.observations}
+        index={state.index}
+        lastIndex={state.lastIndex}
+        setCursor={state.setCursor}
+        t={t}
+      />
       <p className="footnote">{t("source.chart.note")}</p>
       <p className="footnote">{t("source.chart.approximateNote")}</p>
       <p className="footnote">{t("source.chart.sourceNote")}</p>
@@ -176,4 +200,4 @@ function SourceChart({ page, chart, t }: Props): JSX.Element {
   );
 }
 
-export { SourceChart };
+export { Cursor as SourceCursor, Details as SourceDetails, SourceChart };

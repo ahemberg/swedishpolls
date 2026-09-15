@@ -27,14 +27,14 @@ function TimelineControlsRow({ ids, page, state, label, t, fixed = false }: Prop
         <>
           <Isolation
             id={`${ids}-isolate`}
-            series={state.series}
+            series={state.components}
             isolated={state.isolated}
             onIsolate={state.isolate}
             label={label}
             t={t}
           />
           <PartyToggles
-            series={state.series}
+            series={state.components}
             hidden={state.hidden}
             locked={state.isolated !== ALL_PARTIES}
             onToggle={state.toggle}

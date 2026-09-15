@@ -1050,7 +1050,7 @@ public final class SiteHtml {
     html.append("<h2>")
         .append(escape(text.text("downloads.title")))
         .append("</h2>\n<ul class=\"downloads\">\n");
-    link(html, "/api/v1/polls.csv" + pin + "&party=" + component, text.text("downloads.polls"));
+    link(html, pollDownload(bootstrap, component), text.text("downloads.polls"));
     link(html, "/api/v1/estimates/history" + pin, text.text("downloads.estimates"));
     link(html, "/api/v1/seats" + pin, text.text("downloads.seats"));
     link(html, "/api/v1/institutes" + pin, text.text("downloads.houseEffects"));
@@ -2059,7 +2059,7 @@ public final class SiteHtml {
     html.append("<h2>")
         .append(escape(text.text("downloads.title")))
         .append("</h2>\n<ul class=\"downloads\">\n");
-    link(html, "/api/v1/polls.csv" + pin, text.text("downloads.polls"));
+    link(html, pollDownload(bootstrap, null), text.text("downloads.polls"));
     link(html, "/api/v1/estimates/latest" + pin, text.text("downloads.estimates"));
     link(html, "/api/v1/seats" + pin, text.text("downloads.seats"));
     link(html, "/api/v1/coalitions" + pin, text.text("downloads.coalitions"));
@@ -2074,6 +2074,23 @@ public final class SiteHtml {
     html.append("<p class=\"meta\">")
         .append(escape(SiteText.fill(text.text("downloads.pinned"), "publication", publication)))
         .append("</p>\n");
+  }
+
+  private static String pollDownload(ObjectNode bootstrap, String component) {
+    final String language = bootstrap.get("language").asString();
+    final StringBuilder link = new StringBuilder();
+    if (bootstrap.has("source")) {
+      link.append("/source/polls.csv?snapshot=")
+          .append(bootstrap.get("source").get("snapshotId").asString());
+    } else {
+      link.append("/api/v1/polls.csv?publication=")
+          .append(bootstrap.get("api").get("publication").asString());
+    }
+    link.append("&language=").append(language);
+    if (component != null) {
+      link.append("&party=").append(component);
+    }
+    return link.toString();
   }
 
   private static void link(StringBuilder html, String href, String label) {
