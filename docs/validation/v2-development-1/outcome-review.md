@@ -120,7 +120,7 @@ to the paired score loss, Novus and Inizio, also differ from the institutes fail
 primary coverage checks, Sifo and Skop. Score comparison and uncertainty adequacy
 need separate explanations.
 
-## Recommendation for owner decision
+## Investigation priority accepted by the owner
 
 Neither retained method is established as adequate for publication. The evidence
 supports two questions for a future protocol, not an approved model change:
@@ -136,11 +136,13 @@ supports two questions for a future protocol, not an approved model change:
    shared modeling assumptions from source or implementation defects before adding
    party-specific or institute-specific parameters.
 
-Prioritize the shared uncertainty failures when deciding what to investigate next.
-They remain an obstacle even if the relative score loss is repaired. Do not expand
+The owner accepted prioritizing shared uncertainty failures on 2026-09-15.
+They remain an obstacle even if the relative score loss is repaired. Investigating
+midpoint versus fieldwork-window timing is secondary. Do not expand
 the grid again or substitute the window reference on the strength of this review.
 Any new experiment needs a specific hypothesis, fixed inputs and checks, and an
-owner-reviewed protocol before fitting. This recommendation is pending owner review.
+owner-reviewed protocol before fitting. The priority is settled; the next
+investigation's scope and stopping rule remain to be agreed.
 
 ## Reproduce the descriptive calculations
 
