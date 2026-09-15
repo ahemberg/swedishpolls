@@ -227,7 +227,7 @@ public class PageController {
   }
 
   private Optional<Snapshot> sourceSnapshot(String snapshot) {
-    if (snapshot == null || snapshot.isBlank()) {
+    if (snapshot == null) {
       return queries.activeSnapshot();
     }
     try {

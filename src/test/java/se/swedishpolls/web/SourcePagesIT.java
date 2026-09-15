@@ -185,6 +185,7 @@ class SourcePagesIT {
     assertEquals(firstTable.path("polls"), retained.path("pollTable").path("polls"));
     assertEquals(firstCsv, get(retained.path("pollTable").path("csv").asString()).body());
     assertEquals(404, get("/en/polls?snapshot=999999999").statusCode());
+    assertEquals(404, get("/en/polls?snapshot=").statusCode());
   }
 
   @Test

@@ -72,6 +72,45 @@ class PollQueryTest {
   }
 
   @Test
+  void excludedRowsWithMissingInstitutesStillSort() {
+    final PollCsv.Poll original = polls.getFirst();
+    final PollCsv.Poll missingInstitute =
+        copy(
+            original,
+            null,
+            original.collectionFrom(),
+            original.collectionTo(),
+            List.of("missing_institute"));
+    final PollQuery.Filters everything =
+        new PollQuery.Filters(null, null, List.of(), List.of(), null, true);
+
+    final PollQuery.Result result =
+        PollQuery.filter(SNAPSHOT, List.of(original, missingInstitute), PERIODS, everything, 1, 50);
+
+    assertEquals(2, result.total());
+  }
+
+  @Test
+  void dateFiltersDoNotFillInAMissingFieldworkEndpoint() {
+    final PollCsv.Poll original = polls.getFirst();
+    final PollCsv.Poll incomplete =
+        copy(
+            original,
+            original.institute(),
+            null,
+            original.collectionTo(),
+            List.of("missing_collection_period"));
+    final PollQuery.Filters onKnownEndpoint =
+        new PollQuery.Filters(
+            original.collectionTo(), original.collectionTo(), List.of(), List.of(), null, true);
+
+    final PollQuery.Result result =
+        PollQuery.filter(SNAPSHOT, List.of(incomplete), PERIODS, onKnownEndpoint, 1, 50);
+
+    assertEquals(0, result.total());
+  }
+
+  @Test
   void anInstituteFilterAndPagingCutTheSameOrderedRows() {
     final PollQuery.Filters filters =
         new PollQuery.Filters(null, null, List.of("Novus"), List.of(), null, false);
@@ -171,5 +210,29 @@ class PollQueryTest {
 
   private static String text(LocalDate date) {
     return date == null ? "" : date.toString();
+  }
+
+  private static PollCsv.Poll copy(
+      PollCsv.Poll poll,
+      String institute,
+      LocalDate collectionFrom,
+      LocalDate collectionTo,
+      List<String> exclusionReasons) {
+    return new PollCsv.Poll(
+        poll.rowNumber() + 10_000,
+        poll.raw(),
+        poll.company(),
+        institute,
+        poll.methodEra(),
+        poll.methodEvidence(),
+        poll.surveyType(),
+        poll.denominatorNote(),
+        poll.publicationDate(),
+        collectionFrom,
+        collectionTo,
+        poll.sampleSize(),
+        poll.shares(),
+        poll.remainder(),
+        exclusionReasons);
   }
 }

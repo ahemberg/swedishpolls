@@ -136,7 +136,8 @@ public final class PollQuery {
         Comparator.comparing(
                 (Row row) -> row.poll().collectionTo(),
                 Comparator.nullsLast(Comparator.reverseOrder()))
-            .thenComparing(row -> row.poll().institute())
+            .thenComparing(
+                row -> row.poll().institute(), Comparator.nullsLast(Comparator.naturalOrder()))
             .thenComparingInt(row -> row.poll().rowNumber()));
     final long offset = (long) (page - 1) * pageSize;
     final int from = (int) Math.min(offset, matching.size());
@@ -163,9 +164,8 @@ public final class PollQuery {
   }
 
   private static boolean withinDates(PollCsv.Poll poll, Filters filters) {
-    final LocalDate start =
-        poll.collectionFrom() == null ? poll.collectionTo() : poll.collectionFrom();
-    final LocalDate end = poll.collectionTo() == null ? poll.collectionFrom() : poll.collectionTo();
+    final LocalDate start = poll.collectionFrom();
+    final LocalDate end = poll.collectionTo();
     if (start == null || end == null) {
       return filters.from() == null && filters.to() == null;
     }
