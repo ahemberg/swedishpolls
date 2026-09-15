@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import type { Bootstrap, History, RangeSpec } from "./bootstrap";
+import { useFetched } from "./useFetched";
 
 /**
  * The history for the selected range.
@@ -15,10 +15,11 @@ interface Loaded {
   readonly failed: boolean;
 }
 
-function query(page: Bootstrap, range: RangeSpec): string {
+/** One range's history request, or null where the page has no publication API to ask. */
+function query(page: Bootstrap, range: RangeSpec): string | null {
   const { api } = page;
   if (api === undefined) {
-    return "";
+    return null;
   }
   const parameters = new URLSearchParams({
     publication: api.publication,
@@ -30,49 +31,26 @@ function query(page: Bootstrap, range: RangeSpec): string {
   return `${api.base}/estimates/history?${parameters.toString()}`;
 }
 
-async function historyJson<T>(url: string, signal: AbortSignal): Promise<T> {
-  const response = await fetch(url, { signal });
-  if (!response.ok) {
-    throw new Error(`History request failed: ${response.status}`);
+/** A range worth fetching: one the page offers and is not already carrying. */
+function offered(page: Bootstrap, rangeId: string): RangeSpec | undefined {
+  if (rangeId === page.defaultRange) {
+    return undefined;
   }
-  return response.json() as Promise<T>;
+  return (page.ranges ?? []).find((entry) => entry.id === rangeId);
+}
+
+function request(page: Bootstrap, rangeId: string): string | null {
+  const range = offered(page, rangeId);
+  if (range === undefined) {
+    return null;
+  }
+  return query(page, range);
 }
 
 function useHistory(page: Bootstrap, rangeId: string): Loaded {
-  const initial = page.data?.history;
-  const isDefault = rangeId === page.defaultRange;
-  const range = (page.ranges ?? []).find((entry) => entry.id === rangeId);
-  const [history, setHistory] = useState<History | undefined>(initial);
-  const [loading, setLoading] = useState(false);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    if (isDefault || range === undefined || page.api === undefined) {
-      setHistory(initial);
-      setFailed(false);
-      return;
-    }
-    const aborter = new AbortController();
-    setLoading(true);
-    setFailed(false);
-    historyJson<History>(query(page, range), aborter.signal)
-      .then((loaded) => {
-        if (!aborter.signal.aborted) {
-          setHistory(loaded);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!aborter.signal.aborted) {
-          setFailed(true);
-          setLoading(false);
-        }
-      });
-    return () => aborter.abort();
-  }, [page, range, isDefault, initial]);
-
-  return { history, loading, failed };
+  const { value, loading, failed } = useFetched(page.data?.history, request(page, rangeId));
+  return { history: value, loading, failed };
 }
 
 export type { Loaded };
-export { historyJson, useHistory };
+export { useHistory };

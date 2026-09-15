@@ -82,7 +82,7 @@ test('missing fitted days and declared boundaries cannot be joined', () => {
 test('history fetches reject errors and cancellation instead of accepting an error document', async () => {
   const { createServer } = await import('node:http');
   const { once } = await import('node:events');
-  const { historyJson } = await import('../src/useHistory.ts');
+  const { fetchJson } = await import('../src/useFetched.ts');
   const server = createServer((request, response) => {
     response.statusCode = request.url === '/ok' ? 200 : 409;
     response.setHeader('Content-Type', 'application/json');
@@ -92,11 +92,11 @@ test('history fetches reject errors and cancellation instead of accepting an err
   await once(server, 'listening');
   try {
     const base = `http://127.0.0.1:${server.address().port}`;
-    assert.deepEqual(await historyJson(`${base}/ok`, new AbortController().signal), {publicationId:'pinned'});
-    await assert.rejects(historyJson(`${base}/missing`, new AbortController().signal), /409/);
+    assert.deepEqual(await fetchJson(`${base}/ok`, new AbortController().signal), {publicationId:'pinned'});
+    await assert.rejects(fetchJson(`${base}/missing`, new AbortController().signal), /409/);
     const aborted = new AbortController();
     aborted.abort();
-    await assert.rejects(historyJson(`${base}/ok`, aborted.signal), {name:'AbortError'});
+    await assert.rejects(fetchJson(`${base}/ok`, aborted.signal), {name:'AbortError'});
   } finally {
     server.close();
     await once(server, 'close');

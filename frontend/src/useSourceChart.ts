@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { axisMaximum, LEFT, PLOT, PLOT_WIDTH, WIDTH } from "./chart";
+import { visibleParties, withoutParty } from "./parties";
 import type { SourceChartData, SourceMark, SourceObservation, SourceWindow } from "./source-chart";
 import { reportedShares, sourceMarks } from "./source-chart";
 import { ALL_PARTIES } from "./timeline-controls";
-import { historyJson } from "./useHistory";
+import { useFetched } from "./useFetched";
 
 /**
  * The source chart's state: which window, which parties, and which observation is being read.
@@ -56,45 +57,18 @@ function url(data: SourceChartData, rangeId: string): string {
   return `/source/chart?${parameters.toString()}&${data.query}`;
 }
 
-/** One window's observations, fetched only when the reader leaves the one the page arrived with. */
-function useWindow(initial: SourceChartData, rangeId: string): Loaded {
-  const [data, setData] = useState(initial);
-  const [loading, setLoading] = useState(false);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    if (rangeId === initial.defaultRange) {
-      setData(initial);
-      setFailed(false);
-      return;
-    }
-    const aborter = new AbortController();
-    setLoading(true);
-    setFailed(false);
-    historyJson<SourceChartData>(url(initial, rangeId), aborter.signal)
-      .then((loaded) => {
-        if (!aborter.signal.aborted) {
-          setData(loaded);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!aborter.signal.aborted) {
-          setFailed(true);
-          setLoading(false);
-        }
-      });
-    return () => aborter.abort();
-  }, [initial, rangeId]);
-
-  return { data, loading, failed };
+/** The window to fetch, or null for the one the page already carries. */
+function window(data: SourceChartData, rangeId: string): string | null {
+  if (rangeId === data.defaultRange) {
+    return null;
+  }
+  return url(data, rangeId);
 }
 
-function without(hidden: readonly string[], component: string): readonly string[] {
-  if (hidden.includes(component)) {
-    return hidden.filter((entry) => entry !== component);
-  }
-  return [...hidden, component];
+/** One window's observations, fetched only when the reader leaves the one the page arrived with. */
+function useWindow(initial: SourceChartData, rangeId: string): Loaded {
+  const { value, loading, failed } = useFetched(initial, window(initial, rangeId));
+  return { data: value, loading, failed };
 }
 
 /** Which parties are drawn. Isolation wins over the toggles, as it does on the estimate timeline. */
@@ -102,15 +76,10 @@ function useParties(): Parties {
   const [isolated, isolate] = useState(ALL_PARTIES);
   const [hidden, setHidden] = useState<readonly string[]>([]);
   const toggle = useCallback((component: string) => {
-    setHidden((current) => without(current, component));
+    setHidden((current) => withoutParty(current, component));
   }, []);
   const drawn = useCallback(
-    (components: readonly string[]) => {
-      if (isolated !== ALL_PARTIES) {
-        return components.filter((component) => component === isolated);
-      }
-      return components.filter((component) => !hidden.includes(component));
-    },
+    (components: readonly string[]) => visibleParties(components, isolated, hidden),
     [isolated, hidden],
   );
   return { isolated, hidden, isolate, toggle, drawn };
@@ -242,4 +211,4 @@ function useSourceChart(initial: SourceChartData): SourceChartState {
 }
 
 export type { SourceChartState };
-export { nearest, useSourceChart };
+export { useSourceChart };

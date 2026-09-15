@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { Bootstrap, History, PartyObservation, Series } from "./bootstrap";
 import { axisMaximum, xAt, yAt } from "./chart";
+import { visibleParties, withoutParty } from "./parties";
 import { ALL_PARTIES } from "./timeline-controls";
 import { useCursor } from "./useCursor";
 import { useHistory } from "./useHistory";
@@ -38,20 +39,14 @@ function shown(
   isolated: string,
   hidden: readonly string[],
 ): readonly Series[] {
-  const chosen = series.filter((entry) => {
-    if (isolated !== ALL_PARTIES) {
-      return entry.component === isolated;
-    }
-    return !hidden.includes(entry.component);
-  });
-  return chosen.filter((entry) => entry.mean.some((value) => value !== null));
-}
-
-function without(hidden: readonly string[], component: string): readonly string[] {
-  if (hidden.includes(component)) {
-    return hidden.filter((entry) => entry !== component);
-  }
-  return [...hidden, component];
+  const visible = visibleParties(
+    series.map((entry) => entry.component),
+    isolated,
+    hidden,
+  );
+  return series.filter(
+    (entry) => visible.includes(entry.component) && entry.mean.some((value) => value !== null),
+  );
 }
 
 function seriesOf(history: History | undefined): readonly Series[] {
@@ -115,7 +110,7 @@ function useTimeline(
     [reset],
   );
   const toggle = useCallback((component: string) => {
-    setHidden((current) => without(current, component));
+    setHidden((current) => withoutParty(current, component));
   }, []);
 
   return {

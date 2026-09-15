@@ -178,6 +178,15 @@ function DownloadPin({ page, t }: Pick<Props, "page" | "t">): JSX.Element | null
   return null;
 }
 
+/** The source chart, on the pages whose rows come from a retained snapshot rather than a run. */
+function Chart({ page, t }: Pick<Props, "page" | "t">): JSX.Element | null {
+  const { sourceChart } = page;
+  if (sourceChart === undefined) {
+    return null;
+  }
+  return <SourceChart page={page} chart={sourceChart} t={t} />;
+}
+
 function PollsPage({ page, table, t }: Props): JSX.Element {
   return (
     <div>
@@ -191,7 +200,7 @@ function PollsPage({ page, table, t }: Props): JSX.Element {
         </p>
       )}
       <PollFilters page={page} options={table.options} filters={table.filters} t={t} />
-      {page.sourceChart !== undefined && <SourceChart page={page} chart={page.sourceChart} t={t} />}
+      <Chart page={page} t={t} />
       <InvalidNotice table={table} t={t} />
       <EmptyNotice table={table} t={t} />
       {table.polls.length > 0 && (
