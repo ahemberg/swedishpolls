@@ -1,9 +1,10 @@
 import type { JSX } from "react";
 import { useId } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
+import { PLOT } from "./chart";
 import { colour, count, decimal, percent, shortDate } from "./format";
-import type { SourceChartData, SourceObservation } from "./source-chart.ts";
-import { markerSpan } from "./source-chart.ts";
+import type { SourceChartData, SourceObservation } from "./source-chart";
+import { markerSpan } from "./source-chart";
 import { SourceChartFigure } from "./source-chart-figure";
 import { ALL_PARTIES, Isolation, PartyToggles, Ranges } from "./timeline-controls";
 import type { SourceChartState } from "./useSourceChart";
@@ -52,7 +53,7 @@ function Details({
   readonly observation: SourceObservation;
   readonly t: Translate;
 }): JSX.Element {
-  const span = markerSpan(observation, state.data.range);
+  const span = markerSpan(observation, state.data.range, PLOT);
   return (
     <p className="readout" aria-live="polite">
       <b>{observation.institute}</b>
@@ -142,7 +143,7 @@ function SourceChart({ page, chart, t }: Props): JSX.Element {
     <section className="sec o-source-chart" aria-labelledby={`${ids}-title`}>
       <h2 id={`${ids}-title`}>{t("source.chart.title")}</h2>
       <Ranges
-        ranges={state.data.ranges.map((range) => ({ id: range.id, year: null }))}
+        ranges={state.data.ranges}
         selected={state.rangeId}
         onSelect={state.chooseRange}
         t={t}

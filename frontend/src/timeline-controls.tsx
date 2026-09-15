@@ -123,5 +123,4 @@ function PartyToggles({
   );
 }
 
-export type { RangeOption, Toggleable };
 export { ALL_PARTIES, Isolation, PartyToggles, Ranges };

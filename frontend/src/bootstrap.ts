@@ -3,7 +3,7 @@ import type { CoalitionHistoryData, CoalitionLinkError } from "./coalition-histo
 import type { PollstersData } from "./institutes";
 import type { MethodData } from "./method";
 import type { PollTable } from "./poll-table";
-import type { SourceChartData } from "./source-chart.ts";
+import type { SourceChartData } from "./source-chart";
 
 /**
  * The page's resolved publication, as Spring wrote it into the document.

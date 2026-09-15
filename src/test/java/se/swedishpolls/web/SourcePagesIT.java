@@ -16,6 +16,8 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.StreamSupport;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
@@ -92,7 +94,7 @@ class SourcePagesIT {
     final Publisher.Attempt attempt = publisher.publish();
     assertEquals(PublicationOutcome.BLOCKED, attempt.outcome(), attempt.detail());
 
-    for (final String path : java.util.List.of("/", "/en", "/matningar", "/en/polls")) {
+    for (final String path : List.of("/", "/en", "/matningar", "/en/polls")) {
       final HttpResponse<String> response = get(path);
       assertEquals(200, response.statusCode(), path);
       final JsonNode bootstrap = bootstrap(response.body());
@@ -172,8 +174,8 @@ class SourcePagesIT {
     assertEquals(home.path("source").path("snapshotId"), chart.path("snapshotId"));
     assertEquals("oneYear", chart.path("defaultRange").asString());
     assertEquals(
-        java.util.List.of("oneYear", "fourYears", "all"),
-        java.util.stream.StreamSupport.stream(chart.path("ranges").spliterator(), false)
+        List.of("oneYear", "sinceElection", "fourYears", "all"),
+        StreamSupport.stream(chart.path("ranges").spliterator(), false)
             .map(range -> range.path("id").asString())
             .toList());
     assertEquals("oneYear", chart.path("range").path("id").asString());
@@ -222,14 +224,18 @@ class SourcePagesIT {
     assertEquals("all", all.path("range").path("id").asString());
     assertTrue(all.path("observations").size() > chart.path("observations").size());
 
-    assertEquals(
-        404, get("/source/chart?snapshot=" + snapshot + "&range=sinceElection").statusCode());
+    final JsonNode election =
+        JSON.readTree(get("/source/chart?snapshot=" + snapshot + "&range=sinceElection").body());
+    assertEquals("sinceElection", election.path("range").path("id").asString());
+    assertTrue(election.path("range").path("year").asInt() > 2000, "the chip names its election");
+
+    assertEquals(404, get("/source/chart?snapshot=" + snapshot + "&range=sinceLunch").statusCode());
     assertEquals(404, get("/source/chart?snapshot=999999999").statusCode());
     assertEquals(400, get("/source/chart?from=yesterday").statusCode());
   }
 
-  private static java.util.List<String> componentsOf(JsonNode chart) {
-    return java.util.stream.StreamSupport.stream(chart.path("components").spliterator(), false)
+  private static List<String> componentsOf(JsonNode chart) {
+    return StreamSupport.stream(chart.path("components").spliterator(), false)
         .map(JsonNode::asString)
         .toList();
   }

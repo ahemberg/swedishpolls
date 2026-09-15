@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
+import se.swedishpolls.model.ElectionReference;
 import se.swedishpolls.publication.ModelFreeze;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.Translations;
@@ -18,6 +19,7 @@ import se.swedishpolls.publication.service.Publications;
 import se.swedishpolls.source.PollQuery;
 import se.swedishpolls.source.Roster;
 import se.swedishpolls.source.Snapshot;
+import se.swedishpolls.source.service.ElectionReferenceService;
 import se.swedishpolls.source.service.PollQueryService;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -55,11 +57,17 @@ public final class SiteBootstrap {
 
   private final Publications publications;
   private final PollQueryService queries;
+  private final ElectionReferenceService elections;
   private final PublicSite site;
 
-  public SiteBootstrap(Publications publications, PollQueryService queries, PublicSite site) {
+  public SiteBootstrap(
+      Publications publications,
+      PollQueryService queries,
+      ElectionReferenceService elections,
+      PublicSite site) {
     this.publications = publications;
     this.queries = queries;
+    this.elections = elections;
     this.site = site;
   }
 
@@ -129,7 +137,12 @@ public final class SiteBootstrap {
     if (extent.isEmpty()) {
       return Optional.empty();
     }
-    final Optional<SourceChart.Range> selected = SourceChart.range(extent.orElseThrow(), rangeId);
+    // The elections come from the stored reference data rather than a publication, so the source
+    // chart offers the estimate timeline's own election window before any estimate exists.
+    final LocalDate election =
+        SourceChart.lastElectionOnOrBefore(electionDates(), extent.orElseThrow().to());
+    final Optional<SourceChart.Range> selected =
+        SourceChart.range(extent.orElseThrow(), election, rangeId);
     if (selected.isEmpty()) {
       return Optional.empty();
     }
@@ -140,7 +153,7 @@ public final class SiteBootstrap {
     // drawing polls the table beside it is not showing.
     chart.put("query", String.join("&", PollFilters.query(shared)));
     final ArrayNode ranges = chart.putArray("ranges");
-    for (final SourceChart.Range range : SourceChart.ranges(extent.orElseThrow())) {
+    for (final SourceChart.Range range : SourceChart.ranges(extent.orElseThrow(), election)) {
       window(ranges.addObject(), range);
     }
     window(chart.putObject("range"), selected.orElseThrow());
@@ -153,10 +166,19 @@ public final class SiteBootstrap {
     return Optional.of(chart);
   }
 
+  private List<LocalDate> electionDates() {
+    return elections.all().stream().map(ElectionReference::electionDate).toList();
+  }
+
   private static void window(ObjectNode node, SourceChart.Range range) {
     node.put("id", range.id());
     node.put("from", range.from().toString());
     node.put("to", range.to().toString());
+    if (range.year() == null) {
+      node.putNull("year");
+    } else {
+      node.put("year", range.year().intValue());
+    }
   }
 
   /**

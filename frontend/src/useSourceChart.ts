@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LEFT, PLOT_WIDTH, WIDTH } from "./chart";
-import type {
-  SourceChartData,
-  SourceMark,
-  SourceObservation,
-  SourceWindow,
-} from "./source-chart.ts";
-import { sourceMarks, sourceMaximum } from "./source-chart.ts";
+import { axisMaximum, LEFT, PLOT, PLOT_WIDTH, WIDTH } from "./chart";
+import type { SourceChartData, SourceMark, SourceObservation, SourceWindow } from "./source-chart";
+import { reportedShares, sourceMarks } from "./source-chart";
 import { ALL_PARTIES } from "./timeline-controls";
 import { historyJson } from "./useHistory";
 
@@ -203,13 +198,16 @@ function useSourceChart(initial: SourceChartData): SourceChartState {
   const observations = useMemo(() => ordered(data), [data]);
   const cursor = useMarkCursor(observations, data.range);
 
-  const drawn = parties.drawn(data.components);
+  // Memoised because the drawn set feeds the marker and axis derivations below: rebuilding it on
+  // every render would rebuild eleven thousand marks with it on the whole-history window.
+  const { drawn: chosen } = parties;
+  const drawn = useMemo(() => chosen(data.components), [chosen, data.components]);
   const marks = useMemo(
-    () => sourceMarks(data.observations, data.range, drawn),
+    () => sourceMarks(data.observations, data.range, drawn, PLOT),
     [data.observations, data.range, drawn],
   );
   const maximum = useMemo(
-    () => sourceMaximum(data.observations, drawn),
+    () => axisMaximum([], reportedShares(data.observations, drawn)),
     [data.observations, drawn],
   );
   const { reset } = cursor;

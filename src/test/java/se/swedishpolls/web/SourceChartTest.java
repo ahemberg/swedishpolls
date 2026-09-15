@@ -54,7 +54,7 @@ class SourceChartTest {
   @Test
   void theOfferedRangesEndAtTheExtentAndStartNoEarlierThanIt() {
     final SourceChart.Range extent = SourceChart.extent(rows).orElseThrow();
-    final List<SourceChart.Range> ranges = SourceChart.ranges(extent);
+    final List<SourceChart.Range> ranges = SourceChart.ranges(extent, null);
     assertEquals(
         List.of("oneYear", "fourYears", "all"),
         ranges.stream().map(SourceChart.Range::id).toList());
@@ -70,17 +70,43 @@ class SourceChartTest {
   void aShortArchiveClampsEveryOfferedRangeToItsOwnStart() {
     final SourceChart.Range extent =
         new SourceChart.Range("all", LocalDate.of(2026, 6, 1), LocalDate.of(2026, 9, 5));
-    for (final SourceChart.Range range : SourceChart.ranges(extent)) {
+    for (final SourceChart.Range range : SourceChart.ranges(extent, null)) {
       assertEquals(extent.from(), range.from());
     }
   }
 
   @Test
+  void theElectionWindowIsOfferedOnlyForAnElectionInsideTheArchive() {
+    final SourceChart.Range extent = SourceChart.extent(rows).orElseThrow();
+    final LocalDate election = LocalDate.of(2022, 9, 11);
+    final List<SourceChart.Range> ranges = SourceChart.ranges(extent, election);
+    assertEquals(
+        List.of("oneYear", "sinceElection", "fourYears", "all"),
+        ranges.stream().map(SourceChart.Range::id).toList());
+    assertEquals(election, ranges.get(1).from());
+    assertEquals(Integer.valueOf(2022), ranges.get(1).year());
+    assertNull(ranges.getFirst().year(), "only the election window names a year");
+    assertEquals(3, SourceChart.ranges(extent, extent.to().plusYears(1)).size());
+  }
+
+  @Test
+  void theMostRecentElectionOnOrBeforeTheLastInterviewDayIsTheOneOffered() {
+    final List<LocalDate> elections =
+        List.of(LocalDate.of(2018, 9, 9), LocalDate.of(2022, 9, 11), LocalDate.of(2026, 9, 13));
+    assertEquals(
+        LocalDate.of(2022, 9, 11),
+        SourceChart.lastElectionOnOrBefore(elections, LocalDate.of(2026, 9, 5)));
+    assertNull(SourceChart.lastElectionOnOrBefore(elections, LocalDate.of(2010, 1, 1)));
+    assertNull(SourceChart.lastElectionOnOrBefore(List.of(), LocalDate.of(2026, 9, 5)));
+  }
+
+  @Test
   void theDefaultRangeIsTheLastYearAndAnUnknownRangeIsNotOffered() {
     final SourceChart.Range extent = SourceChart.extent(rows).orElseThrow();
-    assertEquals(SourceChart.DEFAULT_RANGE, SourceChart.range(extent, null).orElseThrow().id());
-    assertEquals("fourYears", SourceChart.range(extent, "fourYears").orElseThrow().id());
-    assertEquals(Optional.empty(), SourceChart.range(extent, "sinceElection"));
+    assertEquals(
+        SourceChart.DEFAULT_RANGE, SourceChart.range(extent, null, null).orElseThrow().id());
+    assertEquals("fourYears", SourceChart.range(extent, null, "fourYears").orElseThrow().id());
+    assertEquals(Optional.empty(), SourceChart.range(extent, null, "sinceElection"));
   }
 
   @Test

@@ -232,7 +232,7 @@ public class PageController {
       @RequestParam(required = false) String to,
       @RequestParam(required = false) String institute) {
     final Snapshot selected = sourceSnapshot(snapshot).orElseThrow(ApiErrors::unknownRoute);
-    final PollFilters.Parsed parsed = sourceFilters(from, to, institute, null, null, null);
+    final PollFilters.Parsed parsed = sourceFilters(from, to, institute);
     if (!parsed.valid()) {
       throw ApiErrors.invalidFilter(parsed.invalid());
     }
@@ -270,6 +270,11 @@ public class PageController {
     } catch (NumberFormatException error) {
       throw ApiErrors.unknownRoute();
     }
+  }
+
+  /** The filters a source chart reads: the table's dates and institutes, and nothing else. */
+  private static PollFilters.Parsed sourceFilters(String from, String to, String institute) {
+    return sourceFilters(from, to, institute, null, null, null);
   }
 
   private static PollFilters.Parsed sourceFilters(

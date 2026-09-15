@@ -1,13 +1,19 @@
 import type { JSX } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
-import { BASELINE, HEIGHT, TOP, WIDTH, yAt } from "./chart";
+import { BASELINE, HEIGHT, PLOT, TOP, WIDTH, yAt } from "./chart";
 import { colour } from "./format";
-import type { SourceMark, SourceObservation, SourceWindow } from "./source-chart.ts";
-import { markerSpan, yearTicks } from "./source-chart.ts";
+import type { SourceMark, SourceObservation, SourceWindow } from "./source-chart";
+import { markerSpan, yearTicks } from "./source-chart";
 import { Gridlines } from "./timeline-chart";
 import type { SourceChartState } from "./useSourceChart";
 
-/** The drawn layers of the source chart: the year rules, the selection band and the markers. */
+/**
+ * The drawn layers of the source chart: the year rules, the selection band and the markers.
+ *
+ * A pointer moving over the figure reads a marker out without being pressed, so hovering reveals
+ * the details a press or the slider would. On a touch screen a move only arrives while a finger is
+ * down, which makes the same handler the drag.
+ */
 
 const DASH_APPROXIMATE = "4 3";
 const SOLID = "none";
@@ -18,7 +24,7 @@ const YEAR_LABEL_Y = 14;
 function YearRules({ window }: { readonly window: SourceWindow }): JSX.Element {
   return (
     <g>
-      {yearTicks(window).map((tick) => (
+      {yearTicks(window, PLOT).map((tick) => (
         <g key={tick.year}>
           <line x1={tick.x} x2={tick.x} y1={TOP} y2={BASELINE} stroke="var(--line)" />
           <text
@@ -47,7 +53,7 @@ function Selection({
   if (observation === undefined) {
     return null;
   }
-  const span = markerSpan(observation, window);
+  const span = markerSpan(observation, window, PLOT);
   return (
     <rect
       x={span.x1}
@@ -136,11 +142,7 @@ function SourceChartFigure({
       role="img"
       aria-label={summary}
       onPointerDown={(event) => state.scrub(event.clientX)}
-      onPointerMove={(event) => {
-        if (event.buttons > 0) {
-          state.scrub(event.clientX);
-        }
-      }}
+      onPointerMove={(event) => state.scrub(event.clientX)}
     >
       <title>{summary}</title>
       <Gridlines

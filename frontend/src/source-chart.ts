@@ -1,5 +1,3 @@
-import { axisMaximum, LEFT, PLOT_WIDTH } from "./chart.ts";
-
 /**
  * The source chart's geometry: a real date axis, and one horizontal marker per reported share.
  *
@@ -21,11 +19,15 @@ interface SourceObservation {
   readonly shares: Readonly<Record<string, number | null>>;
 }
 
-/** One offered window of the source chart's date axis. Both bounds are interview dates. */
+/**
+ * One offered window of the source chart's date axis. Both bounds are interview dates, and the year
+ * is the one the window's own label names, which only the election window has.
+ */
 interface SourceWindow {
   readonly id: string;
   readonly from: string;
   readonly to: string;
+  readonly year: number | null;
 }
 
 /**
@@ -49,7 +51,12 @@ const DAY = 86_400_000;
 const MINIMUM_SPAN = 6;
 
 const YEAR_LENGTH = 4;
-const PLOT_RIGHT = LEFT + PLOT_WIDTH;
+
+/** The horizontal box a chart draws days in. */
+interface Plot {
+  readonly left: number;
+  readonly width: number;
+}
 
 /** One drawn marker: where it sits, what it reports, and the observation it came from. */
 interface SourceMark {
@@ -85,94 +92,100 @@ function width(window: SourceWindow): number {
 }
 
 /** Where a day boundary falls, unclamped, so a clipped marker can still be measured. */
-function xAtDay(value: number, window: SourceWindow): number {
-  return LEFT + (PLOT_WIDTH * (value - day(window.from))) / width(window);
+function xAtDay(value: number, window: SourceWindow, plot: Plot): number {
+  return plot.left + (plot.width * (value - day(window.from))) / width(window);
 }
 
-function clamp(value: number): number {
-  return Math.min(PLOT_RIGHT, Math.max(LEFT, value));
+function clamp(value: number, plot: Plot): number {
+  return Math.min(plot.left + plot.width, Math.max(plot.left, value));
 }
 
 /** A marker widened about its own midpoint until it is selectable, without leaving the plot. */
-function selectable(x1: number, x2: number): readonly [number, number] {
+function selectable(x1: number, x2: number, plot: Plot): readonly [number, number] {
   if (x2 - x1 >= MINIMUM_SPAN) {
     return [x1, x2];
   }
   const middle = (x1 + x2) / 2;
-  const start = Math.min(PLOT_RIGHT - MINIMUM_SPAN, Math.max(LEFT, middle - MINIMUM_SPAN / 2));
+  const right = plot.left + plot.width - MINIMUM_SPAN;
+  const start = Math.min(right, Math.max(plot.left, middle - MINIMUM_SPAN / 2));
   return [start, start + MINIMUM_SPAN];
 }
 
 /** One observation's horizontal extent in the window, clipped to the plot but not re-dated. */
-function markerSpan(observation: SourceObservation, window: SourceWindow): Span {
+function markerSpan(observation: SourceObservation, window: SourceWindow, plot: Plot): Span {
   const from = day(observation.from);
   const to = day(observation.to) + 1;
-  const [x1, x2] = selectable(clamp(xAtDay(from, window)), clamp(xAtDay(to, window)));
+  const [x1, x2] = selectable(
+    clamp(xAtDay(from, window, plot), plot),
+    clamp(xAtDay(to, window, plot), plot),
+    plot,
+  );
   return { x1, x2, clippedFrom: from < day(window.from), clippedTo: to > day(window.to) + 1 };
 }
 
 /**
- * Every marker the window draws. A share the institute did not report has no marker at all, and a
- * component outside the reported nine has none either: the comparable remainder is not a party.
+ * The shares one observation actually reports for the drawn parties, in roster order. A share the
+ * institute did not report is absent rather than zero, and a component outside the reported nine
+ * is absent too: the comparable remainder is not a party.
  */
+function reported(
+  observation: SourceObservation,
+  components: readonly string[],
+): readonly { readonly component: string; readonly share: number }[] {
+  return components.flatMap((component) => {
+    const share = observation.shares[component];
+    if (share === undefined || share === null) {
+      return [];
+    }
+    return [{ component, share }];
+  });
+}
+
+/** Every marker the window draws: one per share an observation reports for a drawn party. */
 function sourceMarks(
   observations: readonly SourceObservation[],
   window: SourceWindow,
   components: readonly string[],
+  plot: Plot,
 ): readonly SourceMark[] {
   return observations.flatMap((observation) => {
-    const span = markerSpan(observation, window);
-    return components.flatMap((component) => {
-      const share = observation.shares[component];
-      if (share === undefined || share === null) {
-        return [];
-      }
-      return [
-        {
-          key: `${observation.pollId}-${component}`,
-          component,
-          share,
-          x1: span.x1,
-          x2: span.x2,
-          clippedFrom: span.clippedFrom,
-          clippedTo: span.clippedTo,
-          observation,
-        },
-      ];
-    });
+    const span = markerSpan(observation, window, plot);
+    return reported(observation, components).map(({ component, share }) => ({
+      key: `${observation.pollId}-${component}`,
+      component,
+      share,
+      x1: span.x1,
+      x2: span.x2,
+      clippedFrom: span.clippedFrom,
+      clippedTo: span.clippedTo,
+      observation,
+    }));
   });
 }
 
-/** The top of the axis: the highest share the drawn parties reported, on the timeline's grid. */
-function sourceMaximum(
+/** Every share the drawn parties reported, which is what the axis has to reach. */
+function reportedShares(
   observations: readonly SourceObservation[],
   components: readonly string[],
-): number {
-  const shares = observations.flatMap((observation) =>
-    components.flatMap((component) => {
-      const share = observation.shares[component];
-      if (share === undefined || share === null) {
-        return [];
-      }
-      return [share];
-    }),
+): readonly number[] {
+  return observations.flatMap((observation) =>
+    reported(observation, components).map((entry) => entry.share),
   );
-  return axisMaximum([], shares);
 }
 
 /** Where each calendar year begins inside the window. Its own first day is not a boundary. */
-function yearTicks(window: SourceWindow): readonly YearTick[] {
+function yearTicks(window: SourceWindow, plot: Plot): readonly YearTick[] {
   const first = Number(window.from.slice(0, YEAR_LENGTH));
   const last = Number(window.to.slice(0, YEAR_LENGTH));
   const ticks: YearTick[] = [];
   for (let year = first + 1; year <= last; year += 1) {
     const start = `${year}-01-01`;
     if (start > window.from && start <= window.to) {
-      ticks.push({ year: String(year), x: xAtDay(day(start), window) });
+      ticks.push({ year: String(year), x: xAtDay(day(start), window, plot) });
     }
   }
   return ticks;
 }
 
-export type { SourceChartData, SourceMark, SourceObservation, SourceWindow, Span, YearTick };
-export { MINIMUM_SPAN, markerSpan, PLOT_RIGHT, sourceMarks, sourceMaximum, xAtDay, yearTicks };
+export type { Plot, SourceChartData, SourceMark, SourceObservation, SourceWindow, Span, YearTick };
+export { MINIMUM_SPAN, markerSpan, reportedShares, sourceMarks, yearTicks };

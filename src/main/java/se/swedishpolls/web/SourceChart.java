@@ -1,6 +1,8 @@
 package se.swedishpolls.web;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import se.swedishpolls.source.PollQuery;
@@ -22,8 +24,15 @@ public final class SourceChart {
 
   private static final int LONG_YEARS = 4;
 
-  /** One offered window of the date axis. Both bounds are inclusive interview dates. */
-  public record Range(String id, LocalDate from, LocalDate to) {}
+  /**
+   * One offered window of the date axis. Both bounds are inclusive interview dates, and the year is
+   * the one the window's own label names, which only the election window has.
+   */
+  public record Range(String id, LocalDate from, LocalDate to, Integer year) {
+    public Range(String id, LocalDate from, LocalDate to) {
+      this(id, from, to, null);
+    }
+  }
 
   /**
    * The span every dated observation falls inside, or empty when the archive carries none. A row
@@ -48,21 +57,36 @@ public final class SourceChart {
   }
 
   /**
-   * The windows the chart offers, all ending at the newest interview date. A window reaching past
-   * the start of the archive is clamped to it, so a short archive offers the same chips without
-   * drawing empty years beside its own first poll.
+   * The windows the chart offers, all ending at the newest interview date. These are the estimate
+   * timeline's own windows, so a reader moving between the two charts sees the same chips. A window
+   * reaching past the start of the archive is clamped to it, and the election window is offered
+   * only where an election actually falls inside the archive.
    */
-  public static List<Range> ranges(Range extent) {
-    return List.of(
-        new Range(DEFAULT_RANGE, start(extent, extent.to().minusYears(1)), extent.to()),
-        new Range("fourYears", start(extent, extent.to().minusYears(LONG_YEARS)), extent.to()),
-        extent);
+  public static List<Range> ranges(Range extent, LocalDate election) {
+    final List<Range> ranges = new ArrayList<>();
+    ranges.add(new Range(DEFAULT_RANGE, start(extent, extent.to().minusYears(1)), extent.to()));
+    if (election != null && !election.isAfter(extent.to())) {
+      ranges.add(
+          new Range("sinceElection", start(extent, election), extent.to(), election.getYear()));
+    }
+    ranges.add(
+        new Range("fourYears", start(extent, extent.to().minusYears(LONG_YEARS)), extent.to()));
+    ranges.add(extent);
+    return List.copyOf(ranges);
   }
 
   /** The named window, the last year when the request names none, or empty when it is unknown. */
-  public static Optional<Range> range(Range extent, String id) {
+  public static Optional<Range> range(Range extent, LocalDate election, String id) {
     final String wanted = id == null || id.isBlank() ? DEFAULT_RANGE : id;
-    return ranges(extent).stream().filter(range -> range.id().equals(wanted)).findFirst();
+    return ranges(extent, election).stream().filter(range -> range.id().equals(wanted)).findFirst();
+  }
+
+  /** The most recent election the reference data records on or before the archive's last day. */
+  public static LocalDate lastElectionOnOrBefore(List<LocalDate> elections, LocalDate last) {
+    return elections.stream()
+        .filter(date -> !date.isAfter(last))
+        .max(Comparator.naturalOrder())
+        .orElse(null);
   }
 
   /** Every dated observation whose interview period overlaps the window, clipping to nothing. */
