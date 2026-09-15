@@ -98,6 +98,26 @@ class PublisherTest {
         .recordCandidate(any(), any(), anyLong(), any(), any(), any(), any(), anyInt());
   }
 
+  @Test
+  void publicationCanBeDisabledWithoutDisablingSourceRefresh() {
+    final Publisher publisher = publisher(false);
+
+    assertNull(publisher.refresh(false));
+
+    verify(ingest).check();
+    verify(lock, never()).whileHeld(any());
+  }
+
+  @Test
+  void retainedSourceDataSkipsTheStartupRefresh() {
+    final Publisher publisher = publisher(false);
+
+    publisher.refreshAtStartup(false);
+
+    verify(ingest, never()).check();
+    verify(lock, never()).whileHeld(any());
+  }
+
   private Publisher publisher(boolean released) {
     return new Publisher(
         lock,
