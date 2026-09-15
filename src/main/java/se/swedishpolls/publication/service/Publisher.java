@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Properties;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,6 +107,20 @@ public class Publisher {
 
   public ModelFreeze freeze() {
     return freeze;
+  }
+
+  void refreshAtStartup(boolean publicationEnabled) {
+    if (ingest.activeSnapshot().isEmpty()) {
+      refresh(publicationEnabled);
+    }
+  }
+
+  @Nullable Attempt refresh(boolean publicationEnabled) {
+    if (!publicationEnabled) {
+      ingest.check();
+      return null;
+    }
+    return publish();
   }
 
   /** One publication attempt, holding the worker lock for its whole run. */

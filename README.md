@@ -2,8 +2,9 @@
 
 Build foundation for [issue #16](https://github.com/ahemberg/swedishpolls/issues/16).
 Spring serves a bundled React page and the frozen v1 read API. The snapshot worker
-captures polling data at startup and every 30 minutes; the publication worker turns a
-changed snapshot into a complete, permanent publication.
+captures polling data at 03:00 Europe/Stockholm each day and immediately on a fresh
+installation. The same refresh turns a changed snapshot into a complete, permanent
+publication when publication is enabled.
 
 The audited release verdict blocks publication today, so a deployment publishes nothing
 and the estimate surfaces answer `503 estimates_unavailable`. See

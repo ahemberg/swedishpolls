@@ -19,7 +19,6 @@ se.swedishpolls
 │   │                                SourceHttpConfig
 │   ├── source.repository            JDBC lookups: snapshots, coverage periods, election references,
 │   │                                national allocation rules
-│   └── source.service               SnapshotIngestScheduler calls the ingestion service
 ├── estimation                       the estimator and its model, all plain Java
 │   └── (root)                       PollObservations, WindowFilter, DailyStateSpace, EstimateHistory,
 │                                    HouseEffects, RecencyBaseline, JointUncertainty, Coalitions,
@@ -34,10 +33,10 @@ se.swedishpolls
 │   │                                PublicationOutcome) and the Digest their bytes are recorded
 │   │                                under
 │   ├── publication.service          the publish use case: Publisher; the read use case:
-│   │                                Publications and PublicationMetadata
-│   ├── publication.repository       document rows, asset links: PublicationStore; the worker's
-│   │                                advisory lock: PublicationLock
-│   └── publication.service          PublisherScheduler calls the publication service
+│   │                                Publications and PublicationMetadata; the nightly entry point:
+│   │                                PublisherScheduler
+│   └── publication.repository       document rows, asset links: PublicationStore; the worker's
+│                                    advisory lock: PublicationLock
 ├── model                            shared immutable values used by more than one responsibility
 │   └── (root)                       ElectionReference and NationalAllocationRule
 └── web                              the HTTP surface and the server-rendered site
@@ -68,9 +67,9 @@ Data/JPA is not required and not used; a plain class with repository-named metho
 Repositories depend on values, not on controllers or service implementations.
 
 **Scheduled entry points** (`@Scheduled` classes) are thin: read configuration, call one service
-method, log the outcome. `SnapshotIngestScheduler` sits in `source.service`, `PublisherScheduler` in
-`publication.service`. This keeps the value packages independent of the services that use them.
-They carry no business logic.
+method, log the outcome. `PublisherScheduler` sits in `publication.service` and invokes the existing
+ingest-then-publication flow. This keeps the value packages independent of the services that use
+them. They carry no business logic.
 
 **Configuration** for a responsibility lives in that responsibility, including the registration of
 the outbound HTTP clients it owns. Only wiring that spans responsibilities, such as scheduling
@@ -180,9 +179,9 @@ This section describes the tree and is updated as migration tickets land, unlike
 guide, which states the target.
 
 `source` is organized per this convention as of #117: `source` (root) holds `PollCsv`, `PollQuery`,
-`Roster` and `Snapshot`. `source.service` holds the `SnapshotIngestScheduler` entry point, ingestion,
-poll-query, election-reference and allocation-rule operations. `source.repository` holds their JDBC
-lookups. The shared `Snapshot` value stays in `source`; `ElectionReference` and
+`Roster` and `Snapshot`. `source.service` holds ingestion, poll-query, election-reference and
+allocation-rule operations. `source.repository` holds their JDBC lookups. The shared `Snapshot`
+value stays in `source`; `ElectionReference` and
 `NationalAllocationRule` sit in `model` because repositories, services, estimation and publication
 use them. Tests moved with their classes, and the shared CSV fixtures live in
 `se.swedishpolls.testsupport`.
@@ -198,7 +197,8 @@ calculation instead of accessing fitting spans.
 is read through: `PublicationHeader`,
 `CurrentPublication`, `PublicationAsset`, `ModelRun`, `PinnedSnapshot`, `PublicationOutcome` and
 the `Digest` operation their stored bytes are recorded under. `publication.service` holds
-`PublisherScheduler`, `Publisher`, the `Publications` read service and `PublicationMetadata`;
+`PublisherScheduler`, which owns the one nightly scheduled entry point, `Publisher`, the
+`Publications` read service and `PublicationMetadata`;
 `publication.repository` holds `PublicationStore` and the `PublicationLock` advisory lock. `web` (root) holds the
 site-rendering cluster and `EstimateQuery`; `web.controller` holds `PageController`,
 `ApiV1Controller`, `AssetController`, `ApiExceptionHandler`, `ApiErrors` and the shared `Responses`

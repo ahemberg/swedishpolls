@@ -21,8 +21,9 @@ estimate is for, `sourceCheckedAt` is when the source was last read successfully
 
 ## The worker
 
-`Publisher` runs on `publication.interval` (30 minutes by default) and holds advisory lock
-`1717002` for the whole attempt, so two workers never publish the same snapshot. One attempt:
+The single refresh runs at 03:00 `Europe/Stockholm` each day. When publication is enabled,
+`Publisher` holds advisory lock `1717002` while it checks the source and attempts publication, so
+two workers never publish the same snapshot. One attempt:
 
 1. Check the source. `SnapshotIngest` archives a changed body as a new snapshot.
 2. An unchanged snapshot records an `unchanged` attempt and stops. Unchanged input is not a
@@ -93,8 +94,8 @@ historical, so a historical FI estimate never reads as a current one.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `PUBLICATION_ROOT` | `target/publications` | The durable volume holding image bytes |
-| `publication.enabled` | `true` | Runs the scheduled worker |
-| `publication.interval` | `30m` | How often an attempt runs |
+| `polls.ingest.enabled` | `true` | Runs fresh-install and nightly source refreshes |
+| `publication.enabled` | `true` | Attempts publication after each source refresh |
 
 ## Verification
 

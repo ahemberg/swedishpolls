@@ -5,15 +5,17 @@ snapshot capture and baseline poll eligibility. It does not publish estimates.
 
 ## Fetch and archive
 
-Spring checks the approved `MansMeg/SwedishPolls/master/Data/Polls.csv` at startup
-and every 30 minutes. A Spring-managed `@HttpExchange` client sends each request
-through Boot's configured `RestClient`. `polls.source-url` overrides the URL;
-`polls.ingest.enabled=false` disables scheduling while leaving the ingestion
-component available for explicit checks. `polls.ingest.interval` overrides the
-schedule interval. A PostgreSQL transaction advisory lock allows one worker at a
-time. Fetches have a 10-second connection timeout and a 30-second request timeout.
-The response converter stops downloads above 16 MiB. Errors are logged and the next
-scheduled check retries.
+Spring checks the approved `MansMeg/SwedishPolls/master/Data/Polls.csv` at 03:00
+`Europe/Stockholm` each day. A fresh installation with no source snapshot checks once
+at startup; an ordinary restart with retained data waits for the nightly refresh. A
+Spring-managed `@HttpExchange` client sends each request through Boot's configured
+`RestClient`. `polls.source-url` overrides the URL. `polls.ingest.enabled=false`
+disables startup and nightly automation while leaving the ingestion component
+available for explicit checks. `publication.enabled=false` skips estimate publication
+without disabling source refresh. A PostgreSQL transaction advisory lock allows one
+worker at a time. Fetches have a 10-second connection timeout and a 30-second request
+timeout. The response converter stops downloads above 16 MiB. Errors are logged and
+the next nightly check retries.
 
 ETag and Last-Modified validators survive restarts. A 304 updates the successful
 check time. A 200 with identical SHA-256 bytes updates validators without parsing
