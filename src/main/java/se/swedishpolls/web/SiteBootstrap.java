@@ -148,7 +148,7 @@ public final class SiteBootstrap {
     }
     final ObjectNode chart = JSON.createObjectNode();
     chart.put("snapshotId", snapshot.id());
-    chart.put("defaultRange", SourceChart.DEFAULT_RANGE);
+    chart.put("defaultRange", selected.orElseThrow().id());
     // The one query string a range change appends to. Building a second one is how a chart starts
     // drawing polls the table beside it is not showing.
     chart.put("query", String.join("&", PollFilters.query(shared)));
@@ -242,15 +242,20 @@ public final class SiteBootstrap {
       SiteRoutes.Route route, Publications.Resolved resolved, Snapshot sourceSnapshot) {
     final ObjectNode page = page(route, resolved);
     source(page, sourceSnapshot);
+    final List<Roster.CoveragePeriod> periods = queries.periods();
     if (route.family() == SiteRoutes.Family.OVERVIEW) {
       final ObjectNode sourcePolls =
-          polls(
-              sourceSnapshot.id(),
-              queries.periods(),
-              Translations.of(route.language()),
-              LATEST_POLLS);
+          polls(sourceSnapshot.id(), periods, Translations.of(route.language()), LATEST_POLLS);
       page.set("sourcePolls", sourcePolls.deepCopy());
       ((ObjectNode) page.get("data")).set("polls", sourcePolls);
+    }
+    if (route.family() == SiteRoutes.Family.OVERVIEW || route.family() == SiteRoutes.Family.PARTY) {
+      sourceChart(
+              sourceSnapshot,
+              periods,
+              PollQuery.Filters.none(),
+              page.get("defaultRange").asString())
+          .ifPresent(chart -> page.set("sourceChart", chart));
     }
     return page;
   }

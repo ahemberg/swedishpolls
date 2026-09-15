@@ -3,6 +3,7 @@ import test from 'node:test';
 import { axisMaximum, PLOT } from '../src/chart.ts';
 import {
   MINIMUM_SPAN,
+  dateX,
   markerSpan,
   reportedShares,
   sourceMarks,
@@ -34,6 +35,11 @@ test('a marker spans its own interview dates rather than a sampled estimate day'
   assert.ok(Math.abs(span.x2 - (LEFT + day * 161)) < 0.5);
   assert.equal(span.clippedFrom, false);
   assert.equal(span.clippedTo, false);
+});
+
+test('an estimate ending before the source window does not reach the chart edge', () => {
+  assert.ok(dateX('2025-12-15', YEAR, PLOT) < RIGHT_EDGE);
+  assert.equal(dateX(YEAR.to, YEAR, PLOT), RIGHT_EDGE);
 });
 
 test('a one-day period keeps a selectable width inside the plot', () => {

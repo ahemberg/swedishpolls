@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import type { Bootstrap, Boundary, PartyObservation, Series, Translate } from "./bootstrap";
 import { BASELINE, HEIGHT, TOP, WIDTH } from "./chart";
 import { colour, decimal, percent, shortDate } from "./format";
+import { Markers, Selection, YearRules } from "./source-chart-figure";
 import {
   Bands,
   Boundaries,
@@ -41,6 +42,21 @@ interface ScrubberProps {
   readonly day: string;
   readonly locale: string;
   readonly t: Translate;
+}
+
+function Years({
+  state,
+  dates,
+  x,
+}: {
+  readonly state: TimelineState;
+  readonly dates: readonly string[];
+  readonly x: (value: number) => number;
+}): JSX.Element {
+  if (state.window !== undefined) {
+    return <YearRules window={state.window} />;
+  }
+  return <YearLines dates={dates} x={x} />;
 }
 
 /** A missing day reads as missing: never a zero, never the neighbouring day's value. */
@@ -83,6 +99,43 @@ function TimelineReadout({
   );
 }
 
+function SourceMarks({ state }: { readonly state: TimelineState }): JSX.Element | null {
+  if (state.source === null || state.window === undefined) {
+    return null;
+  }
+  return (
+    <>
+      <Selection
+        observation={state.source.observations[state.source.cursor.index]}
+        window={state.window}
+      />
+      <Markers
+        marks={state.source.marks}
+        maximum={state.maximum}
+        selected={selectedPoll(state.source.observations, state.source.cursor.index)}
+      />
+    </>
+  );
+}
+
+function selectedPoll(
+  observations: readonly { readonly pollId: string }[],
+  index: number,
+): string | null {
+  const observation = observations[index];
+  if (observation === undefined) {
+    return null;
+  }
+  return observation.pollId;
+}
+
+function scrubAt(state: TimelineState, clientX: number, estimate: boolean): void {
+  if (estimate) {
+    state.scrub(clientX);
+  }
+  state.source?.cursor.scrub(clientX);
+}
+
 function TimelineFigure({
   page,
   state,
@@ -92,7 +145,7 @@ function TimelineFigure({
   component,
   observations = [],
 }: FigureProps): JSX.Element {
-  const { drawn, dates, maximum, index, x, y, scrub, svg } = state;
+  const { drawn, dates, maximum, index, x, y, svg } = state;
   return (
     <svg
       ref={svg}
@@ -100,19 +153,16 @@ function TimelineFigure({
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="img"
       aria-label={summary}
-      onPointerDown={(event) => scrub(event.clientX)}
-      onPointerMove={(event) => {
-        if (event.buttons > 0) {
-          scrub(event.clientX);
-        }
-      }}
+      onPointerDown={(event) => scrubAt(state, event.clientX, true)}
+      onPointerMove={(event) => scrubAt(state, event.clientX, event.buttons > 0)}
     >
       <title>{summary}</title>
       <Gridlines maximum={maximum} y={y} page={page} thresholdLabel={t("timeline.threshold")} />
-      <YearLines dates={dates} x={x} />
+      <Years state={state} dates={dates} x={x} />
       <Boundaries boundaries={boundaries} dates={dates} x={x} />
       <Bands drawn={drawn} x={x} y={y} />
       <Lines drawn={drawn} x={x} y={y} />
+      <SourceMarks state={state} />
       <PollDots
         observations={observations}
         component={component ?? null}
@@ -121,7 +171,7 @@ function TimelineFigure({
         y={y}
       />
       <ElectionDots page={page} dates={dates} x={x} y={y} component={component} />
-      <EndLabels page={page} drawn={drawn} y={y} />
+      <EndLabels page={page} drawn={drawn} x={x} y={y} />
       <line
         x1={x(index)}
         x2={x(index)}

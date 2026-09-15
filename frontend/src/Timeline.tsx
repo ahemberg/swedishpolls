@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { useId } from "react";
 import type { Bootstrap, PartyObservation, Translate } from "./bootstrap";
 import { level, shortDate } from "./format";
+import { SourceCursor, SourceDetails } from "./SourceChart";
 import { TimelineControlsRow } from "./timeline-controls-row";
 import { TimelineFigure, TimelineReadout, TimelineScrubber } from "./timeline-figure";
 import { TimelineNotes } from "./timeline-notes";
@@ -31,15 +32,94 @@ function drawnNames(
   return drawn.map((entry) => naming(entry.component)).join(", ");
 }
 
-function Timeline({ page, t, component, observations = [] }: Props): JSX.Element | null {
-  const ids = useId();
-  const state = useTimeline(page, component, observations);
-  const { history, drawn, dates, index } = state;
-  if (history === undefined) {
+function SourceReading({
+  ids,
+  page,
+  state,
+  t,
+}: Props & {
+  readonly ids: string;
+  readonly state: ReturnType<typeof useTimeline>;
+}): JSX.Element | null {
+  const { source, window } = state;
+  const observation = source?.observations[source.cursor.index];
+  if (source === null || window === undefined || observation === undefined) {
     return null;
   }
+  return (
+    <>
+      <SourceDetails
+        page={page}
+        drawn={state.drawnComponents}
+        window={window}
+        observation={observation}
+        t={t}
+      />
+      <SourceCursor
+        id={`${ids}-source-cursor`}
+        page={page}
+        observations={source.observations}
+        index={source.cursor.index}
+        lastIndex={source.cursor.lastIndex}
+        setCursor={source.cursor.setCursor}
+        t={t}
+      />
+    </>
+  );
+}
+
+function SourceNotes({
+  state,
+  t,
+}: {
+  readonly state: ReturnType<typeof useTimeline>;
+  readonly t: Translate;
+}): JSX.Element | null {
+  if (state.source === null) {
+    return null;
+  }
+  const notes = [
+    t("source.chart.note"),
+    t("source.chart.approximateNote"),
+    t("source.chart.sourceNote"),
+  ];
+  if (state.source.loading) {
+    notes.push(t("source.chart.loading"));
+  }
+  if (state.source.failed) {
+    notes.push(t("source.chart.failed"));
+  }
+  return (
+    <>
+      {notes.map((note) => (
+        <p className="footnote" key={note}>
+          {note}
+        </p>
+      ))}
+    </>
+  );
+}
+
+function TimelineContent({
+  ids,
+  page,
+  t,
+  component,
+  observations,
+  state,
+}: {
+  readonly ids: string;
+  readonly page: Bootstrap;
+  readonly t: Translate;
+  readonly component: string | undefined;
+  readonly observations: readonly PartyObservation[];
+  readonly state: ReturnType<typeof useTimeline> & {
+    readonly history: NonNullable<ReturnType<typeof useTimeline>["history"]>;
+  };
+}): JSX.Element {
+  const { history, drawn, dates, index } = state;
   const day = dates[index] ?? history.range.to;
-  const naming = (component: string): string => page.labels[component] ?? component;
+  const naming = (name: string): string => page.labels[name] ?? name;
   const summary = t("timeline.summary", {
     from: shortDate(history.range.from, page.locale),
     to: shortDate(history.range.to, page.locale),
@@ -64,6 +144,7 @@ function Timeline({ page, t, component, observations = [] }: Props): JSX.Element
         t={t}
         coveragePeriod={history.coveragePeriodByDate[index] ?? null}
       />
+      <SourceReading ids={ids} page={page} state={state} t={t} />
       <TimelineFigure
         page={page}
         state={state}
@@ -80,10 +161,29 @@ function Timeline({ page, t, component, observations = [] }: Props): JSX.Element
         step={String(history.range.step)}
         loading={state.loading}
         failed={state.failed}
-        pollDots={observations.length > 0}
+        pollDots={state.source === null && observations.length > 0}
       />
+      <SourceNotes state={state} t={t} />
       <TimelineTableSection id={`${ids}-table`} page={page} state={state} label={naming} t={t} />
     </section>
+  );
+}
+
+function Timeline({ page, t, component, observations = [] }: Props): JSX.Element | null {
+  const ids = useId();
+  const state = useTimeline(page, component, observations);
+  if (state.history === undefined) {
+    return null;
+  }
+  return (
+    <TimelineContent
+      ids={ids}
+      page={page}
+      t={t}
+      component={component}
+      observations={observations}
+      state={{ ...state, history: state.history }}
+    />
   );
 }
 

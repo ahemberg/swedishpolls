@@ -1,10 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
 import type { Bootstrap, History, PartyObservation, Series } from "./bootstrap";
-import { axisMaximum, xAt, yAt } from "./chart";
+import { axisMaximum, PLOT, xAt, yAt } from "./chart";
 import { visibleParties, withoutParty } from "./parties";
+import type { SourceWindow } from "./source-chart";
+import { dateX } from "./source-chart";
 import { ALL_PARTIES } from "./timeline-controls";
 import { useCursor } from "./useCursor";
 import { useHistory } from "./useHistory";
+import type { SourceOverlay } from "./useSourceOverlay";
+import { useSourceOverlay } from "./useSourceOverlay";
 
 /** The timeline's state: which range, which parties, and which day the cursor is reading. */
 
@@ -15,9 +19,13 @@ interface TimelineState {
   readonly loading: boolean;
   readonly failed: boolean;
   readonly series: readonly Series[];
+  readonly components: readonly { readonly component: string }[];
   readonly dates: readonly string[];
   readonly drawn: readonly Series[];
+  readonly drawnComponents: readonly string[];
   readonly maximum: number;
+  readonly source: SourceOverlay["source"];
+  readonly window: SourceWindow | undefined;
   readonly index: number;
   readonly lastIndex: number;
   readonly rangeId: string;
@@ -80,6 +88,46 @@ function observationValues(
     .map((entry) => entry.share);
 }
 
+function axisValues(
+  overlay: SourceOverlay,
+  observations: readonly PartyObservation[],
+  dates: readonly string[],
+): readonly number[] {
+  if (overlay.source !== null) {
+    return overlay.values;
+  }
+  return observationValues(observations, dates);
+}
+
+function useAxes({
+  drawn,
+  overlay,
+  observations,
+  dates,
+}: {
+  readonly drawn: readonly Series[];
+  readonly overlay: SourceOverlay;
+  readonly observations: readonly PartyObservation[];
+  readonly dates: readonly string[];
+}) {
+  const maximum = useMemo(
+    () => axisMaximum(drawn, axisValues(overlay, observations, dates)),
+    [drawn, observations, dates, overlay],
+  );
+  const x = useCallback(
+    (position: number) => {
+      const date = dates[position];
+      if (overlay.window === undefined || date === undefined) {
+        return xAt(position, dates.length);
+      }
+      return dateX(date, overlay.window, PLOT);
+    },
+    [dates, overlay.window],
+  );
+  const y = useCallback((value: number) => yAt(value, maximum), [maximum]);
+  return { maximum, x, y };
+}
+
 function useTimeline(
   page: Bootstrap,
   component = ALL_PARTIES,
@@ -89,25 +137,28 @@ function useTimeline(
   const [isolated, isolate] = useState(component);
   const [hidden, setHidden] = useState<readonly string[]>([]);
   const { history, loading, failed } = useHistory(page, rangeId);
-
   const series = seriesOf(history);
   const dates = datesOf(history);
-  const days = dates.length;
-  const cursor = useCursor(days);
+  const cursor = useCursor(dates.length);
+  const overlay = useSourceOverlay({
+    page,
+    rangeId,
+    history,
+    series,
+    isolated,
+    hidden,
+    svg: cursor.svg,
+  });
   const drawn = useMemo(() => shown(series, isolated, hidden), [series, isolated, hidden]);
-  const maximum = useMemo(
-    () => axisMaximum(drawn, observationValues(observations, dates)),
-    [drawn, observations, dates],
-  );
-  const x = useCallback((position: number) => xAt(position, days), [days]);
-  const y = useCallback((value: number) => yAt(value, maximum), [maximum]);
+  const axes = useAxes({ drawn, overlay, observations, dates });
   const { reset } = cursor;
   const chooseRange = useCallback(
     (id: string) => {
       setRangeId(id);
       reset();
+      overlay.source?.cursor.reset();
     },
-    [reset],
+    [reset, overlay.source?.cursor.reset],
   );
   const toggle = useCallback((component: string) => {
     setHidden((current) => withoutParty(current, component));
@@ -118,22 +169,17 @@ function useTimeline(
     loading,
     failed,
     series,
+    ...overlay,
     dates,
     drawn,
-    maximum,
+    ...axes,
     rangeId,
     isolated,
     hidden,
-    x,
-    y,
     chooseRange,
     isolate,
     toggle,
-    index: cursor.index,
-    lastIndex: cursor.lastIndex,
-    svg: cursor.svg,
-    scrub: cursor.scrub,
-    setCursor: cursor.setCursor,
+    ...cursor,
   };
 }
 

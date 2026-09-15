@@ -58,7 +58,7 @@ function url(data: SourceChartData, rangeId: string): string {
 }
 
 /** The window to fetch, or null for the one the page already carries. */
-function window(data: SourceChartData, rangeId: string): string | null {
+function sourceChartRequest(data: SourceChartData, rangeId: string): string | null {
   if (rangeId === data.defaultRange) {
     return null;
   }
@@ -67,7 +67,7 @@ function window(data: SourceChartData, rangeId: string): string | null {
 
 /** One window's observations, fetched only when the reader leaves the one the page arrived with. */
 function useWindow(initial: SourceChartData, rangeId: string): Loaded {
-  const { value, loading, failed } = useFetched(initial, window(initial, rangeId));
+  const { value, loading, failed } = useFetched(initial, sourceChartRequest(initial, rangeId));
   return { data: value, loading, failed };
 }
 
@@ -132,15 +132,17 @@ interface MarkCursor {
  */
 function useMarkCursor(
   observations: readonly SourceObservation[],
-  window: SourceWindow,
+  window: SourceWindow | undefined,
+  sharedSvg?: React.RefObject<SVGSVGElement | null>,
 ): MarkCursor {
   const [cursor, setCursor] = useState<number | null>(null);
-  const svg = useRef<SVGSVGElement | null>(null);
+  const ownSvg = useRef<SVGSVGElement | null>(null);
+  const svg = sharedSvg ?? ownSvg;
   const lastIndex = Math.max(0, observations.length - 1);
   const scrub = useCallback(
     (clientX: number) => {
       const element = svg.current;
-      if (element === null || observations.length === 0) {
+      if (element === null || observations.length === 0 || window === undefined) {
         return;
       }
       const box = element.getBoundingClientRect();
@@ -148,7 +150,7 @@ function useMarkCursor(
       const wanted = Math.max(0, Math.min(1, (inside - LEFT) / PLOT_WIDTH));
       setCursor(nearest(observations, window, wanted));
     },
-    [observations, window],
+    [observations, window, svg],
   );
   return {
     lastIndex,
@@ -210,5 +212,5 @@ function useSourceChart(initial: SourceChartData): SourceChartState {
   };
 }
 
-export type { SourceChartState };
-export { useSourceChart };
+export type { MarkCursor, SourceChartState };
+export { ordered, sourceChartRequest, useMarkCursor, useSourceChart };

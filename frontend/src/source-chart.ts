@@ -96,6 +96,12 @@ function xAtDay(value: number, window: SourceWindow, plot: Plot): number {
   return plot.left + (plot.width * (value - day(window.from))) / width(window);
 }
 
+/** Where a dated point sits on the real source window, including both edge dates. */
+function dateX(iso: string, window: SourceWindow, plot: Plot): number {
+  const days = Math.max(1, day(window.to) - day(window.from));
+  return plot.left + (plot.width * (day(iso) - day(window.from))) / days;
+}
+
 function clamp(value: number, plot: Plot): number {
   return Math.min(plot.left + plot.width, Math.max(plot.left, value));
 }
@@ -188,4 +194,4 @@ function yearTicks(window: SourceWindow, plot: Plot): readonly YearTick[] {
 }
 
 export type { Plot, SourceChartData, SourceMark, SourceObservation, SourceWindow, Span, YearTick };
-export { MINIMUM_SPAN, markerSpan, reportedShares, sourceMarks, yearTicks };
+export { dateX, MINIMUM_SPAN, markerSpan, reportedShares, sourceMarks, yearTicks };

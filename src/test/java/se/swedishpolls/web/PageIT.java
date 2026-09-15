@@ -105,6 +105,7 @@ class PageIT {
 
   @LocalServerPort private int port;
   @Autowired private Publisher publisher;
+  @Autowired private SnapshotIngest ingest;
   @Autowired private Flyway flyway;
   @InjectWireMock private WireMockServer wireMock;
 
@@ -260,7 +261,9 @@ class PageIT {
     assertTrue(page.contains("relative to the ensemble"));
     assertTrue(
         page.contains(
-            "/api/v1/polls.csv?publication=" + publicationId + "&amp;language=en&amp;party=S"));
+            "/source/polls.csv?snapshot="
+                + resolved.get("source").get("snapshotId").asLong()
+                + "&amp;language=en&amp;party=S"));
     assertTrue(
         page.contains("/api/v1/institutes?publication=" + publicationId + "&amp;language=en"));
     assertTrue(
@@ -320,6 +323,41 @@ class PageIT {
   }
 
   @Test
+  void currentEstimateChartsCarryPollMarkersFromTheVisitsSourceSnapshot() {
+    final byte[] original = TestPublication.polls("2014-01-01");
+    final Map<String, JsonNode> before =
+        Map.of(
+            "/", bootstrap(get("/").body()),
+            "/en/party/social-democrats", bootstrap(get("/en/party/social-democrats").body()));
+    TestPublication.serve(wireMock, TestPublication.moved(original, 1.0));
+    assertEquals(SnapshotIngest.Result.CHANGED, ingest.check());
+    final long corrected = ingest.activeSnapshot().orElseThrow().id();
+    try {
+      for (final String path : List.of("/", "/en/party/social-democrats")) {
+        final String currentPage = get(path).body();
+        final JsonNode current = bootstrap(currentPage);
+        final JsonNode permanent = bootstrap(get(path + "?publication=" + publicationId).body());
+        assertEquals(corrected, current.path("source").path("snapshotId").asLong(), path);
+        assertEquals(
+            current.path("source").path("snapshotId"),
+            current.path("sourceChart").path("snapshotId"),
+            path);
+        assertNotEquals(
+            before.get(path).path("sourceChart").path("observations"),
+            current.path("sourceChart").path("observations"),
+            path);
+        assertEquals(permanent.path("data").path("history"), current.path("data").path("history"));
+        assertTrue(currentPage.contains("/source/polls.csv?snapshot=" + corrected + "&amp;"), path);
+        assertTrue(permanent.path("source").isMissingNode(), path);
+        assertTrue(permanent.path("sourceChart").isMissingNode(), path);
+      }
+    } finally {
+      TestPublication.serve(wireMock, original);
+      assertEquals(SnapshotIngest.Result.CHANGED, ingest.check());
+    }
+  }
+
+  @Test
   void aPublishedProbabilityNeverReadsAsImpossibleOrCertain() {
     final String page = get("/en").body();
     final int table = page.indexOf("<table class=\"blocs\">");
@@ -375,13 +413,16 @@ class PageIT {
   }
 
   @Test
-  void everyPageNamesOneResolvedPublicationAndPinsItsDownloadsAndImagesToIt() {
+  void everyPageNamesOneResolvedPublicationAndPinsPublishedDownloadsAndImagesToIt() {
     final String page = get("/").body();
     final JsonNode resolved = bootstrap(page);
     assertEquals(publicationId, resolved.get("publication").get("publicationId").asString());
     assertEquals(publicationId, resolved.get("api").get("publication").asString());
     assertTrue(
-        page.contains("/api/v1/polls.csv?publication=" + publicationId + "&amp;language=sv"));
+        page.contains(
+            "/source/polls.csv?snapshot="
+                + resolved.get("source").get("snapshotId").asLong()
+                + "&amp;language=sv"));
     assertTrue(page.contains("/api/v1/seats?publication=" + publicationId + "&amp;language=sv"));
     assertTrue(
         resolved

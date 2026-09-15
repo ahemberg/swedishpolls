@@ -289,21 +289,21 @@ function dotTitle(observation: PartyObservation): string {
 }
 
 /** The identity cue that is not colour: the key and the value, written at the end of the line. */
-function EndLabels({ page, drawn, y }: Omit<LayerProps, "x">): JSX.Element {
+function EndLabels({ page, drawn, x, y }: LayerProps): JSX.Element {
   const labelled = drawn.flatMap((series) => {
     const index = lastEstimated(series);
     const value = series.mean[index];
     if (index < 0 || value === undefined || value === null) {
       return [];
     }
-    return [{ component: series.component, value }];
+    return [{ component: series.component, index, value }];
   });
   return (
     <g>
       {labelled.map((entry) => (
         <text
           key={entry.component}
-          x={WIDTH - RIGHT + LABEL_OFFSET}
+          x={x(entry.index) + LABEL_OFFSET}
           y={y(entry.value) + TEXT_BASELINE}
           fontSize="12"
           fontWeight="700"
