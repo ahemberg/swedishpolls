@@ -1,0 +1,123 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< se.swedishpolls:swedishpolls >--------------------
+[INFO] Building swedishpolls 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.3:enforce (toolchain) @ swedishpolls ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] Rule 1: org.apache.maven.enforcer.rules.version.RequireMavenVersion passed
+[INFO] Rule 2: org.apache.maven.enforcer.rules.dependency.RequireReleaseDeps passed
+[INFO] 
+[INFO] --- spotless:3.10.2:check (spotless-check-validate) @ swedishpolls ---
+[INFO] Spotless.Format is keeping 39 files clean - 0 needs changes to be clean, 0 were already clean, 39 were skipped because caching determined they were already clean
+[INFO] Spotless.Java is keeping 153 files clean - 0 needs changes to be clean, 0 were already clean, 153 were skipped because caching determined they were already clean
+[INFO] Spotless.Pom is keeping 1 files clean - 0 needs changes to be clean, 0 were already clean, 1 were skipped because caching determined they were already clean
+[INFO] 
+[INFO] --- frontend:2.0.2:install-node-and-npm (node) @ swedishpolls ---
+[INFO] Installing node version v24.13.1
+[INFO] Unpacking /home/alex/.m2/repository/com/github/eirslett/node/24.13.1/node-24.13.1-linux-x64.tar.gz into /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/target/node/tmp
+[INFO] Copying node binary from /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/target/node/tmp/node-v24.13.1-linux-x64/bin/node to /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/target/node/node
+[INFO] Installed node locally.
+[INFO] Installing npm version 11.8.0
+[INFO] Unpacking /home/alex/.m2/repository/com/github/eirslett/npm/11.8.0/npm-11.8.0.tar.gz into /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/target/node/node_modules
+[INFO] Installed npm locally.
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (npm-ci) @ swedishpolls ---
+[INFO] Running 'npm ci --no-audit --no-fund' in /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/frontend
+[INFO] 
+[INFO] added 32 packages in 3s
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (frontend-check) @ swedishpolls ---
+[INFO] Running 'npm run check' in /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/frontend
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 check
+[INFO] > npm run typecheck && npm run lint && npm test
+[INFO] 
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 typecheck
+[INFO] > tsc --noEmit
+[INFO] 
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 lint
+[INFO] > biome check .
+[INFO] 
+[INFO] Checked 61 files in 90ms. No fixes applied.
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 test
+[INFO] > node --test test/*.test.mjs
+[INFO] 
+[INFO] ✔ all 6,561 assignments keep each party in exactly one ordered destination (33.041934ms)
+[INFO] ✔ preset, clear, singleton and moves preserve canonical roster order (0.676762ms)
+[INFO] ✔ latest totals use zero for empty groups and null for missing constituents (0.388979ms)
+[INFO] ✔ share paths use the editor assignment and selected range (0.360069ms)
+[INFO] ✔ approved mixtures use latest support, conditional SD blue and neutral missing weights (1.229468ms)
+[INFO] ✔ lines and bands break at both fit changes and explicit gaps (0.606318ms)
+[INFO] ✔ missing fitted days and declared boundaries cannot be joined (0.424684ms)
+[INFO] ✔ history fetches reject errors and cancellation instead of accepting an error document (109.41429ms)
+[INFO] ℹ tests 8
+[INFO] ℹ suites 0
+[INFO] ℹ pass 8
+[INFO] ℹ fail 0
+[INFO] ℹ cancelled 0
+[INFO] ℹ skipped 0
+[INFO] ℹ todo 0
+[INFO] ℹ duration_ms 287.066428
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (frontend-build) @ swedishpolls ---
+[INFO] Running 'npm run build' in /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/frontend
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 build
+[INFO] > vite build --outDir ../target/frontend
+[INFO] 
+[INFO] vite v8.2.2 building client environment for production...
+[INFO] transforming...
+[INFO] ✓ 59 modules transformed.
+[INFO] rendering chunks...
+[INFO] computing gzip size...
+[INFO] ../target/frontend/.vite/manifest.json                        0.59 kB │ gzip:  0.23 kB
+[INFO] ../target/frontend/assets/public-sans-latin-DdeTHZLK.woff2   26.83 kB
+[INFO] ../target/frontend/assets/newsreader-latin-s-izfB6B.woff2   132.00 kB
+[INFO] ../target/frontend/assets/main-JBBaYfX_.css                  10.38 kB │ gzip:  3.29 kB
+[INFO] ../target/frontend/assets/main-DJX5lkMF.js                  266.41 kB │ gzip: 78.22 kB
+[INFO] 
+[INFO] ✓ built in 183ms
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ swedishpolls ---
+[INFO] Copying 18 resources from src/main/resources to target/classes
+[INFO] Copying 5 resources from target/frontend to target/classes/static
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ swedishpolls ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 86 source files with javac [debug parameters release 25] to target/classes
+[INFO] /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/src/main/java/se/swedishpolls/web/SiteHtml.java: /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/src/main/java/se/swedishpolls/web/SiteHtml.java uses or overrides a deprecated API.
+[INFO] /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/src/main/java/se/swedishpolls/web/SiteHtml.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ swedishpolls ---
+[INFO] Copying 2 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ swedishpolls ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 67 source files with javac [debug parameters release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.6:test (default-test) @ swedishpolls ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running se.swedishpolls.estimation.DevelopmentValidationTest
+Output already exists: /tmp/junit-9616513855621997717/diagnostic-evidence/diagnostics.json
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.563 s -- in se.swedishpolls.estimation.DevelopmentValidationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  50.362 s
+[INFO] Finished at: 2026-09-14T23:12:08+02:00
+[INFO] ------------------------------------------------------------------------

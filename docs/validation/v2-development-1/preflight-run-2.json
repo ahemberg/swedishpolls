@@ -1,0 +1,10 @@
+{
+  "status" : "ready",
+  "protocolVersion" : "v2-development-1",
+  "registrationSha256" : "fccbc0eec6579ecc2fe7b61a4db3cfc3fea074493f2b9c7cc3910d53a5a4401e",
+  "sourceSha256" : "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+  "folds" : 96,
+  "activeFolds" : 75,
+  "fitEvidence" : "not_run",
+  "reasons" : [ ]
+}

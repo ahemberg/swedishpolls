@@ -252,7 +252,10 @@ class DevelopmentValidationTest {
     // refuses before the output location does. That the run cannot be repeated is the invariant.
     assertFalse(JSON.readTree(Files.readAllBytes(result)).get("reasons").isEmpty());
 
-    final JsonNode wrongToolchain = registration.deepCopy();
+    final JsonNode wrongToolchain =
+        JSON.readTree(
+            Files.readAllBytes(
+                Path.of("docs", "validation", "v2-development-1", "registration-run-2.json")));
     ((ObjectNode) wrongToolchain.get("plan").get("environment")).put("npmVersion", "wrong");
     final Path wrongToolchainRegistration = temp.resolve("wrong-toolchain.json");
     Files.writeString(
@@ -365,11 +368,18 @@ class DevelopmentValidationTest {
         DevelopmentValidation.SUCCESS,
         DevelopmentValidation.run(
             "prepare", plan.toString(), source.toString(), registration.toString()));
+    final Path tuning = evidence.resolve("tuning.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "tune", registration.toString(), source.toString(), tuning.toString()));
+    final byte[] retainedTuning = Files.readAllBytes(tuning);
     final Path result = evidence.resolve("diagnostics.json");
     assertEquals(
         DevelopmentValidation.BLOCKED,
         DevelopmentValidation.run(
             "diagnose", registration.toString(), source.toString(), result.toString()));
+    assertArrayEquals(retainedTuning, Files.readAllBytes(tuning));
     final JsonNode report = JSON.readTree(Files.readAllBytes(result));
     assertEquals("complete", report.get("diagnosticEvidence").asString());
     assertFalse(report.get("gatePassed").booleanValue());

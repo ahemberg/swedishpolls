@@ -1,0 +1,52 @@
+{
+  "protocolVersion" : "v2-development-1",
+  "registrationSha256" : "fccbc0eec6579ecc2fe7b61a4db3cfc3fea074493f2b9c7cc3910d53a5a4401e",
+  "sourceSha256" : "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+  "tuningSha256" : "c2465094f4227f8e69ee4426fd45798a6e82b10d8fe45cd519361c01c78c2c5d",
+  "implementationIdentitySha256" : "585c989c3a53abaf843a1e217c58435287201e1aac1e8327977c4875004440d6",
+  "architecture" : "amd64",
+  "platform" : "linux/amd64",
+  "javaVersion" : "25.0.4",
+  "javaRuntime" : "25.0.4+7-LTS",
+  "vm" : "OpenJDK 64-Bit Server VM 25.0.4+7-LTS",
+  "os" : "Linux 6.17.0-1020-oracle",
+  "runtimeImage" : "eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e",
+  "reasons" : [ ],
+  "periods" : [ {
+    "periodId" : "eight_party_2010",
+    "date" : "2021-09-20",
+    "components" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER" ],
+    "daySeed" : 5416840566589286126,
+    "draws" : 10000,
+    "offsetValues" : 0,
+    "values" : 90000,
+    "reproduction" : {
+      "seed" : 20260908,
+      "draws" : 10000,
+      "periodId" : "eight_party_2010",
+      "components" : [ "S", "M", "SD", "V", "C", "KD", "L", "MP", "OTHER" ],
+      "basisSha256" : "4bfa062453f30fabc7986f2f6a774d87cea6da4899fa646d315f2154d11ca913",
+      "inputRowsSha256" : "8c3b3db1648d6a61a0f078e2155a9b139be94920a1a7e2c8b8fd8a0d99df04d5",
+      "inputRows" : 1038,
+      "parameters" : {
+        "walkVariance" : 1.0E-4,
+        "houseScale" : 0.1,
+        "covarianceMultiplier" : 1.5
+      },
+      "implementationSha256" : "8030d85ec8e7d4c9a9440a7e9ee7fe966c9559f57d7bbb7f828a74b9afeb27d0",
+      "javaRuntimeVersion" : "25.0.4+7-LTS",
+      "javaVmVersion" : "25.0.4+7-LTS",
+      "osName" : "Linux",
+      "osArch" : "amd64",
+      "linearAlgebraVersion" : "0.46.1"
+    }
+  } ],
+  "artifact" : {
+    "path" : "reproduction-amd64.draws",
+    "sha256" : "a6cbbc0dd5be5c63f74e5f0e94c5eb67b93745a90a2d946056f274414d1af1a8",
+    "values" : 90000,
+    "bytes" : 720000
+  },
+  "status" : "complete",
+  "releaseAuthorized" : false
+}

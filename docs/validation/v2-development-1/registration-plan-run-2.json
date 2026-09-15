@@ -1,0 +1,495 @@
+{
+  "version": "v2-development-1",
+  "registeredOn": "2026-09-14",
+  "implementationCommit": "539b1f35b24e78ec79d92b2808f35144efdfe3bf",
+  "authority": {
+    "proposal": "v2-development-1-proposal-1",
+    "proposalCommit": "d5699e82fd537ddc6bad817c4884c36a62752401",
+    "decisionCommit": "ba60536956aceccf01b3b76a1577e368b97ee62a",
+    "releaseBoundary": "development-only; publication remains blocked by v1-release-1",
+    "prospective2026": "missed cutoff 2026-09-12; a later fit cannot qualify retrospectively"
+  },
+  "source": {
+    "path": "src/test/resources/polls/audit.csv",
+    "sha256": "27012c05d1e948133a4a2558ec841df62c518b9122117a461ca1f8f6aa9d1608",
+    "sourceCommit": "f0390c05854d87bbf21db9d31c6431ffa0f07f7e"
+  },
+  "identities": [
+    {
+      "path": "pom.xml",
+      "sha256": "74639196b26d2446b956cb1f8173fff535d31e8791c28ee6c608f73e54acc647"
+    },
+    {
+      "path": ".mvn/wrapper/maven-wrapper.properties",
+      "sha256": "9e702bcd7e68ba1cace0a3382a7082e6e1e1b321688a7a3fbf4d5ae7eb0af533"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "sha256": "9435e439b60a378cf1c171d588aa47c27937d621416103fd1f90c7838bb9707b"
+    },
+    {
+      "path": "compose.yaml",
+      "sha256": "67e98177d8c54d7b284f79d6f732db78ce0d216e066faf54857fcbe8619291a6"
+    },
+    {
+      "path": "compose.dev.yaml",
+      "sha256": "b7db0e30c83eb4f04f03fa6eee862dc4ba309742b475072570f88cecb17fe8f2"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/DevelopmentValidation.java",
+      "sha256": "cfabed51a2c4120d96da8de551f372608fd5bd8d3290c00a09089ca8286b32da"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/DevelopmentPredictiveEvidence.java",
+      "sha256": "78f267b78d3210710f21aff9b2f8b41aca9278161917477a7b133733f1405889"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/PredictiveComparison.java",
+      "sha256": "8ca1cd69b9f23a93a9313abdec5efde67f5893053a9cf778c01fc46c49c69393"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/RecencyBaseline.java",
+      "sha256": "2c71b15b06edcaf18bd11bb91a63441512ed629c1ba75d159eec84a4bd164bc4"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/JointUncertainty.java",
+      "sha256": "d608e3533ded0fcf8912f14ff37f6bd4f81ed637f35296ff5b0c2afc611d34ac"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/DevelopmentTuning.java",
+      "sha256": "af76ea1981c2c263115f2ab693d77f6578026b01bd80fe6cfca9d05f135dae6e"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/DevelopmentDiagnostics.java",
+      "sha256": "88bef50654268f3b1522585ebdcf3c05f113dc30f7643c1c634de75ded04ff1c"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/PollObservations.java",
+      "sha256": "d6a0b2d400d538181d9f0fced69368dfd29831e6ec8c73be2eb3610fa351aa10"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/DailyStateSpace.java",
+      "sha256": "2c7ddaa06ccaa47750313913caa600202a53a9fdb23eb7541bad94ee1259edbf"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/WindowFilter.java",
+      "sha256": "47a4ebfa7fb38b63fbdfb96ad7e73b7bc2f9ba0a4cc090c235895a5230e6c3f1"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/source/PollCsv.java",
+      "sha256": "0ae713d15ceccc9ef1047ad98264f6f0d76bac9f787487d5f0d1e9e1dfc639b8"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/source/Roster.java",
+      "sha256": "b7b4bf64e44dde3a93b6daf9057dbf0378aa237b183d2e04bcc2d76df626a55c"
+    },
+    {
+      "path": "docs/validation/protocol.json",
+      "sha256": "6f774b8517078c88b82c1af3332a3478ec8e9f7156de529c7e20f4cfbcb4d667"
+    },
+    {
+      "path": "docs/validation/release-protocol.json",
+      "sha256": "934520c7cda4458a3cf302fcd79d2e104a3fef2233e00968c4ec42320b6b070b"
+    },
+    {
+      "path": "docs/validation/diagnostics.json",
+      "sha256": "d374e62a7a4e482b314f6066ff36f0c83f34ad9ca0d2fe397af9a725beb201ed"
+    },
+    {
+      "path": "docs/validation/coverage.json",
+      "sha256": "843fdd1ba7dcf4f70cf253996be366ff8793114676b5d24bc0777d518ab364e1"
+    },
+    {
+      "path": "docs/validation/tuning.json",
+      "sha256": "8fbfa7b22b1b0db553b38ac00afa3ed070241265fa5267099502f9071b6bc397"
+    },
+    {
+      "path": "docs/validation/history.json",
+      "sha256": "8ccac840b5838cba54c24d4b3dc17bba0b9086fd4bf61acbe0cf486635844969"
+    },
+    {
+      "path": "docs/validation/uncertainty.json",
+      "sha256": "75e565e9a0b1cf2c0c9e85eae9140cfbbb73af207b4cfa75026b8db68303aa00"
+    },
+    {
+      "path": "docs/validation/remainder.json",
+      "sha256": "d64549550b47e13ec0fb670aa15e52e6f8bd5db1e93945fb61340c55670551ae"
+    },
+    {
+      "path": "docs/validation/seats.json",
+      "sha256": "a66a4e8a35e66f4ef176db38794618f902b163d7191a20cc2f23608c8189229e"
+    },
+    {
+      "path": "docs/validation/development-gates.json",
+      "sha256": "38f8f6498463f53838be92eeb113c45e9f386177d75e564fec0d23dab707f8f9"
+    },
+    {
+      "path": "docs/validation/release-audit.json",
+      "sha256": "cb1d97d9b65526fa3501f17778ade2ac6741a52c5966194fabd615267bee3ad7"
+    },
+    {
+      "path": "docs/validation/remediation-inventory.json",
+      "sha256": "fb4a0d251ab43fb05eeb58b74c5864ba766f398cc1ea990fac25365250e0fcb5"
+    },
+    {
+      "path": "docs/validation/remediation-protocol-v2-proposal.md",
+      "sha256": "dbf828812ae9f9d8b6ff984501b02759a06d925df08ec804668e56db2d332c71"
+    },
+    {
+      "path": "docs/adr/0009-development-remediation-protocol.md",
+      "sha256": "dd9bb226b10264837d2a1cad0c1058ce013361feb73a6944b95e5014a55172e0"
+    },
+    {
+      "path": "src/main/resources/db/migration/V1__validation_protocol.sql",
+      "sha256": "2c82a62ef035cde7feb46d59ec13dd6146d3ef5063f2cbfa0c3a8603dd724c29"
+    },
+    {
+      "path": "src/main/resources/db/migration/V2__poll_snapshots.sql",
+      "sha256": "3f7e3b136c04106c8df8f2a612fcd4a550c9856c6f171e38a253c0acf1a89dbc"
+    },
+    {
+      "path": "src/main/resources/db/migration/V3__election_references.sql",
+      "sha256": "042130ca1576fba8c14ee5719111cb9b5d69dd05c4f2ee373bf762b1629ee0c6"
+    },
+    {
+      "path": "src/main/resources/db/migration/V4__coverage_periods.sql",
+      "sha256": "15b568cb1b65b7e88753d3f4e3996de243edcbf9af8c6d3d1729e91784c1ae2d"
+    },
+    {
+      "path": "src/main/resources/db/migration/V5__publications.sql",
+      "sha256": "fd01f399ae544537a566750b339068069fabc4a9e1bca2d1690542fc87b1a897"
+    },
+    {
+      "path": "src/main/resources/publication/model-freeze.json",
+      "sha256": "66b854018f921c34141fc455bd3130743e8796e03c59f95b23ecd7eeb51d27dc"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/CoverageValidation.java",
+      "sha256": "659954aac5d3fa01fbdd2a5a4dff4eda7e9daa997cae2e7e21fba37c068c0bf1"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/EstimateHistory.java",
+      "sha256": "1e2ff8342b1faf35e56be8e97ca50137f957a6e69a6937bc1f4710790af97d29"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/ComparableRemainder.java",
+      "sha256": "48ae5da44ce2e1a87a5df1f757abb5a56af9431d60b896a6641d48d3c7320b44"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/DevelopmentGates.java",
+      "sha256": "0c1a06fb2ef265a115278ffd2e5bb62681315638d24619a4812c15b34f8980cc"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/NationalSeats.java",
+      "sha256": "e52aadff38b19eeff99be28cb9227f5acc468921799fdd4e0cac5bdb28948fa1"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/SeatOutcomes.java",
+      "sha256": "c21a179bb460125fe75efa8ffcd450e7e13fe618e267bdbdac2e44c702a8edfd"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/estimation/Coalitions.java",
+      "sha256": "5003aebf2511e473a13d4d0849b1854e56754e4e0d001e4eb25112dcb3900bba"
+    },
+    {
+      "path": "src/main/java/se/swedishpolls/model/NationalAllocationRule.java",
+      "sha256": "390cc683a5944d974b77526d2760cea604e3220355ca2026261b04164727e028"
+    }
+  ],
+  "gateDefinitions": {
+    "protocol": "docs/validation/protocol.json",
+    "development": "docs/validation/development-gates.json",
+    "proposal": "docs/validation/remediation-protocol-v2-proposal.md"
+  },
+  "environment": {
+    "javaVersion": "25.0.4",
+    "osName": "Linux",
+    "osArch": "amd64",
+    "mavenVersion": "3.9.16",
+    "nodeVersion": "24.13.1",
+    "npmVersion": "11.8.0",
+    "ejmlVersion": "0.46.1",
+    "mavenCoreSha256": "5d45c72e3dbfab8b68d15ad4f12777b7d9b5fe4d4adc99c3bd51fb9641fab009",
+    "nodeSha256": "d95de52ccb76fb2c5775bf176f29f3025e4b19352c092aad51ce5d930717359f",
+    "npmCliSha256": "8e5f6f3429f8cdbe693cdc29904e9d5a7b127a494bd15c804bd54c7403bfcbe7",
+    "ejmlJarSha256": "9f5dc17cde87c00570278aae3d9b2efcdd5b5e058728d6929ae892816c419f25",
+    "postgresImage": "postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636",
+    "runtimeImage": "eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e"
+  },
+  "outputLocation": "docs/validation/v2-development-1/evidence/run-2",
+  "protectedLocations": [
+    "docs/validation/protocol.json",
+    "docs/validation/release-protocol.json",
+    "docs/validation/coverage.json",
+    "docs/validation/tuning.json",
+    "docs/validation/diagnostics.json",
+    "docs/validation/history.json",
+    "docs/validation/uncertainty.json",
+    "docs/validation/remainder.json",
+    "docs/validation/seats.json",
+    "docs/validation/development-gates.json",
+    "docs/validation/release-audit.json",
+    "src/main/resources/publication/model-freeze.json",
+    "src/test/resources/polls/audit.csv",
+    "docs/validation/v2-development-1/registration-plan.json",
+    "docs/validation/v2-development-1/registration.json",
+    "docs/validation/v2-development-1/evidence/run-1",
+    "docs/validation/v2-development-1/registration.json.sha256",
+    "docs/validation/v2-development-1/preflight.json",
+    "docs/validation/v2-development-1/registration-plan-run-2.json"
+  ],
+  "grid": {
+    "walkVariances": [
+      3e-06,
+      1e-05,
+      3e-05,
+      0.0001,
+      0.0003,
+      0.001
+    ],
+    "houseScales": [
+      0.01,
+      0.02,
+      0.05,
+      0.1,
+      0.2
+    ],
+    "covarianceMultipliers": [
+      0.5,
+      0.75,
+      1.0,
+      1.5,
+      2.0,
+      3.0
+    ],
+    "interpretation": "values below one are development-only underdispersion relative to nominal multinomial covariance"
+  },
+  "periods": [
+    {
+      "id": "eight_party_2010",
+      "from": "2010-01-01",
+      "to": null,
+      "individualFi": false,
+      "activeFrom": "2014-01-15",
+      "activeThrough": "2021-10-05"
+    },
+    {
+      "id": "fi_candidate_2014_2018",
+      "from": "2014-04-09",
+      "to": "2018-09-07",
+      "individualFi": true,
+      "activeFrom": "2014-05-15",
+      "activeThrough": "2018-08-22"
+    }
+  ],
+  "foldsFrom": "docs/validation/protocol.json",
+  "archivedDiagnostics": "docs/validation/diagnostics.json",
+  "archivedTuning": "docs/validation/tuning.json",
+  "electionCycleDates": [
+    "2010-09-19",
+    "2014-09-14",
+    "2018-09-09",
+    "2022-09-11"
+  ],
+  "seeds": {
+    "master": 20260908,
+    "precision": [
+      20260908,
+      20260909,
+      20260910,
+      20260911,
+      20260912,
+      20260913,
+      20260914,
+      20260915
+    ]
+  },
+  "commands": [
+    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='prepare docs/validation/v2-development-1/registration-plan-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/registration-run-2.json'",
+    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='preflight docs/validation/v2-development-1/registration-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/preflight-run-2.json'",
+    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='tune docs/validation/v2-development-1/registration-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/evidence/run-2/tuning.json'",
+    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='estimate docs/validation/v2-development-1/registration-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/evidence/run-2/tuning.json docs/validation/v2-development-1/evidence/run-2/estimation.json'",
+    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='diagnose docs/validation/v2-development-1/registration-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/evidence/run-2/diagnostics.json'",
+    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='measure docs/validation/v2-development-1/registration-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/evidence/run-2/tuning.json docs/validation/v2-development-1/evidence/run-2/measurement.json'",
+    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='reproduce docs/validation/v2-development-1/registration-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/evidence/run-2/tuning.json docs/validation/v2-development-1/evidence/run-2/reproduction-amd64.json'",
+    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='reproduce docs/validation/v2-development-1/registration-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/evidence/run-2/tuning.json docs/validation/v2-development-1/evidence/run-2/reproduction-arm64.json'",
+    "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='compare docs/validation/v2-development-1/registration-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/evidence/run-2/tuning.json docs/validation/v2-development-1/evidence/run-2/reproduction-amd64.json docs/validation/v2-development-1/evidence/run-2/reproduction-arm64.json docs/validation/v2-development-1/evidence/run-2/cross-architecture.json'"
+  ],
+  "parameterSelection": {
+    "method": "midpoint_candidate",
+    "fold": "latest_resolved_active_cutoff"
+  },
+  "coverage": {
+    "developmentThrough": "2021-10-05",
+    "minObservations": 30,
+    "minInstitutes": 5,
+    "maxInternalGapDays": 45,
+    "boundaryShiftDays": [
+      7,
+      14,
+      30
+    ],
+    "stabilityBurnInDays": 60,
+    "maxStabilityShiftPoints": 0.5
+  },
+  "uncertainty": {
+    "draws": 10000,
+    "intervalLevels": [
+      0.5,
+      0.95
+    ],
+    "precisionRepeats": 8,
+    "maxIntervalEndpointSpreadPoints": 0.12,
+    "maxEndpointSumErrorPoints": 1e-09
+  },
+  "outcomes": {
+    "maxMonteCarloStandardError": 0.005,
+    "maxThresholdProbabilitySpread": 0.03,
+    "maxMajorityProbabilitySpread": 0.03,
+    "sensitivityDisclosurePoints": 10.0,
+    "allocationRules": [
+      {
+        "electionYear": 2010,
+        "seats": 349,
+        "thresholdPercent": 4.0,
+        "thresholdInclusive": true,
+        "firstDivisor": 1.4,
+        "subsequentDivisorFormula": "2 * seats_already_allocated + 1",
+        "tieOrder": [
+          "S",
+          "M",
+          "SD",
+          "V",
+          "C",
+          "KD",
+          "L",
+          "MP",
+          "FI"
+        ],
+        "otherReceivesSeats": false,
+        "constituencyExceptionsIncluded": false,
+        "officialTieRule": "lottery",
+        "sourceUrl": "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      },
+      {
+        "electionYear": 2014,
+        "seats": 349,
+        "thresholdPercent": 4.0,
+        "thresholdInclusive": true,
+        "firstDivisor": 1.4,
+        "subsequentDivisorFormula": "2 * seats_already_allocated + 1",
+        "tieOrder": [
+          "S",
+          "M",
+          "SD",
+          "V",
+          "C",
+          "KD",
+          "L",
+          "MP",
+          "FI"
+        ],
+        "otherReceivesSeats": false,
+        "constituencyExceptionsIncluded": false,
+        "officialTieRule": "lottery",
+        "sourceUrl": "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      },
+      {
+        "electionYear": 2018,
+        "seats": 349,
+        "thresholdPercent": 4.0,
+        "thresholdInclusive": true,
+        "firstDivisor": 1.2,
+        "subsequentDivisorFormula": "2 * seats_already_allocated + 1",
+        "tieOrder": [
+          "S",
+          "M",
+          "SD",
+          "V",
+          "C",
+          "KD",
+          "L",
+          "MP",
+          "FI"
+        ],
+        "otherReceivesSeats": false,
+        "constituencyExceptionsIncluded": false,
+        "officialTieRule": "lottery",
+        "sourceUrl": "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      },
+      {
+        "electionYear": 2022,
+        "seats": 349,
+        "thresholdPercent": 4.0,
+        "thresholdInclusive": true,
+        "firstDivisor": 1.2,
+        "subsequentDivisorFormula": "2 * seats_already_allocated + 1",
+        "tieOrder": [
+          "S",
+          "M",
+          "SD",
+          "V",
+          "C",
+          "KD",
+          "L",
+          "MP",
+          "FI"
+        ],
+        "otherReceivesSeats": false,
+        "constituencyExceptionsIncluded": false,
+        "officialTieRule": "lottery",
+        "sourceUrl": "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      },
+      {
+        "electionYear": 2026,
+        "seats": 349,
+        "thresholdPercent": 4.0,
+        "thresholdInclusive": true,
+        "firstDivisor": 1.2,
+        "subsequentDivisorFormula": "2 * seats_already_allocated + 1",
+        "tieOrder": [
+          "S",
+          "M",
+          "SD",
+          "V",
+          "C",
+          "KD",
+          "L",
+          "MP",
+          "FI"
+        ],
+        "otherReceivesSeats": false,
+        "constituencyExceptionsIncluded": false,
+        "officialTieRule": "lottery",
+        "sourceUrl": "https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf"
+      }
+    ]
+  },
+  "measurements": {
+    "snapshot": {
+      "rowSelection": "latest_eligible_poll_per_institute",
+      "correctionFrom": "OTHER",
+      "correctionTo": "M",
+      "correctionPoints": 0.1,
+      "maxShiftPoints": 0.44
+    },
+    "reproduction": {
+      "architectures": [
+        "amd64",
+        "arm64"
+      ],
+      "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runtimeImage": "eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e",
+      "maxDifferencePoints": 2e-14
+    },
+    "resources": {
+      "runtimeTargetMillis": 10000,
+      "runtimeTargetBlocking": false,
+      "hostPipelineRequirementMillis": 1800000,
+      "measurementBoundary": "coverage validation through corrected history, all-day joint uncertainty, repeated-seed probabilities, comparable remainder and sensitivity; excludes registration, source and tuning verification and evidence serialization"
+    }
+  }
+}

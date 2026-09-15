@@ -1,0 +1,4 @@
+bash -c 'docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" -v /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b:/work -w /work eclipse-temurin@sha256:8c6736fa623090b057a5bbd36d42f90c9de4c7d2d4b6c285921a4f85ce65a445 java -Duser.home=/work/target/validation-runtime/home -cp '"'"'target/classes:target/validation-runtime/lib/*'"'"' se.swedishpolls.estimation.DevelopmentValidation reproduce docs/validation/v2-development-1/registration-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/evidence/run-2/tuning.json docs/validation/v2-development-1/evidence/run-2/reproduction-amd64.json'
+
+exit_status=0
+wall_seconds=97.477

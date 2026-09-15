@@ -1,0 +1,4 @@
+ssh -o BatchMode=yes pinas 'docker run --rm --platform linux/arm64 --user "$(id -u):$(id -g)" -v /tmp/swedishpolls-validation-run-2:/work -w /work eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e java -Duser.home=/work/target/validation-runtime/home -cp '"'"'target/classes:target/validation-runtime/lib/*'"'"' se.swedishpolls.estimation.DevelopmentValidation reproduce docs/validation/v2-development-1/registration-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/evidence/run-2/tuning.json docs/validation/v2-development-1/evidence/run-2/reproduction-arm64.json'
+
+exit_status=0
+wall_seconds=104.013
