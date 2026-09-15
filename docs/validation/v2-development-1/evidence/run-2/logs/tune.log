@@ -1,0 +1,118 @@
+./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.DevelopmentValidation -Dspring-boot.run.arguments='tune docs/validation/v2-development-1/registration-run-2.json src/test/resources/polls/audit.csv docs/validation/v2-development-1/evidence/run-2/tuning.json'
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< se.swedishpolls:swedishpolls >--------------------
+[INFO] Building swedishpolls 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.1.1:run (default-cli) > test-compile @ swedishpolls >>>
+[INFO] 
+[INFO] --- enforcer:3.6.3:enforce (toolchain) @ swedishpolls ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] Rule 1: org.apache.maven.enforcer.rules.version.RequireMavenVersion passed
+[INFO] Rule 2: org.apache.maven.enforcer.rules.dependency.RequireReleaseDeps passed
+[INFO] 
+[INFO] --- spotless:3.10.2:check (spotless-check-validate) @ swedishpolls ---
+[INFO] Spotless.Format is keeping 40 files clean - 0 needs changes to be clean, 0 were already clean, 40 were skipped because caching determined they were already clean
+[INFO] Spotless.Java is keeping 153 files clean - 0 needs changes to be clean, 0 were already clean, 153 were skipped because caching determined they were already clean
+[INFO] Spotless.Pom is keeping 1 files clean - 0 needs changes to be clean, 0 were already clean, 1 were skipped because caching determined they were already clean
+[INFO] 
+[INFO] --- frontend:2.0.2:install-node-and-npm (node) @ swedishpolls ---
+[INFO] Node v24.13.1 is already installed.
+[INFO] NPM 11.8.0 is already installed.
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (npm-ci) @ swedishpolls ---
+[INFO] Running 'npm ci --no-audit --no-fund' in /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/frontend
+[INFO] 
+[INFO] added 32 packages in 3s
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (frontend-check) @ swedishpolls ---
+[INFO] Running 'npm run check' in /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/frontend
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 check
+[INFO] > npm run typecheck && npm run lint && npm test
+[INFO] 
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 typecheck
+[INFO] > tsc --noEmit
+[INFO] 
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 lint
+[INFO] > biome check .
+[INFO] 
+[INFO] Checked 61 files in 91ms. No fixes applied.
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 test
+[INFO] > node --test test/*.test.mjs
+[INFO] 
+[INFO] ✔ all 6,561 assignments keep each party in exactly one ordered destination (26.84824ms)
+[INFO] ✔ preset, clear, singleton and moves preserve canonical roster order (0.46219ms)
+[INFO] ✔ latest totals use zero for empty groups and null for missing constituents (0.263409ms)
+[INFO] ✔ share paths use the editor assignment and selected range (0.244368ms)
+[INFO] ✔ approved mixtures use latest support, conditional SD blue and neutral missing weights (0.793304ms)
+[INFO] ✔ lines and bands break at both fit changes and explicit gaps (0.417839ms)
+[INFO] ✔ missing fitted days and declared boundaries cannot be joined (0.3131ms)
+[INFO] ✔ history fetches reject errors and cancellation instead of accepting an error document (89.940849ms)
+[INFO] ℹ tests 8
+[INFO] ℹ suites 0
+[INFO] ℹ pass 8
+[INFO] ℹ fail 0
+[INFO] ℹ cancelled 0
+[INFO] ℹ skipped 0
+[INFO] ℹ todo 0
+[INFO] ℹ duration_ms 247.032334
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (frontend-build) @ swedishpolls ---
+[INFO] Running 'npm run build' in /home/alex/.t3/worktrees/swedishpolls/t3code-8f16ae8b/frontend
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 build
+[INFO] > vite build --outDir ../target/frontend
+[INFO] 
+[INFO] vite v8.2.2 building client environment for production...
+[INFO] transforming...
+[INFO] ✓ 59 modules transformed.
+[INFO] rendering chunks...
+[INFO] computing gzip size...
+[INFO] ../target/frontend/.vite/manifest.json                        0.59 kB │ gzip:  0.23 kB
+[INFO] ../target/frontend/assets/public-sans-latin-DdeTHZLK.woff2   26.83 kB
+[INFO] ../target/frontend/assets/newsreader-latin-s-izfB6B.woff2   132.00 kB
+[INFO] ../target/frontend/assets/main-JBBaYfX_.css                  10.38 kB │ gzip:  3.29 kB
+[INFO] ../target/frontend/assets/main-DJX5lkMF.js                  266.41 kB │ gzip: 78.22 kB
+[INFO] 
+[INFO] ✓ built in 187ms
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ swedishpolls ---
+[INFO] Copying 18 resources from src/main/resources to target/classes
+[INFO] Copying 5 resources from target/frontend to target/classes/static
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ swedishpolls ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ swedishpolls ---
+[INFO] Copying 2 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ swedishpolls ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.1.1:run (default-cli) < test-compile @ swedishpolls <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.1.1:run (default-cli) @ swedishpolls ---
+[INFO] Attaching agents: []
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:01 h
+[INFO] Finished at: 2026-09-15T00:41:30+02:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.1.1:run (default-cli) on project swedishpolls: Process terminated with exit code: 1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+
+exit_status=1
+wall_seconds=3682.983

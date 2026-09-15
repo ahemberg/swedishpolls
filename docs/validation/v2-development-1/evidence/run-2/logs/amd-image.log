@@ -1,0 +1,7 @@
+Unable to find image 'eclipse-temurin@sha256:8c6736fa623090b057a5bbd36d42f90c9de4c7d2d4b6c285921a4f85ce65a445' locally
+docker.io/library/eclipse-temurin@sha256:8c6736fa623090b057a5bbd36d42f90c9de4c7d2d4b6c285921a4f85ce65a445: Pulling from library/eclipse-temurin
+Digest: sha256:8c6736fa623090b057a5bbd36d42f90c9de4c7d2d4b6c285921a4f85ce65a445
+Status: Downloaded newer image for eclipse-temurin@sha256:8c6736fa623090b057a5bbd36d42f90c9de4c7d2d4b6c285921a4f85ce65a445
+openjdk version "25.0.4" 2026-07-21 LTS
+OpenJDK Runtime Environment Temurin-25.0.4+7 (build 25.0.4+7-LTS)
+OpenJDK 64-Bit Server VM Temurin-25.0.4+7 (build 25.0.4+7-LTS, mixed mode, sharing)
