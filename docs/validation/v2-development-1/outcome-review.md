@@ -141,8 +141,18 @@ They remain an obstacle even if the relative score loss is repaired. Investigati
 midpoint versus fieldwork-window timing is secondary. Do not expand
 the grid again or substitute the window reference on the strength of this review.
 Any new experiment needs a specific hypothesis, fixed inputs and checks, and an
-owner-reviewed protocol before fitting. The priority is settled; the next
-investigation's scope and stopping rule remain to be agreed.
+owner-reviewed protocol before fitting.
+
+The owner also accepted the investigation scope and stopping rule on 2026-09-15:
+analyze retained polls, residuals and intervals; inspect source handling and shared
+numerical code; and use small synthetic checks to distinguish implementation
+defects from model assumptions. Stop with an evidenced diagnosis or explicit
+competing hypotheses and a proposed experiment. New real-data fits and model
+changes require a separate decision.
+
+The completed [shared uncertainty investigation](uncertainty-investigation.md)
+records the retained-draw checks, code inspection, small synthetic check and
+competing explanations. Its proposed next experiment remains a separate decision.
 
 ## Reproduce the descriptive calculations
 
