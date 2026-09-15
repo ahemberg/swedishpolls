@@ -136,30 +136,45 @@ function Download({
             {t("polls.download")}
           </a>
         </li>
-        {api !== undefined && (
-          <li>
-            <a
-              className="btn"
-              href={`${api.base}/estimates/latest?publication=${api.publication}&language=${api.language}`}
-            >
-              {t("downloads.estimates")}
-            </a>
-          </li>
-        )}
+        <EstimateDownload page={page} t={t} />
       </ul>
       <p className="footnote">
         {t(pollText(source !== undefined, "polls.downloadNote", "source.polls.downloadNote"))}
       </p>
-      {api !== undefined && (
-        <p className="meta">{t("downloads.pinned", { publication: api.publication })}</p>
-      )}
-      {source !== undefined && (
-        <p className="meta">
-          {t("source.polls.snapshot", { snapshot: String(source.snapshotId) })}
-        </p>
-      )}
+      <DownloadPin page={page} t={t} />
     </section>
   );
+}
+
+function EstimateDownload({ page, t }: Pick<Props, "page" | "t">): JSX.Element | null {
+  const { api } = page;
+  if (api === undefined) {
+    return null;
+  }
+  return (
+    <li>
+      <a
+        className="btn"
+        href={`${api.base}/estimates/latest?publication=${api.publication}&language=${api.language}`}
+      >
+        {t("downloads.estimates")}
+      </a>
+    </li>
+  );
+}
+
+function DownloadPin({ page, t }: Pick<Props, "page" | "t">): JSX.Element | null {
+  if (page.api !== undefined) {
+    return <p className="meta">{t("downloads.pinned", { publication: page.api.publication })}</p>;
+  }
+  if (page.source !== undefined) {
+    return (
+      <p className="meta">
+        {t("source.polls.snapshot", { snapshot: String(page.source.snapshotId) })}
+      </p>
+    );
+  }
+  return null;
 }
 
 function PollsPage({ page, table, t }: Props): JSX.Element {

@@ -126,17 +126,21 @@ function Published({ page, t }: Props): JSX.Element {
   return <Results page={page} data={data} t={t} />;
 }
 
-function Body({ page, t }: Props): JSX.Element {
+function SourceBody({ page, t }: Props): JSX.Element {
+  if (page.source === undefined) {
+    return <NoSource page={page} t={t} />;
+  }
   if (page.route.family === POLLS && page.pollTable !== undefined) {
     return <PollsPage page={page} table={page.pollTable} t={t} />;
   }
-  if (page.publication === undefined && page.source === undefined) {
-    return <NoSource page={page} t={t} />;
+  return <Overview page={page} t={t} />;
+}
+
+function Body({ page, t }: Props): JSX.Element {
+  if (page.publication !== undefined) {
+    return <Published page={page} t={t} />;
   }
-  if (page.publication === undefined) {
-    return <Overview page={page} t={t} />;
-  }
-  return <Published page={page} t={t} />;
+  return <SourceBody page={page} t={t} />;
 }
 
 function Shell({ page, t }: Props): JSX.Element {

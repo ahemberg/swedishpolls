@@ -92,6 +92,14 @@ function includeExcludedLabel(page: Bootstrap, t: Translate): string {
   return t("polls.filter.includeExcluded");
 }
 
+function first(values: readonly string[]): string {
+  return values[0] ?? "";
+}
+
+function optional(value: string | null): string {
+  return value ?? "";
+}
+
 function PollFilters({ page, options, filters, t }: Props): JSX.Element {
   return (
     <form className="filters" method="get" action={page.route.path}>
@@ -104,7 +112,7 @@ function PollFilters({ page, options, filters, t }: Props): JSX.Element {
           name="institute"
           label={t("polls.filter.institute")}
           any={t("polls.filter.anyInstitute")}
-          value={filters.institute[0] ?? ""}
+          value={first(filters.institute)}
           values={options.institutes}
           display={(institute) => institute}
         />
@@ -114,7 +122,7 @@ function PollFilters({ page, options, filters, t }: Props): JSX.Element {
               name="party"
               label={t("polls.filter.party")}
               any={t("polls.filter.allParties")}
-              value={filters.party[0] ?? ""}
+              value={first(filters.party)}
               values={options.parties}
               display={(party) => componentName(page, party)}
             />
@@ -122,7 +130,7 @@ function PollFilters({ page, options, filters, t }: Props): JSX.Element {
               name="coveragePeriod"
               label={t("polls.filter.coveragePeriod")}
               any={t("polls.filter.anyPeriod")}
-              value={filters.coveragePeriod ?? ""}
+              value={optional(filters.coveragePeriod)}
               values={options.coveragePeriods.map((period) => period.id)}
               display={(period) => period}
             />

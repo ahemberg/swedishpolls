@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { BlocStandings } from "./BlocStandings";
-import type { Bootstrap, Translate } from "./bootstrap";
+import type { Bootstrap, PageData, Translate } from "./bootstrap";
 import { headlineDate } from "./bootstrap";
 import { Downloads } from "./Downloads";
 import { Estimates } from "./Estimates";
@@ -22,24 +22,24 @@ interface Props {
   readonly t: Translate;
 }
 
-function Overview({ page, t }: Props): JSX.Element | null {
-  const { data, publication } = page;
-  if (data === undefined || publication === undefined) {
-    if (page.source === undefined || page.sourcePolls === undefined) {
-      return null;
-    }
-    return (
-      <div>
-        <h1>{t("source.title")}</h1>
-        <p className="meta">
-          {t("source.updated", {
-            timestamp: timestamp(page.source.capturedAt, page.locale),
-          })}
-        </p>
-        <LatestPolls page={page} polls={page.sourcePolls} t={t} />
-      </div>
-    );
+function SourceOverview({ page, t }: Props): JSX.Element | null {
+  if (page.source === undefined || page.sourcePolls === undefined) {
+    return null;
   }
+  return (
+    <div>
+      <h1>{t("source.title")}</h1>
+      <p className="meta">
+        {t("source.updated", {
+          timestamp: timestamp(page.source.capturedAt, page.locale),
+        })}
+      </p>
+      <LatestPolls page={page} polls={page.sourcePolls} t={t} />
+    </div>
+  );
+}
+
+function PublishedOverview({ page, data, t }: Props & { readonly data: PageData }): JSX.Element {
   return (
     <div>
       <h1>
@@ -64,6 +64,14 @@ function Overview({ page, t }: Props): JSX.Element | null {
       </div>
     </div>
   );
+}
+
+function Overview({ page, t }: Props): JSX.Element | null {
+  const { data, publication } = page;
+  if (data !== undefined && publication !== undefined) {
+    return <PublishedOverview page={page} data={data} t={t} />;
+  }
+  return <SourceOverview page={page} t={t} />;
 }
 
 export { Overview };
