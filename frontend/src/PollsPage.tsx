@@ -5,6 +5,7 @@ import { PollFilters } from "./poll-filters";
 import { PollRows } from "./poll-rows";
 import type { PollTable } from "./poll-table";
 import { pollQuery } from "./poll-table";
+import { SourceChart } from "./SourceChart";
 
 /**
  * The browsable poll table.
@@ -177,6 +178,15 @@ function DownloadPin({ page, t }: Pick<Props, "page" | "t">): JSX.Element | null
   return null;
 }
 
+/** The source chart, on the pages whose rows come from a retained snapshot rather than a run. */
+function Chart({ page, t }: Pick<Props, "page" | "t">): JSX.Element | null {
+  const { sourceChart } = page;
+  if (sourceChart === undefined) {
+    return null;
+  }
+  return <SourceChart page={page} chart={sourceChart} t={t} />;
+}
+
 function PollsPage({ page, table, t }: Props): JSX.Element {
   return (
     <div>
@@ -190,6 +200,7 @@ function PollsPage({ page, table, t }: Props): JSX.Element {
         </p>
       )}
       <PollFilters page={page} options={table.options} filters={table.filters} t={t} />
+      <Chart page={page} t={t} />
       <InvalidNotice table={table} t={t} />
       <EmptyNotice table={table} t={t} />
       {table.polls.length > 0 && (

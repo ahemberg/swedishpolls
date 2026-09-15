@@ -217,6 +217,33 @@ public class PageController {
     return Responses.render(body, MediaType.parseMediaType("text/csv; charset=utf-8"), false);
   }
 
+  /**
+   * The source chart's markers for one window, read outside the frozen publication API.
+   *
+   * <p>A range change fetches this rather than reloading the page, so the first paint carries only
+   * the window it draws. The snapshot is named in the query, which is what keeps a range change on
+   * the snapshot the visit resolved even when a correction lands meanwhile.
+   */
+  @GetMapping(value = "/source/chart", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<byte[]> sourceChart(
+      @RequestParam(required = false) String snapshot,
+      @RequestParam(required = false) String range,
+      @RequestParam(required = false) String from,
+      @RequestParam(required = false) String to,
+      @RequestParam(required = false) String institute) {
+    final Snapshot selected = sourceSnapshot(snapshot).orElseThrow(ApiErrors::unknownRoute);
+    final PollFilters.Parsed parsed = sourceFilters(from, to, institute);
+    if (!parsed.valid()) {
+      throw ApiErrors.invalidFilter(parsed.invalid());
+    }
+    final ObjectNode chart =
+        bootstrap
+            .sourceChart(selected, queries.periods(), parsed.filters(), range)
+            .orElseThrow(ApiErrors::unknownRoute);
+    return Responses.render(
+        chart.toString().getBytes(StandardCharsets.UTF_8), MediaType.APPLICATION_JSON, false);
+  }
+
   /** The pinned permanent publication, the current one, or nothing published yet. */
   private Optional<Publications.Resolved> resolve(String publication) {
     final Optional<Publications.Resolved> resolved = publications.resolve(publication);
@@ -243,6 +270,11 @@ public class PageController {
     } catch (NumberFormatException error) {
       throw ApiErrors.unknownRoute();
     }
+  }
+
+  /** The filters a source chart reads: the table's dates and institutes, and nothing else. */
+  private static PollFilters.Parsed sourceFilters(String from, String to, String institute) {
+    return sourceFilters(from, to, institute, null, null, null);
   }
 
   private static PollFilters.Parsed sourceFilters(

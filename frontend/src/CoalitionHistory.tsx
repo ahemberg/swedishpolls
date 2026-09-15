@@ -15,7 +15,7 @@ import {
 import { decimal, interval, percent, shortDate, timestamp } from "./format";
 import { TimelineTable } from "./TimelineTable";
 import { useCursor } from "./useCursor";
-import { historyJson } from "./useHistory";
+import { fetchJson } from "./useFetched";
 
 interface Props {
   readonly page: Bootstrap;
@@ -225,7 +225,7 @@ function useHistoryRange(initial: CoalitionHistoryData): {
     setFailed(false);
     let next: CoalitionHistoryData | undefined;
     try {
-      next = await historyJson<CoalitionHistoryData>(
+      next = await fetchJson<CoalitionHistoryData>(
         `/api/v1/publications/${encodeURIComponent(initial.publicationId)}/coalition-history?${parameters}`,
         request.signal,
       );

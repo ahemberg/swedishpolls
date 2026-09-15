@@ -26,6 +26,9 @@ const YEAR_LENGTH = 4;
 const MOVE = "M";
 const DRAW = "L";
 
+/** The plot box a date axis places days in, so the date-axis geometry owns no constants. */
+const PLOT = { left: LEFT, width: PLOT_WIDTH };
+
 interface Span {
   readonly x: number;
   readonly top: number;
@@ -192,6 +195,7 @@ export {
   LEFT,
   lastEstimated,
   linePath,
+  PLOT,
   PLOT_WIDTH,
   RIGHT,
   THRESHOLD_PERCENT,

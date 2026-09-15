@@ -7,6 +7,7 @@ import { Estimates } from "./Estimates";
 import { date, timestamp } from "./format";
 import { LatestPolls } from "./LatestPolls";
 import { Share } from "./Share";
+import { SourceChart } from "./SourceChart";
 import { Threshold } from "./Threshold";
 import { Timeline } from "./Timeline";
 
@@ -34,6 +35,7 @@ function SourceOverview({ page, t }: Props): JSX.Element | null {
           timestamp: timestamp(page.source.capturedAt, page.locale),
         })}
       </p>
+      {page.sourceChart !== undefined && <SourceChart page={page} chart={page.sourceChart} t={t} />}
       <LatestPolls page={page} polls={page.sourcePolls} t={t} />
     </div>
   );

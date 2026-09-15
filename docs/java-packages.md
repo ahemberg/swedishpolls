@@ -43,7 +43,8 @@ se.swedishpolls
 └── web                              the HTTP surface and the server-rendered site
     ├── (root)                       plain site-rendering classes: PublicSite, SiteHtml, SiteText,
     │                                SiteFormat, SiteAssets, SiteRoutes, SiteBootstrap, and the
-    │                                stored-history request sampling: EstimateQuery
+    │                                stored-history request sampling: EstimateQuery, and the
+    │                                source chart's date axis: SourceChart
     └── web.controller               PageController, ApiV1Controller, AssetController,
                                      ApiExceptionHandler, ApiErrors, Responses
 ```
