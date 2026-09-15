@@ -31,7 +31,7 @@ import se.swedishpolls.source.service.SnapshotIngest;
 
 class PublisherTest {
   private static final Instant CHECKED_AT = Instant.parse("2026-09-12T12:00:00Z");
-  private static final Snapshot SNAPSHOT = new Snapshot(42, "sha");
+  private static final Snapshot SNAPSHOT = new Snapshot(42, "sha", CHECKED_AT);
   private static final PublicationHeader HEADER =
       new PublicationHeader(
           "pub_20260912T120000Z",

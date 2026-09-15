@@ -175,11 +175,16 @@ public final class PollQuery {
 
   /** The download of the same rows, with the source precision the snapshot archived. */
   public static String csv(Result result, Filters filters) {
+    return csv(result, filters, "other");
+  }
+
+  /** A current-source download with its explicit comparable-remainder heading. */
+  public static String csv(Result result, Filters filters, String remainderHeader) {
     final List<String> components = filters.selectedComponents();
     final List<String> header = new ArrayList<>();
     for (final String column : CSV_HEADER) {
       if (!COMPONENTS.contains(column) || components.contains(column)) {
-        header.add(column);
+        header.add("other".equals(column) ? remainderHeader : column);
       }
     }
     final StringBuilder out = new StringBuilder();

@@ -4,10 +4,12 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.springframework.stereotype.Component;
 import se.swedishpolls.source.PollCsv;
 import se.swedishpolls.source.PollQuery;
 import se.swedishpolls.source.Roster;
+import se.swedishpolls.source.Snapshot;
 import se.swedishpolls.source.repository.CoveragePeriodRepository;
 import se.swedishpolls.source.repository.SnapshotRepository;
 
@@ -72,5 +74,18 @@ public class PollQueryService {
   /** Every coverage period, for requests that name one. */
   public List<Roster.CoveragePeriod> periods() {
     return periods.periods();
+  }
+
+  public Optional<Snapshot> activeSnapshot() {
+    return snapshots.activeSnapshot();
+  }
+
+  public Optional<Snapshot> snapshot(long id) {
+    return snapshots.findSnapshot(id);
+  }
+
+  public List<String> institutes(long snapshotId) {
+    final List<PollCsv.Poll> polls = parsedPolls.computeIfAbsent(snapshotId, snapshots::polls);
+    return List.copyOf(PollQuery.institutes(polls).keySet());
   }
 }

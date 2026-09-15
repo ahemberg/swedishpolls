@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.service.Publications;
+import se.swedishpolls.source.service.PollQueryService;
 import se.swedishpolls.web.SiteBootstrap;
 import se.swedishpolls.web.SiteHtml;
 import tools.jackson.databind.json.JsonMapper;
@@ -47,13 +48,16 @@ class PageControllerTest {
   @MockitoBean private SiteBootstrap bootstrap;
   @MockitoBean private SiteHtml html;
   @MockitoBean private Publications publications;
+  @MockitoBean private PollQueryService queries;
 
   @BeforeEach
   void renderPage() {
     when(html.page(any())).thenReturn("<html lang=\"sv\">page</html>");
     when(bootstrap.page(any(), any())).thenReturn(PAGE);
     when(bootstrap.unavailable(any(), any())).thenReturn(PAGE);
+    when(bootstrap.noSource(any())).thenReturn(PAGE);
     when(publications.lastSuccessfulCheck()).thenReturn(Optional.empty());
+    when(queries.activeSnapshot()).thenReturn(Optional.empty());
   }
 
   @Test

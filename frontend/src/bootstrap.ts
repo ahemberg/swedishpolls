@@ -167,6 +167,12 @@ export interface Publication {
   readonly assets: Readonly<Record<string, Readonly<Record<Language, string | null>>>>;
 }
 
+export interface SourceSnapshot {
+  readonly snapshotId: number;
+  readonly sha256: string;
+  readonly capturedAt: string;
+}
+
 export interface RangeSpec {
   readonly id: string;
   readonly from: string;
@@ -220,6 +226,9 @@ export interface Bootstrap {
   readonly headlineDate?: string;
   readonly lastSourceCheck?: string | null;
   readonly publication?: Publication;
+  readonly source?: SourceSnapshot;
+  readonly noSource?: boolean;
+  readonly sourcePolls?: Polls;
   readonly api?: {
     readonly base: string;
     readonly publication: string;

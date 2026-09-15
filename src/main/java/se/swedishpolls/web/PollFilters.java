@@ -138,6 +138,15 @@ public final class PollFilters {
     return link.toString();
   }
 
+  /** A current-source download pinned to the snapshot the page resolved. */
+  public static String sourceCsvLink(long snapshotId, PollQuery.Filters filters) {
+    final StringBuilder link = new StringBuilder("/source/polls.csv?snapshot=").append(snapshotId);
+    for (final String parameter : query(filters)) {
+      link.append("&").append(parameter);
+    }
+    return link.toString();
+  }
+
   /** A list parameter, each value escaped and the separator left as the comma the parser reads. */
   private static String joined(List<String> values) {
     return values.stream().map(PollFilters::encode).collect(Collectors.joining(","));

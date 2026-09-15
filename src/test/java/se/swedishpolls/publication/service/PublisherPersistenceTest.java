@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
@@ -75,7 +76,8 @@ class PublisherPersistenceTest {
             });
     final SnapshotIngest ingest = mock(SnapshotIngest.class);
     when(ingest.check()).thenReturn(SnapshotIngest.Result.UNCHANGED);
-    when(ingest.activeSnapshot()).thenReturn(Optional.of(new Snapshot(snapshotId, "sha")));
+    when(ingest.activeSnapshot())
+        .thenReturn(Optional.of(new Snapshot(snapshotId, "sha", Instant.EPOCH)));
     return new Publisher(
         lock,
         ingest,

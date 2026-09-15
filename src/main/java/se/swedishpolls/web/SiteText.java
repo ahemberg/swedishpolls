@@ -145,6 +145,30 @@ public final class SiteText {
         "Den första publiceringen har inte blivit klar. Inga siffror visas förrän en körning har"
             + " klarat alla kontroller.");
     text.put("unavailable.lastCheck", "Källan kontrollerades senast {timestamp}.");
+    text.put("source.title", "Opinionsmätningar");
+    text.put("source.updated", "Källdata uppdaterad {timestamp}.");
+    text.put("source.noPolls.title", "Inga mätningar tillgängliga");
+    text.put("source.noPolls.body", "Det finns inga sparade mätningar.");
+    text.put("source.retry", "Försök igen");
+    text.put(
+        "source.description.overview",
+        "De senaste insamlade opinionsmätningarna med fältarbete, urval och redovisade andelar.");
+    text.put(
+        "source.description.polls",
+        "Insamlade opinionsmätningar med filter, urval och redovisade andelar med källans precision.");
+    text.put("source.polls.title", "Insamlade mätningar");
+    text.put("source.polls.lead", "Redovisade andelar från den sparade källan.");
+    text.put("source.polls.empty", "Inga matchande mätningar. Ändra eller rensa filtret.");
+    text.put("source.polls.column.other", "Övriga partier, inklusive FI");
+    text.put("source.polls.column.eligibility", "Urvalsstatus");
+    text.put("source.polls.filter.includeExcluded", "Visa även uteslutna mätningar");
+    text.put("source.polls.eligible", "Inkluderad");
+    text.put("source.polls.excluded", "Utesluten: {reasons}");
+    text.put(
+        "source.polls.downloadNote",
+        "CSV-filen innehåller alla matchande rader från samma ögonblicksbild som tabellen, med"
+            + " källans precision bevarad.");
+    text.put("source.polls.snapshot", "Ögonblicksbild {snapshot}.");
 
     text.put("timeline.title", "Utveckling över tid");
     text.put("timeline.range.oneYear", "Ett år");
@@ -723,6 +747,30 @@ public final class SiteText {
         "The first publication has not completed. No numbers are shown until a run passes every"
             + " check.");
     text.put("unavailable.lastCheck", "The source was last checked {timestamp}.");
+    text.put("source.title", "Opinion polls");
+    text.put("source.updated", "Source data updated {timestamp}.");
+    text.put("source.noPolls.title", "No polls available");
+    text.put("source.noPolls.body", "There are no retained polls to show.");
+    text.put("source.retry", "Retry");
+    text.put(
+        "source.description.overview",
+        "The latest collected opinion polls with fieldwork dates, samples and reported shares.");
+    text.put(
+        "source.description.polls",
+        "Collected opinion polls with filters, samples and reported shares at source precision.");
+    text.put("source.polls.title", "Collected polls");
+    text.put("source.polls.lead", "Reported shares from the retained source.");
+    text.put("source.polls.empty", "No matching polls. Change or clear the filters.");
+    text.put("source.polls.column.other", "Other parties, including FI");
+    text.put("source.polls.column.eligibility", "Status");
+    text.put("source.polls.filter.includeExcluded", "Also show excluded polls");
+    text.put("source.polls.eligible", "Included");
+    text.put("source.polls.excluded", "Excluded: {reasons}");
+    text.put(
+        "source.polls.downloadNote",
+        "The CSV contains every matching row from the same snapshot as the table, with source"
+            + " precision preserved.");
+    text.put("source.polls.snapshot", "Snapshot {snapshot}.");
 
     text.put("timeline.title", "Support over time");
     text.put("timeline.range.oneYear", "One year");

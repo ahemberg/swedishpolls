@@ -60,17 +60,16 @@ function StaleNotice({ page, t }: Props): JSX.Element | null {
 }
 
 /** Before the first successful publication there are no numbers, and the page says exactly that. */
-function Unavailable({ page, t }: Props): JSX.Element {
-  const checked = page.lastSourceCheck;
+function NoSource({ page, t }: Props): JSX.Element {
   return (
     <div>
-      <h1>{t("unavailable.title")}</h1>
-      <p>{t("unavailable.body")}</p>
-      {checked !== undefined && checked !== null && (
-        <p className="meta">
-          {t("unavailable.lastCheck", { timestamp: timestamp(checked, page.locale) })}
-        </p>
-      )}
+      <h1>{t("source.noPolls.title")}</h1>
+      <p>{t("source.noPolls.body")}</p>
+      <p>
+        <a className="btn primary" href={page.route.path}>
+          {t("source.retry")}
+        </a>
+      </p>
     </div>
   );
 }
@@ -128,8 +127,14 @@ function Published({ page, t }: Props): JSX.Element {
 }
 
 function Body({ page, t }: Props): JSX.Element {
+  if (page.route.family === POLLS && page.pollTable !== undefined) {
+    return <PollsPage page={page} table={page.pollTable} t={t} />;
+  }
+  if (page.publication === undefined && page.source === undefined) {
+    return <NoSource page={page} t={t} />;
+  }
   if (page.publication === undefined) {
-    return <Unavailable page={page} t={t} />;
+    return <Overview page={page} t={t} />;
   }
   return <Published page={page} t={t} />;
 }

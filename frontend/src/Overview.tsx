@@ -4,7 +4,7 @@ import type { Bootstrap, Translate } from "./bootstrap";
 import { headlineDate } from "./bootstrap";
 import { Downloads } from "./Downloads";
 import { Estimates } from "./Estimates";
-import { date } from "./format";
+import { date, timestamp } from "./format";
 import { LatestPolls } from "./LatestPolls";
 import { Share } from "./Share";
 import { Threshold } from "./Threshold";
@@ -25,7 +25,20 @@ interface Props {
 function Overview({ page, t }: Props): JSX.Element | null {
   const { data, publication } = page;
   if (data === undefined || publication === undefined) {
-    return null;
+    if (page.source === undefined || page.sourcePolls === undefined) {
+      return null;
+    }
+    return (
+      <div>
+        <h1>{t("source.title")}</h1>
+        <p className="meta">
+          {t("source.updated", {
+            timestamp: timestamp(page.source.capturedAt, page.locale),
+          })}
+        </p>
+        <LatestPolls page={page} polls={page.sourcePolls} t={t} />
+      </div>
+    );
   }
   return (
     <div>

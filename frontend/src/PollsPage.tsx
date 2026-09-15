@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
+import { timestamp } from "./format";
 import { PollFilters } from "./poll-filters";
 import { PollRows } from "./poll-rows";
 import type { PollTable } from "./poll-table";
@@ -18,6 +19,13 @@ interface Props {
   readonly page: Bootstrap;
   readonly table: PollTable;
   readonly t: Translate;
+}
+
+function pollText(source: boolean, published: string, current: string): string {
+  if (source) {
+    return current;
+  }
+  return published;
 }
 
 /** Whether any cell on this page carries the marker, so the footnote appears only where it is. */
@@ -58,7 +66,7 @@ function EmptyNotice({
   }
   return (
     <p className="notice" role="status">
-      {t("polls.empty")}
+      {t(pollText(table.source, "polls.empty", "source.polls.empty"))}
     </p>
   );
 }
@@ -79,6 +87,8 @@ function Paging({
     const parameters = new URLSearchParams();
     if (page.api !== undefined) {
       parameters.set("publication", page.api.publication);
+    } else if (page.source !== undefined) {
+      parameters.set("snapshot", String(page.source.snapshotId));
     }
     for (const [name, value] of pollQuery(table.filters, pageNumber)) {
       parameters.set(name, value);
@@ -113,8 +123,8 @@ function Download({
   readonly table: PollTable;
   readonly t: Translate;
 }): JSX.Element | null {
-  const { api } = page;
-  if (api === undefined) {
+  const { api, source } = page;
+  if (api === undefined && source === undefined) {
     return null;
   }
   return (
@@ -122,21 +132,32 @@ function Download({
       <h2>{t("downloads.title")}</h2>
       <ul className="downloads">
         <li>
-          <a className="btn" href={`${table.csv}&language=${api.language}`}>
+          <a className="btn" href={`${table.csv}&language=${page.language}`}>
             {t("polls.download")}
           </a>
         </li>
-        <li>
-          <a
-            className="btn"
-            href={`${api.base}/estimates/latest?publication=${api.publication}&language=${api.language}`}
-          >
-            {t("downloads.estimates")}
-          </a>
-        </li>
+        {api !== undefined && (
+          <li>
+            <a
+              className="btn"
+              href={`${api.base}/estimates/latest?publication=${api.publication}&language=${api.language}`}
+            >
+              {t("downloads.estimates")}
+            </a>
+          </li>
+        )}
       </ul>
-      <p className="footnote">{t("polls.downloadNote")}</p>
-      <p className="meta">{t("downloads.pinned", { publication: api.publication })}</p>
+      <p className="footnote">
+        {t(pollText(source !== undefined, "polls.downloadNote", "source.polls.downloadNote"))}
+      </p>
+      {api !== undefined && (
+        <p className="meta">{t("downloads.pinned", { publication: api.publication })}</p>
+      )}
+      {source !== undefined && (
+        <p className="meta">
+          {t("source.polls.snapshot", { snapshot: String(source.snapshotId) })}
+        </p>
+      )}
     </section>
   );
 }
@@ -144,8 +165,15 @@ function Download({
 function PollsPage({ page, table, t }: Props): JSX.Element {
   return (
     <div>
-      <h1>{t("head.title.polls")}</h1>
-      <p className="meta">{t("polls.lead")}</p>
+      <h1>{t(pollText(table.source, "head.title.polls", "source.polls.title"))}</h1>
+      <p className="meta">{t(pollText(table.source, "polls.lead", "source.polls.lead"))}</p>
+      {page.source !== undefined && (
+        <p className="meta">
+          {t("source.updated", {
+            timestamp: timestamp(page.source.capturedAt, page.locale),
+          })}
+        </p>
+      )}
       <PollFilters page={page} options={table.options} filters={table.filters} t={t} />
       <InvalidNotice table={table} t={t} />
       <EmptyNotice table={table} t={t} />

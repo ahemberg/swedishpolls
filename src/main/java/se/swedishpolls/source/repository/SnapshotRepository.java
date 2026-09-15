@@ -44,17 +44,41 @@ public class SnapshotRepository {
 
   public Optional<Snapshot> activeSnapshot() {
     return db.sql(
-            "SELECT s.id, s.sha256 FROM poll_snapshot s JOIN poll_source p ON p.active_snapshot_id = s.id WHERE p.source_url = ?")
+            "SELECT s.id, s.sha256, s.captured_at FROM poll_snapshot s JOIN poll_source p ON p.active_snapshot_id = s.id WHERE p.source_url = ?")
         .param(sourceUrl)
-        .query((rs, row) -> new Snapshot(rs.getLong("id"), rs.getString("sha256")))
+        .query(
+            (rs, row) ->
+                new Snapshot(
+                    rs.getLong("id"),
+                    rs.getString("sha256"),
+                    rs.getTimestamp("captured_at").toInstant()))
         .optional();
   }
 
   public Snapshot snapshot(long id) {
-    return db.sql("SELECT id, sha256 FROM poll_snapshot WHERE id = ? AND source_url = ?")
+    return db.sql(
+            "SELECT id, sha256, captured_at FROM poll_snapshot WHERE id = ? AND source_url = ?")
         .params(id, sourceUrl)
-        .query((rs, row) -> new Snapshot(rs.getLong("id"), rs.getString("sha256")))
+        .query(
+            (rs, row) ->
+                new Snapshot(
+                    rs.getLong("id"),
+                    rs.getString("sha256"),
+                    rs.getTimestamp("captured_at").toInstant()))
         .single();
+  }
+
+  public Optional<Snapshot> findSnapshot(long id) {
+    return db.sql(
+            "SELECT id, sha256, captured_at FROM poll_snapshot WHERE id = ? AND source_url = ?")
+        .params(id, sourceUrl)
+        .query(
+            (rs, row) ->
+                new Snapshot(
+                    rs.getLong("id"),
+                    rs.getString("sha256"),
+                    rs.getTimestamp("captured_at").toInstant()))
+        .optional();
   }
 
   /** Reads the archived source bytes on demand, so a snapshot never carries the whole payload. */
