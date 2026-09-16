@@ -1,6 +1,6 @@
 # Bounded synthetic recovery protocol
 
-Status: draft for final owner confirmation. Version: `synthetic-recovery-v1`.
+Status: accepted by the owner on 2026-09-16. Version: `synthetic-recovery-v1`.
 Decision ticket: [#184](https://github.com/ahemberg/swedishpolls/issues/184).
 
 ## Purpose and authority
@@ -9,18 +9,19 @@ Determine whether predictive poll intervals recover their nominal coverage when
 synthetic observations follow each method's assumed Gaussian model. The owner
 accepted the scope, generating assumptions, two parameter stages, scenario,
 coverage ranges, simultaneous-confidence approach, repetition count and retention
-policy during the #184 interview. The exact scheduling, seed, preflight and
-completion rules below are proposed details awaiting final confirmation.
+policy during the #184 interview. On 2026-09-16, the owner confirmed the complete
+protocol, including the exact scheduling, seed, preflight and completion rules
+and the unchanged-regression-test exception below.
 
 This follows the [#160 outcome review and investigation](https://github.com/ahemberg/swedishpolls/pull/183).
 It does not validate real-poll calibration or authorize publication. Existing
 release gates, FI unavailability, the original evidence, the shipped freeze, the
 old 2022 audit and the missed 2026 cutoff remain unchanged. No revised real-data
-experiment is proposed. The interview's restriction on new real-data fits needs
-one explicit final decision about existing regression tests, described below.
+experiment is authorized. The restriction on new real-data fits permits only
+the unchanged software regression checks described below.
 
-Implementation and execution are subsequent work. Confirming this document settles
-the protocol; it does not itself execute a fit or authorize a model change.
+Implementation and execution are subsequent work. This decision settles the
+protocol; it does not itself execute a fit or authorize a model change.
 
 ## Exact generating model
 
@@ -233,13 +234,11 @@ endpoints, missing repetitions, numerical failures and output-collision behavior
 at the operator boundary. Software tests are not recovery evidence.
 
 The existing model-validation profile includes archived development-poll refits
-in `DevelopmentTuningIT` and `DevelopmentDiagnosticsIT`. Proposed exception,
-pending owner confirmation: retain those unchanged software regression checks
+in `DevelopmentTuningIT` and `DevelopmentDiagnosticsIT`. The owner approved
+retaining those unchanged software regression checks
 before preflight, including the model-validation profile. Do not set any
 evidence-rebuilding `*.full` flags, rerun the once-only audit, or treat test fits
-as new statistical evidence. If the owner rejects the exception, resolve the
-repository-check boundary explicitly before implementation; do not quietly skip
-required checks or run the refits anyway.
+as new statistical evidence.
 
 Record code commit, dependency/toolchain and container identities, host
 architecture, commands and numerical-check tolerances in a machine-readable
