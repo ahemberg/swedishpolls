@@ -94,7 +94,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --no-audit --no-fund
         working-directory: frontend
-      - uses: fallow-rs/fallow@c55ba1ba3c98c6e4ad48f0aed0e0f256c256d959 # v3.23.0
+      - uses: fallow-rs/fallow@30167b42257ded3bef683f6c91b4aa4017a1ff59 # v3.25.0
         with:
           version: '3.23.0'
           command: audit
