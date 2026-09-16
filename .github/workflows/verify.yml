@@ -44,6 +44,10 @@ jobs:
         with:
           name: verified-classes
           path: target/classes/
+          # The Vite manifest lives in the hidden static/.vite directory. Without this the
+          # artifact carries the bundle but not the manifest, and the image serves every page
+          # with no script and no stylesheet.
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
   model-validation:
@@ -187,6 +191,24 @@ jobs:
             done
             return 1
           }
+          # The image can serve every route and still carry no compiled frontend, because a
+          # missing Vite manifest makes the page omit its own script and stylesheet silently.
+          # Assert the served overview references both, and that each one is fetchable.
+          check_frontend() {
+            home=$(curl --fail --silent http://127.0.0.1:8080/)
+            script=$(printf '%s' "$home" |
+              grep -o '<script type="module" src="[^"]*"' |
+              sed 's/.*src="//; s/"$//')
+            stylesheet=$(printf '%s' "$home" |
+              grep -o '<link rel="stylesheet" href="[^"]*"' |
+              sed 's/.*href="//; s/"$//')
+            if [ -z "$script" ] || [ -z "$stylesheet" ]; then
+              echo "The served overview carries no module script or no stylesheet" >&2
+              return 1
+            fi
+            curl --fail --silent "http://127.0.0.1:8080${script}" >/dev/null
+            curl --fail --silent "http://127.0.0.1:8080${stylesheet}" >/dev/null
+          }
           trap cleanup EXIT
           for ARCH in amd64 arm64; do
             export ARCH
@@ -199,6 +221,7 @@ jobs:
             done
             docker compose --project-name "$project" up --detach --wait
             wait_for_app
+            check_frontend
             app=$(docker compose --project-name "$project" ps --quiet app)
             docker exec --user 10001:10001 "$app" sh -c \
               'printf persisted > /var/lib/swedishpolls/publications/restart-smoke'
