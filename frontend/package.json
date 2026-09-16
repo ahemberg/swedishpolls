@@ -23,7 +23,7 @@
     "@biomejs/biome": "2.5.13",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
-    "fallow": "3.23.0",
+    "fallow": "3.25.0",
     "typescript": "7.0.2",
     "vite": "8.2.2"
   }
