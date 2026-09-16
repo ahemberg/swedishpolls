@@ -25,6 +25,6 @@
     "@types/react-dom": "19.2.7",
     "fallow": "3.23.0",
     "typescript": "7.0.2",
-    "vite": "8.2.2"
+    "vite": "8.3.0"
   }
 }
