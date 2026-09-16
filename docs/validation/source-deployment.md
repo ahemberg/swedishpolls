@@ -8,6 +8,12 @@ gated build step.
 
 ## What was deployed
 
+The first rollout of `abbed1c` served no compiled frontend, so the checks were run twice: once on
+that revision, and once on `432318b1f3bc2bcfc8b7b2c7a3e5a96c9df59489`, which carries the fix. The
+current deployment is `432318b`, and every check below passes on it.
+
+### First rollout
+
 Revision `abbed1cebbfb25c02ef9d7ddb0919ea098a6a922`, published by its own `Verify` run
 ([35034925059](https://github.com/ahemberg/swedishpolls/actions/runs/35034925059)) after
 `Build and integration`, `Fallow`, `Model validation` and the image job all passed. The image is
@@ -28,38 +34,46 @@ The release state is the real one: `src/main/resources/publication/model-freeze.
 fixture and no waiver were deployed. The publication volume held no files before or after the
 rollout, and `publication` has no rows.
 
-## Blocking defect: the deployed image references no compiled frontend
+### Second rollout
 
-The image carries the compiled bundle at `/app/resources/static/assets/main-xI081smE.js` and
-`main-JBBaYfX_.css`, and both are served with HTTP 200. It does not carry
-`static/.vite/manifest.json`. `SiteAssets` reads the entry from that manifest and serves no
-script and no stylesheet without it, so every page is the basic HTML with no bundle reference at
-all: `document.querySelectorAll('script[src]')` and `link[rel=stylesheet]` are both empty in a
-real browser at 1440x1000.
+Revision `432318b1f3bc2bcfc8b7b2c7a3e5a96c9df59489`, published by its own `Verify` run
+([35089379822](https://github.com/ahemberg/swedishpolls/actions/runs/35089379822)) with all four
+jobs green. The image is
+`ghcr.io/ahemberg/swedishpolls:432318b1f3bc2bcfc8b7b2c7a3e5a96c9df59489-arm64`, digest
+`sha256:f0367fb3c4ba429213f10f7804f3daeae3f1fa6f509bb7df35c4569ae9b7a968`; the running container
+reports the same revision. It carries `/app/resources/static/.vite/manifest.json`, which the
+previous image did not. The application started in 4.949 s, both retained snapshots survived, and
+the previous `.env` was kept as `.env.rollback-179b`. The host's two `compose.yaml` deviations are
+still in place.
 
-The manifest is lost at the CI artifact boundary, not in the build. Locally
-`target/classes/static/.vite/manifest.json` exists; the `verified-classes` artifact of the run
-above contains `static/assets/main-xI081smE.js` and the other three asset files but no
+## Resolved defect: the first image referenced no compiled frontend
+
+The `abbed1c` image carried the compiled bundle at `/app/resources/static/assets/main-xI081smE.js`
+and `main-JBBaYfX_.css`, and served both with HTTP 200. It did not carry
+`static/.vite/manifest.json`. `SiteAssets` reads the entry from that manifest and serves no script
+and no stylesheet without it, so every page was the basic HTML with no bundle reference at all:
+`document.querySelectorAll('script[src]')` and `link[rel=stylesheet]` were both empty in a real
+browser at 1440x1000. Every criterion needing the mounted page was therefore unverifiable on that
+rollout.
+
+The manifest was lost at the CI artifact boundary, not in the build. Locally
+`target/classes/static/.vite/manifest.json` exists; the `verified-classes` artifact of run
+35034925059 contained `static/assets/main-xI081smE.js` and the other three asset files but no
 `static/.vite` entry, because `actions/upload-artifact` omits hidden files unless
 `include-hidden-files` is set.
 
-The fix is in this commit: `include-hidden-files` on the `verified-classes` upload, plus an image
-smoke assertion that the served overview references a module script and a stylesheet and that each
-one is fetchable. The image job runs only on a push to `main`, so neither the option nor the
-assertion is exercised before the fix merges. The defect therefore stays open on the deployment
-until the rebuilt image is deployed and the checks below are re-run.
+[#205](https://github.com/ahemberg/swedishpolls/pull/205) set that option and added an image smoke
+assertion that the served overview references a module script and a stylesheet and that every one
+of them is fetchable. The `verified-classes` artifact of run 35089379822 carries
+`static/.vite/manifest.json`, the image job passed the new assertion on both architectures, and
+the redeployed service serves `<script type="module" src="/assets/main-xI081smE.js">` and
+`<link rel="stylesheet" href="/assets/main-JBBaYfX_.css">` on both `/` and `/en`.
 
-Consequence for acceptance: every criterion that needs the mounted page is unverifiable on this
-release. The source chart never draws, so the interval charts on the homepage, the party
-controls, the solid and approximate marker styling, and keyboard and touch usability at narrow
-and wide layouts cannot be checked on the deployment. The server-rendered half of each of those
-criteria was checked and passes.
+## What the deployed release serves correctly
 
-## What the deployed release does serve correctly
-
-Startup and reachability. The application started in 5.036 s on Java 25.0.4 against PostgreSQL
-18.6, Flyway validated five migrations with nothing to apply, and `/` answers 200 on both the
-loopback and the LAN address.
+Startup and reachability. The application starts on Java 25.0.4 against PostgreSQL 18.6 in 5.036 s
+on the first rollout and 4.949 s on the second, Flyway validated five migrations with nothing to
+apply, and `/` answers 200 on both the loopback and the LAN address.
 
 Both languages and the basic HTML. `/` and `/en` each return a complete page before any script
 runs, carrying the heading, the source-data timestamp, and an eight-row latest-polls table with
@@ -80,7 +94,29 @@ Over the full history the chart data carries 1,442 observations: 1,410 with a re
 therefore exercises the solid and approximate cases but not the one-day case, which
 `markerSpan` handles through `MINIMUM_SPAN` and remains covered only by the repository tests.
 
-Complete details. Each table row carries pollster, company, method era and its evidence link,
+In the mounted chart the default one-year window draws 672 marker lines, all solid: 84 polls times
+the eight parties each reports, with FI absent rather than zero. The one dashed line at that range
+is the 4% threshold reference, not a marker. Switching to All history draws 11,663 solid and 263
+approximate markers, the latter dashed `4 3`, which is the styling distinction under live data.
+
+Party controls. The chart offers the four range buttons, a show-one-party-at-a-time control with
+Show all beside it, and one button per party for all nine. Isolating the Left Party took the
+All-history chart from 11,948 lines to 10,506 and restored it on a second press.
+
+Complete details in the chart. Selecting a marker names the institute, the interview period, the
+sample size and the party in the readout below the figure: "Demoskop 4 Jan 2010 – 11 Jan 2010
+Sample 1,002".
+
+Keyboard and touch. Every button is in the tab order with no negative `tabindex`, tabbing reaches
+the range and party controls, and the global `:focus-visible` rule draws a 2px outline at a 2px
+offset; the skip link reveals itself on focus. Neither layout overflows horizontally: at 1440 CSS
+pixels the figure is 1040 wide and at 390 it re-renders to 347, with the full marker set in both
+and the table at 50 rows. On the overview at 390 no control is under 24x24. On the polls page at
+390 three targets are: the SV and EN language links at 18x30, the include-excluded checkbox at
+13x13, and the range input at 129x16. They are reachable and operable, but they fall under the
+WCAG 2.2 target-size minimum and are worth a separate look.
+
+Complete details in the table. Each row carries pollster, company, method era and its evidence link,
 survey type, publication date, fieldwork period, the approximate-period flag, sample size, the
 denominator note, coverage period, unmodeled components, reported and display shares, the
 remainder, eligibility and any exclusion reasons.
