@@ -43,6 +43,12 @@ above contains `static/assets/main-xI081smE.js` and the other three asset files 
 `static/.vite` entry, because `actions/upload-artifact` omits hidden files unless
 `include-hidden-files` is set.
 
+The fix is in this commit: `include-hidden-files` on the `verified-classes` upload, plus an image
+smoke assertion that the served overview references a module script and a stylesheet and that each
+one is fetchable. The image job runs only on a push to `main`, so neither the option nor the
+assertion is exercised before the fix merges. The defect therefore stays open on the deployment
+until the rebuilt image is deployed and the checks below are re-run.
+
 Consequence for acceptance: every criterion that needs the mounted page is unverifiable on this
 release. The source chart never draws, so the interval charts on the homepage, the party
 controls, the solid and approximate marker styling, and keyboard and touch usability at narrow

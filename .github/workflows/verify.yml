@@ -184,30 +184,34 @@ jobs:
             fi
             exit "$status"
           }
+          BASE_URL=http://127.0.0.1:8080
           wait_for_app() {
             for attempt in $(seq 1 120); do
-              if curl --fail --silent http://127.0.0.1:8080/ >/dev/null; then return; fi
+              if curl --fail --silent "$BASE_URL/" >/dev/null; then return; fi
               sleep 1
             done
             return 1
           }
           # The image can serve every route and still carry no compiled frontend, because a
           # missing Vite manifest makes the page omit its own script and stylesheet silently.
-          # Assert the served overview references both, and that each one is fetchable.
+          # Assert the served overview references both, and that each one is fetchable. The
+          # entry can pull in more than one stylesheet, so every one of them is checked.
           check_frontend() {
-            home=$(curl --fail --silent http://127.0.0.1:8080/)
-            script=$(printf '%s' "$home" |
+            home_html=$(curl --fail --silent "$BASE_URL/")
+            script_path=$(printf '%s' "$home_html" |
               grep -o '<script type="module" src="[^"]*"' |
               sed 's/.*src="//; s/"$//')
-            stylesheet=$(printf '%s' "$home" |
+            stylesheet_paths=$(printf '%s' "$home_html" |
               grep -o '<link rel="stylesheet" href="[^"]*"' |
               sed 's/.*href="//; s/"$//')
-            if [ -z "$script" ] || [ -z "$stylesheet" ]; then
+            if [ -z "$script_path" ] || [ -z "$stylesheet_paths" ]; then
               echo "The served overview carries no module script or no stylesheet" >&2
               return 1
             fi
-            curl --fail --silent "http://127.0.0.1:8080${script}" >/dev/null
-            curl --fail --silent "http://127.0.0.1:8080${stylesheet}" >/dev/null
+            curl --fail --silent "${BASE_URL}${script_path}" >/dev/null
+            printf '%s\n' "$stylesheet_paths" | while read -r stylesheet_path; do
+              curl --fail --silent "${BASE_URL}${stylesheet_path}" >/dev/null || exit 1
+            done
           }
           trap cleanup EXIT
           for ARCH in amd64 arm64; do
