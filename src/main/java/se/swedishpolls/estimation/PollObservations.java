@@ -118,10 +118,8 @@ public final class PollObservations {
     return covariance;
   }
 
-  /**
-   * Explicit candidate periods are allowed for development; this does not validate their support.
-   */
-  public static Batch prepare(Roster.CoveragePeriod period, List<PollCsv.Poll> polls) {
+  /** The components one period observes: its roster in order, with the residual component last. */
+  static List<String> components(Roster.CoveragePeriod period) {
     final java.util.HashSet<java.lang.String> expected = new HashSet<>(PollCsv.PARTIES);
     if (period.individualFi()) expected.add("FI");
     if (period.roster().size() != expected.size()
@@ -129,14 +127,42 @@ public final class PollObservations {
       throw new IllegalArgumentException("Invalid roster for " + period.id());
     final java.util.ArrayList<java.lang.String> components = new ArrayList<>(period.roster());
     components.add(period.individualFi() ? "RESIDUAL" : "OTHER");
-    final int size = components.size();
-    // Rows are Helmert contrasts: first r+1 components versus component r+2.
+    return List.copyOf(components);
+  }
+
+  /** Rows are Helmert contrasts: the first {@code r+1} components against component {@code r+2}. */
+  static SimpleMatrix helmertBasis(int size) {
     final org.ejml.simple.SimpleMatrix basis = new SimpleMatrix(size - 1, size);
     for (int r = 0; r < size - 1; r++) {
       final double scale = Math.sqrt((r + 1.0) * (r + 2.0));
       for (int c = 0; c <= r; c++) basis.set(r, c, 1 / scale);
       basis.set(r, r + 1, -(r + 1) / scale);
     }
+    return basis;
+  }
+
+  /**
+   * A batch whose ilr coordinates and observation covariance the caller supplies. Synthetic
+   * observations reach the estimator through this rather than through {@link #prepare}, which would
+   * reconstruct their covariance from their own shares.
+   */
+  static Batch explicit(Roster.CoveragePeriod period, List<Observation> observations) {
+    final java.util.List<java.lang.String> components = components(period);
+    return new Batch(
+        period,
+        components,
+        ModelValues.owned(helmertBasis(components.size())),
+        observations,
+        List.of());
+  }
+
+  /**
+   * Explicit candidate periods are allowed for development; this does not validate their support.
+   */
+  public static Batch prepare(Roster.CoveragePeriod period, List<PollCsv.Poll> polls) {
+    final java.util.List<java.lang.String> components = components(period);
+    final int size = components.size();
+    final org.ejml.simple.SimpleMatrix basis = helmertBasis(size);
     final java.util.ArrayList<se.swedishpolls.estimation.PollObservations.Observation>
         observations = new ArrayList<Observation>();
     final java.util.ArrayList<se.swedishpolls.estimation.PollObservations.Exclusion> exclusions =
