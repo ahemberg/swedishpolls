@@ -95,6 +95,38 @@ class SyntheticSearchTest {
   }
 
   @Test
+  void keepsTheFirstPointOfTheRegisteredOrderWhenPointsTieExactly() {
+    // The only training observation sits on day zero, which carries no innovation, so the walk
+    // variance cannot reach the training likelihood and all six of its values tie exactly.
+    final JsonNode search =
+        tune(
+                "tie",
+                dataset(
+                    "midpoint",
+                    List.of(new Row(1, "I0", 0, 0, true), new Row(2, "I1", 45, 45, false))))
+            .get("search");
+
+    final JsonNode attempts = search.get("attempts");
+    double best = Double.NEGATIVE_INFINITY;
+    for (JsonNode attempt : attempts)
+      best = Math.max(best, attempt.get("logLikelihood").doubleValue());
+    final List<Integer> tied = new ArrayList<>();
+    for (int i = 0; i < attempts.size(); i++)
+      if (attempts.get(i).get("logLikelihood").doubleValue() == best) tied.add(i);
+
+    assertEquals(
+        WALKS.size(),
+        tied.size(),
+        () -> "One point per walk variance has to tie exactly, not " + tied.size());
+    assertEquals(tied.get(0), search.get("selectedIndex").intValue());
+    assertNotEquals(
+        tied.get(tied.size() - 1),
+        search.get("selectedIndex").intValue(),
+        "Selecting the last tied point would be the wrong tie break");
+    assertEquals(WALKS.get(0), search.get("selected").get("walkVariance").doubleValue());
+  }
+
+  @Test
   void selectsFromTheTrainingObservationsAloneSoAHeldOutRowCannotMoveThePoint() {
     final ObjectNode moved = dataset("midpoint");
     for (JsonNode row : moved.get("observations"))
@@ -244,8 +276,12 @@ class SyntheticSearchTest {
     return read(evidenceFile);
   }
 
-  /** A tuned dataset document: the same shape a scored one takes, without a parameter point. */
   private static ObjectNode dataset(String convention) {
+    return dataset(convention, ROWS);
+  }
+
+  /** A tuned dataset document: the same shape a scored one takes, without a parameter point. */
+  private static ObjectNode dataset(String convention, List<Row> rows) {
     final ObjectNode document = JSON.createObjectNode();
     document.put("version", "synthetic-recovery-v1");
     document.put("phase", "software_check");
@@ -263,7 +299,7 @@ class SyntheticSearchTest {
       for (int c = 0; c < DIMENSION; c++) row.add(fixed.get(r, c));
     }
     final ArrayNode observations = document.putArray("observations");
-    for (Row row : ROWS) {
+    for (Row row : rows) {
       final ObjectNode observation = observations.addObject();
       observation.put("rowNumber", row.rowNumber());
       observation.put("institute", row.institute());

@@ -69,6 +69,12 @@ the grid endpoints it sits on. A point whose fit fails or returns a nonfinite
 likelihood stops the search there. That point is retained, nothing after it is
 attempted, the grid is never expanded and no scoring evidence follows.
 
+A stopped run writes a `numerical_failure` document instead: the convention, dataset
+index, the earliest failing operation (`search`, `score` or `retain`) and the whole
+`search` block as it stood. There `selectedIndex` is `-1` and `selected`,
+`logLikelihood` and the failing attempt's likelihood are `null`, so the retained
+evidence stays parseable rather than carrying a bare `NaN`.
+
 ### The frozen grid
 
 | Axis | Values |

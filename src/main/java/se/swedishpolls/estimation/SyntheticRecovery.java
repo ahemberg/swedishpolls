@@ -134,7 +134,7 @@ public final class SyntheticRecovery {
       System.err.println(e.getMessage());
       return REJECTED;
     }
-    if (!tuning) {
+    if (!tuning)
       try {
         write(output, score(dataset));
         return SUCCESS;
@@ -143,36 +143,48 @@ public final class SyntheticRecovery {
         System.err.println(e.getMessage());
         return REJECTED;
       }
-    }
 
-    final SyntheticSearch.Selection selection =
-        SyntheticSearch.select(
-            PollObservations.explicit(dataset.period(), dataset.training()),
-            FILTER_CONVENTIONS.get(dataset.convention()));
-    // A failed grid point stops the dataset with every attempt it made preserved; the point is
-    // neither skipped nor replaced, and no recovery claim can follow it.
-    if (selection.failed()) {
+    // A numerical failure at the search or at the tuned fit stops the dataset with its earliest
+    // failing operation preserved; the grid is never expanded and no seed is ever replaced.
+    final SyntheticSearch.Selection selection = select(dataset);
+    String operation = "search";
+    try {
+      if (selection.failed()) throw new IllegalArgumentException(stopping(selection));
+      operation = "score";
+      final ObjectNode evidence = score(dataset.at(selection.parameters()));
+      evidence.put("stage", ESTIMATED_STAGE);
+      evidence.set("search", search(selection));
+      operation = "retain";
+      write(output, evidence);
+      return SUCCESS;
+    } catch (RuntimeException e) {
       final ObjectNode stopped =
-          failure(
-              dataset.convention(),
-              ESTIMATED_STAGE,
-              dataset.datasetIndex(),
-              "search",
-              new IllegalArgumentException(
-                  "Failed training fit at grid point "
-                      + selection.failure().index()
-                      + ": "
-                      + selection.failure().message()));
+          failure(dataset.convention(), ESTIMATED_STAGE, dataset.datasetIndex(), operation, e);
       stopped.set("search", search(selection));
-      write(output, stopped);
+      if (!Files.exists(output))
+        try {
+          write(output, stopped);
+        } catch (RuntimeException ignored) {
+          // A preserved failure must never obscure the failure it records.
+        }
       System.err.println(stopped.get("message").asString());
       return STOPPED;
     }
-    final ObjectNode evidence = score(tuned(dataset, selection.parameters()));
-    evidence.put("stage", ESTIMATED_STAGE);
-    evidence.set("search", search(selection));
-    write(output, evidence);
-    return SUCCESS;
+  }
+
+  /** The training-only search of one dataset, under the convention the dataset names. */
+  private static SyntheticSearch.Selection select(Dataset dataset) {
+    return SyntheticSearch.select(
+        PollObservations.explicit(dataset.period(), dataset.training()),
+        FILTER_CONVENTIONS.get(dataset.convention()));
+  }
+
+  /** What a search that stopped reports: the grid point it failed at and why. */
+  private static String stopping(SyntheticSearch.Selection selection) {
+    return "Failed training fit at grid point "
+        + selection.failure().index()
+        + ": "
+        + selection.failure().message();
   }
 
   /**
@@ -300,23 +312,17 @@ public final class SyntheticRecovery {
       SyntheticSearch.Selection selection = null;
       try {
         final Synthetic synthetic = generate(plan, convention, index);
-        Dataset dataset = synthetic.dataset();
         if (estimated) {
           operation = "search";
-          selection =
-              SyntheticSearch.select(
-                  PollObservations.explicit(dataset.period(), dataset.training()),
-                  FILTER_CONVENTIONS.get(convention));
-          if (selection.failed())
-            throw new IllegalArgumentException(
-                "Failed training fit at grid point "
-                    + selection.failure().index()
-                    + ": "
-                    + selection.failure().message());
-          dataset = tuned(dataset, selection.parameters());
+          selection = select(synthetic.dataset());
+          if (selection.failed()) throw new IllegalArgumentException(stopping(selection));
         }
         operation = "score";
-        evidence = score(dataset);
+        evidence =
+            score(
+                selection == null
+                    ? synthetic.dataset()
+                    : synthetic.dataset().at(selection.parameters()));
         evidence.put("stage", stageName);
         if (selection != null) evidence.set("search", search(selection));
         evidence.set("generation", generation(synthetic));
@@ -394,25 +400,6 @@ public final class SyntheticRecovery {
     return stageName.equals(ESTIMATED_STAGE) ? "estimated" : "datasets";
   }
 
-  /** The same dataset at a selected parameter point: identical rows, covariance and streams. */
-  private static Dataset tuned(Dataset dataset, DailyStateSpace.Parameters parameters) {
-    return new Dataset(
-        dataset.phase(),
-        dataset.convention(),
-        dataset.datasetIndex(),
-        dataset.masterSeed(),
-        dataset.draws(),
-        dataset.prefix(),
-        dataset.period(),
-        dataset.periodStart(),
-        dataset.cutoff(),
-        dataset.scoreThrough(),
-        parameters,
-        dataset.covariance(),
-        dataset.training(),
-        dataset.scoring());
-  }
-
   /** One dataset's search: every attempt it made and the point it selected. */
   private static ObjectNode search(SyntheticSearch.Selection selection) {
     final ObjectNode search = JSON.createObjectNode();
@@ -422,10 +409,29 @@ public final class SyntheticRecovery {
     search.put("objective", "training marginal likelihood; scoring observations never take part");
     search.set("grid", JSON.valueToTree(SyntheticSearch.GRID));
     search.put("selectedIndex", selection.selectedIndex());
-    search.set("selected", JSON.valueToTree(selection.parameters()));
-    search.put("logLikelihood", selection.logLikelihood());
+    // A stopped search selected nothing. Its point and likelihood are left null rather than
+    // written as a nonfinite number, which no strict reader of the retained evidence would parse.
+    if (selection.failed()) {
+      search.putNull("selected");
+      search.putNull("logLikelihood");
+    } else {
+      search.set("selected", JSON.valueToTree(selection.parameters()));
+      search.put("logLikelihood", selection.logLikelihood());
+    }
     search.set("endpoints", JSON.valueToTree(selection.endpoints()));
-    search.set("attempts", JSON.valueToTree(selection.attempts()));
+    final ArrayNode attempts = search.putArray("attempts");
+    for (SyntheticSearch.Attempt attempt : selection.attempts()) {
+      final ObjectNode retained = attempts.addObject();
+      retained.put("index", attempt.index());
+      retained.put("walkVariance", attempt.walkVariance());
+      retained.put("houseScale", attempt.houseScale());
+      retained.put("covarianceMultiplier", attempt.covarianceMultiplier());
+      if (Double.isFinite(attempt.logLikelihood()))
+        retained.put("logLikelihood", attempt.logLikelihood());
+      else retained.putNull("logLikelihood");
+      retained.put("status", attempt.status());
+      retained.put("message", attempt.message());
+    }
     return search;
   }
 
@@ -605,7 +611,27 @@ public final class SyntheticRecovery {
       DailyStateSpace.Parameters parameters,
       ModelValues covariance,
       List<PollObservations.Observation> training,
-      List<PollObservations.Observation> scoring) {}
+      List<PollObservations.Observation> scoring) {
+
+    /** The same dataset at another parameter point: identical rows, covariance and streams. */
+    Dataset at(DailyStateSpace.Parameters point) {
+      return new Dataset(
+          phase,
+          convention,
+          datasetIndex,
+          masterSeed,
+          draws,
+          prefix,
+          period,
+          periodStart,
+          cutoff,
+          scoreThrough,
+          point,
+          covariance,
+          training,
+          scoring);
+    }
+  }
 
   /**
    * One dataset of the registered scenario, generated at the generating truth. The observations
@@ -935,6 +961,11 @@ public final class SyntheticRecovery {
     for (int r = 0; r < covariance.getNumRows(); r++)
       for (int c = 0; c < covariance.getNumCols(); c++)
         digest.update(buffer.putDouble(0, covariance.get(r, c)).array());
+    final Map<Integer, String> membership = new LinkedHashMap<>();
+    for (PollObservations.Observation observation : dataset.training())
+      membership.put(observation.poll().rowNumber(), TRAINING);
+    for (PollObservations.Observation observation : dataset.scoring())
+      membership.put(observation.poll().rowNumber(), SCORING);
     for (PollObservations.Observation observation :
         Stream.concat(dataset.training().stream(), dataset.scoring().stream())
             .sorted(Comparator.comparingInt(row -> row.poll().rowNumber()))
@@ -943,6 +974,8 @@ public final class SyntheticRecovery {
           (observation.poll().rowNumber()
                   + "|"
                   + observation.poll().institute()
+                  + "|"
+                  + membership.get(observation.poll().rowNumber())
                   + "|"
                   + observation.poll().collectionFrom()
                   + "|"
