@@ -100,7 +100,7 @@ jobs:
         working-directory: frontend
       - uses: fallow-rs/fallow@30167b42257ded3bef683f6c91b4aa4017a1ff59 # v3.25.0
         with:
-          version: '3.23.0'
+          version: '3.25.0'
           command: audit
           root: frontend
           config: frontend/.fallowrc.json
