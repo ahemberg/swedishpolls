@@ -284,7 +284,9 @@ class SyntheticControlTest {
   void leavesBothEstimatedStagesNotRunUntilTheControlsDemonstrateRecovery() {
     final JsonNode report = report();
     assertEquals("completed", report.get("status").asString());
-    assertEquals("known", report.get("stage").asString());
+    assertEquals(
+        List.of("known", "estimated"),
+        report.get("stages").valueStream().map(JsonNode::asString).toList());
     assertEquals("software_check; not recovery evidence", report.get("evidenceClass").asString());
     assertEquals(0.0001, report.get("parameters").get("walkVariance").doubleValue());
     assertEquals(0.05, report.get("parameters").get("houseScale").doubleValue());
@@ -299,10 +301,18 @@ class SyntheticControlTest {
     for (JsonNode stage : report.get("estimatedStages")) {
       assertEquals("estimated", stage.get("stage").asString());
       assertEquals("not_run", stage.get("status").asString());
+      assertNull(stage.get("cells"), "A stage that did not run has no cells");
       assertTrue(
           stage.get("reason").asString().contains(known),
           () -> "Unexpected reason: " + stage.get("reason").asString());
     }
+    assertEquals("not_run", report.get("estimatedStageVerdict").asString());
+    assertEquals(known, report.get("recovery").asString());
+
+    // A stage the gate blocked runs no search and writes no evidence at all.
+    assertFalse(Files.exists(evidence.resolve("estimated")), "No estimated dataset was scored");
+    // The divisor stays at 72 whether or not the estimated stages run.
+    assertEquals(72, report.get("confidence").get("primaryCells").intValue());
   }
 
   @Test

@@ -44,7 +44,52 @@ interval summaries with their coverage indicators, and the SHA-256 of the predic
 draw array in the registered big-endian binary64, draw-major encoding. The arrays
 themselves are not retained.
 
-## Running both known-parameter controls
+`inputsSha256` covers the fixed covariance and every row's identity, membership,
+fieldwork dates and ilr coordinates. The known and estimated stages of one dataset
+observe the same rows, so their evidence carries the same hash.
+
+## Tuning one supplied dataset
+
+```
+./mvnw -DskipTests spring-boot:run \
+  -Dspring-boot.run.main-class=se.swedishpolls.estimation.SyntheticRecovery \
+  -Dspring-boot.run.arguments='tune <dataset.json> <evidence.json>'
+```
+
+The same command with the parameter point left out. It searches the registered grid on
+the training observations, scores the dataset at the point it selects and writes the
+search beside the scoring evidence. Exit codes are `0` for a tuned dataset, `2` for a
+refused one and `3` for a search a numerical failure stopped. The document takes the
+fields above without `parameters`: supplying a point beside a search is refused, because
+the evidence would not say which point produced it.
+
+The `search` block holds the frozen grid, all 180 attempts in order with their
+likelihood and status, the selected index and point, its training log-likelihood and
+the grid endpoints it sits on. A point whose fit fails or returns a nonfinite
+likelihood stops the search there. That point is retained, nothing after it is
+attempted, the grid is never expanded and no scoring evidence follows.
+
+A stopped run writes a `numerical_failure` document instead: the convention, dataset
+index, the earliest failing operation (`search`, `score` or `retain`) and the whole
+`search` block as it stood. There `selectedIndex` is `-1` and `selected`,
+`logLikelihood` and the failing attempt's likelihood are `null`, so the retained
+evidence stays parseable rather than carrying a bare `NaN`.
+
+### The frozen grid
+
+| Axis | Values |
+| --- | --- |
+| `walkVariance` | 0.000003, 0.00001, 0.00003, 0.0001, 0.0003, 0.001 |
+| `houseScale` | 0.01, 0.02, 0.05, 0.1, 0.2 |
+| `covarianceMultiplier` | 0.5, 0.75, 1, 1.5, 2, 3 |
+
+The 180 points are evaluated in ascending walk variance, then house scale, then
+multiplier. The objective is the training marginal likelihood under the dataset's own
+convention; the scoring observations are not supplied to it, so they cannot move a
+selection. An exact maximum tie keeps the first point of that order. A multiplier below
+one scales the fixed covariance down; it is not an ordinary overdispersion factor.
+
+## Running the controls and the estimated stages
 
 ```
 ./mvnw -DskipTests spring-boot:run \
@@ -65,10 +110,18 @@ The command generates the registered scenario itself. Both conventions run in th
 `midpoint`, `ilr_window`, each at the generating truth `q = 0.0001`, `s = 0.05` and
 `m = 1.5`. Every dataset is generated, scored and retained before any of it is reduced.
 
+Only when both controls demonstrate recovery does the command repeat each convention
+with the parameters tuned. The estimated stage regenerates each dataset from the same
+streams, so it observes the identical rows, covariance and row identities, and each
+scored poll draws from the same predictive stream and seed as its known-parameter
+counterpart. What differs is the parameter point, and therefore the predictive
+distribution.
+
 | Path | Contents |
 | --- | --- |
-| `control.json` | The stage report: calendar, fixed covariance and noise factor, confidence rule, recovery bands, the 18 cells of each method and the state of every stage |
-| `datasets/<convention>/<index>.json` | One dataset: the scoring evidence above, plus the `generation` block holding the priors, stream names, institute effects, daily latent states and all 140 observations with their ilr coordinates and shares |
+| `control.json` | The run report: calendar, fixed covariance and noise factor, confidence rule, recovery bands, the 18 cells of each method and stage, and the state of every stage |
+| `datasets/<convention>/<index>.json` | One known-parameter dataset: the scoring evidence above, plus the `generation` block holding the priors, stream names, institute effects, daily latent states and all 140 observations with their ilr coordinates and shares |
+| `estimated/<convention>/<index>.json` | The same dataset tuned: the scoring evidence at the selected point, its `search` block and the same `generation` block |
 
 ### The generated scenario
 
@@ -104,10 +157,24 @@ stays incomplete until both check out; the reproduction slice re-derives those d
 
 Both controls have to demonstrate recovery before either estimated stage becomes
 eligible. Until then the report carries both estimated stages as `not_run` with the
-verdict that blocked them.
+verdict that blocked them, `estimatedStageVerdict` as `not_run`, and no `estimated/`
+directory is written at all.
+
+Each estimated method also reports `endpointSelections` and `endpointFrequencies`, the
+number of datasets whose selected point sat on a grid end and how often each axis end
+was selected. Every numerically valid endpoint selection stays in the assessment. That
+is a rule of this synthetic scenario and waives no real-data endpoint gate.
+
+`recovery` combines all four method/stage verdicts under the same precedence a single
+stage uses: incomplete, then failed, then inconclusive, then demonstrated. A numerical
+failure in either stage stops the run at that repetition, preserves its earliest failing
+operation with the attempts the search had made, and leaves the experiment incomplete.
+
+A completed failed or inconclusive verdict is a valid stopping result and `experiment`
+says which stage it stopped after. Demonstrated recovery is not completion: `experiment`
+stays `incomplete` until the registration, preflight and reproduction slices exist.
 
 ## Not built yet
 
-The training-grid search and the estimated-parameter stages, registration verification,
-preflight, the execution cap, reproduction and the published report are later slices of
-this same command.
+Registration verification, preflight, the execution cap, reproduction and the published
+report are later slices of this same command.
