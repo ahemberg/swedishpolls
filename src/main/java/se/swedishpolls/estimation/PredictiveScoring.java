@@ -114,7 +114,7 @@ final class PredictiveScoring {
     final int components = batch.components().size();
     final double[][] drawn = new double[components][draws];
     final long streamSeed = streamSeed(stream, seed);
-    final RandomGenerator random = RANDOM_FACTORY.create(streamSeed);
+    final RandomGenerator random = stream(stream, seed);
     final MessageDigest digest = sha256();
     final byte[] encoded = new byte[components * Double.BYTES];
     final ByteBuffer buffer = ByteBuffer.wrap(encoded);
@@ -180,6 +180,14 @@ final class PredictiveScoring {
   private static boolean inside(double[] sorted, double value, double level) {
     return value >= JointUncertainty.quantile(sorted, (1 - level) / 2)
         && value <= JointUncertainty.quantile(sorted, (1 + level) / 2);
+  }
+
+  /**
+   * The generator one named stream draws from. Generation and scoring share it, so a synthetic
+   * dataset and the draws it is scored with come from the same generator and seed derivation.
+   */
+  static RandomGenerator stream(String stream, long seed) {
+    return RANDOM_FACTORY.create(streamSeed(stream, seed));
   }
 
   /** Each scored observation draws from its own stream, named by the run that scores it. */
