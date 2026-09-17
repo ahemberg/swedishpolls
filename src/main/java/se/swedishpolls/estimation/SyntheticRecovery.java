@@ -24,16 +24,23 @@ import tools.jackson.databind.node.ObjectNode;
 /**
  * The operator entry point of the accepted {@code synthetic-recovery-v1} protocol.
  *
- * <p>This slice scores one supplied synthetic dataset: explicit ilr observations and the registered
- * fixed observation covariance reach {@link WindowFilter} and {@link PredictiveScoring} directly,
- * without source preparation, so nothing reconstructs the covariance from the generated shares. It
- * retains the predictive distribution, stream identity, interval summaries and draw hash of every
- * scored poll. Generation, parameter search, coverage aggregation and reporting are later slices of
- * the same workflow; running this command is a software check, not recovery evidence.
+ * <p>{@code score} scores one supplied synthetic dataset: explicit ilr observations and the
+ * registered fixed observation covariance reach {@link WindowFilter} and {@link PredictiveScoring}
+ * directly, without source preparation, so nothing reconstructs the covariance from the generated
+ * shares. {@code control} generates the registered scenario and runs both known-parameter controls
+ * at the generating truth, retaining every dataset and reporting component-level recovery verdicts
+ * with their Monte Carlo uncertainty.
+ *
+ * <p>The estimated-parameter stages, preflight, the execution cap and registration verification are
+ * later slices of the same workflow. Running either command is a software check; it is recovery
+ * evidence only when its registered phase says so.
  */
 public final class SyntheticRecovery {
   public static final int SUCCESS = 0;
   public static final int REJECTED = 2;
+
+  /** A run stopped by a numerical failure, with its partial evidence preserved. */
+  public static final int STOPPED = 3;
 
   /** The accepted protocol version. A document naming another protocol is refused. */
   static final String VERSION = "synthetic-recovery-v1";
@@ -57,17 +64,32 @@ public final class SyntheticRecovery {
   static final String TRAINING = "training";
   static final String SCORING = "scoring";
 
+  /** The known-parameter stage this slice runs, and the stage it gates. */
+  static final String KNOWN_STAGE = "known";
+
+  static final String ESTIMATED_STAGE = "estimated";
+
   private static final String PREFLIGHT = "preflight";
 
-  /** The software-check phase keeps test fixtures out of the registered scientific streams. */
-  private static final List<String> PHASES = List.of(FORMAL, PREFLIGHT, "software_check");
+  private static final String SOFTWARE_CHECK = "software_check";
 
-  private static final Map<String, WindowFilter.Convention> CONVENTIONS =
+  /** The software-check phase keeps test fixtures out of the registered scientific streams. */
+  private static final List<String> PHASES = List.of(FORMAL, PREFLIGHT, SOFTWARE_CHECK);
+
+  private static final String MIDPOINT = "midpoint";
+  private static final String ILR_WINDOW = "ilr_window";
+
+  /** Both conventions, in the order the controls run them. */
+  private static final List<String> CONVENTIONS = List.of(MIDPOINT, ILR_WINDOW);
+
+  private static final Map<String, WindowFilter.Convention> FILTER_CONVENTIONS =
       Map.of(
-          "midpoint",
+          MIDPOINT,
           WindowFilter.Convention.MIDPOINT,
-          "ilr_window",
+          ILR_WINDOW,
           WindowFilter.Convention.FIELDWORK);
+
+  private static final String NOT_RUN = "not_run";
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
@@ -79,13 +101,19 @@ public final class SyntheticRecovery {
 
   /** The operator entry point. It refuses an output that exists rather than replacing it. */
   public static int run(String... args) {
-    if (args.length != 3 || !args[0].equals("score")) {
-      System.err.println("Usage: score <dataset.json> <evidence.json>");
-      return REJECTED;
-    }
-    final Path output = Path.of(args[2]);
+    if (args.length == 3 && args[0].equals("score")) return scoreOne(args[1], args[2]);
+    if (args.length == 3 && args[0].equals("control")) return control(args[1], args[2]);
+    System.err.println("Usage: score <dataset.json> <evidence.json> | control <plan.json> <dir>");
+    return REJECTED;
+  }
+
+  /** One supplied dataset, scored at the parameters its document names. */
+  private static int scoreOne(String datasetFile, String evidenceFile) {
+    final Path output = Path.of(evidenceFile);
     try {
-      score(Path.of(args[1]), output);
+      require(!Files.exists(output), "Output already exists: " + output);
+      final Path file = Path.of(datasetFile);
+      write(output, score(supplied(read(file), file)));
       return SUCCESS;
     } catch (RuntimeException e) {
       rejected(output, e.getMessage());
@@ -94,17 +122,391 @@ public final class SyntheticRecovery {
     }
   }
 
-  /** One dataset of one convention: filter the training rows, then score every held-out row. */
-  private static void score(Path datasetFile, Path output) {
-    require(!Files.exists(output), "Output already exists: " + output);
-    final JsonNode document = read(datasetFile);
+  /**
+   * Both known-parameter controls: generate the registered scenario of each convention, score every
+   * dataset at the generating truth and reduce the retained evidence to the cells of the stage. A
+   * numerical failure stops the run with its partial evidence preserved.
+   */
+  private static int control(String planFile, String directory) {
+    final Path destination = Path.of(directory);
+    final Path report = destination.resolve("control.json");
+    final Plan plan;
+    try {
+      // A destination that exists could already hold evidence, so nothing is written into it.
+      if (Files.exists(destination)) {
+        System.err.println("Evidence destination already exists: " + destination);
+        return REJECTED;
+      }
+      final Path file = Path.of(planFile);
+      plan = plan(read(file), file);
+    } catch (RuntimeException e) {
+      rejected(report, e.getMessage());
+      System.err.println(e.getMessage());
+      return REJECTED;
+    }
+
+    final List<Stage> stages = new ArrayList<>();
+    for (String convention : CONVENTIONS) {
+      final Stage stage = stage(plan, convention, destination);
+      stages.add(stage);
+      if (stage.failure() != null) break;
+    }
+    write(report, report(plan, stages));
+    return stages.stream().anyMatch(stage -> stage.failure() != null) ? STOPPED : SUCCESS;
+  }
+
+  /** The registered plan of one control run. */
+  private record Plan(String phase, long masterSeed, int datasets, int draws) {}
+
+  private static Plan plan(JsonNode document, Path file) {
+    require(
+        VERSION.equals(required(document, "version").asString()),
+        "Unregistered protocol version in " + file);
+    final String phase = required(document, "phase").asString();
+    require(PHASES.contains(phase), "Unregistered phase " + phase);
+    final long masterSeed = required(document, "masterSeed").longValue();
+    final int datasets = required(document, "datasets").intValue();
+    final int draws = required(document, "draws").intValue();
+    require(draws >= 2, "Coverage needs at least two draws");
+    require(datasets >= 2, "A sample variance needs at least two datasets");
+    if (phase.equals(FORMAL)) {
+      require(masterSeed == FORMAL_SEED, "The formal phase uses master seed " + FORMAL_SEED);
+      require(draws == FORMAL_DRAWS, "The formal phase uses " + FORMAL_DRAWS + " predictive draws");
+      require(
+          datasets == FORMAL_DATASETS,
+          "The formal phase runs " + FORMAL_DATASETS + " datasets per convention");
+    }
+    if (phase.equals(PREFLIGHT))
+      require(
+          datasets <= PREFLIGHT_DATASETS,
+          "Preflight runs at most " + PREFLIGHT_DATASETS + " datasets");
+    return new Plan(phase, masterSeed, datasets, draws);
+  }
+
+  /** One method and stage: its cells and verdict, or the repetition that stopped it. */
+  private record Stage(
+      String convention,
+      int completedDatasets,
+      List<SyntheticCoverage.Cell> cells,
+      String verdict,
+      ObjectNode failure) {}
+
+  /**
+   * One convention's known-parameter control. Every dataset is generated, scored and retained
+   * before any of it is reduced, and each dataset contributes exactly one fraction per cell.
+   */
+  private static Stage stage(Plan plan, String convention, Path destination) {
+    final List<String> components = components(prefix(plan.phase(), convention, 0));
+    final int levels = SyntheticCoverage.LEVELS.size();
+    final double[][][] fractions = new double[components.size()][levels][plan.datasets()];
+    final long[][] covered = new long[components.size()][levels];
+    final long[][] scored = new long[components.size()][levels];
+    boolean drawsRetained = true;
+    for (int index = 0; index < plan.datasets(); index++) {
+      final Path file =
+          destination.resolve("datasets").resolve(convention).resolve(index + ".json");
+      final ObjectNode evidence;
+      String operation = "generate";
+      try {
+        final Synthetic synthetic = generate(plan, convention, index);
+        operation = "score";
+        evidence = score(synthetic.dataset());
+        evidence.set("generation", generation(synthetic));
+        operation = "retain";
+        write(file, evidence);
+      } catch (RuntimeException e) {
+        // The repetition, its identity and the earliest failing operation are kept where its
+        // evidence would have gone; the planned denominator is not reduced and the seed is never
+        // replaced.
+        final ObjectNode failure = failure(convention, index, operation, e);
+        if (!Files.exists(file))
+          try {
+            write(file, failure);
+          } catch (RuntimeException ignored) {
+            // A preserved failure must never obscure the failure it records.
+          }
+        return new Stage(convention, index, List.of(), SyntheticCoverage.INCOMPLETE, failure);
+      }
+      // One dataset's 25 scoring polls are correlated, so they reduce to one fraction per cell
+      // before anything is averaged.
+      final int polls = evidence.get("scoringPolls").intValue();
+      final long[][] dataset = new long[components.size()][levels];
+      for (JsonNode poll : evidence.get("polls")) {
+        if (poll.get("drawsSha256").asString().length() != 64) drawsRetained = false;
+        for (int component = 0; component < components.size(); component++) {
+          final JsonNode summary = poll.get("components").get(component);
+          for (int level = 0; level < levels; level++)
+            if (summary.get("covered" + SyntheticCoverage.LEVELS.get(level)).booleanValue())
+              dataset[component][level]++;
+        }
+      }
+      for (int component = 0; component < components.size(); component++)
+        for (int level = 0; level < levels; level++) {
+          covered[component][level] += dataset[component][level];
+          scored[component][level] += polls;
+          fractions[component][level][index] = dataset[component][level] / (double) polls;
+        }
+    }
+
+    final List<SyntheticCoverage.Cell> cells = new ArrayList<>();
+    for (int component = 0; component < components.size(); component++)
+      for (int level = 0; level < levels; level++)
+        cells.add(
+            SyntheticCoverage.cell(
+                components.get(component),
+                SyntheticCoverage.LEVELS.get(level),
+                fractions[component][level],
+                covered[component][level],
+                scored[component][level],
+                drawsRetained));
+    return new Stage(
+        convention, plan.datasets(), cells, SyntheticCoverage.stageVerdict(cells), null);
+  }
+
+  /** The stage report: what was planned, what ran and what each cell may claim. */
+  private static ObjectNode report(Plan plan, List<Stage> stages) {
+    final ObjectNode report = JSON.createObjectNode();
+    final boolean stopped = stages.stream().anyMatch(stage -> stage.failure() != null);
+    report.put("status", stopped ? "stopped" : "completed");
+    report.put("version", VERSION);
+    report.put("phase", plan.phase());
+    report.put(
+        "evidenceClass",
+        plan.phase().equals(FORMAL) ? "formal" : plan.phase() + "; not recovery evidence");
+    report.put("stage", KNOWN_STAGE);
+    report.put("masterSeed", plan.masterSeed());
+    report.put("plannedDatasets", plan.datasets());
+    report.put("draws", plan.draws());
+    report.set("parameters", JSON.valueToTree(SyntheticScenario.TRUTH));
+    report.put("parameterSource", "the registered generating truth; no search runs in this stage");
+    report.set("calendar", calendar());
+    report.set("observationCovariance", matrix(SyntheticScenario.observationCovariance()));
+    report.set("observationNoiseFactor", factor(SyntheticScenario.noiseFactor()));
+    report.put(
+        "observationCovarianceSource",
+        "registered fixed matrix; never reconstructed from generated shares");
+    final ObjectNode confidence = report.putObject("confidence");
+    confidence.put("alpha", SyntheticCoverage.ALPHA);
+    confidence.put("primaryCells", SyntheticCoverage.PRIMARY_CELLS);
+    confidence.put("criticalValue", SyntheticCoverage.CRITICAL_VALUE);
+    confidence.put(
+        "adjustment",
+        "two-sided Bonferroni across all 72 primary cells, kept whether or not the estimated"
+            + " stages run");
+    confidence.put("claim", "approximate large-sample simultaneous 95%, not a finite-sample bound");
+    final ObjectNode bands = report.putObject("recoveryBands");
+    for (int level : SyntheticCoverage.LEVELS) {
+      final ArrayNode band = bands.putArray("level" + level);
+      band.add(SyntheticCoverage.band(level).low());
+      band.add(SyntheticCoverage.band(level).high());
+    }
+
+    final ArrayNode methods = report.putArray("methods");
+    final List<String> verdicts = new ArrayList<>();
+    for (String convention : CONVENTIONS) {
+      final Stage stage =
+          stages.stream()
+              .filter(candidate -> candidate.convention().equals(convention))
+              .findFirst()
+              .orElse(null);
+      final ObjectNode method = methods.addObject();
+      method.put("convention", convention);
+      method.put("stage", KNOWN_STAGE);
+      if (stage == null) {
+        method.put("status", NOT_RUN);
+        method.put("verdict", SyntheticCoverage.INCOMPLETE);
+        method.put("reason", "an earlier convention stopped the run");
+        verdicts.add(SyntheticCoverage.INCOMPLETE);
+        continue;
+      }
+      method.put("status", stage.failure() == null ? "completed" : SyntheticCoverage.INCOMPLETE);
+      method.put("verdict", stage.verdict());
+      method.put("plannedDatasets", plan.datasets());
+      method.put("completedDatasets", stage.completedDatasets());
+      method.put("evidence", "datasets/" + convention);
+      if (stage.failure() != null) method.set("failure", stage.failure());
+      final ArrayNode cells = method.putArray("cells");
+      for (SyntheticCoverage.Cell cell : stage.cells()) cells.add(JSON.valueToTree(cell));
+      verdicts.add(stage.verdict());
+    }
+
+    final String known = SyntheticCoverage.combined(verdicts);
+    report.put("knownStageVerdict", known);
+    final boolean eligible = known.equals(SyntheticCoverage.DEMONSTRATED);
+    report.put("estimatedStagesEligible", eligible);
+    final ArrayNode estimated = report.putArray("estimatedStages");
+    for (String convention : CONVENTIONS) {
+      final ObjectNode stage = estimated.addObject();
+      stage.put("convention", convention);
+      stage.put("stage", ESTIMATED_STAGE);
+      stage.put("status", NOT_RUN);
+      stage.put(
+          "reason",
+          eligible
+              ? "eligible; the estimated-parameter stage is a later slice of this workflow"
+              : "the known-parameter controls did not demonstrate recovery (" + known + ")");
+    }
+    // A complete failed or inconclusive control is a valid stopping result; anything else leaves
+    // the experiment incomplete, including a demonstrated control whose estimated stage is later.
+    report.put(
+        "experiment",
+        known.equals(SyntheticCoverage.FAILED) || known.equals(SyntheticCoverage.INCONCLUSIVE)
+            ? "stopped_after_known_stage"
+            : SyntheticCoverage.INCOMPLETE);
+    report.put(
+        "conclusion",
+        "software execution of the known-parameter stage; a completed statistical verdict here is"
+            + " neither a model change nor permission to publish");
+    return report;
+  }
+
+  private static ObjectNode calendar() {
+    final ObjectNode calendar = JSON.createObjectNode();
+    calendar.put("periodStart", SyntheticScenario.PERIOD_START.toString());
+    calendar.put("cutoff", SyntheticScenario.CUTOFF.toString());
+    calendar.put("scoreThrough", SyntheticScenario.HORIZON.toString());
+    calendar.put("weeks", SyntheticScenario.WEEKS);
+    calendar.put("trainingPolls", SyntheticScenario.TRAINING_POLLS);
+    calendar.put("scoringPolls", SyntheticScenario.SCORING_POLLS);
+    calendar.set("institutes", JSON.valueToTree(SyntheticScenario.INSTITUTES));
+    return calendar;
+  }
+
+  /** The repetition that stopped a stage, and the earliest operation that failed in it. */
+  private static ObjectNode failure(
+      String convention, int datasetIndex, String operation, RuntimeException cause) {
+    final ObjectNode failure = JSON.createObjectNode();
+    failure.put("status", "numerical_failure");
+    failure.put("version", VERSION);
+    failure.put("convention", convention);
+    failure.put("datasetIndex", datasetIndex);
+    failure.put("stage", KNOWN_STAGE);
+    failure.put("operation", operation);
+    failure.put("message", cause.getMessage() == null ? cause.toString() : cause.getMessage());
+    failure.put(
+        "denominator", "unchanged; the repetition is preserved and its seed is never replaced");
+    return failure;
+  }
+
+  /** One generated dataset and the latent truth it came from. */
+  private record Synthetic(Dataset dataset, SyntheticScenario.Generated generated) {}
+
+  /** One dataset ready to score: the identity it carries and the rows it observes. */
+  private record Dataset(
+      String phase,
+      String convention,
+      int datasetIndex,
+      long masterSeed,
+      int draws,
+      String prefix,
+      Roster.CoveragePeriod period,
+      LocalDate periodStart,
+      LocalDate cutoff,
+      LocalDate scoreThrough,
+      DailyStateSpace.Parameters parameters,
+      ModelValues covariance,
+      List<PollObservations.Observation> training,
+      List<PollObservations.Observation> scoring) {}
+
+  /**
+   * One dataset of the registered scenario, generated at the generating truth. The observations
+   * reach the estimator as coordinates and a fixed covariance, never through source preparation.
+   */
+  private static Synthetic generate(Plan plan, String convention, int index) {
+    final String prefix = prefix(plan.phase(), convention, index);
+    final Roster.CoveragePeriod period = period(prefix);
+    final ModelValues covariance = SyntheticScenario.observationCovariance();
+    final SyntheticScenario.Generated generated =
+        SyntheticScenario.generate(prefix, plan.masterSeed(), FILTER_CONVENTIONS.get(convention));
+    final List<PollObservations.Observation> training = new ArrayList<>();
+    final List<PollObservations.Observation> scoring = new ArrayList<>();
+    for (int row = 0; row < generated.rows().size(); row++) {
+      final SyntheticScenario.Row scheduled = generated.rows().get(row);
+      final PollObservations.Observation observation =
+          observation(
+              poll(scheduled.rowNumber(), scheduled.institute(), scheduled.from(), scheduled.to()),
+              period,
+              column(generated.ilr().get(row)),
+              covariance);
+      (scheduled.training() ? training : scoring).add(observation);
+    }
+    require(
+        training.size() == SyntheticScenario.TRAINING_POLLS,
+        "The registered schedule has " + SyntheticScenario.TRAINING_POLLS + " training polls");
+    require(
+        scoring.size() == SyntheticScenario.SCORING_POLLS,
+        "The registered schedule has " + SyntheticScenario.SCORING_POLLS + " scoring polls");
+    return new Synthetic(
+        new Dataset(
+            plan.phase(),
+            convention,
+            index,
+            plan.masterSeed(),
+            plan.draws(),
+            prefix,
+            period,
+            SyntheticScenario.PERIOD_START,
+            SyntheticScenario.CUTOFF,
+            SyntheticScenario.HORIZON,
+            SyntheticScenario.TRUTH,
+            covariance,
+            training,
+            scoring),
+        generated);
+  }
+
+  /** The generating truth behind one dataset, retained beside the evidence it produced. */
+  private static ObjectNode generation(Synthetic synthetic) {
+    final SyntheticScenario.Generated generated = synthetic.generated();
+    final ObjectNode generation = JSON.createObjectNode();
+    final ObjectNode priors = generation.putObject("priors");
+    priors.put("initialVariance", SyntheticScenario.INITIAL_VARIANCE);
+    priors.put("walkVariance", SyntheticScenario.WALK_VARIANCE);
+    priors.put("houseScale", SyntheticScenario.HOUSE_SCALE);
+    priors.put("noiseMultiplier", SyntheticScenario.NOISE_MULTIPLIER);
+    priors.put("institutePrior", "independent and uncentered; centering is an output transform");
+    final ArrayNode streams = generation.putArray("streams");
+    for (String stream : List.of("initial", "walk", "houses", "noise"))
+      streams.add(synthetic.dataset().prefix() + "|" + stream);
+    generation.set("referencePercentages", JSON.valueToTree(SyntheticScenario.REFERENCE));
+    generation.put(
+        "referenceUse", "covariance only; not the initial-state mean and never regenerated");
+    final ObjectNode effects = generation.putObject("instituteEffects");
+    for (int institute = 0; institute < SyntheticScenario.INSTITUTES.size(); institute++)
+      effects.set(
+          SyntheticScenario.INSTITUTES.get(institute),
+          JSON.valueToTree(generated.instituteEffects().get(institute)));
+    final ObjectNode latent = generation.putObject("latentStates");
+    latent.put("dayZero", SyntheticScenario.PERIOD_START.toString());
+    latent.put("days", generated.latent().size());
+    latent.set("ilr", JSON.valueToTree(generated.latent()));
+    final ArrayNode observations = generation.putArray("observations");
+    for (int row = 0; row < generated.rows().size(); row++) {
+      final SyntheticScenario.Row scheduled = generated.rows().get(row);
+      final ObjectNode observation = observations.addObject();
+      observation.put("rowNumber", scheduled.rowNumber());
+      observation.put("institute", scheduled.institute());
+      observation.put("membership", scheduled.training() ? TRAINING : SCORING);
+      observation.put("fieldworkFrom", scheduled.from().toString());
+      observation.put("fieldworkTo", scheduled.to().toString());
+      observation.put(
+          "midpoint",
+          SyntheticScenario.PERIOD_START.plusDays(scheduled.midpointOffset()).toString());
+      observation.set("ilr", JSON.valueToTree(generated.ilr().get(row)));
+      observation.set("shares", JSON.valueToTree(generated.shares().get(row)));
+    }
+    return generation;
+  }
+
+  /** One supplied dataset document, read into the same shape a generated dataset takes. */
+  private static Dataset supplied(JsonNode document, Path datasetFile) {
     require(
         VERSION.equals(required(document, "version").asString()),
         "Unregistered protocol version in " + datasetFile);
     final String phase = required(document, "phase").asString();
     require(PHASES.contains(phase), "Unregistered phase " + phase);
     final String convention = required(document, "convention").asString();
-    require(CONVENTIONS.containsKey(convention), "Unregistered convention " + convention);
+    require(FILTER_CONVENTIONS.containsKey(convention), "Unregistered convention " + convention);
     final long masterSeed = required(document, "masterSeed").longValue();
     final int datasetIndex = required(document, "datasetIndex").intValue();
     final int draws = required(document, "draws").intValue();
@@ -132,24 +534,30 @@ public final class SyntheticRecovery {
             required(point, "houseScale").doubleValue(),
             required(point, "covarianceMultiplier").doubleValue());
 
-    final String prefix = VERSION + "|" + phase + "|" + convention + "|" + datasetIndex;
+    final String prefix = prefix(phase, convention, datasetIndex);
     final Roster.CoveragePeriod period =
         new Roster.CoveragePeriod(prefix, periodStart, scoreThrough, ROSTER, false, false, null);
-    final List<String> components = PollObservations.components(period);
-    final int dimension = components.size() - 1;
+    final int dimension = PollObservations.components(period).size() - 1;
     final ModelValues covariance = covariance(document, dimension);
 
     final List<PollObservations.Observation> training = new ArrayList<>();
     final List<PollObservations.Observation> scoring = new ArrayList<>();
     int previousRow = 0;
     for (JsonNode row : required(document, "observations")) {
+      final int rowNumber = required(row, "rowNumber").intValue();
+      final LocalDate from = date(row, "fieldworkFrom");
+      final LocalDate to = date(row, "fieldworkTo");
+      require(!to.isBefore(from), "Row " + rowNumber + " ends before it starts");
+      final BigDecimal sampleSize = required(row, "sampleSize").decimalValue();
+      require(sampleSize.signum() > 0, "Row " + rowNumber + " has a positive nominal sample size");
       final PollObservations.Observation observation =
-          observation(row, period, dimension, covariance);
-      final int rowNumber = observation.poll().rowNumber();
+          observation(
+              poll(rowNumber, required(row, "institute").asString(), from, to, sampleSize),
+              period,
+              coordinates(row, rowNumber, dimension),
+              covariance);
       require(rowNumber > previousRow, "Row identities are unique and ascending: " + rowNumber);
       previousRow = rowNumber;
-      final LocalDate from = observation.poll().collectionFrom();
-      final LocalDate to = observation.poll().collectionTo();
       require(!from.isBefore(periodStart), "Row " + rowNumber + " starts before the period");
       final String membership = required(row, "membership").asString();
       // Membership follows the publication date and the fieldwork end, never the midpoint, so a
@@ -165,13 +573,38 @@ public final class SyntheticRecovery {
     }
     require(!training.isEmpty(), "A dataset has training observations");
     require(!scoring.isEmpty(), "A dataset has scoring observations");
+    return new Dataset(
+        phase,
+        convention,
+        datasetIndex,
+        masterSeed,
+        draws,
+        prefix,
+        period,
+        periodStart,
+        cutoff,
+        scoreThrough,
+        parameters,
+        covariance,
+        training,
+        scoring);
+  }
 
-    final PollObservations.Batch trainingBatch = PollObservations.explicit(period, training);
-    final PollObservations.Batch scoringBatch = PollObservations.explicit(period, scoring);
+  /** One dataset of one convention: filter the training rows, then score every held-out row. */
+  private static ObjectNode score(Dataset dataset) {
+    final List<String> components = PollObservations.components(dataset.period());
+    final PollObservations.Batch trainingBatch =
+        PollObservations.explicit(dataset.period(), dataset.training());
+    final PollObservations.Batch scoringBatch =
+        PollObservations.explicit(dataset.period(), dataset.scoring());
     // The synthetic interval has no cycle reset, so every institute keeps one effect throughout.
     final WindowFilter.Scored filtered =
         WindowFilter.score(
-            trainingBatch, scoring, List.of(), parameters, CONVENTIONS.get(convention));
+            trainingBatch,
+            dataset.scoring(),
+            List.of(),
+            dataset.parameters(),
+            FILTER_CONVENTIONS.get(dataset.convention()));
     final Map<Integer, WindowFilter.Prediction> byRow = new LinkedHashMap<>();
     for (WindowFilter.Prediction prediction : filtered.predictions())
       byRow.put(prediction.poll().rowNumber(), prediction);
@@ -179,35 +612,42 @@ public final class SyntheticRecovery {
     final ObjectNode evidence = JSON.createObjectNode();
     evidence.put("status", "scored");
     evidence.put("version", VERSION);
-    evidence.put("phase", phase);
-    evidence.put("convention", convention);
-    evidence.put("datasetIndex", datasetIndex);
-    evidence.put("masterSeed", masterSeed);
-    evidence.put("streamPrefix", prefix);
-    evidence.put("periodStart", periodStart.toString());
-    evidence.put("cutoff", cutoff.toString());
-    evidence.put("scoreThrough", scoreThrough.toString());
-    evidence.set("parameters", JSON.valueToTree(parameters));
+    evidence.put("phase", dataset.phase());
+    evidence.put("convention", dataset.convention());
+    evidence.put("datasetIndex", dataset.datasetIndex());
+    evidence.put("masterSeed", dataset.masterSeed());
+    evidence.put("streamPrefix", dataset.prefix());
+    evidence.put("periodStart", dataset.periodStart().toString());
+    evidence.put("cutoff", dataset.cutoff().toString());
+    evidence.put("scoreThrough", dataset.scoreThrough().toString());
+    evidence.set("parameters", JSON.valueToTree(dataset.parameters()));
     evidence.set("components", JSON.valueToTree(components));
-    evidence.put("dimension", dimension);
-    evidence.put("draws", draws);
-    evidence.set("observationCovariance", matrix(covariance));
+    evidence.put("dimension", components.size() - 1);
+    evidence.put("draws", dataset.draws());
+    evidence.set("observationCovariance", matrix(dataset.covariance()));
     evidence.put(
         "observationCovarianceSource",
         "registered fixed matrix; never reconstructed from generated shares");
     evidence.put("drawEncoding", PredictiveScoring.DRAW_ENCODING);
-    evidence.put("trainingPolls", training.size());
-    evidence.put("scoringPolls", scoring.size());
+    evidence.put("trainingPolls", dataset.training().size());
+    evidence.put("scoringPolls", dataset.scoring().size());
     evidence.put("trainingLogLikelihood", filtered.logLikelihood());
     final ArrayNode polls = evidence.putArray("polls");
-    for (PollObservations.Observation observation : scoring) {
+    for (PollObservations.Observation observation : dataset.scoring()) {
       final WindowFilter.Prediction prediction = byRow.get(observation.poll().rowNumber());
       require(
           prediction != null, "No prediction for scoring row " + observation.poll().rowNumber());
       polls.add(
-          scored(scoringBatch, observation, prediction, prefix, masterSeed, draws, components));
+          scored(
+              scoringBatch,
+              observation,
+              prediction,
+              dataset.prefix(),
+              dataset.masterSeed(),
+              dataset.draws(),
+              components));
     }
-    write(output, evidence);
+    return evidence;
   }
 
   /** One scored poll: the predictive distribution it came from and the summaries it produced. */
@@ -265,6 +705,25 @@ public final class SyntheticRecovery {
     return row;
   }
 
+  private static String prefix(String phase, String convention, int datasetIndex) {
+    return VERSION + "|" + phase + "|" + convention + "|" + datasetIndex;
+  }
+
+  private static Roster.CoveragePeriod period(String prefix) {
+    return new Roster.CoveragePeriod(
+        prefix,
+        SyntheticScenario.PERIOD_START,
+        SyntheticScenario.HORIZON,
+        ROSTER,
+        false,
+        false,
+        null);
+  }
+
+  private static List<String> components(String prefix) {
+    return PollObservations.components(period(prefix));
+  }
+
   /** The registered observation covariance, preserved exactly as the document supplies it. */
   private static ModelValues covariance(JsonNode document, int dimension) {
     final JsonNode rows = required(document, "observationCovariance");
@@ -295,55 +754,65 @@ public final class SyntheticRecovery {
     return matrix;
   }
 
-  /**
-   * One synthetic observation. Its ilr coordinates and its covariance are supplied, so neither the
-   * shares nor the nominal sample size takes part in the numerical path.
-   */
-  private static PollObservations.Observation observation(
-      JsonNode row, Roster.CoveragePeriod period, int dimension, ModelValues covariance) {
-    final int rowNumber = required(row, "rowNumber").intValue();
-    final String institute = required(row, "institute").asString();
-    final LocalDate from = date(row, "fieldworkFrom");
-    final LocalDate to = date(row, "fieldworkTo");
-    require(!to.isBefore(from), "Row " + rowNumber + " ends before it starts");
-    final BigDecimal sampleSize = required(row, "sampleSize").decimalValue();
-    require(sampleSize.signum() > 0, "Row " + rowNumber + " has a positive nominal sample size");
+  private static ModelValues coordinates(JsonNode row, int rowNumber, int dimension) {
     final JsonNode coordinates = required(row, "ilr");
     require(
         coordinates.size() == dimension,
         "Row " + rowNumber + " has " + dimension + " ilr coordinates");
-    final SimpleMatrix ilr = new SimpleMatrix(dimension, 1);
+    final double[] values = new double[dimension];
     for (int i = 0; i < dimension; i++) {
-      final double value = coordinates.get(i).doubleValue();
-      require(Double.isFinite(value), "Row " + rowNumber + " has finite ilr coordinates");
-      ilr.set(i, 0, value);
+      values[i] = coordinates.get(i).doubleValue();
+      require(Double.isFinite(values[i]), "Row " + rowNumber + " has finite ilr coordinates");
     }
-    // Publication happens on the fieldwork end, and the midpoint follows the estimator's own
-    // floor-of-half-elapsed-days convention.
-    final PollCsv.Poll poll =
-        new PollCsv.Poll(
-            rowNumber,
-            Map.of("row", Integer.toString(rowNumber)),
-            institute,
-            institute,
-            null,
-            null,
-            null,
-            null,
-            to,
-            from,
-            to,
-            sampleSize,
-            Map.of(),
-            null,
-            List.of());
-    require(period.covers(poll), "Row " + rowNumber + " lies outside the synthetic period");
+    return column(values);
+  }
+
+  /**
+   * One poll of the synthetic calendar. Publication happens on the fieldwork end, and the nominal
+   * sample size is carried for the record rather than used: the covariance is supplied.
+   */
+  private static PollCsv.Poll poll(
+      int rowNumber, String institute, LocalDate from, LocalDate to, BigDecimal sampleSize) {
+    return new PollCsv.Poll(
+        rowNumber,
+        Map.of("row", Integer.toString(rowNumber)),
+        institute,
+        institute,
+        null,
+        null,
+        null,
+        null,
+        to,
+        from,
+        to,
+        sampleSize,
+        Map.of(),
+        null,
+        List.of());
+  }
+
+  private static PollCsv.Poll poll(int rowNumber, String institute, LocalDate from, LocalDate to) {
+    return poll(rowNumber, institute, from, to, SyntheticScenario.SAMPLE_SIZE);
+  }
+
+  /**
+   * One synthetic observation. Its ilr coordinates and its covariance are supplied, so neither the
+   * shares nor the nominal sample size takes part in the numerical path. The midpoint follows the
+   * estimator's own floor-of-half-elapsed-days convention.
+   */
+  private static PollObservations.Observation observation(
+      PollCsv.Poll poll, Roster.CoveragePeriod period, ModelValues ilr, ModelValues covariance) {
+    require(period.covers(poll), "Row " + poll.rowNumber() + " lies outside the synthetic period");
+    final LocalDate from = poll.collectionFrom();
+    final LocalDate to = poll.collectionTo();
     return new PollObservations.Observation(
-        poll,
-        from.plusDays(ChronoUnit.DAYS.between(from, to) / 2),
-        ModelValues.copyOf(ilr),
-        covariance,
-        0);
+        poll, from.plusDays(ChronoUnit.DAYS.between(from, to) / 2), ilr, covariance, 0);
+  }
+
+  private static ModelValues column(double[] values) {
+    final SimpleMatrix matrix = new SimpleMatrix(values.length, 1);
+    for (int r = 0; r < values.length; r++) matrix.set(r, 0, values[r]);
+    return ModelValues.owned(matrix);
   }
 
   private static ArrayNode column(ModelValues values) {
@@ -357,6 +826,15 @@ public final class SyntheticRecovery {
     for (int r = 0; r < values.getNumRows(); r++) {
       final ArrayNode row = array.addArray();
       for (int c = 0; c < values.getNumCols(); c++) row.add(values.get(r, c));
+    }
+    return array;
+  }
+
+  private static ArrayNode factor(double[][] values) {
+    final ArrayNode array = JSON.createArrayNode();
+    for (double[] row : values) {
+      final ArrayNode line = array.addArray();
+      for (double value : row) line.add(value);
     }
     return array;
   }
@@ -406,7 +884,7 @@ public final class SyntheticRecovery {
     result.put("status", "rejected");
     result.put("version", VERSION);
     result.putArray("reasons").add(reason == null ? "Synthetic scoring failed" : reason);
-    result.put("scoringEvidence", "not_run");
+    result.put("scoringEvidence", NOT_RUN);
     try {
       write(output, result);
     } catch (RuntimeException ignored) {
