@@ -282,9 +282,8 @@ is still not permission to publish.
 ## The registered run
 
 The protocol has been executed once, on `alex-lenovo` at implementation commit
-`7794b6c`. Preflight measured the run at 41.8 hours against the registered 24-hour cap
-and 23.8 GiB required against 11.0 GiB free, so it stopped there and no formal dataset
-was generated. The registration, the repository checks, the whole preflight evidence
-tree and the report are in
-[`synthetic-recovery-v1/`](synthetic-recovery-v1/report.md). The protocol has no
-statistical result until the owner records one of the decisions that report names.
+`7794b6c`. Preflight found the host infeasible on both registered limits, so it stopped
+there and no formal dataset was generated. The registration, the repository checks, the
+whole preflight evidence tree and the measured figures are in the
+[execution report](synthetic-recovery-v1/report.md). The protocol has no statistical
+result until the owner records one of the decisions that report names.

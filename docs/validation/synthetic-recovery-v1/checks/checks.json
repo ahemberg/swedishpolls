@@ -1,5 +1,7 @@
 {
   "command": "./mvnw --batch-mode --no-transfer-progress -Pmodel-validation verify",
+  "implementationCommit": "7794b6ce2adb4e228f1ef2c6b821dfd75c6fd351",
+  "workingTree": "clean; the commit was read from git rev-parse HEAD before the run",
   "startedAt": "2026-09-18T16:43:36Z",
   "finishedAt": "2026-09-18T17:01:09Z",
   "exitCode": 0,
