@@ -1,0 +1,15 @@
+{
+  "measuredAt": "2026-09-18T17:02:25Z",
+  "hostname": "alex-lenovo",
+  "kernel": "Linux 6.17.0-1020-oracle",
+  "architecture": "x86_64",
+  "cpuModel": "Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz",
+  "cpuCores": 8,
+  "registeredWorkers": 1,
+  "memoryTotalBytes": 16628150272,
+  "memoryAvailableBytes": 11072385024,
+  "evidenceFilesystem": "/dev/mapper/ubuntu--vg-root",
+  "evidenceFreeBytes": 11795439616,
+  "javaRuntime": "openjdk version \"25.0.4\" 2026-07-21",
+  "note": "Capacity measured before registration. The protocol permits one worker on this host; the remaining cores are not used."
+}
