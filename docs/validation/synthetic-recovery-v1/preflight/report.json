@@ -1,0 +1,71 @@
+{
+  "version" : "synthetic-recovery-v1",
+  "phase" : "formal",
+  "outcome" : "stopped_at_preflight_infeasible",
+  "recovery" : "not_run",
+  "reasons" : [ "projected formal duration exceeds the registered 24-hour cap", "free disk is below twice the projected retained output plus 1 GiB" ],
+  "budget" : {
+    "stages" : [ {
+      "convention" : "midpoint",
+      "stage" : "known",
+      "slowestNanos" : 392165277,
+      "largestBytes" : 285948
+    }, {
+      "convention" : "midpoint",
+      "stage" : "estimated",
+      "slowestNanos" : 3016369985,
+      "largestBytes" : 326197
+    }, {
+      "convention" : "ilr_window",
+      "stage" : "known",
+      "slowestNanos" : 415445403,
+      "largestBytes" : 286129
+    }, {
+      "convention" : "ilr_window",
+      "stage" : "estimated",
+      "slowestNanos" : 8210957465,
+      "largestBytes" : 326360
+    } ],
+    "charging" : "generation is charged to the known stage; each stage carries its own evidence work and reproduction",
+    "datasets" : 10000,
+    "perRepetitionNanos" : 12034938130,
+    "projectionMargin" : 1.25,
+    "projectedNanos" : 150436726625000,
+    "preflightNanos" : 52999036014,
+    "totalNanos" : 150489725661014,
+    "capNanos" : 86400000000000,
+    "withinCap" : false,
+    "projectedBytes" : 12246340000,
+    "requiredBytes" : 25566421824,
+    "usableBytes" : 11785195520,
+    "sufficientDisk" : false
+  },
+  "registrationSha256" : "5944ba9db005cb0f6d58c2471b1e1c00013e81f40dc32db554f090fe8bad8ed4",
+  "preflightPath" : "/home/alex/evidence/synthetic-recovery-v1/preflight/preflight.json",
+  "stages" : [ {
+    "convention" : "midpoint",
+    "stage" : "known",
+    "status" : "not_run",
+    "verdict" : "incomplete",
+    "reason" : "the registered host cannot carry the run within its resource limit"
+  }, {
+    "convention" : "ilr_window",
+    "stage" : "known",
+    "status" : "not_run",
+    "verdict" : "incomplete",
+    "reason" : "the registered host cannot carry the run within its resource limit"
+  }, {
+    "convention" : "midpoint",
+    "stage" : "estimated",
+    "status" : "not_run",
+    "verdict" : "incomplete",
+    "reason" : "the registered host cannot carry the run within its resource limit"
+  }, {
+    "convention" : "ilr_window",
+    "stage" : "estimated",
+    "status" : "not_run",
+    "verdict" : "incomplete",
+    "reason" : "the registered host cannot carry the run within its resource limit"
+  } ],
+  "completion" : "no formal dataset was generated; the infeasibility is retained and the scientific settings are unchanged"
+}

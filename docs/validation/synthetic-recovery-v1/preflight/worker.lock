@@ -1,0 +1,7 @@
+{
+  "hostname" : "alex-lenovo",
+  "pid" : 547099,
+  "claimedAt" : "2026-09-18T17:03:45.194552260Z",
+  "workers" : 1,
+  "rule" : "one host and one worker; the lock is retained so nothing silently resumes the run"
+}
