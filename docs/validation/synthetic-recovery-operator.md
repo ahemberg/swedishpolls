@@ -278,3 +278,12 @@ is still not permission to publish.
 | `<evidence>/worker.lock` | The host, process and claim time of the one permitted worker |
 | `<evidence>/report.json` | The run report, its identities and the protected-evidence hashes |
 | `<evidence>/interruption.json` | The stage and repetition the watchdog stopped at |
+
+## The registered run
+
+The protocol has been executed once, on `alex-lenovo` at implementation commit
+`7794b6c`. Preflight found the host infeasible on both registered limits, so it stopped
+there and no formal dataset was generated. The registration, the repository checks, the
+whole preflight evidence tree and the measured figures are in the
+[execution report](synthetic-recovery-v1/report.md). The protocol has no statistical
+result until the owner records one of the decisions that report names.

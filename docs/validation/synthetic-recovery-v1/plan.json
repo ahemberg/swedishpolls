@@ -1,0 +1,353 @@
+{
+  "version" : "synthetic-recovery-v1",
+  "phase" : "formal",
+  "registeredOn" : "2026-09-18",
+  "protocol" : {
+    "path" : "docs/validation/synthetic-recovery-protocol.md",
+    "sha256" : "897063ff08c05f15ac2b598125424ec18163396bf66f3c6d08399e2cd142b065"
+  },
+  "implementationCommit" : "7794b6ce2adb4e228f1ef2c6b821dfd75c6fd351",
+  "dependencies" : [ {
+    "name" : "commons-csv-1.14.1.jar",
+    "path" : "/home/alex/.m2/repository/org/apache/commons/commons-csv/1.14.1/commons-csv-1.14.1.jar",
+    "sha256" : "32be0e1e76673092f5d12cb790bd2acb6c2ab04c4ea6efc69ea5ee17911c24fe"
+  }, {
+    "name" : "commons-io-2.20.0.jar",
+    "path" : "/home/alex/.m2/repository/commons-io/commons-io/2.20.0/commons-io-2.20.0.jar",
+    "sha256" : "df90bba0fe3cb586b7f164e78fe8f8f4da3f2dd5c27fa645f888100ccc25dd72"
+  }, {
+    "name" : "commons-codec-1.21.0.jar",
+    "path" : "/home/alex/.m2/repository/commons-codec/commons-codec/1.21.0/commons-codec-1.21.0.jar",
+    "sha256" : "4da851cb6abfb98bfe9eb77c5e5fc47f5414fa28b94e21b7fd9a646705dc167f"
+  }, {
+    "name" : "spring-boot-starter-webmvc-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-starter-webmvc/4.1.1/spring-boot-starter-webmvc-4.1.1.jar",
+    "sha256" : "4aec3edbdf6317fefe23db1b989d8bba143a45a51c1fc32346146ecebf67d625"
+  }, {
+    "name" : "spring-boot-starter-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-starter/4.1.1/spring-boot-starter-4.1.1.jar",
+    "sha256" : "de5b2dd28400eda20914fd4a6054d0c201e68d2e4de35a25a4d89f054ccc2e63"
+  }, {
+    "name" : "spring-boot-starter-logging-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-starter-logging/4.1.1/spring-boot-starter-logging-4.1.1.jar",
+    "sha256" : "8eca7d72c8434f5c3b935385c656cd5337f473434bdbcb4913b3b3a34897d178"
+  }, {
+    "name" : "logback-classic-1.5.38.jar",
+    "path" : "/home/alex/.m2/repository/ch/qos/logback/logback-classic/1.5.38/logback-classic-1.5.38.jar",
+    "sha256" : "afb439c61fa287c9e1925523b13baab03617e724406a389d48b61c2c3e46b700"
+  }, {
+    "name" : "logback-core-1.5.38.jar",
+    "path" : "/home/alex/.m2/repository/ch/qos/logback/logback-core/1.5.38/logback-core-1.5.38.jar",
+    "sha256" : "a855a0fc97b1d06f4efb1c3bba5ebd0eb508d8b58e68e89e4bbc23a85135c883"
+  }, {
+    "name" : "log4j-to-slf4j-2.25.5.jar",
+    "path" : "/home/alex/.m2/repository/org/apache/logging/log4j/log4j-to-slf4j/2.25.5/log4j-to-slf4j-2.25.5.jar",
+    "sha256" : "b68e8b47342dbc9b35644a14fe2efc0b7bf18da703910cd05ad5501ffe07bba1"
+  }, {
+    "name" : "log4j-api-2.25.5.jar",
+    "path" : "/home/alex/.m2/repository/org/apache/logging/log4j/log4j-api/2.25.5/log4j-api-2.25.5.jar",
+    "sha256" : "64777f73ea0b3104c04eb82befbdccc30a425a19e83ad06cb2f93aa303511863"
+  }, {
+    "name" : "jul-to-slf4j-2.0.18.jar",
+    "path" : "/home/alex/.m2/repository/org/slf4j/jul-to-slf4j/2.0.18/jul-to-slf4j-2.0.18.jar",
+    "sha256" : "cbb7d1aaaa9e871eb1a06594abd911bf97027152976edf1edc315be75239204e"
+  }, {
+    "name" : "jakarta.annotation-api-3.0.0.jar",
+    "path" : "/home/alex/.m2/repository/jakarta/annotation/jakarta.annotation-api/3.0.0/jakarta.annotation-api-3.0.0.jar",
+    "sha256" : "b01f55552284cfb149411e64eabca75e942d26d2e1786b32914250e4330afaa2"
+  }, {
+    "name" : "snakeyaml-2.6.jar",
+    "path" : "/home/alex/.m2/repository/org/yaml/snakeyaml/2.6/snakeyaml-2.6.jar",
+    "sha256" : "c8f7a98e7394adda02f6317249710e4d1b4c7a25aa8c7eace0c2eea52eb8bf85"
+  }, {
+    "name" : "spring-boot-starter-jackson-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-starter-jackson/4.1.1/spring-boot-starter-jackson-4.1.1.jar",
+    "sha256" : "d30e594a3e0f3a090438fc22000a87ab577a3b80c674180a10544ca331207f24"
+  }, {
+    "name" : "spring-boot-jackson-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-jackson/4.1.1/spring-boot-jackson-4.1.1.jar",
+    "sha256" : "69a9b4d8850a0532a5e44ff7306a03621485b26596e7f9481de7d28e68a2dd42"
+  }, {
+    "name" : "spring-boot-starter-tomcat-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat/4.1.1/spring-boot-starter-tomcat-4.1.1.jar",
+    "sha256" : "f224d8504be3b413825ee85ef549a7b1598ee8512e062c6bd5ddce1043cd388a"
+  }, {
+    "name" : "spring-boot-starter-tomcat-runtime-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat-runtime/4.1.1/spring-boot-starter-tomcat-runtime-4.1.1.jar",
+    "sha256" : "580f0d9a9d02a1a6e387640e422af42f9dbdf302836d562ec595fdb2b31a1c29"
+  }, {
+    "name" : "tomcat-embed-core-11.0.24.jar",
+    "path" : "/home/alex/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/11.0.24/tomcat-embed-core-11.0.24.jar",
+    "sha256" : "e7b966dcaac8c5ffa4f10e44031ebf5b71f2123560c08ac8b7120028615aea08"
+  }, {
+    "name" : "tomcat-embed-el-11.0.24.jar",
+    "path" : "/home/alex/.m2/repository/org/apache/tomcat/embed/tomcat-embed-el/11.0.24/tomcat-embed-el-11.0.24.jar",
+    "sha256" : "ad0546f12dace008aacce18ba13222137760b310ca719e173d3e13021b9af6c6"
+  }, {
+    "name" : "tomcat-embed-websocket-11.0.24.jar",
+    "path" : "/home/alex/.m2/repository/org/apache/tomcat/embed/tomcat-embed-websocket/11.0.24/tomcat-embed-websocket-11.0.24.jar",
+    "sha256" : "825160101f0da4a10e19b5730c2ae2f99f8c2c7a7211ac05562726c5e97ab91e"
+  }, {
+    "name" : "spring-boot-tomcat-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-tomcat/4.1.1/spring-boot-tomcat-4.1.1.jar",
+    "sha256" : "17f65629e4eb3c979c0572b69b57d630bb12e64869e9d7520adddaa6734256b6"
+  }, {
+    "name" : "spring-boot-http-converter-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-http-converter/4.1.1/spring-boot-http-converter-4.1.1.jar",
+    "sha256" : "52a167430a918c223b2ccd2eb62aff91a8e43e6daebe5a07caa37b9a04c61cb9"
+  }, {
+    "name" : "spring-boot-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot/4.1.1/spring-boot-4.1.1.jar",
+    "sha256" : "0d92b532b1d4020640e72d78c31af175c23db8e0ddd45b81855b7fdf4c9c70f0"
+  }, {
+    "name" : "spring-context-7.0.9.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/spring-context/7.0.9/spring-context-7.0.9.jar",
+    "sha256" : "7552a2fcfa30cea53eb14d7a65a7a8e1b1dd82e832a7164fb7e6fb105f438858"
+  }, {
+    "name" : "spring-web-7.0.9.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/spring-web/7.0.9/spring-web-7.0.9.jar",
+    "sha256" : "941ced476427bde2533872f293da535fd0258de3f3a650a7f1bfe01ed2927302"
+  }, {
+    "name" : "spring-beans-7.0.9.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/spring-beans/7.0.9/spring-beans-7.0.9.jar",
+    "sha256" : "ff218b827a25c9e8929b0cd56dfb56916cea9d5b669ed97dc7cb262508ff548b"
+  }, {
+    "name" : "micrometer-observation-1.17.1.jar",
+    "path" : "/home/alex/.m2/repository/io/micrometer/micrometer-observation/1.17.1/micrometer-observation-1.17.1.jar",
+    "sha256" : "eb34f0cd84a879393ae5c21160fc06385ccdc74f36a4d1e31b199f59acfdaf71"
+  }, {
+    "name" : "micrometer-commons-1.17.1.jar",
+    "path" : "/home/alex/.m2/repository/io/micrometer/micrometer-commons/1.17.1/micrometer-commons-1.17.1.jar",
+    "sha256" : "f2cee6ef046e72eec8128474c7f58c6217173b45ae373c30de0289f2a56ab0fd"
+  }, {
+    "name" : "spring-boot-webmvc-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-webmvc/4.1.1/spring-boot-webmvc-4.1.1.jar",
+    "sha256" : "9f08c1fb938c45a8693fec5f3065be3aca203948a7ab4d56b06444986f75a6b2"
+  }, {
+    "name" : "spring-boot-servlet-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-servlet/4.1.1/spring-boot-servlet-4.1.1.jar",
+    "sha256" : "4dcb156e311a4c1ad5f1ed7eabd94a78ea74510b05c429a4fcfdcf8beb9d5882"
+  }, {
+    "name" : "spring-webmvc-7.0.9.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/spring-webmvc/7.0.9/spring-webmvc-7.0.9.jar",
+    "sha256" : "8f114c1461692c5e534e82b27de23b7fb23370db8dee7ce0c92d5106906c9555"
+  }, {
+    "name" : "spring-aop-7.0.9.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/spring-aop/7.0.9/spring-aop-7.0.9.jar",
+    "sha256" : "b8c5d6bfcb1f4993f2cc124f7ab7fac40edf5256b9e43c2f7250a733cb5510e9"
+  }, {
+    "name" : "spring-expression-7.0.9.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/spring-expression/7.0.9/spring-expression-7.0.9.jar",
+    "sha256" : "046434c40f43819729b9b1db0e6c659dfa68184c1c2c2efa5f7b3a5b27c4e2e2"
+  }, {
+    "name" : "spring-boot-starter-restclient-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-starter-restclient/4.1.1/spring-boot-starter-restclient-4.1.1.jar",
+    "sha256" : "453502f3b357b98257d38220f1a89768e75a157d305499b1425b0620956e72e1"
+  }, {
+    "name" : "spring-boot-restclient-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-restclient/4.1.1/spring-boot-restclient-4.1.1.jar",
+    "sha256" : "e613f02dafc91120634aff26272e77fe1e56d6a644967bd74ed7beb7f199b17e"
+  }, {
+    "name" : "spring-boot-http-client-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-http-client/4.1.1/spring-boot-http-client-4.1.1.jar",
+    "sha256" : "a7bae90c3d39eb318fee764d8a18dfa4009d62a9b0d6843c3ce987f4c0ad606e"
+  }, {
+    "name" : "spring-boot-starter-jdbc-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-starter-jdbc/4.1.1/spring-boot-starter-jdbc-4.1.1.jar",
+    "sha256" : "c51b28a3793168bff837eea90b1ae641efc3a28d6cdb980dd2b0b230914e93ee"
+  }, {
+    "name" : "spring-boot-jdbc-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-jdbc/4.1.1/spring-boot-jdbc-4.1.1.jar",
+    "sha256" : "30de56a06ccedb40245fd3a69a5107c7b3c0500447bb982a54a3b5da2859ae2c"
+  }, {
+    "name" : "spring-boot-sql-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-sql/4.1.1/spring-boot-sql-4.1.1.jar",
+    "sha256" : "fa4f6ddded1bb3bbc496897686336d8433e34f1f22daa886872be2aa184def23"
+  }, {
+    "name" : "spring-boot-transaction-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-transaction/4.1.1/spring-boot-transaction-4.1.1.jar",
+    "sha256" : "e7f2fad4fe65bf6aaf1b1a538a68a1cf69988adb558f4a0fc0992a8be4fddf64"
+  }, {
+    "name" : "spring-boot-persistence-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-persistence/4.1.1/spring-boot-persistence-4.1.1.jar",
+    "sha256" : "0f78d2556ac3ed75f9eaf3134a1fba94ad1ec3414b52aa279c1f690217e71e3c"
+  }, {
+    "name" : "spring-tx-7.0.9.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/spring-tx/7.0.9/spring-tx-7.0.9.jar",
+    "sha256" : "bfb15da6e096e2c0752e9db9987d2415bf0da1d744efc988535c10c6b6c2eedd"
+  }, {
+    "name" : "spring-jdbc-7.0.9.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/spring-jdbc/7.0.9/spring-jdbc-7.0.9.jar",
+    "sha256" : "ca0d9af1c5721eef8cac1f94c8b9d27a753248bc33c86e3472bd3d1dbd78f450"
+  }, {
+    "name" : "HikariCP-7.0.2.jar",
+    "path" : "/home/alex/.m2/repository/com/zaxxer/HikariCP/7.0.2/HikariCP-7.0.2.jar",
+    "sha256" : "f1e612fa27345be3107a85431e8a8aeb205c15364ab2f2d411e40a9d7bb08095"
+  }, {
+    "name" : "spring-boot-starter-flyway-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-starter-flyway/4.1.1/spring-boot-starter-flyway-4.1.1.jar",
+    "sha256" : "d9a454f49cc844b1c2940f645f659c506322d02444912422a19ba619de60e6c7"
+  }, {
+    "name" : "spring-boot-flyway-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-flyway/4.1.1/spring-boot-flyway-4.1.1.jar",
+    "sha256" : "61db32d08f2b1b04cf006e916575da22ecee0a2e0bb0604aca26c04f7bd4aa0e"
+  }, {
+    "name" : "spring-boot-docker-compose-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-docker-compose/4.1.1/spring-boot-docker-compose-4.1.1.jar",
+    "sha256" : "23e26aa285338ba381db45e7da9bf5d94bc6cd91e8dad627ae67b3fc793b8a23"
+  }, {
+    "name" : "spring-boot-autoconfigure-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/4.1.1/spring-boot-autoconfigure-4.1.1.jar",
+    "sha256" : "59228756ddd76cea050f95d86deff334789bc53b6688beaa673b1af2b9794592"
+  }, {
+    "name" : "jackson-databind-3.1.5.jar",
+    "path" : "/home/alex/.m2/repository/tools/jackson/core/jackson-databind/3.1.5/jackson-databind-3.1.5.jar",
+    "sha256" : "3a2338d996fd3056791df8d335fa9ba8a62a706ed4245ecf81b3e583df37d08a"
+  }, {
+    "name" : "jackson-annotations-2.21.jar",
+    "path" : "/home/alex/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.21/jackson-annotations-2.21.jar",
+    "sha256" : "53ca085f4a150f703f49e1aabd935bd03b43e1ea3d55d135438292af22cef56b"
+  }, {
+    "name" : "jackson-core-3.1.5.jar",
+    "path" : "/home/alex/.m2/repository/tools/jackson/core/jackson-core/3.1.5/jackson-core-3.1.5.jar",
+    "sha256" : "9431b7fa2673bbb618c11d865fe15e13222fd182a214ff998cb7e56afd8f35d2"
+  }, {
+    "name" : "flyway-database-postgresql-12.4.0.jar",
+    "path" : "/home/alex/.m2/repository/org/flywaydb/flyway-database-postgresql/12.4.0/flyway-database-postgresql-12.4.0.jar",
+    "sha256" : "abc075a5c3cbf37dc64b28fec7e2398fb14f31109f7ab6271854738797407b85"
+  }, {
+    "name" : "flyway-core-12.4.0.jar",
+    "path" : "/home/alex/.m2/repository/org/flywaydb/flyway-core/12.4.0/flyway-core-12.4.0.jar",
+    "sha256" : "c3f93df1f3e0c9d14652adb5ade97401f2ede503859ac693c2af5c06e2797799"
+  }, {
+    "name" : "postgresql-42.7.13.jar",
+    "path" : "/home/alex/.m2/repository/org/postgresql/postgresql/42.7.13/postgresql-42.7.13.jar",
+    "sha256" : "6e0e4cc2d8cae902084f8a2b18728b073a6fd9d1f87c9d8bff8f298c18185b93"
+  }, {
+    "name" : "checker-qual-3.55.1.jar",
+    "path" : "/home/alex/.m2/repository/org/checkerframework/checker-qual/3.55.1/checker-qual-3.55.1.jar",
+    "sha256" : "857658c8bdcbff794949a8d9922f88d63ee3751c203c7cd7d21ea97f9e745288"
+  }, {
+    "name" : "ejml-simple-0.46.1.jar",
+    "path" : "/home/alex/.m2/repository/org/ejml/ejml-simple/0.46.1/ejml-simple-0.46.1.jar",
+    "sha256" : "9f5dc17cde87c00570278aae3d9b2efcdd5b5e058728d6929ae892816c419f25"
+  }, {
+    "name" : "ejml-core-0.46.1.jar",
+    "path" : "/home/alex/.m2/repository/org/ejml/ejml-core/0.46.1/ejml-core-0.46.1.jar",
+    "sha256" : "60e239ad8ad7b255542cab56986edec88f14feecdf86468b1ad37a7a7afe52e2"
+  }, {
+    "name" : "ejml-fdense-0.46.1.jar",
+    "path" : "/home/alex/.m2/repository/org/ejml/ejml-fdense/0.46.1/ejml-fdense-0.46.1.jar",
+    "sha256" : "cfb01f81014f53cfb1def140b76150541123bfe886589d4b9043fc0d0125b688"
+  }, {
+    "name" : "ejml-ddense-0.46.1.jar",
+    "path" : "/home/alex/.m2/repository/org/ejml/ejml-ddense/0.46.1/ejml-ddense-0.46.1.jar",
+    "sha256" : "5e056bb27c1f39e612e8d05b3467bf1f05d0dc6c73f6b73a85fddf73127f901f"
+  }, {
+    "name" : "ejml-cdense-0.46.1.jar",
+    "path" : "/home/alex/.m2/repository/org/ejml/ejml-cdense/0.46.1/ejml-cdense-0.46.1.jar",
+    "sha256" : "bcae1ca55fc546b9f13e21042467281458f04b11d8e21015f248c6aebb9b2ab3"
+  }, {
+    "name" : "ejml-zdense-0.46.1.jar",
+    "path" : "/home/alex/.m2/repository/org/ejml/ejml-zdense/0.46.1/ejml-zdense-0.46.1.jar",
+    "sha256" : "6c0b124b7cdcec8387aa608f5e46304385ad0536dc7b790f5b0eab988c2e5dbc"
+  }, {
+    "name" : "ejml-dsparse-0.46.1.jar",
+    "path" : "/home/alex/.m2/repository/org/ejml/ejml-dsparse/0.46.1/ejml-dsparse-0.46.1.jar",
+    "sha256" : "3d3679e89895c5b9abc78ab7407c5b9218b247d38de5fa5ad8395c1b4d1ee30b"
+  }, {
+    "name" : "ejml-fsparse-0.46.1.jar",
+    "path" : "/home/alex/.m2/repository/org/ejml/ejml-fsparse/0.46.1/ejml-fsparse-0.46.1.jar",
+    "sha256" : "b834c5851ecdf65390af5cc487ef3167baf8ed4bd84463d42cc21591369b49aa"
+  }, {
+    "name" : "spring-core-7.0.9.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/spring-core/7.0.9/spring-core-7.0.9.jar",
+    "sha256" : "5195f4722699b39878d99a832549fe65df2890b159d063b88fff31b1ca65ae36"
+  }, {
+    "name" : "commons-logging-1.3.6.jar",
+    "path" : "/home/alex/.m2/repository/commons-logging/commons-logging/1.3.6/commons-logging-1.3.6.jar",
+    "sha256" : "f8ead8943401081dea0aa824b5b1ba40a0e4ed297a572a0f02258150a0b62357"
+  }, {
+    "name" : "jspecify-1.0.1.jar",
+    "path" : "/home/alex/.m2/repository/org/jspecify/jspecify/1.0.1/jspecify-1.0.1.jar",
+    "sha256" : "070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66"
+  }, {
+    "name" : "spring-boot-web-server-4.1.1.jar",
+    "path" : "/home/alex/.m2/repository/org/springframework/boot/spring-boot-web-server/4.1.1/spring-boot-web-server-4.1.1.jar",
+    "sha256" : "6912fb1fdf7f657a61ac050760fa835fb1e7496399291697e2901f82887a4fee"
+  }, {
+    "name" : "slf4j-api-2.0.18.jar",
+    "path" : "/home/alex/.m2/repository/org/slf4j/slf4j-api/2.0.18/slf4j-api-2.0.18.jar",
+    "sha256" : "44508fd1576500688c790b190acdd16fec4f8c79a3e0b900afd70503cf055f55"
+  } ],
+  "toolchain" : {
+    "javaVersion" : "25.0.4",
+    "javaRuntime" : "25.0.4+7-1-24.04-Ubuntu",
+    "vm" : "OpenJDK 64-Bit Server VM 25.0.4+7-1-24.04-Ubuntu",
+    "osName" : "Linux",
+    "osArch" : "amd64"
+  },
+  "container" : {
+    "image" : "eclipse-temurin@sha256:b4c93a50fc67612798db73d68ca3b0ee4ebdd51736e59cca370e689b9797037e"
+  },
+  "host" : {
+    "hostname" : "alex-lenovo",
+    "workers" : 1
+  },
+  "commands" : {
+    "register" : "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.SyntheticRecovery -Dspring-boot.run.arguments='register docs/validation/synthetic-recovery-v1/plan.json docs/validation/synthetic-recovery-v1/registration.json'",
+    "preflight" : "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.SyntheticRecovery -Dspring-boot.run.arguments='preflight docs/validation/synthetic-recovery-v1/registration.json /home/alex/evidence/synthetic-recovery-v1/preflight'",
+    "commit" : "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.SyntheticRecovery -Dspring-boot.run.arguments='commit docs/validation/synthetic-recovery-v1/registration.json /home/alex/evidence/synthetic-recovery-v1/preflight/preflight.json docs/validation/synthetic-recovery-v1/execution.json'",
+    "experiment" : "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.SyntheticRecovery -Dspring-boot.run.arguments='experiment docs/validation/synthetic-recovery-v1/execution.json /home/alex/evidence/synthetic-recovery-v1/formal'",
+    "reproduce" : "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.SyntheticRecovery -Dspring-boot.run.arguments='reproduce docs/validation/synthetic-recovery-v1/execution.json /home/alex/evidence/synthetic-recovery-v1/formal /home/alex/evidence/synthetic-recovery-v1/formal/reproduction.json'",
+    "report" : "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.SyntheticRecovery -Dspring-boot.run.arguments='report docs/validation/synthetic-recovery-v1/execution.json /home/alex/evidence/synthetic-recovery-v1/formal /home/alex/evidence/synthetic-recovery-v1/formal/reproduction.json /home/alex/evidence/synthetic-recovery-v1/formal/report.json'"
+  },
+  "numericalTolerances" : {
+    "interval" : 1.0E-9,
+    "coverage" : 1.0E-9,
+    "likelihood" : 1.0E-6
+  },
+  "schedule" : {
+    "periodStart" : "2016-01-01",
+    "cutoff" : "2016-06-28",
+    "scoreThrough" : "2016-08-02",
+    "weeks" : 28,
+    "trainingPolls" : 115,
+    "scoringPolls" : 25,
+    "institutes" : [ "I0", "I1", "I2", "I3", "I4" ]
+  },
+  "covarianceSha256" : "9f43d610dbc59272ece07dfcc09dd85b6f0781aeefb67481d8de16811c7b3dfc",
+  "streams" : {
+    "masterSeed" : 20260916,
+    "formalPrefix" : "synthetic-recovery-v1|formal",
+    "preflightPrefix" : "synthetic-recovery-v1|preflight",
+    "generating" : [ "initial", "walk", "houses", "noise" ],
+    "predictive" : "predictive",
+    "seedDerivation" : "SHA-256 of UTF-8 \"stream|masterSeed\"; first eight bytes big-endian signed"
+  },
+  "run" : {
+    "conventions" : [ "midpoint", "ilr_window" ],
+    "stages" : [ "known", "estimated" ],
+    "gridPoints" : 180,
+    "datasets" : 10000,
+    "draws" : 4000
+  },
+  "limits" : {
+    "wallClockHours" : 24,
+    "projectionMargin" : 1.25,
+    "logReserveBytes" : 1073741824,
+    "preflightDatasets" : 4
+  },
+  "outputLocation" : "/home/alex/evidence/synthetic-recovery-v1/formal",
+  "preflightLocation" : "/home/alex/evidence/synthetic-recovery-v1/preflight",
+  "protectedLocations" : [ {
+    "path" : "src/main/resources/publication/model-freeze.json",
+    "sha256" : "66b854018f921c34141fc455bd3130743e8796e03c59f95b23ecd7eeb51d27dc"
+  }, {
+    "path" : "docs/validation/v2-development-1/evidence/run-1",
+    "sha256" : "8c55ed95793d084a4412286589ada97e069fabf4a669993d42c0a55bb6b69468"
+  }, {
+    "path" : "docs/validation/v2-development-1/evidence/run-2",
+    "sha256" : "3f2c62344bae05daf2912941a7b3cdc4a930ae57d2fc33e3afb0478f0eef5bf4"
+  } ]
+}
