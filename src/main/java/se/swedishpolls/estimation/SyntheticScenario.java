@@ -39,6 +39,9 @@ final class SyntheticScenario {
   static final DailyStateSpace.Parameters TRUTH =
       new DailyStateSpace.Parameters(WALK_VARIANCE, HOUSE_SCALE, NOISE_MULTIPLIER);
 
+  /** The four generating streams of one dataset, in the order they are consumed. */
+  static final List<String> GENERATING_STREAMS = List.of("initial", "walk", "houses", "noise");
+
   /** The five institutes, each keeping one effect throughout the cycle. */
   static final List<String> INSTITUTES = List.of("I0", "I1", "I2", "I3", "I4");
 
