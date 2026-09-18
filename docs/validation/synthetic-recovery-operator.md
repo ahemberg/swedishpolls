@@ -44,6 +44,10 @@ interval summaries with their coverage indicators, and the SHA-256 of the predic
 draw array in the registered big-endian binary64, draw-major encoding. The arrays
 themselves are not retained.
 
+`coverageFractions` holds this dataset's own contribution to each cell: one fraction per
+component and interval level over its scoring polls, which are correlated and are never
+averaged as independent repetitions.
+
 `inputsSha256` covers the fixed covariance and every row's identity, membership,
 fieldwork dates and ilr coordinates. The known and estimated stages of one dataset
 observe the same rows, so their evidence carries the same hash.
@@ -174,7 +178,103 @@ A completed failed or inconclusive verdict is a valid stopping result and `exper
 says which stage it stopped after. Demonstrated recovery is not completion: `experiment`
 stays `incomplete` until the registration, preflight and reproduction slices exist.
 
-## Not built yet
+## The registered lifecycle
 
-Registration verification, preflight, the execution cap, reproduction and the published
-report are later slices of this same command.
+A run that is evidence rather than a software check goes through five more commands, in
+order. Each one re-reads the registration and refuses an identity that has moved.
+
+```
+register  <plan.json> <registration.json>
+preflight <registration.json> <preflight-directory>
+commit    <registration.json> <preflight.json> <execution.json>
+experiment <execution.json> <evidence-directory> [resumption.json]
+reproduce <execution.json> <evidence-directory> <reproduction.json>
+report    <execution.json> <evidence-directory> <reproduction.json> <report.json>
+report    <preflight.json> <report.json>
+```
+
+Exit codes are `0` for success, `1` for a completed check whose outcome did not confirm
+what it checked, `2` for a refused operation, `3` for a numerical failure, `4` for a run
+the watchdog stopped and `5` for a preflight that does not fit the host.
+
+### The registration
+
+`register` validates a plan and freezes it, writing `<registration.json>` and a
+`.sha256` sidecar beside it. The plan pins the protocol document, the implementation
+commit, every dependency, the toolchain, the container image, the host and its single
+worker, the exact commands, the numerical tolerances, the schedule, the fixed covariance
+and its noise factor, the stream rules, the run size, the resource limits, both evidence
+destinations and the protected locations with their digests.
+
+Validation is the same at every later boundary, so a registration that froze is one the
+rest of the workflow accepts. A formal registration has to sit at
+`docs/validation/synthetic-recovery-v1/registration.json` before preflight, and its
+execution identity at `docs/validation/synthetic-recovery-v1/execution.json` before any
+formal dataset is generated.
+
+### Preflight
+
+`preflight` runs one warm-up and three timed datasets per convention, indices 0 to 3, in
+streams whose phase is `preflight`. It measures generation, the known-parameter
+prediction path, all 180 training-grid evaluations, estimated-parameter prediction, the
+evidence writing and hashing and full reproduction, in the intended evidence format. The
+estimated path runs here for its cost alone: no coverage from these datasets is inspected
+or enters a formal result. A numerical failure stops preflight with the failing operation
+preserved.
+
+`T` is the sum of each convention's slowest measured known and estimated stage time.
+Generation is charged to the known stage; each stage carries its own evidence work and
+reproduction. The projection is `datasets x T x 1.25` plus the elapsed preflight, and it
+has to fit 24 hours. Free disk has to be at least twice the projected retained output
+plus 1 GiB. An infeasible projection is retained with its reasons and stops the run: no
+repetition is lowered, no window shortened, no grid point omitted and no precision
+changed. `report <preflight.json> <report.json>` publishes that stop with every stage
+accounted as not run.
+
+### The execution identity and the cap
+
+`commit` writes the final execution identity from a feasible preflight record, with its
+own checksum sidecar. It carries the registration and preflight digests, the
+implementation commit, the host, the single worker, the architecture and the 24-hour
+clock. That clock starts at preflight launch and covers formal work and reproduction, so
+each command inherits the same deadline rather than restarting it.
+
+`experiment` takes the single-worker lock in its destination, verifies the protected
+real-data evidence and the shipped freeze, and runs both stages. The watchdog checks the
+deadline between repetitions: at the cap it stops scheduling, writes `interruption.json`
+with the stage and repetition it stopped at, and leaves every completed record where it
+is. Repetitions are never adapted and no interim coverage stops the run.
+
+An interrupted run is never continued on its own. A resumption needs a decision recorded
+outside this workflow, naming the execution identity, the interrupted run and the digest
+of its partial output, and it writes a destination of its own so that output stays as the
+watchdog left it.
+
+### Reproduction
+
+`reproduce` regenerates every completed predictive array from its retained prediction,
+stream and seed, and compares the hash without replacing it. It recomputes each
+component's interval summaries, both coverage indicators, the per-dataset fractions and
+the cells of every stage, against the numerical tolerances the registration fixed. A
+missing or changed hash, a changed summary, a missing dataset or a changed published cell
+is reported as a finding; nothing is written into the run being read. A stage the
+protocol left explicitly not run has no predictive output and is reported as such.
+Cross-architecture reproduction is outside this protocol.
+
+### The report
+
+`report` accounts for every planned or explicitly not-run stage and distinguishes a
+completed failed or inconclusive control from preflight infeasibility, from incomplete
+numerical evidence and from an interrupted run. It carries the evidence location, the run
+identities, the reproduction outcome and the before and after hashes of the protected
+real-data evidence and the shipped freeze. Completion needs every planned stage complete,
+demonstrated recovery, reproduced predictive output and unchanged protected evidence; it
+is still not permission to publish.
+
+| Path | Contents |
+| --- | --- |
+| `<preflight>/preflight.json` | Timings of all eight preflight datasets, the projection, the disk requirement and the feasibility verdict |
+| `<preflight>/preflight/<stage>/<convention>/<index>.json` | The preflight datasets, which no summary reads |
+| `<evidence>/worker.lock` | The host, process and claim time of the one permitted worker |
+| `<evidence>/report.json` | The run report, its identities and the protected-evidence hashes |
+| `<evidence>/interruption.json` | The stage and repetition the watchdog stopped at |

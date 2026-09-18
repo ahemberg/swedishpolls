@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -45,10 +46,20 @@ import tools.jackson.databind.node.ObjectNode;
  */
 public final class SyntheticRecovery {
   public static final int SUCCESS = 0;
+
+  /** A completed operation whose outcome did not confirm what it checked. */
+  public static final int BLOCKED = 1;
+
   public static final int REJECTED = 2;
 
   /** A run stopped by a numerical failure, with its partial evidence preserved. */
   public static final int STOPPED = 3;
+
+  /** A run the 24-hour watchdog stopped, with its completed records preserved. */
+  public static final int INTERRUPTED = 4;
+
+  /** A preflight whose projection does not fit the registered host. */
+  public static final int INFEASIBLE = 5;
 
   /** The accepted protocol version. A document naming another protocol is refused. */
   static final String VERSION = "synthetic-recovery-v1";
@@ -77,9 +88,9 @@ public final class SyntheticRecovery {
 
   static final String ESTIMATED_STAGE = "estimated";
 
-  private static final String PREFLIGHT = "preflight";
+  static final String PREFLIGHT = "preflight";
 
-  private static final String SOFTWARE_CHECK = "software_check";
+  static final String SOFTWARE_CHECK = "software_check";
 
   /** The software-check phase keeps test fixtures out of the registered scientific streams. */
   private static final List<String> PHASES = List.of(FORMAL, PREFLIGHT, SOFTWARE_CHECK);
@@ -88,7 +99,7 @@ public final class SyntheticRecovery {
   private static final String ILR_WINDOW = "ilr_window";
 
   /** Both conventions, in the order the controls run them. */
-  private static final List<String> CONVENTIONS = List.of(MIDPOINT, ILR_WINDOW);
+  static final List<String> CONVENTIONS = List.of(MIDPOINT, ILR_WINDOW);
 
   private static final Map<String, WindowFilter.Convention> FILTER_CONVENTIONS =
       Map.of(
@@ -109,12 +120,29 @@ public final class SyntheticRecovery {
 
   /** The operator entry point. It refuses an output that exists rather than replacing it. */
   public static int run(String... args) {
-    if (args.length == 3 && args[0].equals("score")) return scoreOne(args[1], args[2], false);
-    if (args.length == 3 && args[0].equals("tune")) return scoreOne(args[1], args[2], true);
-    if (args.length == 3 && args[0].equals("control")) return control(args[1], args[2]);
+    final String command = args.length == 0 ? "" : args[0];
+    if (args.length == 3 && command.equals("score")) return scoreOne(args[1], args[2], false);
+    if (args.length == 3 && command.equals("tune")) return scoreOne(args[1], args[2], true);
+    if (args.length == 3 && command.equals("control")) return control(args[1], args[2]);
+    if (args.length == 3 && command.equals("register")) return register(args[1], args[2]);
+    if (args.length == 3 && command.equals("preflight")) return preflight(args[1], args[2]);
+    if (args.length == 4 && command.equals("commit")) return commit(args[1], args[2], args[3]);
+    if ((args.length == 3 || args.length == 4) && command.equals("experiment"))
+      return experiment(args[1], args[2], args.length == 4 ? args[3] : null);
+    if (args.length == 4 && command.equals("reproduce"))
+      return reproduce(args[1], args[2], args[3]);
+    if (args.length == 3 && command.equals("report")) return infeasibilityReport(args[1], args[2]);
+    if (args.length == 5 && command.equals("report"))
+      return finalReport(args[1], args[2], args[3], args[4]);
     System.err.println(
         "Usage: score <dataset.json> <evidence.json> | tune <dataset.json> <evidence.json>"
-            + " | control <plan.json> <dir>");
+            + " | control <plan.json> <dir> | register <plan.json> <registration.json>"
+            + " | preflight <registration.json> <dir>"
+            + " | commit <registration.json> <preflight.json> <execution.json>"
+            + " | experiment <execution.json> <dir> [resumption.json]"
+            + " | reproduce <execution.json> <dir> <reproduction.json>"
+            + " | report <execution.json> <dir> <reproduction.json> <report.json>"
+            + " | report <preflight.json> <report.json>");
     return REJECTED;
   }
 
@@ -210,11 +238,24 @@ public final class SyntheticRecovery {
       return REJECTED;
     }
 
+    final Run run = execute(plan, destination, () -> false);
+    write(report, run.report());
+    return run.exitCode();
+  }
+
+  /** One completed or stopped pass over both stages, and the report it reduced to. */
+  private record Run(ObjectNode report, List<Stage> known, List<Stage> estimated, int exitCode) {}
+
+  /**
+   * Both known-parameter controls and, when they demonstrate recovery, both estimated stages. The
+   * watchdog decides between repetitions whether another one is scheduled at all.
+   */
+  private static Run execute(Plan plan, Path destination, SyntheticReproduction.Deadline deadline) {
     final List<Stage> known = new ArrayList<>();
     for (String convention : CONVENTIONS) {
-      final Stage stage = stage(plan, convention, destination, KNOWN_STAGE);
+      final Stage stage = stage(plan, convention, destination, KNOWN_STAGE, deadline);
       known.add(stage);
-      if (stage.failure() != null) break;
+      if (stage.stopped()) break;
     }
 
     // Both controls have to demonstrate recovery before either estimated stage runs; a failed,
@@ -223,16 +264,17 @@ public final class SyntheticRecovery {
     final List<Stage> estimated = new ArrayList<>();
     if (control.equals(SyntheticCoverage.DEMONSTRATED))
       for (String convention : CONVENTIONS) {
-        final Stage stage = stage(plan, convention, destination, ESTIMATED_STAGE);
+        final Stage stage = stage(plan, convention, destination, ESTIMATED_STAGE, deadline);
         estimated.add(stage);
-        if (stage.failure() != null) break;
+        if (stage.stopped()) break;
       }
 
-    write(report, report(plan, known, control, estimated));
-    return Stream.concat(known.stream(), estimated.stream())
-            .anyMatch(stage -> stage.failure() != null)
-        ? STOPPED
-        : SUCCESS;
+    final List<Stage> all = Stream.concat(known.stream(), estimated.stream()).toList();
+    final int exitCode =
+        all.stream().anyMatch(stage -> stage.interruption() != null)
+            ? INTERRUPTED
+            : all.stream().anyMatch(stage -> stage.failure() != null) ? STOPPED : SUCCESS;
+    return new Run(report(plan, known, control, estimated), known, estimated, exitCode);
   }
 
   /** One stage's verdict per convention, with a convention that never ran left incomplete. */
@@ -284,7 +326,13 @@ public final class SyntheticRecovery {
       String verdict,
       Map<String, Integer> endpointFrequencies,
       int endpointSelections,
-      ObjectNode failure) {}
+      ObjectNode failure,
+      ObjectNode interruption) {
+
+    boolean stopped() {
+      return failure != null || interruption != null;
+    }
+  }
 
   /**
    * One convention and stage. Every dataset is generated, scored and retained before any of it is
@@ -292,7 +340,12 @@ public final class SyntheticRecovery {
    * regenerates the identical observations from the same streams and selects its parameters on the
    * training observations alone before scoring them.
    */
-  private static Stage stage(Plan plan, String convention, Path destination, String stageName) {
+  private static Stage stage(
+      Plan plan,
+      String convention,
+      Path destination,
+      String stageName,
+      SyntheticReproduction.Deadline deadline) {
     final boolean estimated = stageName.equals(ESTIMATED_STAGE);
     final List<String> components = components(prefix(plan.phase(), convention, 0));
     final int levels = SyntheticCoverage.LEVELS.size();
@@ -303,6 +356,21 @@ public final class SyntheticRecovery {
     int endpointSelections = 0;
     boolean drawsRetained = true;
     for (int index = 0; index < plan.datasets(); index++) {
+      // The watchdog stops scheduling at the cap. Everything completed so far stays where it is,
+      // and the reason it stopped is preserved beside it.
+      if (deadline.expired()) {
+        final ObjectNode interruption = interruption(convention, stageName, index);
+        write(destination.resolve("interruption.json"), interruption);
+        return new Stage(
+            convention,
+            index,
+            List.of(),
+            SyntheticCoverage.INCOMPLETE,
+            endpoints,
+            endpointSelections,
+            null,
+            interruption);
+      }
       final Path file =
           destination.resolve(directory(stageName)).resolve(convention).resolve(index + ".json");
       final ObjectNode evidence;
@@ -351,7 +419,8 @@ public final class SyntheticRecovery {
             SyntheticCoverage.INCOMPLETE,
             endpoints,
             endpointSelections,
-            failure);
+            failure,
+            null);
       }
       // One dataset's 25 scoring polls are correlated, so they reduce to one fraction per cell
       // before anything is averaged.
@@ -392,7 +461,26 @@ public final class SyntheticRecovery {
         SyntheticCoverage.stageVerdict(cells),
         endpoints,
         endpointSelections,
+        null,
         null);
+  }
+
+  /** The repetition the watchdog stopped at, and the cap that stopped it. */
+  private static ObjectNode interruption(String convention, String stageName, int datasetIndex) {
+    final ObjectNode interruption = JSON.createObjectNode();
+    interruption.put("status", "interrupted");
+    interruption.put("version", VERSION);
+    interruption.put("convention", convention);
+    interruption.put("stage", stageName);
+    interruption.put("datasetIndex", datasetIndex);
+    interruption.put("reason", "the 24-hour wall-clock cap was reached");
+    interruption.put("stoppedAt", Instant.now().toString());
+    interruption.put(
+        "preservation", "every completed record is retained; nothing is adapted or rerun");
+    interruption.put(
+        "resumption",
+        "resuming needs a separately recorded owner decision and preserves this partial output");
+    return interruption;
   }
 
   /** Each stage keeps its datasets apart, so neither can be mistaken for the other's evidence. */
@@ -439,10 +527,10 @@ public final class SyntheticRecovery {
   private static ObjectNode report(
       Plan plan, List<Stage> known, String control, List<Stage> estimated) {
     final ObjectNode report = JSON.createObjectNode();
-    final boolean stopped =
-        Stream.concat(known.stream(), estimated.stream())
-            .anyMatch(stage -> stage.failure() != null);
-    report.put("status", stopped ? "stopped" : "completed");
+    final List<Stage> all = Stream.concat(known.stream(), estimated.stream()).toList();
+    final boolean interrupted = all.stream().anyMatch(stage -> stage.interruption() != null);
+    final boolean stopped = all.stream().anyMatch(stage -> stage.failure() != null);
+    report.put("status", interrupted ? "interrupted" : stopped ? "stopped" : "completed");
     report.put("version", VERSION);
     report.put("phase", plan.phase());
     report.put(
@@ -472,6 +560,10 @@ public final class SyntheticRecovery {
         "two-sided Bonferroni across all 72 primary cells, kept whether or not the estimated"
             + " stages run");
     confidence.put("claim", "approximate large-sample simultaneous 95%, not a finite-sample bound");
+    report.put(
+        "interimStopping",
+        "none; repetitions are never adapted and no coverage is inspected before a stage"
+            + " completes");
     final ObjectNode bands = report.putObject("recoveryBands");
     for (int level : SyntheticCoverage.LEVELS) {
       final ArrayNode band = bands.putArray("level" + level);
@@ -504,24 +596,40 @@ public final class SyntheticRecovery {
                 Stream.concat(verdicts(known).stream(), verdicts(estimated).stream()).toList())
             : control;
     report.put("recovery", overall);
-    // A complete failed or inconclusive stage is a valid stopping result. Anything else leaves the
-    // experiment incomplete, including demonstrated recovery, whose completion needs the
-    // registration, preflight and reproduction slices this command does not yet carry.
-    report.put(
-        "experiment",
-        overall.equals(SyntheticCoverage.FAILED) || overall.equals(SyntheticCoverage.INCONCLUSIVE)
-            ? (eligible ? "stopped_after_estimated_stage" : "stopped_after_known_stage")
-            : SyntheticCoverage.INCOMPLETE);
-    if (overall.equals(SyntheticCoverage.DEMONSTRATED))
-      report.put(
-          "experimentReason",
-          "every stage demonstrated recovery; completion additionally needs committed registration,"
-              + " feasible preflight and reproduced predictive output");
+    report.put("experiment", experiment(overall, eligible, interrupted, stopped));
+    report.put("experimentReason", experimentReason(overall, interrupted, stopped));
     report.put(
         "conclusion",
         "software execution of the registered scenario; a completed statistical verdict here is"
             + " neither a model change nor permission to publish");
     return report;
+  }
+
+  /**
+   * What the run itself amounts to. A complete failed or inconclusive stage is a valid stopping
+   * result; an interrupted or numerically stopped run is incomplete, and demonstrated recovery
+   * stays incomplete here because completion also needs reproduced output and unchanged protected
+   * evidence, which the reproduction and report commands establish.
+   */
+  private static String experiment(
+      String overall, boolean eligible, boolean interrupted, boolean stopped) {
+    if (interrupted) return "incomplete_interrupted";
+    if (stopped) return "incomplete_numerical_failure";
+    if (overall.equals(SyntheticCoverage.FAILED) || overall.equals(SyntheticCoverage.INCONCLUSIVE))
+      return eligible ? "stopped_after_estimated_stage" : "stopped_after_known_stage";
+    return SyntheticCoverage.INCOMPLETE;
+  }
+
+  private static String experimentReason(String overall, boolean interrupted, boolean stopped) {
+    if (interrupted)
+      return "the 24-hour cap stopped scheduling; completed records are preserved and resuming"
+          + " needs a separately recorded owner decision";
+    if (stopped)
+      return "a numerical failure stopped the run at a repetition the evidence preserves";
+    if (overall.equals(SyntheticCoverage.DEMONSTRATED))
+      return "every stage demonstrated recovery; completion additionally needs reproduced"
+          + " predictive output and unchanged protected real-data evidence";
+    return "the stage verdicts are a completed result of the registered run";
   }
 
   /** One convention of one stage, or the reason it did not run. */
@@ -541,7 +649,7 @@ public final class SyntheticRecovery {
       method.put("reason", blocked == null ? "an earlier stage stopped the run" : blocked);
       return method;
     }
-    method.put("status", stage.failure() == null ? "completed" : SyntheticCoverage.INCOMPLETE);
+    method.put("status", stage.stopped() ? SyntheticCoverage.INCOMPLETE : "completed");
     method.put("verdict", stage.verdict());
     method.put("plannedDatasets", plan.datasets());
     method.put("completedDatasets", stage.completedDatasets());
@@ -556,6 +664,7 @@ public final class SyntheticRecovery {
               + " endpoint gate");
     }
     if (stage.failure() != null) method.set("failure", stage.failure());
+    if (stage.interruption() != null) method.set("interruption", stage.interruption());
     final ArrayNode cells = method.putArray("cells");
     for (SyntheticCoverage.Cell cell : stage.cells()) cells.add(JSON.valueToTree(cell));
     return method;
@@ -886,7 +995,28 @@ public final class SyntheticRecovery {
               dataset.draws(),
               components));
     }
+    evidence.set("coverageFractions", fractions(polls, components));
+    evidence.put(
+        "coverageFractionRule",
+        "one fraction per component and interval level over this dataset's scoring polls; the"
+            + " polls are correlated and are never averaged as independent repetitions");
     return evidence;
+  }
+
+  /** What one dataset contributes to each cell: the fraction of its scoring polls covered. */
+  private static ObjectNode fractions(ArrayNode polls, List<String> components) {
+    final ObjectNode fractions = JSON.createObjectNode();
+    for (int component = 0; component < components.size(); component++) {
+      final ObjectNode levels = fractions.putObject(components.get(component));
+      for (int level : SyntheticCoverage.LEVELS) {
+        int covered = 0;
+        for (JsonNode poll : polls)
+          if (poll.get("components").get(component).get("covered" + level).booleanValue())
+            covered++;
+        levels.put("level" + level, covered / (double) polls.size());
+      }
+    }
+    return fractions;
   }
 
   /** One scored poll: the predictive distribution it came from and the summaries it produced. */
@@ -994,7 +1124,7 @@ public final class SyntheticRecovery {
     return VERSION + "|" + phase + "|" + convention + "|" + datasetIndex;
   }
 
-  private static Roster.CoveragePeriod period(String prefix) {
+  static Roster.CoveragePeriod period(String prefix) {
     return new Roster.CoveragePeriod(
         prefix,
         SyntheticScenario.PERIOD_START,
@@ -1007,6 +1137,11 @@ public final class SyntheticRecovery {
 
   private static List<String> components(String prefix) {
     return PollObservations.components(period(prefix));
+  }
+
+  /** The registered component order, which every dataset of the scenario observes. */
+  static List<String> components() {
+    return components(VERSION);
   }
 
   /** The registered observation covariance, preserved exactly as the document supplies it. */
@@ -1056,7 +1191,7 @@ public final class SyntheticRecovery {
    * One poll of the synthetic calendar. Publication happens on the fieldwork end, and the nominal
    * sample size is carried for the record rather than used: the covariance is supplied.
    */
-  private static PollCsv.Poll poll(
+  static PollCsv.Poll poll(
       int rowNumber, String institute, LocalDate from, LocalDate to, BigDecimal sampleSize) {
     return new PollCsv.Poll(
         rowNumber,
@@ -1085,7 +1220,7 @@ public final class SyntheticRecovery {
    * shares nor the nominal sample size takes part in the numerical path. The midpoint follows the
    * estimator's own floor-of-half-elapsed-days convention.
    */
-  private static PollObservations.Observation observation(
+  static PollObservations.Observation observation(
       PollCsv.Poll poll, Roster.CoveragePeriod period, ModelValues ilr, ModelValues covariance) {
     require(period.covers(poll), "Row " + poll.rowNumber() + " lies outside the synthetic period");
     final LocalDate from = poll.collectionFrom();
@@ -1094,7 +1229,7 @@ public final class SyntheticRecovery {
         poll, from.plusDays(ChronoUnit.DAYS.between(from, to) / 2), ilr, covariance, 0);
   }
 
-  private static ModelValues column(double[] values) {
+  static ModelValues column(double[] values) {
     final SimpleMatrix matrix = new SimpleMatrix(values.length, 1);
     for (int r = 0; r < values.length; r++) matrix.set(r, 0, values[r]);
     return ModelValues.owned(matrix);
@@ -1158,6 +1293,593 @@ public final class SyntheticRecovery {
           (JSON.writerWithDefaultPrettyPrinter().writeValueAsString(value) + System.lineSeparator())
               .getBytes(StandardCharsets.UTF_8),
           StandardOpenOption.CREATE_NEW);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  /** Validates a registration plan and freezes it, with its own checksum beside it. */
+  private static int register(String planFile, String registrationFile) {
+    final Path output = Path.of(registrationFile);
+    try {
+      SyntheticRegistration.register(Path.of(planFile), output);
+      return SUCCESS;
+    } catch (RuntimeException e) {
+      // A refusal leaves nothing behind: a rejection document at a registered path would block
+      // the corrected operation the operator is about to run.
+      System.err.println(e.getMessage());
+      return REJECTED;
+    }
+  }
+
+  /**
+   * The timing-only preflight: one warm-up and three timed datasets per convention, in preflight
+   * streams of their own. It measures generation, the known-parameter prediction path, all 180
+   * training-grid evaluations, estimated-parameter prediction, the actual evidence writing and
+   * hashing and full reproduction. The estimated path runs here to be costed, never to be
+   * inspected: no coverage from these datasets enters a formal result.
+   */
+  private static int preflight(String registrationFile, String directory) {
+    final Instant started = Instant.now();
+    final long startNanos = System.nanoTime();
+    final Path destination = Path.of(directory);
+    final SyntheticRegistration.Checked checked;
+    try {
+      if (Files.exists(destination)) {
+        System.err.println("Preflight destination already exists: " + destination);
+        return REJECTED;
+      }
+      checked = SyntheticRegistration.check(Path.of(registrationFile), true);
+      SyntheticRegistration.verifyDestination(checked, destination, "preflightLocation");
+      SyntheticRegistration.claimWorker(destination, checked);
+    } catch (RuntimeException e) {
+      System.err.println(e.getMessage());
+      return REJECTED;
+    }
+
+    final Path record = destination.resolve("preflight.json");
+    final Plan plan =
+        new Plan(PREFLIGHT, checked.masterSeed(), PREFLIGHT_DATASETS, checked.draws());
+    final double tolerance = SyntheticRegistration.tolerance(checked, "interval");
+    final List<SyntheticBudget.Measured> timed = new ArrayList<>();
+    final ArrayNode measurements = JSON.createArrayNode();
+    for (String convention : CONVENTIONS)
+      for (int index = 0; index < PREFLIGHT_DATASETS; index++) {
+        final SyntheticBudget.Measured measured;
+        try {
+          // The cap starts here, so preflight is the first work it bounds.
+          require(
+              System.nanoTime() - startNanos < SyntheticBudget.CAP_NANOS,
+              "The 24-hour wall-clock cap was reached during preflight");
+          measured = measure(plan, convention, index, destination, tolerance);
+        } catch (RuntimeException e) {
+          // A numerical failure stops preflight with the operation that failed preserved.
+          final ObjectNode failure = failure(convention, PREFLIGHT, index, "measure", e);
+          write(destination.resolve("preflight-failure.json"), failure);
+          final ObjectNode stopped = preflightRecord(checked, started, startNanos, measurements);
+          stopped.put("status", "stopped");
+          stopped.put("feasibility", "not_measured");
+          stopped.set("failure", failure);
+          write(record, stopped);
+          System.err.println(failure.get("message").asString());
+          return STOPPED;
+        }
+        measurements.add(measurement(convention, index, measured, index == 0));
+        if (index > 0) timed.add(measured);
+      }
+
+    final ObjectNode result = preflightRecord(checked, started, startNanos, measurements);
+    final SyntheticBudget.Budget budget =
+        SyntheticBudget.project(
+            timed,
+            checked.datasets(),
+            System.nanoTime() - startNanos,
+            usableSpace(Path.of(required(checked.plan(), "outputLocation").asString())));
+    result.put("status", "measured");
+    result.set("budget", budget(budget));
+    result.put("feasibility", budget.feasible() ? "feasible" : "infeasible");
+    result.set("reasons", JSON.valueToTree(budget.reasons()));
+    result.put(
+        "settings",
+        "unchanged; an infeasible projection stops the run rather than lowering repetitions,"
+            + " shortening windows, omitting grid points or changing precision");
+    write(record, result);
+    return budget.feasible() ? SUCCESS : INFEASIBLE;
+  }
+
+  /** One preflight dataset, measured through both stages in the intended evidence format. */
+  private static SyntheticBudget.Measured measure(
+      Plan plan, String convention, int index, Path destination, double tolerance) {
+    final long generationStart = System.nanoTime();
+    final Synthetic synthetic = generate(plan, convention, index);
+    final long generationNanos = System.nanoTime() - generationStart;
+
+    final long knownStart = System.nanoTime();
+    final ObjectNode known = score(synthetic.dataset());
+    final long knownPredictionNanos = System.nanoTime() - knownStart;
+    known.put("stage", KNOWN_STAGE);
+    known.set("generation", generation(synthetic));
+    final Path knownFile = preflightFile(destination, KNOWN_STAGE, convention, index);
+    final long knownWrite = System.nanoTime();
+    write(knownFile, known);
+    final long knownEvidenceNanos = System.nanoTime() - knownWrite;
+    final long knownReproduction = System.nanoTime();
+    SyntheticReproduction.dataset(
+        knownFile, known, tolerance, coverageCounter(), new ArrayList<>());
+    final long knownReproductionNanos = System.nanoTime() - knownReproduction;
+
+    final long searchStart = System.nanoTime();
+    final SyntheticSearch.Selection selection = select(synthetic.dataset());
+    final long likelihoodNanos = System.nanoTime() - searchStart;
+    if (selection.failed()) throw new IllegalArgumentException(stopping(selection));
+    final long tunedStart = System.nanoTime();
+    final ObjectNode tuned = score(synthetic.dataset().at(selection.parameters()));
+    final long tunedPredictionNanos = System.nanoTime() - tunedStart;
+    tuned.put("stage", ESTIMATED_STAGE);
+    tuned.set("search", search(selection));
+    tuned.set("generation", generation(synthetic));
+    final Path tunedFile = preflightFile(destination, ESTIMATED_STAGE, convention, index);
+    final long tunedWrite = System.nanoTime();
+    write(tunedFile, tuned);
+    final long estimatedEvidenceNanos = System.nanoTime() - tunedWrite;
+    final long tunedReproduction = System.nanoTime();
+    SyntheticReproduction.dataset(
+        tunedFile, tuned, tolerance, coverageCounter(), new ArrayList<>());
+    final long estimatedReproductionNanos = System.nanoTime() - tunedReproduction;
+
+    return new SyntheticBudget.Measured(
+        convention,
+        generationNanos,
+        knownPredictionNanos,
+        knownEvidenceNanos,
+        knownReproductionNanos,
+        likelihoodNanos,
+        tunedPredictionNanos,
+        estimatedEvidenceNanos,
+        estimatedReproductionNanos,
+        size(knownFile),
+        size(tunedFile));
+  }
+
+  /** The counter a preflight reproduction fills; its coverage is measured, never inspected. */
+  private static long[][] coverageCounter() {
+    return new long[components().size()][SyntheticCoverage.LEVELS.size()];
+  }
+
+  private static Path preflightFile(
+      Path destination, String stageName, String convention, int index) {
+    return destination
+        .resolve(PREFLIGHT)
+        .resolve(directory(stageName))
+        .resolve(convention)
+        .resolve(index + ".json");
+  }
+
+  private static ObjectNode measurement(
+      String convention, int index, SyntheticBudget.Measured measured, boolean warmUp) {
+    final ObjectNode retained = JSON.createObjectNode();
+    retained.put("convention", convention);
+    retained.put("datasetIndex", index);
+    retained.put("role", warmUp ? "warm_up" : "timed");
+    retained.put("generationNanos", measured.generationNanos());
+    retained.put("knownPredictionNanos", measured.knownPredictionNanos());
+    retained.put("knownEvidenceNanos", measured.knownEvidenceNanos());
+    retained.put("knownReproductionNanos", measured.knownReproductionNanos());
+    retained.put("likelihoodNanos", measured.likelihoodNanos());
+    retained.put("gridPoints", SyntheticSearch.POINTS);
+    retained.put("tunedPredictionNanos", measured.tunedPredictionNanos());
+    retained.put("estimatedEvidenceNanos", measured.estimatedEvidenceNanos());
+    retained.put("estimatedReproductionNanos", measured.estimatedReproductionNanos());
+    retained.put("knownBytes", measured.knownBytes());
+    retained.put("estimatedBytes", measured.estimatedBytes());
+    return retained;
+  }
+
+  private static ObjectNode preflightRecord(
+      SyntheticRegistration.Checked checked,
+      Instant started,
+      long startNanos,
+      ArrayNode measurements) {
+    final ObjectNode record = JSON.createObjectNode();
+    record.put("version", VERSION);
+    record.put("phase", checked.phase());
+    record.put("registrationSha256", checked.sha256());
+    record.put("datasets", PREFLIGHT_DATASETS);
+    record.put("warmUpDatasets", 1);
+    record.put("timedDatasets", PREFLIGHT_DATASETS - 1);
+    record.put("streamPhase", PREFLIGHT);
+    record.put("deadlineStartedAt", started.toString());
+    record.put("capNanos", SyntheticBudget.CAP_NANOS);
+    record.put("elapsedNanos", System.nanoTime() - startNanos);
+    record.put("hostname", SyntheticRegistration.hostname());
+    record.put("workers", 1);
+    record.put(
+        "coverage",
+        "not inspected; preflight datasets never enter the formal collection or any summary");
+    record.set("measurements", measurements);
+    return record;
+  }
+
+  private static ObjectNode budget(SyntheticBudget.Budget budget) {
+    final ObjectNode retained = JSON.createObjectNode();
+    final ArrayNode stages = retained.putArray("stages");
+    for (SyntheticBudget.Stage stage : budget.stages()) {
+      final ObjectNode entry = stages.addObject();
+      entry.put("convention", stage.convention());
+      entry.put("stage", stage.stage());
+      entry.put("slowestNanos", stage.slowestNanos());
+      entry.put("largestBytes", stage.largestBytes());
+    }
+    retained.put(
+        "charging",
+        "generation is charged to the known stage; each stage carries its own evidence work and"
+            + " reproduction");
+    retained.put("datasets", budget.datasets());
+    retained.put("perRepetitionNanos", budget.perRepetitionNanos());
+    retained.put("projectionMargin", SyntheticBudget.MARGIN);
+    retained.put("projectedNanos", budget.projectedNanos());
+    retained.put("preflightNanos", budget.preflightNanos());
+    retained.put("totalNanos", budget.totalNanos());
+    retained.put("capNanos", budget.capNanos());
+    retained.put("withinCap", budget.withinCap());
+    retained.put("projectedBytes", budget.projectedBytes());
+    retained.put("requiredBytes", budget.requiredBytes());
+    retained.put("usableBytes", budget.usableBytes());
+    retained.put("sufficientDisk", budget.sufficientDisk());
+    return retained;
+  }
+
+  /** The final execution identity, which no formal dataset is generated without. */
+  private static int commit(String registrationFile, String preflightFile, String executionFile) {
+    final Path output = Path.of(executionFile);
+    try {
+      SyntheticRegistration.commit(Path.of(registrationFile), Path.of(preflightFile), output);
+      return SUCCESS;
+    } catch (RuntimeException e) {
+      System.err.println(e.getMessage());
+      return REJECTED;
+    }
+  }
+
+  /**
+   * The registered run: one host, one worker and a watchdog whose clock started at preflight
+   * launch. It writes a fresh registered destination and never resumes an interrupted run without a
+   * separately recorded owner decision.
+   */
+  private static int experiment(String executionFile, String directory, String resumptionFile) {
+    final Path destination = Path.of(directory);
+    final Path report = destination.resolve("report.json");
+    final SyntheticRegistration.Execution execution;
+    final ObjectNode resumed;
+    try {
+      if (Files.exists(destination)) {
+        System.err.println("Evidence destination already exists: " + destination);
+        return REJECTED;
+      }
+      execution = SyntheticRegistration.execution(Path.of(executionFile));
+      resumed = resumption(execution, resumptionFile, destination);
+      SyntheticRegistration.verifyProtectedEvidence(execution.checked().plan());
+      SyntheticRegistration.claimWorker(destination, execution.checked());
+    } catch (RuntimeException e) {
+      System.err.println(e.getMessage());
+      return REJECTED;
+    }
+
+    final SyntheticRegistration.Checked checked = execution.checked();
+    final Map<String, String> before = protectedDigests(checked.plan());
+    final Plan plan =
+        new Plan(checked.phase(), checked.masterSeed(), checked.datasets(), checked.draws());
+    final Instant startedAt = Instant.now();
+    final long startNanos = System.nanoTime();
+    final Run run = execute(plan, destination, execution::expired);
+    final ObjectNode result = run.report();
+    result.put("startedAt", startedAt.toString());
+    result.put("completedAt", Instant.now().toString());
+    result.put("elapsedNanos", System.nanoTime() - startNanos);
+    result.put("exitCode", run.exitCode());
+    result.set("identities", identities(execution));
+    result.put("evidenceLocation", destination.toString());
+    result.set("protectedEvidence", protectedEvidence(checked.plan(), before));
+    if (resumed != null) result.set("resumedFrom", resumed);
+    write(report, result);
+    return run.exitCode();
+  }
+
+  /**
+   * An interrupted run is never continued on its own. A resumption needs an owner decision recorded
+   * outside this workflow, and it writes a destination of its own so the original partial output
+   * stays exactly as the watchdog left it.
+   */
+  private static ObjectNode resumption(
+      SyntheticRegistration.Execution execution, String resumptionFile, Path destination) {
+    if (resumptionFile == null) {
+      SyntheticRegistration.verifyDestination(execution.checked(), destination, "outputLocation");
+      return null;
+    }
+    final Path file = Path.of(resumptionFile);
+    final JsonNode decision = SyntheticRegistration.read(file);
+    require(
+        VERSION.equals(required(decision, "version").asString()),
+        "Unregistered protocol version in " + file);
+    require(
+        required(decision, "executionSha256").asString().equals(execution.sha256()),
+        "The owner decision names another execution identity");
+    for (String field : List.of("decidedOn", "decidedBy", "reason"))
+      require(
+          !required(decision, field).asString().isBlank(), "An owner decision records " + field);
+    final JsonNode interrupted = required(decision, "interruptedRun");
+    final Path original = Path.of(required(interrupted, "path").asString());
+    require(
+        !original.toAbsolutePath().normalize().equals(destination.toAbsolutePath().normalize()),
+        "A resumed run writes a destination of its own");
+    require(
+        SyntheticRegistration.treeDigest(original)
+            .equals(required(interrupted, "sha256").asString()),
+        "The interrupted run's partial output is not the one the owner decided on");
+    require(
+        Files.isRegularFile(original.resolve("interruption.json")),
+        "A resumed run continues an interrupted run, not a completed one");
+    final ObjectNode retained = JSON.createObjectNode();
+    retained.put("path", original.toString());
+    retained.put("sha256", required(interrupted, "sha256").asString());
+    retained.put("decidedOn", required(decision, "decidedOn").asString());
+    retained.put("decidedBy", required(decision, "decidedBy").asString());
+    retained.put("reason", required(decision, "reason").asString());
+    retained.put("decisionSha256", SyntheticRegistration.digest(file));
+    retained.put("preservation", "the original partial output is retained unchanged");
+    return retained;
+  }
+
+  /** Regenerates every completed predictive array and recomputes what was read from it. */
+  private static int reproduce(String executionFile, String directory, String output) {
+    final Path destination = Path.of(directory);
+    final Path record = Path.of(output);
+    final SyntheticRegistration.Execution execution;
+    final JsonNode report;
+    try {
+      require(!Files.exists(record), "Output already exists: " + record);
+      execution = SyntheticRegistration.execution(Path.of(executionFile));
+      report = SyntheticRegistration.read(destination.resolve("report.json"));
+      require(
+          required(required(report, "identities"), "executionSha256")
+              .asString()
+              .equals(execution.sha256()),
+          "The run was not generated under this execution identity");
+    } catch (RuntimeException e) {
+      System.err.println(e.getMessage());
+      return REJECTED;
+    }
+
+    final SyntheticReproduction.Outcome outcome =
+        SyntheticReproduction.reproduce(
+            destination,
+            report,
+            SyntheticRegistration.tolerance(execution.checked(), "interval"),
+            SyntheticRegistration.tolerance(execution.checked(), "coverage"),
+            execution::expired);
+    final ObjectNode retained = SyntheticReproduction.record(outcome);
+    retained.set("identities", identities(execution));
+    retained.put("evidenceLocation", destination.toString());
+    write(record, retained);
+    return outcome.interrupted() ? INTERRUPTED : outcome.reproduced() ? SUCCESS : BLOCKED;
+  }
+
+  /** The reviewable report of one run: every stage, the reproduction and the protected evidence. */
+  private static int finalReport(
+      String executionFile, String directory, String reproductionFile, String output) {
+    final Path record = Path.of(output);
+    final SyntheticRegistration.Execution execution;
+    final JsonNode run;
+    final JsonNode reproduction;
+    try {
+      require(!Files.exists(record), "Output already exists: " + record);
+      execution = SyntheticRegistration.execution(Path.of(executionFile));
+      run = SyntheticRegistration.read(Path.of(directory).resolve("report.json"));
+      reproduction = SyntheticRegistration.read(Path.of(reproductionFile));
+      require(
+          required(required(reproduction, "identities"), "executionSha256")
+              .asString()
+              .equals(execution.sha256()),
+          "The reproduction was not run under this execution identity");
+    } catch (RuntimeException e) {
+      System.err.println(e.getMessage());
+      return REJECTED;
+    }
+
+    final ObjectNode report = JSON.createObjectNode();
+    final String experiment = required(run, "experiment").asString();
+    final String reproduced = required(reproduction, "outcome").asString();
+    final boolean unchanged = protectedUnchanged(run);
+    final boolean confirmed = reproduced.equals("reproduced") && unchanged;
+    final boolean complete =
+        required(run, "status").asString().equals("completed")
+            && required(run, "recovery").asString().equals(SyntheticCoverage.DEMONSTRATED)
+            && confirmed;
+    report.put("version", VERSION);
+    report.put("phase", execution.checked().phase());
+    report.put(
+        "outcome",
+        complete
+            ? "complete_recovery_demonstrated"
+            : experiment.equals("stopped_after_known_stage")
+                    || experiment.equals("stopped_after_estimated_stage")
+                ? "complete_" + required(run, "recovery").asString()
+                : experiment);
+    report.put("recovery", required(run, "recovery").asString());
+    report.put("knownStageVerdict", required(run, "knownStageVerdict").asString());
+    report.put("estimatedStageVerdict", required(run, "estimatedStageVerdict").asString());
+    report.put("evidenceLocation", required(run, "evidenceLocation").asString());
+    report.set("identities", required(run, "identities"));
+    report.set("stages", stageAccounting(run));
+    final ObjectNode reproducing = report.putObject("reproduction");
+    reproducing.put("outcome", reproduced);
+    reproducing.put("datasets", required(reproduction, "reproducedDatasets").intValue());
+    reproducing.put("arrays", required(reproduction, "reproducedArrays").intValue());
+    reproducing.set("findings", required(reproduction, "findings"));
+    reproducing.put("path", reproductionFile);
+    report.set("protectedEvidence", required(run, "protectedEvidence"));
+    report.put("protectedEvidenceUnchanged", unchanged);
+    report.put(
+        "completion",
+        complete
+            ? "every planned stage completed, its predictive output reproduced and the protected"
+                + " real-data evidence and shipped freeze are unchanged"
+            : "incomplete or stopped; see the outcome and the stage accounting");
+    report.put(
+        "authority",
+        "a recovery verdict here supports this synthetic scenario only; it is neither a model"
+            + " change nor permission to publish");
+    write(record, report);
+    // A completed failed or inconclusive verdict is a result, not an error. Evidence that did not
+    // reproduce, or protected evidence that moved, is: the report says so and so does the exit
+    // code.
+    return confirmed ? SUCCESS : BLOCKED;
+  }
+
+  /** The report of a run that never started, because its preflight did not fit the host. */
+  private static int infeasibilityReport(String preflightFile, String output) {
+    final Path record = Path.of(output);
+    final JsonNode preflight;
+    try {
+      require(!Files.exists(record), "Output already exists: " + record);
+      preflight = SyntheticRegistration.read(Path.of(preflightFile));
+      require(
+          VERSION.equals(required(preflight, "version").asString()),
+          "Unregistered protocol version in " + preflightFile);
+      require(
+          !required(preflight, "feasibility").asString().equals("feasible"),
+          "A feasible preflight is reported with its run");
+    } catch (RuntimeException e) {
+      System.err.println(e.getMessage());
+      return REJECTED;
+    }
+
+    final ObjectNode report = JSON.createObjectNode();
+    report.put("version", VERSION);
+    report.put("phase", required(preflight, "phase").asString());
+    report.put("outcome", "stopped_at_preflight_" + required(preflight, "feasibility").asString());
+    report.put("recovery", NOT_RUN);
+    report.set("reasons", required(preflight, "reasons"));
+    report.set("budget", preflight.get("budget"));
+    report.put("registrationSha256", required(preflight, "registrationSha256").asString());
+    report.put("preflightPath", preflightFile);
+    final ArrayNode stages = report.putArray("stages");
+    for (String stageName : List.of(KNOWN_STAGE, ESTIMATED_STAGE))
+      for (String convention : CONVENTIONS) {
+        final ObjectNode stage = stages.addObject();
+        stage.put("convention", convention);
+        stage.put("stage", stageName);
+        stage.put("status", NOT_RUN);
+        stage.put("verdict", SyntheticCoverage.INCOMPLETE);
+        stage.put("reason", "the registered host cannot carry the run within its resource limit");
+      }
+    report.put(
+        "completion",
+        "no formal dataset was generated; the infeasibility is retained and the scientific"
+            + " settings are unchanged");
+    write(record, report);
+    return SUCCESS;
+  }
+
+  /** Every planned stage of a run, whether it completed, stopped or never started. */
+  private static ArrayNode stageAccounting(JsonNode run) {
+    final ArrayNode stages = JSON.createArrayNode();
+    for (String field : List.of("methods", "estimatedStages"))
+      for (JsonNode method : required(run, field)) {
+        final ObjectNode stage = stages.addObject();
+        for (String name : List.of("convention", "stage", "status", "verdict"))
+          stage.put(name, required(method, name).asString());
+        if (method.get("reason") != null) stage.put("reason", method.get("reason").asString());
+        if (method.get("completedDatasets") != null)
+          stage.put("completedDatasets", method.get("completedDatasets").intValue());
+        if (method.get("plannedDatasets") != null)
+          stage.put("plannedDatasets", method.get("plannedDatasets").intValue());
+        if (method.get("failure") != null) stage.set("failure", method.get("failure"));
+        if (method.get("interruption") != null)
+          stage.set("interruption", method.get("interruption"));
+      }
+    return stages;
+  }
+
+  private static boolean protectedUnchanged(JsonNode run) {
+    for (JsonNode location : required(run, "protectedEvidence"))
+      if (!required(location, "unchanged").booleanValue()) return false;
+    return true;
+  }
+
+  /** The protected real-data evidence and shipped freeze, before and after the run. */
+  private static Map<String, String> protectedDigests(JsonNode plan) {
+    final Map<String, String> digests = new LinkedHashMap<>();
+    for (JsonNode location : required(plan, "protectedLocations")) {
+      final Path path = Path.of(required(location, "path").asString());
+      digests.put(path.toString(), SyntheticRegistration.treeDigest(path));
+    }
+    return digests;
+  }
+
+  private static ArrayNode protectedEvidence(JsonNode plan, Map<String, String> before) {
+    final ArrayNode retained = JSON.createArrayNode();
+    for (JsonNode location : required(plan, "protectedLocations")) {
+      final Path path = Path.of(required(location, "path").asString());
+      final String registered = required(location, "sha256").asString();
+      final String after = SyntheticRegistration.treeDigest(path);
+      final ObjectNode entry = retained.addObject();
+      entry.put("path", path.toString());
+      entry.put("registeredSha256", registered);
+      entry.put("beforeSha256", before.get(path.toString()));
+      entry.put("afterSha256", after);
+      entry.put("unchanged", after.equals(registered) && after.equals(before.get(path.toString())));
+    }
+    return retained;
+  }
+
+  /** The identities every artifact of one run carries, so nothing can be read out of context. */
+  private static ObjectNode identities(SyntheticRegistration.Execution execution) {
+    final ObjectNode identities = JSON.createObjectNode();
+    identities.put("protocol", VERSION);
+    identities.put("executionSha256", execution.sha256());
+    for (String field :
+        List.of(
+            "phase",
+            "registrationPath",
+            "registrationSha256",
+            "preflightPath",
+            "preflightSha256",
+            "implementationCommit",
+            "hostname",
+            "architecture",
+            "javaRuntime",
+            "vm",
+            "deadlineStartedAt",
+            "deadlineAt")) identities.put(field, required(execution.identity(), field).asString());
+    identities.put("workers", required(execution.identity(), "workers").intValue());
+    identities.put("remainingMillis", execution.remainingMillis());
+    identities.set("commands", required(execution.checked().plan(), "commands"));
+    identities.set(
+        "numericalTolerances", required(execution.checked().plan(), "numericalTolerances"));
+    return identities;
+  }
+
+  private static long size(Path file) {
+    try {
+      return Files.size(file);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  /**
+   * The free space of the filesystem the formal evidence will land on. The registered destination
+   * does not exist yet, so the nearest existing ancestor stands for its filestore; a destination on
+   * another volume than preflight is measured where it will be written.
+   */
+  private static long usableSpace(Path directory) {
+    Path ancestor = directory.toAbsolutePath().normalize();
+    while (ancestor != null && !Files.exists(ancestor)) ancestor = ancestor.getParent();
+    if (ancestor == null) throw new IllegalArgumentException("No filesystem holds " + directory);
+    final Path existing = ancestor;
+    try {
+      return Files.getFileStore(existing).getUsableSpace();
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
