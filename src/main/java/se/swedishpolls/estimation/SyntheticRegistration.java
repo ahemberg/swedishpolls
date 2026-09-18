@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
@@ -124,8 +125,7 @@ final class SyntheticRegistration {
     planIdentity.put("path", planFile.toString());
     planIdentity.put("sha256", digest(planFile));
     registration.set("plan", plan);
-    registration.put("preflight", "not_run");
-    registration.put("formalGeneration", "not_run");
+    registration.set("covariance", retainedCovariance());
     final byte[] bytes = pretty(registration);
     writeNew(registrationFile, bytes);
     writeNew(
@@ -148,6 +148,7 @@ final class SyntheticRegistration {
         FROZEN.equals(required(registration, "status").asString()), "Registration is not frozen");
     final JsonNode plan = required(registration, "plan");
     verifyPlan(plan);
+    verifyRetainedCovariance(required(registration, "covariance"));
     final JsonNode identity = required(registration, "planIdentity");
     require(
         digest(Path.of(required(identity, "path").asString()))
@@ -303,6 +304,66 @@ final class SyntheticRegistration {
       throw new UncheckedIOException(e);
     }
     return HexFormat.of().formatHex(digest.digest());
+  }
+
+  /**
+   * The fixed covariance and its noise factor as numbers. The protocol preserves the matrix in the
+   * registration, not only its digest, so the covariance a dataset generated through is comparable
+   * to the registration without recomputing it from the implementation being checked.
+   */
+  private static ObjectNode retainedCovariance() {
+    final ObjectNode retained = JSON.createObjectNode();
+    retained.put("sha256", covarianceSha256());
+    final ModelValues covariance = SyntheticScenario.observationCovariance();
+    final ArrayNode matrix = retained.putArray("observationCovariance");
+    for (int r = 0; r < covariance.getNumRows(); r++) {
+      final ArrayNode row = matrix.addArray();
+      for (int c = 0; c < covariance.getNumCols(); c++) row.add(covariance.get(r, c));
+    }
+    final ArrayNode factor = retained.putArray("noiseFactor");
+    for (double[] values : SyntheticScenario.noiseFactor()) {
+      final ArrayNode row = factor.addArray();
+      for (double value : values) row.add(value);
+    }
+    retained.put(
+        "source",
+        "R = H diag(1/p) H' / 1000 at the registered reference composition, and the lower Cholesky"
+            + " factor of m R; never recomputed from generated shares or latent states");
+    return retained;
+  }
+
+  /**
+   * Rejects a retained covariance that no longer matches the one the scenario generates through.
+   */
+  private static void verifyRetainedCovariance(JsonNode retained) {
+    final ModelValues covariance = SyntheticScenario.observationCovariance();
+    require(
+        matches(required(retained, "observationCovariance"), covariance),
+        "Retained observation covariance mismatch");
+    require(
+        matches(required(retained, "noiseFactor"), SyntheticScenario.noiseFactor()),
+        "Retained noise factor mismatch");
+    require(
+        required(retained, "sha256").asString().equals(covarianceSha256()),
+        "Retained covariance identity mismatch");
+  }
+
+  private static boolean matches(JsonNode retained, ModelValues values) {
+    final double[][] rows = new double[values.getNumRows()][values.getNumCols()];
+    for (int r = 0; r < values.getNumRows(); r++)
+      for (int c = 0; c < values.getNumCols(); c++) rows[r][c] = values.get(r, c);
+    return matches(retained, rows);
+  }
+
+  private static boolean matches(JsonNode retained, double[][] values) {
+    if (retained.size() != values.length) return false;
+    for (int r = 0; r < values.length; r++) {
+      final JsonNode row = retained.get(r);
+      if (row.size() != values[r].length) return false;
+      for (int c = 0; c < values[r].length; c++)
+        if (Double.compare(row.get(c).doubleValue(), values[r][c]) != 0) return false;
+    }
+    return true;
   }
 
   /** The identity of the fixed covariance and the noise factor the scenario generates through. */

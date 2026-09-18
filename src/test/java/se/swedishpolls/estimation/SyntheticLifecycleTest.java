@@ -163,6 +163,55 @@ class SyntheticLifecycleTest {
   }
 
   @Test
+  void retainsTheFixedCovarianceAndItsNoiseFactorAsNumbersTheDatasetEvidenceCanBeCheckedAgainst() {
+    final JsonNode covariance = read(registration).get("covariance");
+    assertEquals(SyntheticRegistration.covarianceSha256(), covariance.get("sha256").asString());
+
+    final ModelValues expected = SyntheticScenario.observationCovariance();
+    final JsonNode retained = covariance.get("observationCovariance");
+    assertEquals(expected.getNumRows(), retained.size());
+    for (int r = 0; r < expected.getNumRows(); r++)
+      for (int c = 0; c < expected.getNumCols(); c++)
+        assertEquals(expected.get(r, c), retained.get(r).get(c).doubleValue());
+
+    final double[][] factor = SyntheticScenario.noiseFactor();
+    final JsonNode retainedFactor = covariance.get("noiseFactor");
+    assertEquals(factor.length, retainedFactor.size());
+    for (int r = 0; r < factor.length; r++)
+      for (int c = 0; c < factor[r].length; c++)
+        assertEquals(factor[r][c], retainedFactor.get(r).get(c).doubleValue());
+
+    // The point of retaining it: the matrix a dataset generated through is comparable to the
+    // registration without recomputing it from the implementation under test.
+    assertEquals(
+        retained, read(evidence.resolve("datasets/midpoint/0.json")).get("observationCovariance"));
+  }
+
+  @Test
+  void refusesARegistrationWhoseRetainedCovarianceMovedOrIsMissingEvenWithItsChecksumRewritten() {
+    assertRetainedCovarianceRejected(
+        "moved",
+        document ->
+            ((ArrayNode) document.get("covariance").get("observationCovariance").get(0))
+                .set(0, 1.0));
+    assertRetainedCovarianceRejected(
+        "moved-factor",
+        document -> ((ArrayNode) document.get("covariance").get("noiseFactor").get(2)).set(1, 1.0));
+    assertRetainedCovarianceRejected("missing", document -> document.remove("covariance"));
+  }
+
+  @Test
+  void freezesNoLifecycleStatusFieldThatNothingEverWritesBack() {
+    // Preflight status lives in the preflight record and formal-generation status in the committed
+    // execution identity. A frozen document pinned by digest cannot carry either.
+    final JsonNode frozen = read(registration);
+    assertNull(frozen.get("preflight"));
+    assertNull(frozen.get("formalGeneration"));
+    assertEquals("measured", read(preflightRecord).get("status").asString());
+    assertEquals(SyntheticRegistration.FROZEN, read(execution).get("status").asString());
+  }
+
+  @Test
   void measuresOneWarmUpAndThreeTimedDatasetsPerConventionInPreflightStreams() {
     final JsonNode record = read(preflightRecord);
     assertEquals("measured", record.get("status").asString());
@@ -579,6 +628,29 @@ class SyntheticLifecycleTest {
     void apply(ObjectNode plan);
   }
 
+  /**
+   * Rewrites the frozen registration and its checksum sidecar together, so the refusal comes from
+   * the retained covariance rather than from the document checksum that would otherwise catch it.
+   */
+  private void assertRetainedCovarianceRejected(String name, RegistrationChange change) {
+    final Path moved = temp.resolve("covariance/" + name + "/registration.json");
+    copy(registration, moved);
+    final ObjectNode document = (ObjectNode) read(moved);
+    change.apply(document);
+    write(moved, document);
+    writeText(SyntheticRegistration.checksum(moved), digest(moved) + System.lineSeparator());
+    assertEquals(
+        SyntheticRecovery.REJECTED,
+        SyntheticRecovery.run(
+            "preflight", moved.toString(), temp.resolve("covariance/" + name + "/pre").toString()),
+        name);
+    assertFalse(Files.exists(temp.resolve("covariance/" + name + "/pre")), name);
+  }
+
+  private interface RegistrationChange {
+    void apply(ObjectNode registration);
+  }
+
   /** A software-check registration of the accepted protocol, on two datasets and eight draws. */
   private static ObjectNode plan(Path output, Path preflight) {
     final ObjectNode plan = JSON.createObjectNode();
@@ -744,6 +816,14 @@ class SyntheticLifecycleTest {
       Files.createDirectories(file.getParent());
       Files.writeString(file, JSON.writeValueAsString(document), StandardCharsets.UTF_8);
       return file;
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private static void writeText(Path file, String content) {
+    try {
+      Files.writeString(file, content, StandardCharsets.UTF_8);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
