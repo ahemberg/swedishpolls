@@ -1,0 +1,36 @@
+{
+  "command": "./mvnw --batch-mode --no-transfer-progress -Pmodel-validation verify",
+  "implementationCommit": "eaf52c4fb7a6aad8916f2b7f23cc9911376a86fb",
+  "workingTree": "clean; the commit was read from git rev-parse HEAD before the run",
+  "startedAt": "2026-09-19T20:48:18Z",
+  "finishedAt": "2026-09-19T21:06:30Z",
+  "exitCode": 0,
+  "elapsed": "18m 12s",
+  "log": "checks/logs/model-validation.log",
+  "logSha256": "98a1f53ce39d57a7778f2c58603265417e0d38fb8183426faa4780311ef49b67",
+  "summaries": [
+    {
+      "testsRun": 314,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "testsRun": 104,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    {
+      "testsRun": 194,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    }
+  ],
+  "staticAnalysis": "PMD, SpotBugs and Spotless passed; SpotBugs reported 0 bug instances",
+  "approvedRegressionRefits": "DevelopmentTuningIT and DevelopmentDiagnosticsIT ran unchanged as approved software regression checks",
+  "fullRunFlags": "none set; no *.full evidence-rebuilding flag was enabled",
+  "onceOnlyAudit": "not rerun",
+  "statisticalStanding": "software check only; these test fits are not recovery evidence"
+}
