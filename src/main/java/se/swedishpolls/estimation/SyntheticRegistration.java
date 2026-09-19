@@ -17,7 +17,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -25,14 +27,14 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
- * The machine-readable registration of the accepted {@code synthetic-recovery-v1} protocol, and the
+ * The machine-readable registration of the accepted {@code synthetic-recovery-v2} protocol, and the
  * execution identity the formal run is generated under.
  *
  * <p>A registration pins the protocol document, the code commit, the dependency and toolchain
- * identities, the container image, the architecture, the host, the single-worker configuration, the
- * exact commands, the numerical tolerances, the schedule, the fixed covariance and its factor, and
- * the stream rules. Every operation that produces evidence re-reads it and rejects an identity that
- * has moved, so the implementation cannot silently change the experiment. Preflight needs the
+ * identities, the container image, the architecture, the host, the worker configuration, the exact
+ * commands, the numerical tolerances, the schedule, the fixed covariance and its factor, and the
+ * stream rules. Every operation that produces evidence re-reads it and rejects an identity that has
+ * moved, so the implementation cannot silently change the experiment. Preflight needs the
  * registration committed at its registered location; formal generation additionally needs the
  * execution identity committed, which is what binds the run to a feasible preflight.
  *
@@ -47,16 +49,16 @@ final class SyntheticRegistration {
 
   /** Where a formal registration and its execution identity have to be committed. */
   static final Path COMMITTED_REGISTRATION =
-      Path.of("docs/validation/synthetic-recovery-v1/registration.json");
+      Path.of("docs/validation/synthetic-recovery-v2/registration.json");
 
   static final Path COMMITTED_EXECUTION =
-      Path.of("docs/validation/synthetic-recovery-v1/execution.json");
+      Path.of("docs/validation/synthetic-recovery-v2/execution.json");
 
   /** The protocol document a registration of this version has to name. */
   private static final String PROTOCOL_DOCUMENT = "docs/validation/synthetic-recovery-protocol.md";
 
   private static final List<String> COMMAND_NAMES =
-      List.of("register", "preflight", "commit", "experiment", "reproduce", "report");
+      List.of("register", "preflight", "commit", "experiment", "reproduce", "report", "summarize");
 
   private static final List<String> TOLERANCES = List.of("interval", "coverage", "likelihood");
 
@@ -64,6 +66,15 @@ final class SyntheticRegistration {
 
   /** A checked registration: the frozen document, its plan and the identity it was read under. */
   record Checked(JsonNode registration, JsonNode plan, String sha256) {
+    /** The registered worker count: datasets run in parallel within one stage, nothing else. */
+    int workers() {
+      return required(required(plan, "host"), "workers").intValue();
+    }
+
+    int limit(String name) {
+      return required(required(plan, "limits"), name).intValue();
+    }
+
     int datasets() {
       return required(required(plan, "run"), "datasets").intValue();
     }
@@ -87,15 +98,41 @@ final class SyntheticRegistration {
       JsonNode identity,
       String sha256,
       Instant deadlineStartedAt,
-      Instant deadlineAt) {
+      Instant deadlineAt)
+      implements SyntheticReproduction.Deadline {
 
     /** True once the watchdog has to stop scheduling further work. */
-    boolean expired() {
+    @Override
+    public boolean expired() {
       return !Instant.now().isBefore(deadlineAt);
+    }
+
+    /** How far past the cap the clock now is. It is zero until the watchdog fires. */
+    @Override
+    public long overrunMillis() {
+      return Math.max(0, Duration.between(deadlineAt, Instant.now()).toMillis());
     }
 
     long remainingMillis() {
       return Duration.between(Instant.now(), deadlineAt).toMillis();
+    }
+
+    /** The budget a stage starting now would have. It never goes below zero. */
+    long remainingNanos() {
+      return Math.max(0, Duration.between(Instant.now(), deadlineAt).toNanos());
+    }
+
+    /**
+     * What the sustained preflight window measured each convention and stage at, keyed {@code
+     * convention/stage}. The stage budget is charged against these.
+     */
+    Map<String, Long> sustainedStageNanos() {
+      final Map<String, Long> sustained = new LinkedHashMap<>();
+      for (JsonNode stage : required(identity, "stageProjections"))
+        sustained.put(
+            required(stage, "convention").asString() + "/" + required(stage, "stage").asString(),
+            required(stage, "sustainedNanos").longValue());
+      return Map.copyOf(sustained);
     }
   }
 
@@ -208,6 +245,20 @@ final class SyntheticRegistration {
             + ManagementFactory.getRuntimeMXBean().getVmVersion());
     identity.put("datasets", checked.datasets());
     identity.put("draws", checked.draws());
+    // The stage budget is charged against what the sustained window measured, so the run reads the
+    // rates from the frozen identity rather than re-deriving them from the preflight record.
+    final ArrayNode projections = identity.putArray("stageProjections");
+    for (JsonNode stage : required(required(preflight, "budget"), "stages")) {
+      final ObjectNode entry = projections.addObject();
+      entry.put("convention", required(stage, "convention").asString());
+      entry.put("stage", required(stage, "stage").asString());
+      entry.put("sustainedNanos", required(stage, "sustainedNanos").longValue());
+    }
+    require(projections.size() > 0, "A feasible preflight projects every stage");
+    identity.put(
+        "stageBudgeting",
+        "each stage is projected against the budget remaining when it starts; an estimated stage"
+            + " is re-projected from its own control's completed throughput");
     identity.put("deadlineStartedAt", started.toString());
     identity.put(
         "deadlineAt", started.plusNanos(required(preflight, "capNanos").longValue()).toString());
@@ -259,21 +310,20 @@ final class SyntheticRegistration {
   }
 
   /**
-   * Takes the single-worker lock of one run. The registration permits one worker on one host, and
-   * the lock is the second, independent signal: a second worker finds the file and stops.
+   * Takes the worker lock of one run. The registration permits one process on one host, and the
+   * lock is the second, independent signal: a second process finds the file and stops. Inside that
+   * process the registered workers parallelise datasets within one stage.
    */
-  static void claimWorker(Path directory, Checked checked) {
-    require(
-        required(required(checked.plan(), "host"), "workers").intValue() == 1,
-        "The protocol permits one worker");
+  static void claimWorkers(Path directory, Checked checked) {
     final ObjectNode worker = JSON.createObjectNode();
     worker.put("hostname", hostname());
     worker.put("pid", ProcessHandle.current().pid());
     worker.put("claimedAt", Instant.now().toString());
-    worker.put("workers", 1);
+    worker.put("workers", checked.workers());
     worker.put(
         "rule",
-        "one host and one worker; the lock is retained so nothing silently resumes the run");
+        "one host and one process; workers parallelise datasets within one stage, and the lock is"
+            + " retained so nothing silently resumes the run");
     writeNew(directory.resolve("worker.lock"), pretty(worker));
   }
 
@@ -444,7 +494,14 @@ final class SyntheticRegistration {
     require(
         required(host, "hostname").asString().equals(hostname()),
         "Host identity mismatch: " + required(host, "hostname").asString());
-    require(required(host, "workers").intValue() == 1, "The protocol permits one worker");
+    // Workers parallelise datasets within one stage, one per physical core. The v1 capacity record
+    // read logical processors; the worker count follows physical cores, and never exceeds them.
+    final int cores = required(host, "physicalCores").intValue();
+    final int workers = required(host, "workers").intValue();
+    require(
+        cores >= 1 && cores <= Runtime.getRuntime().availableProcessors(),
+        "Host identity mismatch: physicalCores");
+    require(workers >= 1 && workers <= cores, "The protocol permits one worker per physical core");
     final JsonNode commands = required(plan, "commands");
     for (String name : COMMAND_NAMES)
       require(
@@ -463,7 +520,7 @@ final class SyntheticRegistration {
         "Registered covariance and noise factor identity mismatch");
     verifyStreams(required(plan, "streams"), plan);
     verifyRun(required(plan, "run"), plan);
-    verifyLimits(required(plan, "limits"));
+    verifyLimits(required(plan, "limits"), formal(plan));
     verifyProtectedEvidence(plan);
   }
 
@@ -496,10 +553,10 @@ final class SyntheticRegistration {
     require(
         required(streams, "formalPrefix")
                 .asString()
-                .equals(SyntheticRecovery.VERSION + "|" + SyntheticRecovery.FORMAL)
+                .equals(SyntheticRecovery.STREAM_VERSION + "|" + SyntheticRecovery.FORMAL)
             && required(streams, "preflightPrefix")
                 .asString()
-                .equals(SyntheticRecovery.VERSION + "|" + SyntheticRecovery.PREFLIGHT),
+                .equals(SyntheticRecovery.STREAM_VERSION + "|" + SyntheticRecovery.PREFLIGHT),
         "Registered stream prefix mismatch");
     require(
         strings(streams, "generating").equals(SyntheticScenario.GENERATING_STREAMS),
@@ -538,16 +595,31 @@ final class SyntheticRegistration {
         "The formal phase uses " + SyntheticRecovery.FORMAL_DRAWS + " predictive draws");
   }
 
-  private static void verifyLimits(JsonNode limits) {
+  /**
+   * The resource limits, including the shape of the sustained preflight window. A software check
+   * may measure a shorter window than the formal run; the formal run may not.
+   */
+  private static void verifyLimits(JsonNode limits, boolean formal) {
     require(
         required(limits, "wallClockHours").intValue() == 24
             && Double.compare(
                     required(limits, "projectionMargin").doubleValue(), SyntheticBudget.MARGIN)
                 == 0
-            && required(limits, "logReserveBytes").longValue() == SyntheticBudget.LOG_RESERVE_BYTES
-            && required(limits, "preflightDatasets").intValue()
-                == SyntheticRecovery.PREFLIGHT_DATASETS,
+            && required(limits, "logReserveBytes").longValue() == SyntheticBudget.LOG_RESERVE_BYTES,
         "Registered resource limit mismatch");
+    final int subWindow = required(limits, "preflightSubWindowDatasets").intValue();
+    final int window = required(limits, "preflightWindowDatasets").intValue();
+    final int warmUp = required(limits, "preflightWarmUpLimit").intValue();
+    require(subWindow >= 1, "A sustained rate needs a sub-window");
+    require(
+        window >= 2 * subWindow, "The measured window holds at least two consecutive sub-windows");
+    require(warmUp >= 2 * subWindow, "Warm-up reaches steady state over at least two sub-windows");
+    if (formal)
+      require(
+          subWindow == SyntheticRecovery.PREFLIGHT_SUB_WINDOW_DATASETS
+              && window == SyntheticRecovery.PREFLIGHT_WINDOW_DATASETS
+              && warmUp == SyntheticRecovery.PREFLIGHT_WARM_UP_LIMIT,
+          "Registered preflight window mismatch");
   }
 
   /** Both evidence destinations have to be fresh, separate and clear of every protected path. */

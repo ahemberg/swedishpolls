@@ -5,11 +5,12 @@ The workflow that executes the
 slices; this page describes what exists today. Running it is a software check. It is
 not recovery evidence, and it runs no formal experiment.
 
-The accepted protocol is now `synthetic-recovery-v2`. This workflow still implements the
-`synthetic-recovery-v1` operational clauses: one worker, a cold per-dataset preflight and
-a single all-or-nothing budget against the 24-hour cap. It therefore refuses a v2
-registration, and the four-worker execution, the sustained-throughput preflight,
-stage budgeting and `stage_budget_deferred` are not built yet.
+The accepted protocol is `synthetic-recovery-v2`, and this workflow implements it: workers
+parallelise datasets within one stage, preflight measures sustained throughput after
+thermal steady state, and each stage is budgeted against the wall clock remaining when its
+turn comes. A document naming `synthetic-recovery-v1` is refused; the stream names keep
+the v1 token, because a stream name is a generating input and changing it would change
+every draw.
 
 ## Scoring one supplied dataset
 
@@ -29,7 +30,7 @@ from the generated shares.
 
 | Field | Meaning |
 | --- | --- |
-| `version` | `synthetic-recovery-v1` |
+| `version` | `synthetic-recovery-v2` |
 | `phase` | `formal`, `preflight` or `software_check` |
 | `convention` | `midpoint` or `ilr_window` |
 | `masterSeed`, `datasetIndex`, `draws` | Stream identity and predictive draws per poll |
@@ -104,11 +105,17 @@ one scales the fixed covariance down; it is not an ordinary overdispersion facto
 ```
 ./mvnw -DskipTests spring-boot:run \
   -Dspring-boot.run.main-class=se.swedishpolls.estimation.SyntheticRecovery \
-  -Dspring-boot.run.arguments='control <plan.json> <evidence-directory>'
+  -Dspring-boot.run.arguments='control <plan.json> <evidence-directory> [workers]'
 ```
 
 Exit codes are `0` for a completed stage, `2` for a refused plan and `3` for a run a
-numerical failure stopped. A completed stage may report failed or inconclusive recovery;
+numerical failure stopped. `workers` defaults to one and may not exceed the available
+processors. It is the software-check knob behind the protocol's own requirement that
+retained evidence not depend on worker count or completion order, which is checked two
+ways: the same plan at one worker and at four writes byte-identical datasets, and the
+eight preflight datasets `synthetic-recovery-v1` retained regenerate at four workers with
+every hash, summary and coordinate identical to the committed evidence. Only the protocol
+identity the evidence is stamped with moved, because the stream names did not. A completed stage may report failed or inconclusive recovery;
 that is a result, not an error.
 
 The plan carries `version`, `phase`, `masterSeed`, `datasets` and `draws`. The `formal`
@@ -175,6 +182,11 @@ number of datasets whose selected point sat on a grid end and how often each axi
 was selected. Every numerically valid endpoint selection stays in the assessment. That
 is a rule of this synthetic scenario and waives no real-data endpoint gate.
 
+`controlVerdicts` states both controls at the top of the report, each as a complete result
+in its own right: a control that ran all its repetitions and reported all 18 of its cells
+is a result whether or not the stages depending on it ever start. `knownStageVerdict`
+combines the two, and is the gate rather than a substitute for either.
+
 `recovery` combines all four method/stage verdicts under the same precedence a single
 stage uses: incomplete, then failed, then inconclusive, then demonstrated. A numerical
 failure in either stage stops the run at that repetition, preserves its earliest failing
@@ -197,18 +209,20 @@ experiment <execution.json> <evidence-directory> [resumption.json]
 reproduce <execution.json> <evidence-directory> <reproduction.json>
 report    <execution.json> <evidence-directory> <reproduction.json> <report.json>
 report    <preflight.json> <report.json>
+summarize <execution.json> <evidence-directory> <results.json>
 ```
 
 Exit codes are `0` for success, `1` for a completed check whose outcome did not confirm
 what it checked, `2` for a refused operation, `3` for a numerical failure, `4` for a run
-the watchdog stopped and `5` for a preflight that does not fit the host.
+the watchdog stopped, `5` for a preflight that does not fit the host and `6` for a run a
+stage budget deferred.
 
 ### The registration
 
 `register` validates a plan and freezes it, writing `<registration.json>` and a
 `.sha256` sidecar beside it. The plan pins the protocol document, the implementation
-commit, every dependency, the toolchain, the container image, the host and its single
-worker, the exact commands, the numerical tolerances, the schedule, the fixed covariance
+commit, every dependency, the toolchain, the container image, the host with its physical
+cores and its workers, the exact commands, the numerical tolerances, the schedule, the fixed covariance
 and its noise factor, the stream rules, the run size, the resource limits, both evidence
 destinations and the protected locations with their digests.
 
@@ -221,10 +235,14 @@ The registration records no lifecycle status. It is pinned by digest and never r
 so preflight status lives in the preflight record and formal-generation status in the
 committed execution identity, each written when the thing happens.
 
+`host.workers` may not exceed `host.physicalCores`, and `physicalCores` may not exceed the
+processors the JVM reports. The v1 capacity record read logical processors; the worker
+count follows physical cores.
+
 Validation is the same at every later boundary, so a registration that froze is one the
 rest of the workflow accepts. A formal registration has to sit at
-`docs/validation/synthetic-recovery-v1/registration.json` before preflight, and its
-execution identity at `docs/validation/synthetic-recovery-v1/execution.json` before any
+`docs/validation/synthetic-recovery-v2/registration.json` before preflight, and its
+execution identity at `docs/validation/synthetic-recovery-v2/execution.json` before any
 formal dataset is generated.
 
 ### Preflight
@@ -250,15 +268,45 @@ accounted as not run.
 
 `commit` writes the final execution identity from a feasible preflight record, with its
 own checksum sidecar. It carries the registration and preflight digests, the
-implementation commit, the host, the single worker, the architecture and the 24-hour
-clock. That clock starts at preflight launch and covers formal work and reproduction, so
-each command inherits the same deadline rather than restarting it.
+implementation commit, the host, the workers, the architecture, the sustained per-stage
+rates the window measured, and the 24-hour clock. That clock starts at preflight launch
+and covers formal work and reproduction, so each command inherits the same deadline rather
+than restarting it.
 
-`experiment` takes the single-worker lock in its destination, verifies the protected
-real-data evidence and the shipped freeze, and runs both stages. The watchdog checks the
-deadline between repetitions: at the cap it stops scheduling, writes `interruption.json`
-with the stage and repetition it stopped at, and leaves every completed record where it
-is. Repetitions are never adapted and no interim coverage stops the run.
+`experiment` takes the worker lock in its destination, verifies the protected real-data
+evidence and the shipped freeze, and runs the four stages in the fixed order `midpoint`
+known, `ilr_window` known, `midpoint` estimated, `ilr_window` estimated. Conventions and
+stages stay sequential: the controls-before-estimation gate depends on it. Workers
+parallelise datasets within one stage, in batches of the registered worker count, and the
+reduction walks each batch in dataset order regardless of the order the workers finished
+it.
+
+The watchdog checks the deadline between batches. At the cap it stops scheduling, lets the
+repetitions in flight finish, writes `interruption.json` with the stage, the completed
+repetition count and how far past the cap the last one ran, and leaves every completed
+record where it is. One batch of overrun against a 24-hour cap is cheaper than the risk of
+a half-written evidence file, and a partially written dataset is not evidence. Repetitions
+are never adapted and no interim coverage stops the run.
+
+### Stage budgeting and `stage_budget_deferred`
+
+Each stage is projected against the wall clock remaining when its turn comes. A known
+stage is charged the rate the sustained window measured. An estimated stage is re-projected
+from its own control's throughput over the repetitions that control completed, scaled by
+the cost ratio the preflight window measured between the two stages: ten thousand completed
+repetitions measure the host far better than a preflight window can, and by the time an
+estimated stage is due that measurement exists.
+
+Timing may inform what runs. Coverage may never: no coverage figure, per-dataset fraction,
+cell verdict or endpoint frequency reaches the decision to start a stage.
+
+A stage that does not project within its remaining budget is not started. The run writes
+`deferral.json` with the projection, the budget remaining and the margin, stops with exit
+code `6`, and reports `incomplete_stage_budget_deferred`. The stage is accounted as not
+run; `N`, the grid, the schedule and the confidence rule are untouched, and a control that
+completed all its repetitions is reported as a complete result in its own right. Past the
+cap there is no budget left to defer against: that is the watchdog's business, and the
+stage reports the interruption instead.
 
 An interrupted run is never continued on its own. A resumption needs a decision recorded
 outside this workflow, naming the execution identity, the interrupted run and the digest
@@ -288,20 +336,34 @@ is still not permission to publish.
 
 | Path | Contents |
 | --- | --- |
-| `<preflight>/preflight.json` | Timings of all eight preflight datasets, the projection, the disk requirement and the feasibility verdict |
+| `<preflight>/preflight.json` | The steady-state record, the measured window and its sub-windows, every dataset's timings, the per-stage projection, the disk requirement and the feasibility verdict |
 | `<preflight>/preflight/<stage>/<convention>/<index>.json` | The preflight datasets, which no summary reads |
-| `<evidence>/worker.lock` | The host, process and claim time of the one permitted worker |
+| `<evidence>/worker.lock` | The host, process, claim time and worker count of the one permitted process |
 | `<evidence>/report.json` | The run report, its identities and the protected-evidence hashes |
-| `<evidence>/interruption.json` | The stage and repetition the watchdog stopped at |
+| `<evidence>/interruption.json` | The stage, the completed repetition count and the overrun at the cap |
+| `<evidence>/deferral.json` | The stage a budget deferred, its projection and the budget it had |
+| `<evidence>/manifests/<stage>-<convention>.txt` | The per-file manifest each committed rollup digest is taken over |
+
+### The committed record
+
+`summarize` writes the reviewable record the repository keeps under
+`docs/validation/synthetic-recovery-v2/`. `results.json` accounts for all 72 primary cells
+with their status, coverage, standard error and interval; a stage that did not run carries
+its cells as unmeasured rather than as coverage over the part that exists. Beside it is one
+rollup per stage and convention, each the digest of a full per-file manifest written next
+to the evidence on the volume, so the committed digest reaches every retained file without
+the repository carrying any of them.
 
 ## The registered run
 
-The protocol has been executed once, on `alex-lenovo` at implementation commit
-`7794b6c`. Preflight found the host infeasible on both registered limits, so it stopped
-there and no formal dataset was generated. The registration, the repository checks, the
-whole preflight evidence tree and the measured figures are in the
-[execution report](synthetic-recovery-v1/report.md).
+The protocol was executed once under `synthetic-recovery-v1`, on `alex-lenovo` at
+implementation commit `7794b6c`. Preflight found the host infeasible on both registered
+limits, so it stopped there and no formal dataset was generated. That registration, the
+repository checks, the whole preflight evidence tree and the measured figures are in the
+[v1 execution report](synthetic-recovery-v1/report.md). `synthetic-recovery-v1` keeps its
+stopped result and its digests, and still has no statistical result.
 
-The owner has since recorded the decision that report asked for, amending the protocol
-to `synthetic-recovery-v2`. `synthetic-recovery-v1` keeps its stopped result and its
-digests, and still has no statistical result.
+The owner then recorded the decision that report asked for, amending the protocol to
+`synthetic-recovery-v2`, and this workflow now implements it. The v2 run has not been
+registered or executed: `docs/validation/synthetic-recovery-v2/` does not exist yet, and
+`synthetic-recovery-v2` has no result either.

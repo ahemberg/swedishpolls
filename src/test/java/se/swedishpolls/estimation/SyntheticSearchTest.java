@@ -283,7 +283,7 @@ class SyntheticSearchTest {
   /** A tuned dataset document: the same shape a scored one takes, without a parameter point. */
   private static ObjectNode dataset(String convention, List<Row> rows) {
     final ObjectNode document = JSON.createObjectNode();
-    document.put("version", "synthetic-recovery-v1");
+    document.put("version", "synthetic-recovery-v2");
     document.put("phase", "software_check");
     document.put("convention", convention);
     document.put("masterSeed", SEED);
