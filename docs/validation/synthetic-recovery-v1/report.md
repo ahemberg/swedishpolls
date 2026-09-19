@@ -139,6 +139,14 @@ registration without recomputing it from the implementation; and `registration.j
 still reads `"preflight": "not_run"`, because nothing writes that field back. The frozen
 document is left exactly as it froze.
 
+Both were fixed afterwards, in #214. `register` now writes the covariance and its noise
+factor into the registration as numbers and rejects a registration whose retained matrix
+has moved, and the two lifecycle-status fields are gone, since a document pinned by digest
+cannot carry a status that changes. Everything above is evidence of the run that stopped,
+and stays byte-identical: `registration.json` keeps the format and the sha256 it froze
+under, and a registration in that format is no longer accepted. The owner decision below
+registers afresh in either case.
+
 ## Numerical and resource outcomes
 
 No numerical failure occurred. Every preflight fit, search and reproduction completed

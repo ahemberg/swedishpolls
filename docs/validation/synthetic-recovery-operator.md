@@ -206,6 +206,15 @@ worker, the exact commands, the numerical tolerances, the schedule, the fixed co
 and its noise factor, the stream rules, the run size, the resource limits, both evidence
 destinations and the protected locations with their digests.
 
+The frozen document also carries the fixed covariance and the lower Cholesky factor of
+`m R` as numbers, so the matrix a dataset generated through is comparable to the
+registration without recomputing it from the implementation being checked. A registration
+whose retained matrix has moved is refused, with or without a matching sidecar.
+
+The registration records no lifecycle status. It is pinned by digest and never rewritten,
+so preflight status lives in the preflight record and formal-generation status in the
+committed execution identity, each written when the thing happens.
+
 Validation is the same at every later boundary, so a registration that froze is one the
 rest of the workflow accepts. A formal registration has to sit at
 `docs/validation/synthetic-recovery-v1/registration.json` before preflight, and its
