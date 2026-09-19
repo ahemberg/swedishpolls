@@ -1,0 +1,38 @@
+{
+  "status" : "frozen",
+  "version" : "synthetic-recovery-v2",
+  "phase" : "formal",
+  "registrationPath" : "docs/validation/synthetic-recovery-v2/registration.json",
+  "registrationSha256" : "31caea039dc55558f80a07fb23801d8c8e98635dbda8295b3a0f0dd05c746846",
+  "preflightPath" : "/media/alex/wd 4tb backup/evidence/synthetic-recovery-v2/preflight/preflight.json",
+  "preflightSha256" : "8b0d2f9aebf9ca544347544897c66609cffde0446cd99fc0c90a5b7b5749c188",
+  "implementationCommit" : "eaf52c4fb7a6aad8916f2b7f23cc9911376a86fb",
+  "hostname" : "alex-lenovo",
+  "workers" : 4,
+  "architecture" : "amd64",
+  "javaRuntime" : "25.0.4+7-1-24.04-Ubuntu",
+  "vm" : "OpenJDK 64-Bit Server VM 25.0.4+7-1-24.04-Ubuntu",
+  "datasets" : 10000,
+  "draws" : 4000,
+  "stageProjections" : [ {
+    "convention" : "midpoint",
+    "stage" : "known",
+    "sustainedNanos" : 116166712
+  }, {
+    "convention" : "midpoint",
+    "stage" : "estimated",
+    "sustainedNanos" : 995057742
+  }, {
+    "convention" : "ilr_window",
+    "stage" : "known",
+    "sustainedNanos" : 147023997
+  }, {
+    "convention" : "ilr_window",
+    "stage" : "estimated",
+    "sustainedNanos" : 3062333585
+  } ],
+  "stageBudgeting" : "each stage is projected against the budget remaining when it starts; an estimated stage is re-projected from its own control's completed throughput",
+  "deadlineStartedAt" : "2026-09-19T22:55:05.626880629Z",
+  "deadlineAt" : "2026-09-20T22:55:05.626880629Z",
+  "clock" : "the 24-hour wall clock starts at preflight launch and covers formal work and reproduction"
+}
