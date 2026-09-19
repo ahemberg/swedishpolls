@@ -1,7 +1,44 @@
 # Bounded synthetic recovery protocol
 
-Status: accepted by the owner on 2026-09-16. Version: `synthetic-recovery-v1`.
-Decision ticket: [#184](https://github.com/ahemberg/swedishpolls/issues/184).
+Status: accepted by the owner on 2026-09-16, amended on 2026-09-19. Version:
+`synthetic-recovery-v2`. Decision tickets: [#184](https://github.com/ahemberg/swedishpolls/issues/184)
+for the protocol, [#216](https://github.com/ahemberg/swedishpolls/issues/216) for this
+amendment.
+
+## What v2 changes
+
+v2 differs from v1 in operational clauses only. No scientific setting moved. The
+repetition count, the predictive draw count, the 180-point grid, the recovery bands,
+the schedule, the generating model, the fixed covariance, the master seed, the stream
+rules, the roster and the two conventions are identical to the text accepted in #184.
+Four clauses move, all about how the run is carried on a host:
+
+- Four workers, one per physical core, parallel across datasets within a stage only.
+- Sustained-throughput preflight measured at the registered worker count after thermal
+  steady state, replacing the cold single-worker burst.
+- Stage-by-stage budgeting against the budget remaining when each stage starts,
+  replacing the all-or-nothing total.
+- An evidence destination on the external volume, which retires the storage constraint
+  without relaxing the 2x safety margin.
+
+This amends the protocol accepted in #184; it does not supersede it. The
+`synthetic-recovery-v1` evidence in `docs/validation/synthetic-recovery-v1/` stands
+exactly as retained, including the `stopped_at_preflight_infeasible` result and every
+digest in it. That evidence pins this document by the sha256
+`897063ff08c05f15ac2b598125424ec18163396bf66f3c6d08399e2cd142b065`, which is the v1
+text as committed in `5fe83e57d39449a284728aa73ba7fa57b86868df` and is retrievable
+there.
+
+Registration validation digests the working-tree file at this path, so the v1
+registration no longer passes its protocol-identity check. That is the pin working, not
+breaking: the v1 registration names a document that has since moved, and a frozen
+registration whose document changed underneath it is exactly what a digest is for.
+Re-validating v1 is not something a closed run needs. Its retained evidence carries its
+own digests and stands on them.
+
+A document pinned by digest that changes needs a new identity, which is why the version
+string moved rather than the text being quietly edited in place. The experiment was not
+redesigned after it failed to fit the host. It was rescheduled.
 
 ## Purpose and authority
 
@@ -11,7 +48,9 @@ accepted the scope, generating assumptions, two parameter stages, scenario,
 coverage ranges, simultaneous-confidence approach, repetition count and retention
 policy during the #184 interview. On 2026-09-16, the owner confirmed the complete
 protocol, including the exact scheduling, seed, preflight and completion rules
-and the unchanged-regression-test exception below.
+and the unchanged-regression-test exception below. On 2026-09-19, after the
+registered host stopped the v1 run at preflight, the owner recorded the operational
+amendment above.
 
 This follows the [#160 outcome review and investigation](https://github.com/ahemberg/swedishpolls/pull/183).
 It does not validate real-poll calibration or authorize publication. Existing
@@ -126,6 +165,11 @@ order. Register the lower Cholesky factor of `m R` and multiply it by the noise
 stream's standard normal vector for each poll. This includes the generating
 multiplier exactly once.
 
+The literal `synthetic-recovery-v1` token stays in the stream name under v2. A stream
+name is a generating input: changing it changes every draw in the experiment, which
+is a scientific change this amendment does not make. The token names the stream rule,
+not the revision of this document.
+
 Predictive stream names append `|predictive|ROW` to the dataset prefix. Reuse that
 stream between known- and estimated-parameter stages, giving the stages the same
 underlying normal draws without making their predictive distributions identical.
@@ -178,44 +222,133 @@ Any failed cell means that method/stage fails; otherwise any inconclusive cell
 makes it inconclusive. Missing or numerically failed required results make the
 stage incomplete, with any established statistical failures retained alongside.
 
+A stage that a stage budget deferred, or that the watchdog stopped short, is
+incomplete. Record its completed repetition count and report no coverage at all for
+it. `N` stays frozen at 10,000, and a short stage never reports coverage over the
+subset it happened to complete: a subset chosen by when the clock ran out is not
+the planned design, and averaging it would answer a question nobody registered.
+
 The complete experiment demonstrates recovery only if both methods pass both
 stages. A complete failed or inconclusive first stage is a valid stopping result;
 the dependent second stage remains not run. Interrupted or missing evidence is
 incomplete, never a valid completed statistical result. Neither a successful
 experiment nor an endpoint selection changes publication permission.
 
-## Timing-only preflight and resource limit
+## Registered host and workers
 
-Freeze the implementation, schedule, covariance, seeds, host, single-worker
-execution configuration and exact commands before preflight. On that host, use
-one warm-up dataset followed by three timed datasets per convention. Their stream
-prefix replaces `formal` with `preflight`; their indices are 0 through 3. They
-never enter the formal collection or coverage summaries.
+The registered host is `alex-lenovo`: x86_64, Intel Core i5-10300H, 4 physical cores,
+15.5 GiB RAM. The run uses four workers, one per physical core. The v1 capacity record
+reads 8 cores, which counts logical processors; the worker count follows physical cores.
 
-Measure generation, the known-parameter prediction path, all 180 training-grid
-evaluations, estimated-parameter prediction, evidence writing and reproduction.
-The preflight
-may execute the estimated path before formal controls because it measures cost
-only. Do not inspect coverage or use statistical outcomes from these datasets.
-Retain timings, resource measurements and numerical errors; a numerical failure
-stops preflight. Time the intended evidence format, including draw hashing, rather
-than a cheaper surrogate.
+Workers parallelise datasets within one stage. Conventions and stages stay sequential.
+That ordering is what makes the controls-before-estimation gate meaningful, and a gate
+running concurrently with the thing it gates is not a gate. Every dataset derives its
+streams from `SHA-256(stream-name|master-seed)` and no dataset reads another's state,
+so which worker takes which dataset, and in what order they finish, cannot reach any
+result. Retain evidence per dataset as it completes, and reduce a stage only once it
+has completed.
 
-Let T be the sum of the slowest measured known-stage and estimated-stage times
-for each convention. Charge generation to the known stage; charge each stage's
-evidence work and reproduction to that stage. Project formal duration as
-`10000 × T × 1.25`, then add elapsed preflight time. If this exceeds 24 hours on
-the registered host, stop and
-return for a decision. Do not lower repetitions, shorten windows, omit grid points
-or change precision. Verify space for at least twice the projected retained output
-plus 1 GiB for logs and temporary files before formal generation.
+`pinas` was considered and rejected as the host. A Pi 5 is roughly 0.4x the throughput
+of `alex-lenovo` on this workload, and it serves the live application and the 03:00
+nightly refresh.
 
-The 24-hour wall-clock cap includes preflight, formal execution and reproduction,
-starting at preflight launch; ordinary build and software checks occur beforehand.
-A watchdog stops scheduling work at the cap and preserves completed records and
-the interruption reason. No coverage-based interim stopping or extra repetitions
-are allowed. Resuming an incomplete experiment needs a separately recorded owner
-decision and must preserve the original partial output.
+## Evidence destination and storage
+
+Write formal evidence to the external ext4-over-LUKS volume mounted at
+`/media/alex/wd 4tb backup`, which has 2.9 TB free against the 23.81 GiB the v1
+preflight required. Verify space for at least twice the projected retained output plus
+1 GiB for logs and temporary files before formal generation. The destination retires
+the constraint that stopped v1; it does not relax the rule.
+
+The destination refuses to overwrite evidence, as in v1.
+
+## Sustained-throughput preflight
+
+Freeze the implementation, schedule, covariance, seeds, host, the four-worker
+execution configuration and the exact commands before preflight.
+
+Preflight measures sustained throughput at the registered worker count. Warm up until
+the host reaches thermal steady state, then time a measured window with all four
+workers busy, and project from that window. The v1 preflight timed one dataset at a
+time on a cold machine, which samples the best conditions an H-series laptop part will
+ever see; sustained all-core clocks on that part are materially lower, so a projection
+from the cold burst understates the run. Record the steady-state criterion, the
+measurements establishing it and the worker count alongside the timings.
+
+Preflight datasets use a stream prefix whose phase is `preflight` and indices from 0
+upward, as many as steady state and the measured window require. They never enter the
+formal collection or any coverage summary. Measure generation, the known-parameter
+prediction path, all 180 training-grid evaluations, estimated-parameter prediction,
+evidence writing including draw hashing, and reproduction, in the intended evidence
+format rather than a cheaper surrogate. The preflight may execute the estimated path
+before the formal controls because it measures cost only. Do not inspect coverage or
+use any statistical outcome from these datasets. Retain timings, resource measurements
+and numerical errors; a numerical failure stops preflight.
+
+For each convention and stage, let `t` be the slowest sustained wall-clock seconds per
+dataset over the measured window: split the window into consecutive sub-windows of at
+least 20 completed datasets and take the largest elapsed-time-per-dataset among them.
+v1 charged the slowest measured dataset, and v2 charges the slowest sustained rate. The
+window mean is not the charge: averaging the fast start into the slow remainder is a
+weaker margin than v1 had, and the amendment does not weaken a margin. Charge generation
+to the known stage; charge each stage's evidence work and reproduction to that stage.
+Project that stage as `10000 × t × 1.25`. The 25% margin is unchanged. Do not lower repetitions, shorten windows, omit grid points or change
+precision to make a projection fit.
+
+## The cap and stage budgeting
+
+The 24-hour wall-clock cap is unchanged. It starts at preflight launch and covers
+preflight, formal execution and reproduction; ordinary build and software checks occur
+beforehand.
+
+v1 charged the whole projection against the whole cap before anything ran, so a total
+over the cap stopped the experiment with nothing measured. v2 budgets per stage. Each
+stage must project within the budget remaining when that stage starts. The four stages
+start in the fixed order: `midpoint` known, `ilr_window` known, `midpoint` estimated,
+`ilr_window` estimated.
+
+Re-project each estimated stage from the controls' measured throughput over 10,000 real
+repetitions, rather than reusing the preflight estimate. Ten thousand completed
+repetitions at the registered worker count measure the host far better than a preflight
+window can, and by the time an estimated stage is due that measurement exists.
+
+Timing may inform what runs. Coverage may never. The prohibition on interim stopping is
+about outcomes, not about measuring how fast the machine is going: no coverage figure,
+per-dataset fraction, cell verdict or endpoint frequency may reach the decision to
+start, continue or stop a stage. Repetitions are never adapted, `N` is never lowered,
+and no extra repetitions are added.
+
+### `stage_budget_deferred`
+
+A stage that does not project within its remaining budget is not started, and the run
+stops with the reason `stage_budget_deferred`. It is a stopping reason in its own right,
+distinct from an interruption, a numerical failure and an infeasible preflight.
+
+Preflight infeasibility keeps its own reason, `stopped_at_preflight_infeasible`, and now
+means one of two things: the storage rule is not satisfied, or the first stage does not
+project within its own budget, which is the cap less the elapsed preflight. A stage the preflight does clear, and a later stage the
+elapsed run no longer affords, are different outcomes and are recorded as such.
+
+The overall verdict stays `incomplete` when it fires. Overall recovery requires all four
+stages, and a deferral at the estimated boundary leaves 36 of the 72 cells unmeasured.
+Account every deferred stage as not run, with the deferral reason, the budget remaining
+and the projection that exceeded it.
+
+The report states both control verdicts at the top, as complete results in their own
+right. A control that ran all 10,000 repetitions and reported all 18 of its cells is a
+complete result whether or not the stages that depend on it ever start.
+
+### The watchdog under parallelism
+
+The watchdog checks the deadline while work is in flight. At the cap it stops scheduling
+new repetitions and lets the in-flight ones finish. One repetition of overrun against a
+24-hour cap is cheaper than the risk of a half-written evidence file, and a partially
+written dataset is not evidence. Record how many repetitions completed and how far past
+the cap the last one finished.
+
+A stage the watchdog stops short is incomplete under the coverage-assessment rule above.
+Resuming an incomplete experiment needs a separately recorded owner decision and must
+preserve the original partial output.
 
 ## Implementation and independent checks
 
@@ -230,8 +363,14 @@ and covariance against dense conditioning for both conventions. Retain existing
 transform, covariance and scoring tests. Verify that synthetic training excludes
 scoring observations, that fixed covariance survives the entire path, and that
 known/tuned stages share identical inputs. Exercise blocked controls, selected
-endpoints, missing repetitions, numerical failures and output-collision behavior
-at the operator boundary. Software tests are not recovery evidence.
+endpoints, missing repetitions, numerical failures, stage deferral, the watchdog's
+in-flight drain and output-collision behavior at the operator boundary. Software tests
+are not recovery evidence.
+
+Verify, as a software check on a handful of datasets rather than a formal run, that
+retained evidence does not depend on worker count or completion order: the same datasets
+at one worker and at four produce identical evidence apart from timings and the order
+records were written in. Parallel execution is only safe to register if this holds.
 
 The existing model-validation profile includes archived development-poll refits
 in `DevelopmentTuningIT` and `DevelopmentDiagnosticsIT`. The owner approved
@@ -241,25 +380,49 @@ evidence-rebuilding `*.full` flags, rerun the once-only audit, or treat test fit
 as new statistical evidence.
 
 Record code commit, dependency/toolchain and container identities, host
-architecture, commands and numerical-check tolerances in a machine-readable
-registration. Protect original real-data evidence and the shipped freeze with
-before/after hashes. Commit the registration before any preflight fit. After
-preflight, retain its feasibility record and commit the final execution identity
+architecture, worker count, commands and numerical-check tolerances in a
+machine-readable registration. Protect original real-data evidence and the shipped
+freeze with before/after hashes. Commit the registration before any preflight fit.
+After preflight, retain its feasibility record and commit the final execution identity
 before formal generation; scientific settings and N are unchanged.
 
 ## Evidence and completion
 
-Write to a new registered directory that refuses to overwrite evidence. Retain
-the registration, generated latent states and house effects, observation vectors
-and transformed shares, fixed covariance, every seed/stream identity, all search
-outcomes, selected points, predictive means/covariances, interval summaries,
-coverage indicators, per-dataset fractions, confidence calculations, statuses,
-commands, exit codes, timings and environment identities.
+Retain on the evidence volume: the registration, generated latent states and house
+effects, observation vectors and transformed shares, fixed covariance, every
+seed/stream identity, all search outcomes, selected points, predictive
+means/covariances, interval summaries, coverage indicators, per-dataset fractions,
+confidence calculations, statuses, commands, exit codes, timings and environment
+identities.
 
 Hash each predictive draw array in the existing big-endian binary64, draw-major,
 component-order encoding. Retain the hash, seed, dimensions and generating
 prediction, rather than the array bytes. The full 40,000 method-stage repetitions
-would otherwise generate approximately 288 GB of raw predictive draws.
+would otherwise generate approximately 288 GB of raw predictive draws. The 2.9 TB
+destination makes that affordable, so the storage reason recorded in #184 no longer
+applies. The choice stands on the stronger reason: regeneration proves the computation
+reproduces, and archival only proves that bytes were stored.
+
+### The committed record
+
+Commit about 58 KB under `docs/validation/synthetic-recovery-v2/`:
+
+| Path | Contents |
+| --- | --- |
+| `report.md` | The reviewable report, both control verdicts first |
+| `registration.json` | The frozen registration, with its checksum sidecar |
+| `results.json` | All 72 cells, each with its status, coverage, standard error and interval |
+| rollup digests | One per stage and convention |
+
+Each rollup digest is taken over a full per-file manifest that lives on the drive beside
+the evidence, so the committed digest reaches every retained file without the repository
+carrying any of them.
+
+No `plan.json`: the plan is frozen into the registration, and a second copy is a second
+thing to keep in step. No preflight datasets; v1 committed 4.7 MiB of them and they are
+timing artifacts.
+
+### Reproduction and completion
 
 Reproduction uses the pinned implementation/environment and retained predictions
 to regenerate every completed predictive array and compare its hash without
@@ -282,4 +445,5 @@ motivates the fixed multiplicity adjustment. Marginal intervals here use a norma
 approximation, so the combined confidence claim is also approximate.
 [Morris, White and Crowther](https://doi.org/10.1002/sim.8086) discuss preplanning
 simulation designs and reporting Monte Carlo uncertainty. The specific scenario,
-coverage margins and resource limits are owner decisions recorded in #184.
+coverage margins and resource limits are owner decisions recorded in #184, with the
+operational clauses amended in #216.

@@ -1,9 +1,15 @@
 # Synthetic recovery: operator workflow
 
-The workflow that executes the accepted
-[`synthetic-recovery-v1` protocol](synthetic-recovery-protocol.md). It is built in
+The workflow that executes the
+[bounded synthetic recovery protocol](synthetic-recovery-protocol.md). It is built in
 slices; this page describes what exists today. Running it is a software check. It is
 not recovery evidence, and it runs no formal experiment.
+
+The accepted protocol is now `synthetic-recovery-v2`. This workflow still implements the
+`synthetic-recovery-v1` operational clauses: one worker, a cold per-dataset preflight and
+a single all-or-nothing budget against the 24-hour cap. It therefore refuses a v2
+registration, and the four-worker execution, the sustained-throughput preflight,
+stage budgeting and `stage_budget_deferred` are not built yet.
 
 ## Scoring one supplied dataset
 
@@ -294,5 +300,8 @@ The protocol has been executed once, on `alex-lenovo` at implementation commit
 `7794b6c`. Preflight found the host infeasible on both registered limits, so it stopped
 there and no formal dataset was generated. The registration, the repository checks, the
 whole preflight evidence tree and the measured figures are in the
-[execution report](synthetic-recovery-v1/report.md). The protocol has no statistical
-result until the owner records one of the decisions that report names.
+[execution report](synthetic-recovery-v1/report.md).
+
+The owner has since recorded the decision that report asked for, amending the protocol
+to `synthetic-recovery-v2`. `synthetic-recovery-v1` keeps its stopped result and its
+digests, and still has no statistical result.

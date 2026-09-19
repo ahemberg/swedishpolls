@@ -57,6 +57,32 @@ Poll-to-poll variation beyond pure sampling variation, treated as inflated obser
 **Release gate**:
 A pre-registered validation requirement that must pass before an estimation method may be published. A failed gate blocks release unless waived by a recorded owner decision.
 
+**Recovery**:
+An interval procedure's attainment of its nominal coverage on observations generated from the model it assumes. It is a property of an implementation, never a statement about real opinion.
+_Avoid_: validation, verification
+
+**Control**:
+A validation stage carried out at the true generating parameters rather than fitted ones. It separates an implementation defect from a parameter-fitting defect.
+_Avoid_: baseline, reference
+
+**Stage**:
+One method and one parameter condition of a validation run, assessed and reported on its own. A complete stage is a result in its own right, whether or not the stages depending on it ever run.
+
+**Preflight**:
+A timing-only measurement of a run on its registered host, made before that run is registered as feasible. It establishes cost, never an outcome.
+
+**Cell verdict**:
+What one component and interval level of a stage establishes: demonstrated, failed or inconclusive. Inconclusive is a verdict, not a missing one.
+
+**Stopping reason**:
+The named condition under which a registered run stopped short. It is distinct from a verdict: a run that stops for a reason still carries complete results for the stages that finished.
+
+**Stage budget deferral**:
+A stage left unstarted because the wall-clock budget remaining when its turn came would not carry it, recorded as `stage_budget_deferred`. The stage is unmeasured rather than shortened.
+
+**Incomplete result**:
+A run or stage with planned results left unmeasured. It is never a statistical result, though established failures within it are retained.
+
 **Publication**:
 A complete, permanent set of results produced from one source snapshot by one model run. Its documents, image bytes, inputs, parameters and seeds are retained unchanged; a correction produces a new publication rather than an edit.
 
