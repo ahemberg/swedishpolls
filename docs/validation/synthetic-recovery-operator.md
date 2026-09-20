@@ -364,6 +364,9 @@ repository checks, the whole preflight evidence tree and the measured figures ar
 stopped result and its digests, and still has no statistical result.
 
 The owner then recorded the decision that report asked for, amending the protocol to
-`synthetic-recovery-v2`, and this workflow now implements it. The v2 run has not been
-registered or executed: `docs/validation/synthetic-recovery-v2/` does not exist yet, and
-`synthetic-recovery-v2` has no result either.
+`synthetic-recovery-v2`, and this workflow implemented it at commit `eaf52c4`. The
+registered run on `alex-lenovo` completed all four stages, reproduced all 1,000,000
+predictive arrays without a finding, and reported `complete_recovery_demonstrated`.
+The committed [v2 execution report](synthetic-recovery-v2/report.md) and
+[`results.json`](synthetic-recovery-v2/results.json) carry the result and the rollup
+digests over the external evidence.
