@@ -16,6 +16,67 @@ class SiteTextTest {
   private static final Set<String> SHARED =
       Set.of("language.short.sv", "language.short.en", "polls.unmodeledMark");
 
+  private static final Set<String> METHOD_PAGE_KEYS =
+      Set.of(
+          "about.seats",
+          "head.title.method",
+          "method.coverage.boundaryNote",
+          "method.coverage.candidate",
+          "method.coverage.column.decision",
+          "method.coverage.column.roster",
+          "method.coverage.column.span",
+          "method.coverage.column.status",
+          "method.coverage.fiNote",
+          "method.coverage.gate.burnIn",
+          "method.coverage.gate.development",
+          "method.coverage.gate.gap",
+          "method.coverage.gate.institutes",
+          "method.coverage.gate.polls",
+          "method.coverage.gate.shifts",
+          "method.coverage.gate.stability",
+          "method.coverage.otherNote",
+          "method.coverage.rosterCaption",
+          "method.coverage.title",
+          "method.coverage.validated",
+          "method.data.eligibility",
+          "method.data.eras",
+          "method.data.history",
+          "method.data.provenance",
+          "method.data.title",
+          "method.lead",
+          "method.model.draws",
+          "method.model.estimand",
+          "method.model.house",
+          "method.model.hyper",
+          "method.model.observations",
+          "method.model.overdispersion",
+          "method.model.title",
+          "method.reproduction.decimals",
+          "method.reproduction.draws",
+          "method.reproduction.estimator",
+          "method.reproduction.inputs",
+          "method.reproduction.protocols",
+          "method.reproduction.seed",
+          "method.reproduction.title",
+          "method.seats.title",
+          "method.validation.coverageLead",
+          "method.validation.failed",
+          "method.validation.gateCoverage",
+          "method.validation.gateMisfit",
+          "method.validation.gateScore",
+          "method.validation.gatesLead",
+          "method.validation.sensitivity",
+          "method.validation.title",
+          "method.validation.verdictBlocked",
+          "method.validation.verdictReleased",
+          "polls.column.other",
+          "polls.column.period",
+          "polls.missing",
+          "seats.era",
+          "seats.pointVersusMean",
+          "seats.threshold",
+          "seats.tie");
+
   @Test
   void bothLanguagesCarryTheSameKeys() {
     assertEquals(
@@ -45,6 +106,16 @@ class SiteTextTest {
         assertFalse(
             text.text("head.title." + family.name().toLowerCase(java.util.Locale.ROOT)).isBlank(),
             language + " " + family);
+      }
+    }
+  }
+
+  @Test
+  void everyMethodPageTextExistsInBothLanguages() {
+    for (final String language : Translations.LANGUAGES) {
+      final SiteText text = SiteText.of(language);
+      for (final String key : METHOD_PAGE_KEYS) {
+        assertDoesNotThrow(() -> text.text(key), language + " " + key);
       }
     }
   }
