@@ -40,6 +40,9 @@ class SyntheticControlTest {
   private static final double[] REFERENCE = {30, 25, 15, 8, 6, 4, 4, 6, 2};
   private static final int[] LENGTHS = {1, 10, 21};
 
+  /** Every assertion here runs against the parallel path, at one worker per available processor. */
+  private static final int WORKERS = Math.min(4, Runtime.getRuntime().availableProcessors());
+
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
   @TempDir static Path temp;
@@ -52,7 +55,106 @@ class SyntheticControlTest {
     assertEquals(
         SyntheticRecovery.SUCCESS,
         SyntheticRecovery.run(
-            "control", write(temp.resolve("plan.json"), plan()).toString(), evidence.toString()));
+            "control",
+            write(temp.resolve("plan.json"), plan()).toString(),
+            evidence.toString(),
+            Integer.toString(WORKERS)));
+  }
+
+  @Test
+  void reproducesTheRetainedV1PreflightDatasetsExactlyWhenRunAtFourWorkers() {
+    // The registration-grade check the amendment asks for: the eight preflight datasets v1
+    // retained, with their full evidence and hashes, regenerated at the registered worker count.
+    // A stream name is a generating input and v2 did not change one, so every draw, every hash and
+    // every summary has to come back identical. Only the protocol identity the evidence is stamped
+    // with moved, and that is the amendment itself rather than a number in the experiment.
+    assumeParallel();
+    final Path regenerated = temp.resolve("v1-preflight");
+    final ObjectNode plan = plan();
+    plan.put("phase", "preflight");
+    plan.put("masterSeed", 20260916);
+    plan.put("datasets", 4);
+    plan.put("draws", 4000);
+    assertEquals(
+        SyntheticRecovery.SUCCESS,
+        SyntheticRecovery.run(
+            "control",
+            write(temp.resolve("v1-preflight-plan.json"), plan).toString(),
+            regenerated.toString(),
+            Integer.toString(WORKERS)));
+
+    final Path retained = Path.of("docs/validation/synthetic-recovery-v1/preflight/preflight");
+    for (String convention : CONVENTIONS)
+      for (int index = 0; index < 4; index++) {
+        final ObjectNode expected =
+            (ObjectNode)
+                read(retained.resolve("datasets").resolve(convention).resolve(index + ".json"));
+        final ObjectNode actual =
+            (ObjectNode)
+                read(regenerated.resolve("datasets").resolve(convention).resolve(index + ".json"));
+        assertEquals("synthetic-recovery-v1", expected.get("version").asString());
+        assertEquals("synthetic-recovery-v2", actual.get("version").asString());
+        expected.put("version", "synthetic-recovery-v2");
+        final String name = convention + "/" + index;
+        assertEquals(expected.get("inputsSha256"), actual.get("inputsSha256"), name);
+        assertEquals(expected.get("polls").size(), actual.get("polls").size(), name);
+        for (int poll = 0; poll < expected.get("polls").size(); poll++) {
+          final int row = poll;
+          assertEquals(
+              expected.get("polls").get(poll).get("drawsSha256"),
+              actual.get("polls").get(poll).get("drawsSha256"),
+              () -> name + " poll " + row + " regenerated a different predictive draw array");
+        }
+        assertEquals(expected, actual, () -> name + " differs from the retained v1 evidence");
+      }
+  }
+
+  @Test
+  void retainsEvidenceThatDoesNotDependOnWorkerCountOrCompletionOrder() {
+    // Parallel execution is only safe to register if this holds: every dataset derives its streams
+    // from its own name and reads no other dataset's state, so which worker takes which dataset,
+    // and in what order they finish, cannot reach any retained byte.
+    assumeParallel();
+    final Path serial = temp.resolve("serial-run");
+    assertEquals(
+        SyntheticRecovery.SUCCESS,
+        SyntheticRecovery.run(
+            "control", temp.resolve("plan.json").toString(), serial.toString(), "1"));
+
+    for (String convention : CONVENTIONS)
+      for (int index = 0; index < DATASETS; index++) {
+        final Path relative = Path.of("datasets", convention, index + ".json");
+        assertEquals(
+            digest(serial.resolve(relative)),
+            digest(evidence.resolve(relative)),
+            () -> relative + " differs between one worker and " + WORKERS);
+      }
+
+    // The reduction walks the batch in dataset order regardless of the order the workers finished
+    // it, so the cells and verdicts the stage published are identical too. Timings and the order
+    // records were written in are the only things the worker count may move.
+    final JsonNode parallel = report();
+    final JsonNode single = read(serial.resolve("control.json"));
+    for (String field : List.of("knownStageVerdict", "estimatedStageVerdict", "recovery"))
+      assertEquals(single.get(field).asString(), parallel.get(field).asString(), field);
+    for (int method = 0; method < single.get("methods").size(); method++)
+      assertEquals(
+          single.get("methods").get(method).get("cells"),
+          parallel.get("methods").get(method).get("cells"));
+  }
+
+  private static void assumeParallel() {
+    org.junit.jupiter.api.Assumptions.assumeTrue(
+        WORKERS > 1, "The host has one processor, so there is no parallel path to compare");
+  }
+
+  private static String digest(Path file) {
+    try {
+      return java.util.HexFormat.of()
+          .formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file)));
+    } catch (Exception e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @Test
@@ -339,8 +441,9 @@ class SyntheticControlTest {
     single.put("datasets", 1);
     assertRejected("single", single, "at least two datasets");
 
+    // The superseded revision is a document naming another protocol, and is refused as one.
     final ObjectNode other = plan();
-    other.put("version", "synthetic-recovery-v2");
+    other.put("version", "synthetic-recovery-v1");
     assertRejected("other", other, "Unregistered protocol version");
   }
 
@@ -362,7 +465,7 @@ class SyntheticControlTest {
 
   private static ObjectNode plan() {
     final ObjectNode plan = JSON.createObjectNode();
-    plan.put("version", "synthetic-recovery-v1");
+    plan.put("version", "synthetic-recovery-v2");
     plan.put("phase", "software_check");
     plan.put("masterSeed", SEED);
     plan.put("datasets", DATASETS);

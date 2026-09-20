@@ -288,7 +288,7 @@ class SyntheticRecoveryTest {
   /** The dataset document an operator supplies: explicit observations and one fixed covariance. */
   private static ObjectNode dataset(String convention) {
     final ObjectNode document = JSON.createObjectNode();
-    document.put("version", "synthetic-recovery-v1");
+    document.put("version", "synthetic-recovery-v2");
     document.put("phase", "software_check");
     document.put("convention", convention);
     document.put("masterSeed", SEED);

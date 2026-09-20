@@ -33,8 +33,20 @@ import tools.jackson.databind.node.ObjectNode;
  * from. No formal experiment is invoked.
  */
 class SyntheticLifecycleTest {
-  private static final int DATASETS = 2;
+  private static final int DATASETS = 4;
   private static final int DRAWS = 8;
+
+  /**
+   * Two workers, so the parallel path is the one under test everywhere here, and a preflight window
+   * small enough that the whole lifecycle stays a software check rather than a wait.
+   */
+  private static final int CORES = Math.min(2, Runtime.getRuntime().availableProcessors());
+
+  private static final int WORKERS = CORES;
+  private static final int SUB_WINDOW = 1;
+  private static final List<String> CONVENTIONS = List.of("midpoint", "ilr_window");
+  private static final int WINDOW = 2;
+  private static final int WARM_UP_LIMIT = 2;
   private static final int SCORING_POLLS = 25;
   private static final String COMMIT = "0123456789abcdef0123456789abcdef01234567";
   private static final JsonMapper JSON = JsonMapper.builder().build();
@@ -89,7 +101,14 @@ class SyntheticLifecycleTest {
     assertRegistrationRejected(
         "toolchain", plan -> field(plan, "toolchain").put("javaVersion", "0.0.1"));
     assertRegistrationRejected("host", plan -> field(plan, "host").put("hostname", "other-host"));
-    assertRegistrationRejected("workers", plan -> field(plan, "host").put("workers", 2));
+    assertRegistrationRejected("workers", plan -> field(plan, "host").put("workers", CORES + 1));
+    assertRegistrationRejected(
+        "cores",
+        plan ->
+            field(plan, "host")
+                .put("physicalCores", Runtime.getRuntime().availableProcessors() + 1));
+    assertRegistrationRejected(
+        "window", plan -> field(plan, "limits").put("preflightWindowDatasets", 1));
     assertRegistrationRejected("covariance", plan -> plan.put("covarianceSha256", "0".repeat(64)));
     assertRegistrationRejected("schedule", plan -> field(plan, "schedule").put("weeks", 27));
     assertRegistrationRejected(
@@ -115,6 +134,11 @@ class SyntheticLifecycleTest {
     field(formal, "run").put("datasets", 10000);
     field(formal, "run").put("draws", 4000);
     field(formal, "container").put("image", runtimeImage());
+    // A formal registration carries the registered preflight window, not a software check's.
+    field(formal, "limits")
+        .put("preflightSubWindowDatasets", SyntheticRecovery.PREFLIGHT_SUB_WINDOW_DATASETS)
+        .put("preflightWindowDatasets", SyntheticRecovery.PREFLIGHT_WINDOW_DATASETS)
+        .put("preflightWarmUpLimit", SyntheticRecovery.PREFLIGHT_WARM_UP_LIMIT);
     final Path formalRegistration = temp.resolve("formal/registration.json");
     assertEquals(
         SyntheticRecovery.SUCCESS,
@@ -212,24 +236,51 @@ class SyntheticLifecycleTest {
   }
 
   @Test
-  void measuresOneWarmUpAndThreeTimedDatasetsPerConventionInPreflightStreams() {
+  void measuresSustainedThroughputAtTheRegisteredWorkerCountAfterThermalSteadyState() {
     final JsonNode record = read(preflightRecord);
     assertEquals("measured", record.get("status").asString());
     assertEquals("preflight", record.get("streamPhase").asString());
-    assertEquals(4, record.get("datasets").intValue());
-    assertEquals(1, record.get("warmUpDatasets").intValue());
-    assertEquals(3, record.get("timedDatasets").intValue());
-    assertEquals(1, record.get("workers").intValue());
+    assertEquals(WORKERS, record.get("workers").intValue());
+    assertEquals(SUB_WINDOW, record.get("subWindowDatasets").intValue());
+    assertEquals(WINDOW, record.get("windowDatasets").intValue());
+    assertEquals(WARM_UP_LIMIT, record.get("warmUpLimit").intValue());
     assertNotNull(Instant.parse(record.get("deadlineStartedAt").asString()));
+    assertTrue(
+        record.get("measurement").asString().startsWith("sustained throughput"),
+        "The preflight is not a cold single-worker burst");
+
+    // The steady-state criterion, the measurements establishing it and the worker count are
+    // recorded alongside the timings, as the amendment requires.
+    assertEquals(CONVENTIONS, conventions(record.get("steadyState")));
+    for (JsonNode convention : record.get("steadyState")) {
+      assertTrue(convention.get("criterion").asString().contains("consecutive"));
+      assertEquals(0.05, convention.get("tolerance").doubleValue());
+      assertEquals(SUB_WINDOW, convention.get("subWindowDatasets").intValue());
+      assertTrue(convention.get("warmUpDatasets").intValue() > 0);
+      assertTrue(convention.get("subWindows").size() > 0);
+    }
+
+    // The measured window of each convention splits into consecutive sub-windows, and each one
+    // carries the wall clock the host sustained over it.
+    assertEquals(CONVENTIONS, conventions(record.get("windows")));
+    for (JsonNode window : record.get("windows")) {
+      assertEquals(WINDOW, window.get("datasets").intValue());
+      assertEquals(WINDOW / SUB_WINDOW, window.get("subWindows").size());
+      assertTrue(window.get("charge").asString().contains("largest elapsed time per dataset"));
+      for (JsonNode sub : window.get("subWindows")) {
+        assertEquals(SUB_WINDOW, sub.get("datasets").intValue());
+        assertTrue(sub.get("elapsedNanos").longValue() > 0);
+        assertTrue(sub.get("perDatasetNanos").doubleValue() > 0);
+        assertTrue(sub.get("knownStageNanos").doubleValue() > 0);
+        assertTrue(sub.get("estimatedStageNanos").doubleValue() > 0);
+      }
+    }
 
     final JsonNode measurements = record.get("measurements");
-    assertEquals(8, measurements.size());
-    for (int index = 0; index < measurements.size(); index++) {
-      final JsonNode measured = measurements.get(index);
-      assertEquals(index < 4 ? "midpoint" : "ilr_window", measured.get("convention").asString());
-      assertEquals(index % 4, measured.get("datasetIndex").intValue());
-      assertEquals(index % 4 == 0 ? "warm_up" : "timed", measured.get("role").asString());
+    assertEquals(2 * (WARM_UP_LIMIT + WINDOW), measurements.size());
+    for (JsonNode measured : measurements) {
       assertEquals(SyntheticSearch.POINTS, measured.get("gridPoints").intValue());
+      assertTrue(List.of("warm_up", "timed").contains(measured.get("role").asString()));
       // Generation, both prediction paths, the whole training grid, the evidence work and both
       // reproductions are each measured on their own.
       for (String phase :
@@ -250,11 +301,11 @@ class SyntheticLifecycleTest {
     // The estimated path ran here for its cost only, in streams of its own, and no coverage from
     // these datasets reaches a formal collection.
     assertTrue(
-        Files.isRegularFile(temp.resolve("run/preflight/preflight/estimated/midpoint/3.json")),
+        Files.isRegularFile(temp.resolve("run/preflight/preflight/estimated/midpoint/0.json")),
         "The estimated path is measured in preflight");
     assertEquals(
-        "synthetic-recovery-v1|preflight|midpoint|3",
-        read(temp.resolve("run/preflight/preflight/datasets/midpoint/3.json"))
+        "synthetic-recovery-v1|preflight|midpoint|0",
+        read(temp.resolve("run/preflight/preflight/datasets/midpoint/0.json"))
             .get("streamPrefix")
             .asString());
     assertFalse(record.has("cells"));
@@ -265,7 +316,7 @@ class SyntheticLifecycleTest {
   }
 
   @Test
-  void projectsTheRegisteredRunAgainstTheCapAndTheDiskItWouldNeed() {
+  void projectsEachStageFromItsSlowestSustainedSubWindowAndGatesOnlyTheFirstOne() {
     final JsonNode budget = read(preflightRecord).get("budget");
     assertEquals(
         List.of("midpoint/known", "midpoint/estimated", "ilr_window/known", "ilr_window/estimated"),
@@ -274,16 +325,17 @@ class SyntheticLifecycleTest {
             .valueStream()
             .map(stage -> stage.get("convention").asString() + "/" + stage.get("stage").asString())
             .toList());
-    long slowest = 0;
+    long sustained = 0;
     long largest = 0;
     for (JsonNode stage : budget.get("stages")) {
-      slowest += stage.get("slowestNanos").longValue();
+      assertTrue(stage.get("sustainedNanos").longValue() > 0);
+      sustained += stage.get("sustainedNanos").longValue();
       largest += stage.get("largestBytes").longValue();
     }
-    assertEquals(slowest, budget.get("perRepetitionNanos").longValue());
+    assertEquals(sustained, budget.get("perRepetitionNanos").longValue());
     assertEquals(1.25, budget.get("projectionMargin").doubleValue());
     assertEquals(
-        Math.round(DATASETS * (double) slowest * 1.25), budget.get("projectedNanos").longValue());
+        Math.round(DATASETS * (double) sustained * 1.25), budget.get("projectedNanos").longValue());
     assertEquals(
         budget.get("projectedNanos").longValue() + budget.get("preflightNanos").longValue(),
         budget.get("totalNanos").longValue());
@@ -292,16 +344,31 @@ class SyntheticLifecycleTest {
     assertEquals(
         2 * budget.get("projectedBytes").longValue() + (1L << 30),
         budget.get("requiredBytes").longValue());
-    assertTrue(budget.get("withinCap").booleanValue());
     assertTrue(budget.get("sufficientDisk").booleanValue());
+
+    // Feasibility is the storage rule and the first stage alone. A later stage the elapsed run no
+    // longer affords is a deferral when its turn comes, not an infeasible preflight.
+    final JsonNode first = budget.get("firstStage");
+    assertEquals("midpoint", first.get("convention").asString());
+    assertEquals("known", first.get("stage").asString());
+    assertEquals("the sustained preflight window", first.get("source").asString());
+    assertEquals(
+        Math.round(DATASETS * (double) first.get("perDatasetNanos").longValue() * 1.25),
+        first.get("projectedNanos").longValue());
+    assertTrue(first.get("fits").booleanValue());
     assertEquals("feasible", read(preflightRecord).get("feasibility").asString());
+    assertTrue(read(preflightRecord).get("budgeting").asString().contains("the first stage alone"));
+  }
+
+  private static List<String> conventions(JsonNode entries) {
+    return entries.valueStream().map(entry -> entry.get("convention").asString()).toList();
   }
 
   @Test
   void retainsAnInfeasibleProjectionAndStopsWithoutChangingTheScientificSettings() {
     final Path base = temp.resolve("infeasible");
     final ObjectNode plan = plan(base.resolve("evidence"), base.resolve("pre"));
-    field(plan, "run").put("datasets", 900_000);
+    field(plan, "run").put("datasets", 20_000_000);
     final Path frozen = base.resolve("registration.json");
     assertEquals(
         SyntheticRecovery.SUCCESS,
@@ -315,10 +382,11 @@ class SyntheticLifecycleTest {
     assertEquals("infeasible", record.get("feasibility").asString());
     assertEquals(
         List.of(
-            "projected formal duration exceeds the registered 24-hour cap",
+            "the first stage does not project within the cap less the elapsed preflight",
             "free disk is below twice the projected retained output plus 1 GiB"),
         record.get("reasons").valueStream().map(JsonNode::asString).toList());
-    assertEquals(900_000, record.get("budget").get("datasets").intValue());
+    assertEquals(20_000_000, record.get("budget").get("datasets").intValue());
+    assertFalse(record.get("budget").get("firstStage").get("fits").booleanValue());
     assertTrue(
         record.get("settings").asString().startsWith("unchanged;"),
         "An infeasible projection changes no scientific setting");
@@ -376,16 +444,17 @@ class SyntheticLifecycleTest {
   }
 
   @Test
-  void runsUnderOneHostAndWorkerAndLeavesTheProtectedEvidenceUnchanged() {
+  void runsUnderOneHostAndTheRegisteredWorkersAndLeavesTheProtectedEvidenceUnchanged() {
     final JsonNode report = read(evidence.resolve("report.json"));
     assertEquals("completed", report.get("status").asString());
     assertEquals(evidence.toString(), report.get("evidenceLocation").asString());
 
     final JsonNode identities = report.get("identities");
-    assertEquals("synthetic-recovery-v1", identities.get("protocol").asString());
+    assertEquals("synthetic-recovery-v2", identities.get("protocol").asString());
     assertEquals(COMMIT, identities.get("implementationCommit").asString());
     assertEquals(hostname(), identities.get("hostname").asString());
-    assertEquals(1, identities.get("workers").intValue());
+    assertEquals(WORKERS, identities.get("workers").intValue());
+    assertEquals(4, identities.get("stageProjections").size());
     assertEquals(digest(registration), identities.get("registrationSha256").asString());
     assertEquals(digest(execution), identities.get("executionSha256").asString());
     assertEquals(
@@ -395,7 +464,7 @@ class SyntheticLifecycleTest {
 
     final JsonNode worker = read(evidence.resolve("worker.lock"));
     assertEquals(hostname(), worker.get("hostname").asString());
-    assertEquals(1, worker.get("workers").intValue());
+    assertEquals(WORKERS, worker.get("workers").intValue());
 
     // The 24-hour clock is the one preflight started, not one this command restarted.
     final Instant started =
@@ -461,7 +530,7 @@ class SyntheticLifecycleTest {
         SyntheticRecovery.run(
             "experiment", executionFile.toString(), base.resolve("resumed").toString()));
     final ObjectNode decision = JSON.createObjectNode();
-    decision.put("version", "synthetic-recovery-v1");
+    decision.put("version", "synthetic-recovery-v2");
     decision.put("executionSha256", digest(executionFile));
     decision.put("decidedOn", "2026-09-17");
     decision.put("decidedBy", "the model owner");
@@ -492,6 +561,175 @@ class SyntheticLifecycleTest {
     final JsonNode resumed = read(base.resolve("resumed-accepted/report.json"));
     assertEquals(directory.toString(), resumed.get("resumedFrom").get("path").asString());
     assertEquals("the model owner", resumed.get("resumedFrom").get("decidedBy").asString());
+  }
+
+  @Test
+  void defersAStageThatDoesNotProjectWithinTheBudgetRemainingWhenItsTurnComes() {
+    // The first control is charged a rate it can carry; the second is charged one it cannot. The
+    // budget is a timing input: nothing here reads a cell, a fraction or an endpoint frequency.
+    final Path base = temp.resolve("deferred");
+    final Path directory = base.resolve("evidence");
+    final ObjectNode budget = JSON.createObjectNode();
+    final Path executionFile =
+        forged(
+            base,
+            directory,
+            DATASETS,
+            24L * 3600 * 1_000_000_000L,
+            stages -> {
+              field(stages.get(0)).put("sustainedNanos", 1);
+              field(stages.get(1)).put("sustainedNanos", 1);
+              field(stages.get(2)).put("sustainedNanos", Long.MAX_VALUE / 1_000);
+              field(stages.get(3)).put("sustainedNanos", 1);
+              budget.set("stages", stages);
+            });
+
+    assertEquals(
+        SyntheticRecovery.DEFERRED,
+        SyntheticRecovery.run("experiment", executionFile.toString(), directory.toString()));
+
+    final JsonNode deferral = read(directory.resolve("deferral.json"));
+    assertEquals("stage_budget_deferred", deferral.get("status").asString());
+    assertEquals("ilr_window", deferral.get("convention").asString());
+    assertEquals("known", deferral.get("stage").asString());
+    assertTrue(
+        deferral.get("projectedNanos").longValue() > deferral.get("remainingNanos").longValue());
+    assertEquals(1.25, deferral.get("projectionMargin").doubleValue());
+    assertTrue(deferral.get("inputs").asString().startsWith("timing only;"));
+
+    final JsonNode report = read(directory.resolve("report.json"));
+    assertEquals("stage_budget_deferred", report.get("status").asString());
+
+    // Both control verdicts stand at the top, each as a complete result in its own right: the one
+    // that ran every repetition and reported all 18 cells, and the one the budget deferred.
+    assertEquals(CONVENTIONS, conventions(report.get("controlVerdicts")));
+    assertEquals("completed", report.get("controlVerdicts").get(0).get("status").asString());
+    assertEquals(18, report.get("controlVerdicts").get(0).get("cells").intValue());
+    assertEquals(
+        DATASETS, report.get("controlVerdicts").get(0).get("completedDatasets").intValue());
+    assertEquals("not_run", report.get("controlVerdicts").get(1).get("status").asString());
+    assertEquals("incomplete", report.get("controlVerdicts").get(1).get("verdict").asString());
+    assertEquals("incomplete_stage_budget_deferred", report.get("experiment").asString());
+    assertEquals("incomplete", report.get("recovery").asString());
+
+    // The control whose budget held is a complete result in its own right; the deferred stage is
+    // accounted as not run, with the reason, the budget remaining and the projection that exceeded
+    // it.
+    final JsonNode ran = report.get("methods").get(0);
+    assertEquals("completed", ran.get("status").asString());
+    assertEquals(DATASETS, ran.get("completedDatasets").intValue());
+    assertEquals(18, ran.get("cells").size());
+    final JsonNode stopped = report.get("methods").get(1);
+    assertEquals("not_run", stopped.get("status").asString());
+    assertEquals("incomplete", stopped.get("verdict").asString());
+    assertEquals(0, stopped.get("cells").size());
+    assertTrue(stopped.get("reason").asString().contains("unmeasured rather than shortened"));
+
+    // A deferral changes nothing about the design: not N, not the grid, not the schedule and not
+    // the confidence rule.
+    assertEquals(DATASETS, report.get("plannedDatasets").intValue());
+    assertEquals(72, report.get("confidence").get("primaryCells").intValue());
+    assertEquals(3.391763140587952, report.get("confidence").get("criticalValue").doubleValue());
+    assertEquals(28, report.get("calendar").get("weeks").intValue());
+    assertEquals(
+        read(evidence.resolve("report.json")).get("recoveryBands"), report.get("recoveryBands"));
+    for (JsonNode estimated : report.get("estimatedStages"))
+      assertEquals("not_run", estimated.get("status").asString());
+  }
+
+  @Test
+  void letsTheRepetitionsInFlightFinishAtTheCapAndRecordsHowManyCompleted() {
+    // A run whose stage budgets all fit, against a clock that runs out partway through the first
+    // control. Scheduling stops at the cap; nothing is left half-written behind it.
+    final int planned = 400;
+    final Path base = temp.resolve("drained");
+    final Path directory = base.resolve("evidence");
+    final Path executionFile =
+        forged(
+            base,
+            directory,
+            planned,
+            20_000_000_000L,
+            stages -> {
+              for (JsonNode stage : stages) field(stage).put("sustainedNanos", 0);
+            });
+
+    assertEquals(
+        SyntheticRecovery.INTERRUPTED,
+        SyntheticRecovery.run("experiment", executionFile.toString(), directory.toString()));
+
+    final JsonNode interruption = read(directory.resolve("interruption.json"));
+    assertEquals("interrupted", interruption.get("status").asString());
+    final String convention = interruption.get("convention").asString();
+    assertEquals("known", interruption.get("stage").asString());
+    final int completed = interruption.get("completedRepetitions").intValue();
+    assertTrue(completed < planned, "The cap stopped the stage short");
+    assertTrue(completed > 0, "The cap stopped scheduling after the run had made progress");
+    assertTrue(interruption.get("overrunMillis").longValue() >= 0);
+    assertTrue(interruption.get("drain").asString().contains("allowed to finish"));
+
+    // Every repetition that was in flight finished and was retained, and nothing beyond them was
+    // scheduled: the retained files are exactly the completed count, on a batch boundary.
+    assertEquals(completed, retained(directory.resolve("datasets").resolve(convention)));
+    assertEquals(0, completed % WORKERS);
+
+    // A stage the watchdog stopped short is incomplete and reports no coverage at all. N stays at
+    // the registered repetition count.
+    final JsonNode method =
+        read(directory.resolve("report.json"))
+            .get("methods")
+            .valueStream()
+            .filter(candidate -> candidate.get("convention").asString().equals(convention))
+            .findFirst()
+            .orElseThrow();
+    assertEquals("incomplete", method.get("status").asString());
+    assertEquals("incomplete", method.get("verdict").asString());
+    assertEquals(0, method.get("cells").size());
+    assertEquals(completed, method.get("completedDatasets").intValue());
+    assertEquals(planned, method.get("plannedDatasets").intValue());
+  }
+
+  /**
+   * A registration of its own, with a preflight record forged into the stage rates and cap the case
+   * under test needs. Nothing waits for a real 24-hour clock or a real sustained window.
+   */
+  private static Path forged(
+      Path base, Path directory, int datasets, long capNanos, StageRates rates) {
+    final ObjectNode plan = plan(directory, base.resolve("pre"));
+    field(plan, "run").put("datasets", datasets);
+    field(plan, "run").put("draws", datasets > DATASETS ? 2000 : DRAWS);
+    final Path frozen = base.resolve("registration.json");
+    assertEquals(
+        SyntheticRecovery.SUCCESS,
+        SyntheticRecovery.run(
+            "register", write(base.resolve("plan.json"), plan).toString(), frozen.toString()));
+    final ObjectNode record = (ObjectNode) read(preflightRecord);
+    record.put("registrationSha256", digest(frozen));
+    record.put("deadlineStartedAt", Instant.now().toString());
+    record.put("capNanos", capNanos);
+    rates.apply((ArrayNode) record.get("budget").get("stages"));
+    final Path executionFile = base.resolve("execution.json");
+    assertEquals(
+        SyntheticRecovery.SUCCESS,
+        SyntheticRecovery.run(
+            "commit",
+            frozen.toString(),
+            write(base.resolve("preflight.json"), record).toString(),
+            executionFile.toString()));
+    return executionFile;
+  }
+
+  private interface StageRates {
+    void apply(ArrayNode stages);
+  }
+
+  private static int retained(Path stage) {
+    if (!Files.isDirectory(stage)) return 0;
+    try (final Stream<Path> files = Files.list(stage)) {
+      return (int) files.count();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   @Test
@@ -535,6 +773,56 @@ class SyntheticLifecycleTest {
     assertTrue(published.get("protectedEvidenceUnchanged").booleanValue());
     assertEquals(
         2 * DATASETS * SCORING_POLLS, published.get("reproduction").get("arrays").intValue());
+  }
+
+  @Test
+  void summarizesEveryPrimaryCellAndOneRollupDigestPerStageAndConvention() {
+    final Path results = temp.resolve("run/results.json");
+    assertEquals(
+        SyntheticRecovery.SUCCESS,
+        SyntheticRecovery.run(
+            "summarize", execution.toString(), evidence.toString(), results.toString()));
+    final JsonNode record = read(results);
+    assertEquals("synthetic-recovery-v2", record.get("version").asString());
+    assertEquals(72, record.get("cells").size());
+    assertEquals(72, record.get("primaryCells").intValue());
+    assertEquals(3.391763140587952, record.get("criticalValue").doubleValue());
+
+    // The known stages published their cells; the estimated stages never ran, so their cells are
+    // accounted as unmeasured rather than as coverage over the part that exists.
+    int measured = 0;
+    for (JsonNode cell : record.get("cells")) {
+      assertTrue(List.of("midpoint", "ilr_window").contains(cell.get("convention").asString()));
+      if (!cell.get("measured").booleanValue()) {
+        assertEquals("estimated", cell.get("stage").asString());
+        assertEquals("incomplete", cell.get("verdict").asString());
+        assertFalse(cell.has("coverage"));
+        continue;
+      }
+      measured++;
+      assertEquals("known", cell.get("stage").asString());
+      assertTrue(cell.get("coverage").doubleValue() >= 0);
+      assertTrue(cell.get("standardError").doubleValue() >= 0);
+      assertTrue(cell.get("lower").doubleValue() <= cell.get("upper").doubleValue());
+    }
+    assertEquals(36, measured);
+
+    // One rollup per stage and convention, each digesting a full per-file manifest that lives on
+    // the volume beside the evidence rather than in the repository.
+    assertEquals(4, record.get("rollups").size());
+    for (JsonNode rollup : record.get("rollups")) {
+      if (rollup.get("status").asString().equals("not_run")) {
+        assertEquals("estimated", rollup.get("stage").asString());
+        assertEquals(0, rollup.get("files").intValue());
+        continue;
+      }
+      final Path manifest = evidence.resolve(rollup.get("manifest").asString());
+      assertTrue(
+          Files.isRegularFile(manifest), () -> manifest + " was written beside the evidence");
+      assertEquals(DATASETS, rollup.get("files").intValue());
+      assertEquals(digest(manifest), rollup.get("manifestSha256").asString());
+      assertEquals(DATASETS, text(manifest).strip().split(System.lineSeparator()).length);
+    }
   }
 
   @Test
@@ -654,7 +942,7 @@ class SyntheticLifecycleTest {
   /** A software-check registration of the accepted protocol, on two datasets and eight draws. */
   private static ObjectNode plan(Path output, Path preflight) {
     final ObjectNode plan = JSON.createObjectNode();
-    plan.put("version", "synthetic-recovery-v1");
+    plan.put("version", "synthetic-recovery-v2");
     plan.put("phase", "software_check");
     plan.put("registeredOn", "2026-09-17");
     final ObjectNode protocol = plan.putObject("protocol");
@@ -678,10 +966,12 @@ class SyntheticLifecycleTest {
     plan.putObject("container").put("image", "test-runtime");
     final ObjectNode host = plan.putObject("host");
     host.put("hostname", hostname());
-    host.put("workers", 1);
+    host.put("physicalCores", CORES);
+    host.put("workers", WORKERS);
     final ObjectNode commands = plan.putObject("commands");
     for (String name :
-        List.of("register", "preflight", "commit", "experiment", "reproduce", "report"))
+        List.of(
+            "register", "preflight", "commit", "experiment", "reproduce", "report", "summarize"))
       commands.put(name, "./mvnw spring-boot:run -Dspring-boot.run.arguments='" + name + " ...'");
     final ObjectNode tolerances = plan.putObject("numericalTolerances");
     tolerances.put("interval", 1e-9);
@@ -721,7 +1011,9 @@ class SyntheticLifecycleTest {
     limits.put("wallClockHours", 24);
     limits.put("projectionMargin", 1.25);
     limits.put("logReserveBytes", 1L << 30);
-    limits.put("preflightDatasets", 4);
+    limits.put("preflightSubWindowDatasets", SUB_WINDOW);
+    limits.put("preflightWindowDatasets", WINDOW);
+    limits.put("preflightWarmUpLimit", WARM_UP_LIMIT);
     plan.put("outputLocation", output.toString());
     plan.put("preflightLocation", preflight.toString());
     final ArrayNode protectedLocations = plan.putArray("protectedLocations");

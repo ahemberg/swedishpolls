@@ -20,7 +20,7 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
- * The reproduction step of the accepted {@code synthetic-recovery-v1} protocol: every completed
+ * The reproduction step of the accepted {@code synthetic-recovery-v2} protocol: every completed
  * predictive array is regenerated from the retained prediction and its hash is compared without
  * replacement, and the intervals, coverage indicators and aggregate results are recomputed from the
  * retained inputs.
@@ -161,9 +161,17 @@ final class SyntheticReproduction {
     return new Outcome(stages, datasets, arrays, findings, interrupted);
   }
 
-  /** The watchdog seam: the cap is enforced between datasets rather than inside one. */
+  /**
+   * The watchdog seam: the cap is enforced between batches of datasets rather than inside one, so
+   * the repetitions in flight when it fires are allowed to finish.
+   */
   interface Deadline {
     boolean expired();
+
+    /** How far past the cap the clock now is; zero for a run no clock bounds. */
+    default long overrunMillis() {
+      return 0;
+    }
   }
 
   private static Stage stage(
