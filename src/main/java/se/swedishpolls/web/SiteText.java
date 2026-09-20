@@ -554,6 +554,7 @@ public final class SiteText {
         "Intervallen är {level} %-intervall och är betingade på modellens anpassade"
             + " hyperparametrar.");
     text.put("about.seats", Translations.of(Translations.SWEDISH).text("seats.note"));
+    text.put("seats.tie", Translations.of(Translations.SWEDISH).text("seats.tie"));
     text.put(
         "about.other",
         "Övriga är samlat stöd för partier som inte särredovisas under perioden. Övriga är inget"
@@ -1174,6 +1175,7 @@ public final class SiteText {
         "Intervals are {level}% intervals and are conditional on the model's fitted"
             + " hyperparameters.");
     text.put("about.seats", Translations.of(Translations.ENGLISH).text("seats.note"));
+    text.put("seats.tie", Translations.of(Translations.ENGLISH).text("seats.tie"));
     text.put(
         "about.other",
         "Other parties is combined support for parties not shown individually in the period. It"
