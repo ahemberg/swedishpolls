@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Bootstrap, PageData, Translate } from "./bootstrap";
+import type { Bootstrap, ResultsPageData, Translate } from "./bootstrap";
 import { ChamberHeading } from "./ChamberHeading";
 import type { Seats, SeatsParty } from "./chamber";
 import { Downloads } from "./Downloads";
@@ -19,7 +19,7 @@ import { SeatColumns, seatSpan } from "./seat-columns";
 
 interface Props {
   readonly page: Bootstrap;
-  readonly data: PageData;
+  readonly data: ResultsPageData;
   readonly t: Translate;
 }
 

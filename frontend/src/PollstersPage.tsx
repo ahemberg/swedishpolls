@@ -1,5 +1,6 @@
 import { Fragment, type JSX } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
+import { pollstersData } from "./bootstrap";
 import { decimal } from "./format";
 import type { InstituteMeta, PollstersCell, PollstersData, PollstersMatrix } from "./institutes";
 import { componentName } from "./labels";
@@ -19,7 +20,7 @@ interface Props {
 
 /** The institutes and their house effects, read from the bootstrap the server resolved. */
 function pollsters(page: Bootstrap): PollstersData | undefined {
-  return page.data?.pollsters;
+  return pollstersData(page)?.pollsters;
 }
 
 function date(

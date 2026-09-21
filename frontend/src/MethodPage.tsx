@@ -1,5 +1,6 @@
 import type { JSX, ReactNode } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
+import { methodData } from "./bootstrap";
 import { decimal } from "./format";
 import { componentName } from "./labels";
 import type { MethodData } from "./method";
@@ -22,7 +23,7 @@ interface Props {
 
 /** The frozen numbers beside the explanation, read from the bootstrap the server resolved. */
 function method(page: Bootstrap): MethodData | undefined {
-  return page.data?.method;
+  return methodData(page)?.method;
 }
 
 function Section({
@@ -83,7 +84,7 @@ function Decision({
 }
 
 function Coverage({ page, t }: { readonly page: Bootstrap; readonly t: Translate }): JSX.Element {
-  const periods = page.data?.latest.coveragePeriods ?? [];
+  const periods = methodData(page)?.latest.coveragePeriods ?? [];
   return (
     <Section title={t("method.coverage.title")}>
       <div className="scroll">

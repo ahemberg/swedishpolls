@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import type { Bootstrap, HouseEffect, PartyData, PartyObservation, Translate } from "./bootstrap";
+import { resultsData } from "./bootstrap";
 import { Downloads } from "./Downloads";
 import { colour, count, date, decimal, percent, probability, shortDate } from "./format";
 import { componentName } from "./labels";
@@ -63,7 +64,7 @@ function thresholdReading(page: Bootstrap, party: PartyData, t: Translate): stri
 }
 
 function EstimateFootnotes({ page, party, t }: Props & { readonly party: PartyData }): JSX.Element {
-  const sensitivity = page.data?.seats.sensitivity;
+  const sensitivity = resultsData(page)?.seats.sensitivity;
   return (
     <>
       {party.pointSeats !== null && (
@@ -213,7 +214,7 @@ function HouseEffects({ page, party, t }: Props & { readonly party: PartyData })
 }
 
 function Party({ page, t }: Props): JSX.Element | null {
-  const party = page.data?.party;
+  const party = resultsData(page)?.party;
   if (party === undefined) {
     return null;
   }

@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import type { Bootstrap, Boundary, PartyObservation, Series } from "./bootstrap";
+import { resultsData } from "./bootstrap";
 import {
   axisLevels,
   BASELINE,
@@ -184,7 +185,7 @@ function ElectionDots({
   readonly y: Scale;
   readonly component: string | undefined;
 }): JSX.Element {
-  const elections = page.data?.elections?.elections ?? [];
+  const elections = resultsData(page)?.elections?.elections ?? [];
   return (
     <g>
       {elections.flatMap((election) => {

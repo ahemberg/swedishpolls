@@ -1,4 +1,5 @@
 {
+  "entry": ["src/api-contract.ts"],
   "rules": {
     "unresolved-imports": "error",
     "unlisted-dependencies": "error",

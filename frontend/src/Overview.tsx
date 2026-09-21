@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import { BlocStandings } from "./BlocStandings";
-import type { Bootstrap, PageData, Translate } from "./bootstrap";
-import { headlineDate } from "./bootstrap";
+import type { Bootstrap, ResultsPageData, Translate } from "./bootstrap";
+import { headlineDate, isResultsData } from "./bootstrap";
 import { Downloads } from "./Downloads";
 import { Estimates } from "./Estimates";
 import { date, timestamp } from "./format";
@@ -41,7 +41,11 @@ function SourceOverview({ page, t }: Props): JSX.Element | null {
   );
 }
 
-function PublishedOverview({ page, data, t }: Props & { readonly data: PageData }): JSX.Element {
+function PublishedOverview({
+  page,
+  data,
+  t,
+}: Props & { readonly data: ResultsPageData }): JSX.Element {
   return (
     <div>
       <h1>
@@ -70,7 +74,7 @@ function PublishedOverview({ page, data, t }: Props & { readonly data: PageData 
 
 function Overview({ page, t }: Props): JSX.Element | null {
   const { data, publication } = page;
-  if (data !== undefined && publication !== undefined) {
+  if (data !== undefined && isResultsData(data) && publication !== undefined) {
     return <PublishedOverview page={page} data={data} t={t} />;
   }
   return <SourceOverview page={page} t={t} />;

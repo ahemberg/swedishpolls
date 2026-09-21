@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Bootstrap, PageData, Translate } from "./bootstrap";
+import type { Bootstrap, ResultsPageData, Translate } from "./bootstrap";
 import type { Coalition } from "./chamber";
 import { count, probability } from "./format";
 import { Hemicycle, hemicycleSummary } from "./Hemicycle";
@@ -12,11 +12,11 @@ import { coalitionName, componentName } from "./labels";
 
 interface Props {
   readonly page: Bootstrap;
-  readonly data: PageData;
+  readonly data: ResultsPageData;
   readonly t: Translate;
 }
 
-function defaults(data: PageData): readonly Coalition[] {
+function defaults(data: ResultsPageData): readonly Coalition[] {
   return data.coalitions.overviewDefaults.flatMap((id) => {
     const found = data.coalitions.coalitions.find((coalition) => coalition.id === id);
     if (found === undefined) {

@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
-import { headlineDate } from "./bootstrap";
+import { headlineDate, latestData } from "./bootstrap";
 import { date, level, timestamp } from "./format";
 
 /**
@@ -15,11 +15,11 @@ interface Props {
 }
 
 function Uncertainty({ page, t }: Props): JSX.Element | null {
-  const { data } = page;
-  if (data === undefined) {
+  const latest = latestData(page);
+  if (latest === undefined) {
     return null;
   }
-  return <p>{t("about.uncertainty", { level: level(data.latest.intervalLevel) })}</p>;
+  return <p>{t("about.uncertainty", { level: level(latest.intervalLevel) })}</p>;
 }
 
 function About({ page, t }: Props): JSX.Element | null {
