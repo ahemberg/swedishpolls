@@ -3,6 +3,7 @@ import { useId } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
 import { PLOT } from "./chart";
 import { colour, count, decimal, percent, shortDate } from "./format";
+import { componentName } from "./labels";
 import type { SourceChartData, SourceObservation } from "./source-chart";
 import { markerSpan } from "./source-chart";
 import { SourceChartFigure } from "./source-chart-figure";
@@ -26,7 +27,7 @@ interface Props {
 }
 
 function partyName(page: Bootstrap, component: string): string {
-  return page.labels[component] ?? component;
+  return componentName(page, component);
 }
 
 function fieldwork(observation: SourceObservation, locale: string): string {

@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Translate } from "./bootstrap";
+import type { RangeId, Translate } from "./bootstrap";
 import { colour } from "./format";
 
 /**
@@ -13,7 +13,7 @@ const ALL_PARTIES = "";
 
 /** One offered window, however the page that offers it names the rest of its own range. */
 interface RangeOption {
-  readonly id: string;
+  readonly id: RangeId;
   readonly year: number | null;
 }
 

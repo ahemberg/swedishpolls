@@ -72,6 +72,13 @@ function HistoryChart({
   const cursor = useCursor(history.dates.length);
   const drawn = BLOCKS.map((component) => ({ component, ...history.series[component] }));
   const date = history.dates[cursor.index];
+  // The table draws the two blocks and nothing else, so its header is one of two keys.
+  function blockLabel(component: string): string {
+    if (component === "a") {
+      return t("coalitionHistory.a");
+    }
+    return t("coalitionHistory.b");
+  }
   return (
     <>
       <CoalitionHistoryPlot history={history} page={page} t={t} index={cursor.index} />
@@ -116,7 +123,7 @@ function HistoryChart({
             page={page}
             dates={history.dates}
             drawn={drawn}
-            label={(component) => t(`coalitionHistory.${component}`)}
+            label={blockLabel}
             t={t}
             intervals={true}
           />

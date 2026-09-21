@@ -1,3 +1,5 @@
+import type { RangeId } from "./bootstrap";
+
 /**
  * The source chart's geometry: a real date axis, and one horizontal marker per reported share.
  *
@@ -24,7 +26,7 @@ interface SourceObservation {
  * is the one the window's own label names, which only the election window has.
  */
 interface SourceWindow {
-  readonly id: string;
+  readonly id: RangeId;
   readonly from: string;
   readonly to: string;
   readonly year: number | null;

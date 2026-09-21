@@ -3,6 +3,8 @@ import type { Bootstrap, Translate } from "./bootstrap";
 import { count, date } from "./format";
 import type { PollRow, PollTable } from "./poll-table";
 
+import type { PageTextKey } from "./text";
+
 /**
  * The rows of the poll table.
  *
@@ -112,7 +114,7 @@ function sourceEligibility(poll: PollRow, t: Translate): string {
   return t("source.polls.excluded", { reasons: poll.exclusionReasons.join(", ") });
 }
 
-function pollText(sourceTable: boolean, published: string, source: string): string {
+function pollText(sourceTable: boolean, published: PageTextKey, source: PageTextKey): PageTextKey {
   if (sourceTable) {
     return source;
   }

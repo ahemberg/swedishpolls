@@ -4,6 +4,8 @@ import { decimal } from "./format";
 import { componentName } from "./labels";
 import type { MethodData } from "./method";
 
+import type { PageTextKey } from "./text";
+
 /**
  * The method page.
  *
@@ -162,7 +164,7 @@ function gateRows(page: Bootstrap, data: MethodData, t: Translate): readonly Gat
   ];
 }
 
-function verdictKey(data: MethodData): string {
+function verdictKey(data: MethodData): PageTextKey {
   if (data.verdict.released) {
     return "method.validation.verdictReleased";
   }

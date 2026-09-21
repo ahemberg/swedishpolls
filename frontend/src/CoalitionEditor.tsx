@@ -17,6 +17,7 @@ import {
   total,
 } from "./coalition-history";
 import { share } from "./format";
+import { componentName } from "./labels";
 import { type Drag, usePointerDrag } from "./usePointerDrag";
 
 const DESTINATIONS = ["a", "b", "unassigned"] as const;
@@ -120,7 +121,7 @@ function pickedName(picked: Party | null): string {
 }
 
 function partyName(page: Bootstrap, party: Party): string {
-  return page.labels[party] ?? party;
+  return componentName(page, party);
 }
 
 function partyShare(shares: Readonly<Record<string, number | null>>, party: Party): number | null {

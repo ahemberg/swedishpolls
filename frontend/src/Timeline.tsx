@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { useId } from "react";
 import type { Bootstrap, PartyObservation, Translate } from "./bootstrap";
 import { level, shortDate } from "./format";
+import { componentName } from "./labels";
 import { SourceCursor, SourceDetails } from "./SourceChart";
 import { TimelineControlsRow } from "./timeline-controls-row";
 import { TimelineFigure, TimelineReadout, TimelineScrubber } from "./timeline-figure";
@@ -119,7 +120,7 @@ function TimelineContent({
 }): JSX.Element {
   const { history, drawn, dates, index } = state;
   const day = dates[index] ?? history.range.to;
-  const naming = (name: string): string => page.labels[name] ?? name;
+  const naming = (name: string): string => componentName(page, name);
   const summary = t("timeline.summary", {
     from: shortDate(history.range.from, page.locale),
     to: shortDate(history.range.to, page.locale),

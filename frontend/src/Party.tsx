@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import type { Bootstrap, HouseEffect, PartyData, PartyObservation, Translate } from "./bootstrap";
 import { Downloads } from "./Downloads";
 import { colour, count, date, decimal, percent, probability, shortDate } from "./format";
+import { componentName } from "./labels";
 import { PollColumns } from "./poll-columns";
 import { Share } from "./Share";
 import { Timeline } from "./Timeline";
@@ -76,7 +77,7 @@ function EstimateFootnotes({ page, party, t }: Props & { readonly party: PartyDa
 }
 
 function Estimate({ page, party, t }: Props & { readonly party: PartyData }): JSX.Element {
-  const name = page.labels[party.component] ?? party.component;
+  const name = componentName(page, party.component);
   return (
     <section className="party-heading">
       <h1>
@@ -104,7 +105,7 @@ function sample(observation: PartyObservation, page: Bootstrap, t: Translate): s
 }
 
 function Observations({ page, party, t }: Props & { readonly party: PartyData }): JSX.Element {
-  const name = page.labels[party.component] ?? party.component;
+  const name = componentName(page, party.component);
   return (
     <section className="sec">
       <h2>{t("party.observations")}</h2>

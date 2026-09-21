@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import type { Bootstrap, Boundary, PartyObservation, Series, Translate } from "./bootstrap";
 import { BASELINE, HEIGHT, TOP, WIDTH } from "./chart";
 import { colour, decimal, percent, shortDate } from "./format";
+import { componentName } from "./labels";
 import { Markers, Selection, YearRules } from "./source-chart-figure";
 import {
   Bands,
@@ -13,6 +14,7 @@ import {
   PollDots,
   YearLines,
 } from "./timeline-chart";
+
 import type { TimelineState } from "./useTimeline";
 
 /** The drawn figure and the two ways to move its cursor: dragging it, or stepping the range input. */
@@ -62,7 +64,7 @@ function Years({
 /** A missing day reads as missing: never a zero, never the neighbouring day's value. */
 function reading(page: Bootstrap, series: Series, index: number, t: Translate): string {
   const value = series.mean[index];
-  const name = page.labels[series.component] ?? series.component;
+  const name = componentName(page, series.component);
   if (value === undefined || value === null) {
     return `${name} ${t("estimate.unavailable")}`;
   }
@@ -82,7 +84,7 @@ function TimelineReadout({
   if (coverage !== undefined) {
     coverageReading = t("timeline.coverage", {
       period: coverage.id,
-      roster: coverage.roster.map((entry) => page.labels[entry] ?? entry).join(", "),
+      roster: coverage.roster.map((entry) => componentName(page, entry)).join(", "),
     });
   }
   return (
