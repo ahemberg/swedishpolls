@@ -1,7 +1,8 @@
-import type { CoalitionResults, Seats } from "./chamber";
-import type { CoalitionHistoryData, CoalitionLinkError } from "./coalition-history";
-import type { PollstersData } from "./institutes";
-import type { MethodData } from "./method";
+import type { Family, Language } from "./bootstrap-parser";
+import { parseBootstrap } from "./bootstrap-parser";
+
+import type { CoalitionLinkError } from "./coalition-history";
+import type { PageData } from "./page-data";
 import type { PollTable } from "./poll-table";
 import type { SourceChartData } from "./source-chart";
 import { type PageTextKey, translate } from "./text";
@@ -18,17 +19,7 @@ import { type PageTextKey, translate } from "./text";
 /** The element Spring writes the bootstrap into. */
 const BOOTSTRAP_ELEMENT = "site-bootstrap";
 
-export type Language = "sv" | "en";
-
-/** Every family the server can route to, whether or not this build renders a page for it. */
-export type Family =
-  | "OVERVIEW"
-  | "PARTY"
-  | "SEATS"
-  | "COALITIONS"
-  | "POLLSTERS"
-  | "POLLS"
-  | "METHOD";
+export type { Family, Language } from "./bootstrap-parser";
 
 /** The windows a timeline offers, as the server names them. */
 export type RangeId = "oneYear" | "sinceElection" | "fourYears" | "all";
@@ -209,19 +200,6 @@ export interface NavigationEntry {
  * page that shows numbers. The timeline, the election dots and the poll list belong to the
  * overview alone, so they are absent rather than empty on the seats and coalitions pages.
  */
-export interface PageData {
-  readonly coalitionHistory?: CoalitionHistoryData;
-  readonly latest: Latest;
-  readonly seats: Seats;
-  readonly coalitions: CoalitionResults;
-  readonly elections?: Elections;
-  readonly history?: History;
-  readonly polls?: Polls;
-  readonly party?: PartyData;
-  readonly pollsters?: PollstersData;
-  readonly method?: MethodData;
-}
-
 export interface Bootstrap {
   readonly language: Language;
   readonly locale: string;
@@ -251,26 +229,11 @@ export interface Bootstrap {
   readonly data?: PageData;
   readonly pollTable?: PollTable;
   readonly coalitionLinkError?: CoalitionLinkError;
+  readonly coalitionShare?: string;
+  readonly customCoalitionSelection?: boolean;
   readonly ranges?: readonly RangeSpec[];
   readonly defaultRange?: RangeId;
 }
-
-/** The page families this build renders, as the server names them. */
-export const OVERVIEW = "OVERVIEW";
-export const SEATS = "SEATS";
-export const COALITIONS = "COALITIONS";
-
-/** The individual party page family. */
-export const PARTY = "PARTY";
-
-/** The browsable poll table, which carries source observations rather than published estimates. */
-export const POLLS = "POLLS";
-
-/** The pollsters page, which carries institute metadata and house effects rather than estimates. */
-export const POLLSTERS = "POLLSTERS";
-
-/** The method page, which carries the explanation and the frozen numbers rather than results. */
-export const METHOD = "METHOD";
 
 /**
  * The publication-wide summary cards a page can offer. A party page is not here: it offers its
@@ -294,10 +257,14 @@ export function readBootstrap(): Bootstrap {
   if (element === null || element.textContent === null) {
     throw new Error("The page carries no bootstrap");
   }
-  return JSON.parse(element.textContent) as Bootstrap;
+  return parseBootstrap(element.textContent);
 }
 
 /** One wording, by key, in the language the page was routed to. */
 export function translator(page: Bootstrap): Translate {
   return (key, values) => translate(page.language, key, values);
 }
+
+export { COALITIONS, METHOD, OVERVIEW, PARTY, POLLS, POLLSTERS, SEATS } from "./bootstrap-parser";
+export type { MethodPageData, PageData, PollstersPageData, ResultsPageData } from "./page-data";
+export { isResultsData, latestData, methodData, pollstersData, resultsData } from "./page-data";

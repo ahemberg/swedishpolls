@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import type { Bootstrap, Boundary, PartyObservation, Series, Translate } from "./bootstrap";
+import { resultsData } from "./bootstrap";
 import { BASELINE, HEIGHT, TOP, WIDTH } from "./chart";
 import { colour, decimal, percent, shortDate } from "./format";
 import { componentName } from "./labels";
@@ -79,7 +80,9 @@ function TimelineReadout({
   t,
   coveragePeriod,
 }: ReadoutProps): JSX.Element {
-  const coverage = page.data?.latest.coveragePeriods.find((entry) => entry.id === coveragePeriod);
+  const coverage = resultsData(page)?.latest.coveragePeriods.find(
+    (entry) => entry.id === coveragePeriod,
+  );
   let coverageReading = t("timeline.noCoverage");
   if (coverage !== undefined) {
     coverageReading = t("timeline.coverage", {

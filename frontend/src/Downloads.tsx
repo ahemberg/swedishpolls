@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import type { Bootstrap, CardKind, Language, Publication, Translate } from "./bootstrap";
+import { resultsData } from "./bootstrap";
 
 /**
  * The journalist downloads. Every link names the publication this page resolved, so a file cannot
@@ -68,7 +69,7 @@ function ImageDownload({
 }
 
 function partyComponent(page: Bootstrap): string | null {
-  return page.data?.party?.component ?? null;
+  return resultsData(page)?.party?.component ?? null;
 }
 
 function pollsQuery(pin: string, component: string | null): string {

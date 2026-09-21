@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Bootstrap, Interval, PageData, Translate } from "./bootstrap";
+import type { Bootstrap, Interval, ResultsPageData, Translate } from "./bootstrap";
 import type { Seats } from "./chamber";
 import { colour, date, decimal, level, percent } from "./format";
 import { componentName } from "./labels";
@@ -12,7 +12,7 @@ import { Sparkline } from "./Sparkline";
 
 interface Props {
   readonly page: Bootstrap;
-  readonly data: PageData;
+  readonly data: ResultsPageData;
   readonly t: Translate;
 }
 

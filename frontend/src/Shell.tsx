@@ -4,6 +4,7 @@ import type { Bootstrap, Family, PageData, Translate } from "./bootstrap";
 import {
   COALITIONS,
   headlineDate,
+  isResultsData,
   METHOD,
   OVERVIEW,
   PARTY,
@@ -97,6 +98,20 @@ interface ResultsProps {
   readonly t: Translate;
 }
 
+function SeatsResult({ page, data, t }: ResultsProps): JSX.Element {
+  if (!isResultsData(data)) {
+    return <Title page={page} t={t} />;
+  }
+  return <SeatsPage page={page} data={data} t={t} />;
+}
+
+function CoalitionsResult({ page, data, t }: ResultsProps): JSX.Element {
+  if (!isResultsData(data)) {
+    return <Title page={page} t={t} />;
+  }
+  return <CoalitionsPage page={page} data={data} t={t} />;
+}
+
 /**
  * Which page each family that carries results is rendered by.
  *
@@ -106,8 +121,8 @@ interface ResultsProps {
 const PAGES: Readonly<Record<string, (props: ResultsProps) => JSX.Element>> = {
   [OVERVIEW]: ({ page, t }) => <Overview page={page} t={t} />,
   [PARTY]: ({ page, t }) => <Party page={page} t={t} />,
-  [SEATS]: ({ page, data, t }) => <SeatsPage page={page} data={data} t={t} />,
-  [COALITIONS]: ({ page, data, t }) => <CoalitionsPage page={page} data={data} t={t} />,
+  [SEATS]: SeatsResult,
+  [COALITIONS]: CoalitionsResult,
   [POLLSTERS]: ({ page, t }) => <PollstersPage page={page} t={t} />,
   [METHOD]: ({ page, t }) => <MethodPage page={page} t={t} />,
 };

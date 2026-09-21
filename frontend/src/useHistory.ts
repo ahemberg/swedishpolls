@@ -1,4 +1,5 @@
 import type { Bootstrap, History, RangeSpec } from "./bootstrap";
+import { resultsData } from "./bootstrap";
 import { useFetched } from "./useFetched";
 
 /**
@@ -48,7 +49,7 @@ function request(page: Bootstrap, rangeId: string): string | null {
 }
 
 function useHistory(page: Bootstrap, rangeId: string): Loaded {
-  const { value, loading, failed } = useFetched(page.data?.history, request(page, rangeId));
+  const { value, loading, failed } = useFetched(resultsData(page)?.history, request(page, rangeId));
   return { history: value, loading, failed };
 }
 
