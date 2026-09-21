@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import tools.jackson.core.JacksonException;
 
 /** Turns every rejected request into the frozen error body its code names. */
 @RestControllerAdvice
@@ -13,6 +14,11 @@ public class ApiExceptionHandler {
   @ExceptionHandler(ApiErrors.ApiException.class)
   public ResponseEntity<ApiErrorResponse> api(ApiErrors.ApiException error) {
     return body(error);
+  }
+
+  @ExceptionHandler(JacksonException.class)
+  public ResponseEntity<Void> invalidPublicationDocument() {
+    return ResponseEntity.internalServerError().build();
   }
 
   /**

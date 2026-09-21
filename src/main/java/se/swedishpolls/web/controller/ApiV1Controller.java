@@ -40,6 +40,9 @@ public class ApiV1Controller {
   private final ObjectReader histories;
   private final ObjectReader coalitionHistories;
   private final ObjectReader institutes;
+  private final ObjectReader latest;
+  private final ObjectReader elections;
+  private final ObjectReader seats;
   private final ObjectReader objects;
   private final ObjectReader publicationMetadata;
 
@@ -50,6 +53,9 @@ public class ApiV1Controller {
     histories = json.readerFor(HistoryResponse.class);
     coalitionHistories = json.readerFor(CoalitionHistoryResponse.class);
     institutes = json.readerFor(InstitutesDocument.class);
+    latest = json.readerFor(LatestResponse.class);
+    elections = json.readerFor(ElectionsResponse.class);
+    seats = json.readerFor(SeatsResponse.class);
     objects = json.readerFor(ObjectNode.class);
     publicationMetadata = json.readerFor(PublicationResponse.class);
   }
@@ -70,15 +76,20 @@ public class ApiV1Controller {
   }
 
   @GetMapping("/estimates/latest")
-  public ResponseEntity<byte[]> latest(
+  public ResponseEntity<LatestResponse> latest(
       @RequestParam(required = false) String publication,
       @RequestParam(required = false) String coveragePeriod,
       @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
     final String period =
         coveragePeriod == null ? resolved.header().headlinePeriod() : coveragePeriod;
-    return rawJson(
-        publications.latest(resolved.header(), period, language), "coveragePeriod", resolved);
+    return json(
+        document(
+            publications.latest(resolved.header(), period, language),
+            "coveragePeriod",
+            latest,
+            LatestResponse.class),
+        resolved);
   }
 
   @GetMapping("/estimates/history")
@@ -160,27 +171,37 @@ public class ApiV1Controller {
   }
 
   @GetMapping("/elections")
-  public ResponseEntity<byte[]> elections(
+  public ResponseEntity<ElectionsResponse> elections(
       @RequestParam(required = false) String publication,
       @RequestParam(required = false) String coveragePeriod,
       @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
     final String period =
         coveragePeriod == null ? resolved.header().headlinePeriod() : coveragePeriod;
-    return rawJson(
-        publications.elections(resolved.header(), period, language), "coveragePeriod", resolved);
+    return json(
+        document(
+            publications.elections(resolved.header(), period, language),
+            "coveragePeriod",
+            elections,
+            ElectionsResponse.class),
+        resolved);
   }
 
   @GetMapping("/seats")
-  public ResponseEntity<byte[]> seats(
+  public ResponseEntity<SeatsResponse> seats(
       @RequestParam(required = false) String publication,
       @RequestParam(required = false) String election,
       @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
     final int electionYear =
         election == null ? resolved.header().approximatedElection() : year(election);
-    return rawJson(
-        publications.seats(resolved.header(), electionYear, language), "election", resolved);
+    return json(
+        document(
+            publications.seats(resolved.header(), electionYear, language),
+            "election",
+            seats,
+            SeatsResponse.class),
+        resolved);
   }
 
   @GetMapping("/coalitions")
