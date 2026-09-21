@@ -58,5 +58,5 @@ function latestData(page: Bootstrap): Latest | undefined {
   return undefined;
 }
 
-export type { MethodPageData, PageData, PollstersPageData, ResultsPageData };
+export type { PageData, ResultsPageData };
 export { isResultsData, latestData, methodData, pollstersData, resultsData };

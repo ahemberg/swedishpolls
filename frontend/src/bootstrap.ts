@@ -266,5 +266,5 @@ export function translator(page: Bootstrap): Translate {
 }
 
 export { COALITIONS, METHOD, OVERVIEW, PARTY, POLLS, POLLSTERS, SEATS } from "./bootstrap-parser";
-export type { MethodPageData, PageData, PollstersPageData, ResultsPageData } from "./page-data";
+export type { PageData, ResultsPageData } from "./page-data";
 export { isResultsData, latestData, methodData, pollstersData, resultsData } from "./page-data";
