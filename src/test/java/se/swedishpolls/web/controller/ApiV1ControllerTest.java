@@ -266,36 +266,31 @@ class ApiV1ControllerTest {
   }
 
   @Test
-  void unfilteredFrozenPublicationDocumentsAreServedByteForByte() throws Exception {
+  void unfilteredCoalitionDocumentIsServedByteForByte() throws Exception {
     final String stored = "{\n  \"publication\": {\"publicationId\": \"pub_1\"}\n}\n";
     when(publications.resolve(isNull()))
         .thenReturn(Optional.of(new Publications.Resolved(HEADER, false)));
-    when(publications.latest(HEADER, HEADER.headlinePeriod(), "sv"))
-        .thenReturn(Optional.of(stored));
-    when(publications.elections(HEADER, HEADER.headlinePeriod(), "sv"))
-        .thenReturn(Optional.of(stored));
-    when(publications.seats(HEADER, HEADER.approximatedElection(), "sv"))
-        .thenReturn(Optional.of(stored));
     when(publications.coalitions(HEADER, HEADER.approximatedElection(), "sv"))
         .thenReturn(Optional.of(stored));
 
-    for (final String path :
-        List.of(
-            "/api/v1/estimates/latest",
-            "/api/v1/elections",
-            "/api/v1/seats",
-            "/api/v1/coalitions")) {
-      final MvcResult result =
-          mvc.perform(get(path))
-              .andExpect(status().isOk())
-              .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "max-age=300, public"))
-              .andExpect(header().exists(HttpHeaders.ETAG))
-              .andReturn();
-      assertEquals(
-          sha256(stored.getBytes(StandardCharsets.UTF_8)),
-          sha256(result.getResponse().getContentAsByteArray()),
-          path);
-    }
+    final MvcResult result =
+        mvc.perform(get("/api/v1/coalitions"))
+            .andExpect(status().isOk())
+            .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "max-age=300, public"))
+            .andExpect(header().exists(HttpHeaders.ETAG))
+            .andReturn();
+    assertEquals(
+        sha256(stored.getBytes(StandardCharsets.UTF_8)),
+        sha256(result.getResponse().getContentAsByteArray()));
+  }
+
+  @Test
+  void invalidStoredPublicationDocumentIsAServerError() throws Exception {
+    when(publications.resolve(isNull()))
+        .thenReturn(Optional.of(new Publications.Resolved(HEADER, false)));
+    when(publications.latest(HEADER, HEADER.headlinePeriod(), "sv")).thenReturn(Optional.of("{}"));
+
+    mvc.perform(get("/api/v1/estimates/latest")).andExpect(status().isInternalServerError());
   }
 
   @Test
