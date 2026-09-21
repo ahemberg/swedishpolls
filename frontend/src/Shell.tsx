@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { About } from "./About";
-import type { Bootstrap, PageData, Translate } from "./bootstrap";
+import type { Bootstrap, Family, PageData, Translate } from "./bootstrap";
 import {
   COALITIONS,
   headlineDate,
@@ -20,6 +20,7 @@ import { PollsPage } from "./PollsPage";
 import { PollstersPage } from "./PollstersPage";
 import { SeatsPage } from "./SeatsPage";
 import { SiteHeader } from "./SiteHeader";
+import type { PageTextKey } from "./text";
 
 /**
  * The page around the results: the header, the staleness notice, the body of whichever family this
@@ -74,9 +75,20 @@ function NoSource({ page, t }: Props): JSX.Element {
   );
 }
 
+/** The document title of each family, written out so no case mapping runs per page. */
+const TITLES: Record<Family, PageTextKey> = {
+  [OVERVIEW]: "head.title.overview",
+  [PARTY]: "head.title.party",
+  [SEATS]: "head.title.seats",
+  [COALITIONS]: "head.title.coalitions",
+  [POLLSTERS]: "head.title.pollsters",
+  [POLLS]: "head.title.polls",
+  [METHOD]: "head.title.method",
+};
+
 /** A family this build has no page for yet: its own title, and the shell around it. */
 function Title({ page, t }: Props): JSX.Element {
-  return <h1>{t(`head.title.${page.route.family.toLowerCase()}`)}</h1>;
+  return <h1>{t(TITLES[page.route.family])}</h1>;
 }
 
 interface ResultsProps {

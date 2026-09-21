@@ -3,6 +3,8 @@ import type { Bootstrap, Translate } from "./bootstrap";
 import { headlineDate } from "./bootstrap";
 import { date } from "./format";
 
+import type { PageTextKey } from "./text";
+
 /**
  * How a page about the chamber opens: what it is, the day it claims, that it is not a forecast,
  * and where the majority line falls.
@@ -17,9 +19,9 @@ interface Props {
   readonly page: Bootstrap;
   readonly t: Translate;
   /** The wording key of this page's title. */
-  readonly title: string;
+  readonly title: PageTextKey;
   /** The wording key of its lead sentence, which takes the headline date. */
-  readonly lead: string;
+  readonly lead: PageTextKey;
   /** The seats a coalition needs for its own majority. */
   readonly majoritySeats: number;
 }

@@ -4,6 +4,7 @@ import type { PollstersData } from "./institutes";
 import type { MethodData } from "./method";
 import type { PollTable } from "./poll-table";
 import type { SourceChartData } from "./source-chart";
+import { type PageTextKey, translate } from "./text";
 
 /**
  * The page's resolved publication, as Spring wrote it into the document.
@@ -19,8 +20,21 @@ const BOOTSTRAP_ELEMENT = "site-bootstrap";
 
 export type Language = "sv" | "en";
 
+/** Every family the server can route to, whether or not this build renders a page for it. */
+export type Family =
+  | "OVERVIEW"
+  | "PARTY"
+  | "SEATS"
+  | "COALITIONS"
+  | "POLLSTERS"
+  | "POLLS"
+  | "METHOD";
+
+/** The windows a timeline offers, as the server names them. */
+export type RangeId = "oneYear" | "sinceElection" | "fourYears" | "all";
+
 /** One wording lookup, with optional {token} substitutions. */
-export type Translate = (key: string, values?: Record<string, string>) => string;
+export type Translate = (key: PageTextKey, values?: Record<string, string>) => string;
 
 export interface Interval {
   readonly component: string;
@@ -175,7 +189,7 @@ export interface SourceSnapshot {
 }
 
 export interface RangeSpec {
-  readonly id: string;
+  readonly id: RangeId;
   readonly from: string;
   readonly to: string;
   readonly step: number;
@@ -213,15 +227,13 @@ export interface Bootstrap {
   readonly language: Language;
   readonly locale: string;
   readonly route: {
-    readonly family: string;
+    readonly family: Family;
     readonly path: string;
     readonly parameter: string | null;
   };
   readonly alternates: Readonly<Record<Language, string>>;
   readonly navigation: readonly NavigationEntry[];
   readonly site: { readonly name: string; readonly origin: string };
-  readonly text: Readonly<Record<string, string>>;
-  readonly labels: Readonly<Record<string, string>>;
   readonly partyPaths: Readonly<Record<string, string>>;
   readonly permanent?: boolean;
   readonly headlineDate?: string;
@@ -241,7 +253,7 @@ export interface Bootstrap {
   readonly pollTable?: PollTable;
   readonly coalitionLinkError?: CoalitionLinkError;
   readonly ranges?: readonly RangeSpec[];
-  readonly defaultRange?: string;
+  readonly defaultRange?: RangeId;
 }
 
 /** The page families this build renders, as the server names them. */
@@ -286,19 +298,7 @@ export function readBootstrap(): Bootstrap {
   return JSON.parse(element.textContent) as Bootstrap;
 }
 
-/** One wording, by key. A missing key is a bug in the page, not something to paper over. */
+/** One wording, by key, in the language the page was routed to. */
 export function translator(page: Bootstrap): Translate {
-  return (key, values) => {
-    const template = page.text[key];
-    if (template === undefined) {
-      throw new Error(`No ${page.language} page text for ${key}`);
-    }
-    if (values === undefined) {
-      return template;
-    }
-    return Object.entries(values).reduce(
-      (filled, [token, value]) => filled.replaceAll(`{${token}}`, value),
-      template,
-    );
-  };
+  return (key, values) => translate(page.language, key, values);
 }

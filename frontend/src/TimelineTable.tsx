@@ -2,6 +2,8 @@ import type { JSX } from "react";
 import type { Bootstrap, Series, Translate } from "./bootstrap";
 import { decimal, interval, percent, shortDate } from "./format";
 
+import type { PageTextKey } from "./text";
+
 /**
  * The chart's table alternative. It carries the same sampled days and the same values, so a reader
  * who cannot use the chart is not reading a summary of it but the thing itself.
@@ -30,7 +32,7 @@ function TimelineTable({
   readonly t: Translate;
   readonly intervals?: boolean;
 }): JSX.Element {
-  let caption = "timeline.tableCaption";
+  let caption: PageTextKey = "timeline.tableCaption";
   let className: string | undefined;
   if (intervals) {
     caption = "coalitionHistory.table";

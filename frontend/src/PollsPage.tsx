@@ -7,6 +7,8 @@ import type { PollTable } from "./poll-table";
 import { pollQuery } from "./poll-table";
 import { SourceChart } from "./SourceChart";
 
+import type { PageTextKey } from "./text";
+
 /**
  * The browsable poll table.
  *
@@ -22,7 +24,7 @@ interface Props {
   readonly t: Translate;
 }
 
-function pollText(source: boolean, published: string, current: string): string {
+function pollText(source: boolean, published: PageTextKey, current: PageTextKey): PageTextKey {
   if (source) {
     return current;
   }

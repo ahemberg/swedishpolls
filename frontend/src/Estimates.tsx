@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import type { Bootstrap, Interval, PageData, Translate } from "./bootstrap";
 import type { Seats } from "./chamber";
 import { colour, date, decimal, level, percent } from "./format";
+import { componentName } from "./labels";
 import { Sparkline } from "./Sparkline";
 
 /**
@@ -26,7 +27,7 @@ function PartyName({
   readonly page: Bootstrap;
   readonly component: string;
 }): JSX.Element {
-  const name = page.labels[component] ?? component;
+  const name = componentName(page, component);
   const path = page.partyPaths[component];
   if (path === undefined) {
     return <>{name}</>;
@@ -128,7 +129,7 @@ function Estimates({ page, data, t }: Props): JSX.Element {
       </div>
       {Object.entries(latest.unavailable).map(([component, reason]) => (
         <p className="footnote" key={component}>
-          {`${page.labels[component] ?? component}: ${t("estimate.unavailable")} (${reason.reason})`}
+          {`${componentName(page, component)}: ${t("estimate.unavailable")} (${reason.reason})`}
         </p>
       ))}
       {fi !== undefined && (

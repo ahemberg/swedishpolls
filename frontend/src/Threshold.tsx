@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import type { Bootstrap, Translate } from "./bootstrap";
 import type { Seats, SeatsParty } from "./chamber";
 import { colour, probability } from "./format";
+import { componentName } from "./labels";
 
 /**
  * Spärren 4 %: the probability of clearing the national threshold.
@@ -52,7 +53,7 @@ function Threshold({ page, seats, t }: Props): JSX.Element {
             <tr key={party.component}>
               <th scope="row">
                 <span className="swatch" style={{ background: colour(party.component) }} />
-                {page.labels[party.component] ?? party.component}
+                {componentName(page, party.component)}
               </th>
               <td>
                 <span className="bar">
