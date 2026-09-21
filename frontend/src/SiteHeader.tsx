@@ -1,5 +1,7 @@
 import type { JSX } from "react";
-import type { Bootstrap, Language, Translate } from "./bootstrap";
+import type { Bootstrap, Family, Language, Translate } from "./bootstrap";
+import { COALITIONS, METHOD, OVERVIEW, PARTY, POLLS, POLLSTERS, SEATS } from "./bootstrap";
+import type { PageTextKey } from "./text";
 
 /**
  * The brand, the translated navigation and the explicit language switch.
@@ -10,6 +12,17 @@ import type { Bootstrap, Language, Translate } from "./bootstrap";
  */
 
 const LANGUAGES: readonly Language[] = ["sv", "en"];
+
+/** The navigation label of each family, so the header words itself rather than the server. */
+const NAVIGATION: Record<Family, PageTextKey> = {
+  [OVERVIEW]: "nav.overview",
+  [PARTY]: "nav.party",
+  [SEATS]: "nav.seats",
+  [COALITIONS]: "nav.coalitions",
+  [POLLSTERS]: "nav.pollsters",
+  [POLLS]: "nav.polls",
+  [METHOD]: "nav.method",
+};
 
 interface Props {
   readonly page: Bootstrap;
@@ -41,7 +54,7 @@ function SiteHeader({ page, t }: Props): JSX.Element {
           {page.navigation.map((entry) => (
             <li key={entry.family}>
               <a href={entry.path} aria-current={current(entry.current)}>
-                {entry.label}
+                {t(NAVIGATION[entry.family])}
               </a>
             </li>
           ))}

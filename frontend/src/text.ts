@@ -7,9 +7,7 @@ import sv from "./text.sv.json" with { type: "json" };
  * together with the display names of components and coalitions.
  *
  * The wording lives with the pages that word it, and the key union is derived from the catalogue
- * itself, so a key no language carries is a compile error rather than a blank page. The two
- * assignments below pin the catalogues to each other's key sets: a key present in one language and
- * missing in the other fails `tsc --noEmit`.
+ * itself, so a key no language carries is a compile error rather than a blank page.
  *
  * There is no i18n library behind this. The catalogue has no plurals, flat keys and plain
  * `{token}` substitution; language comes from the URL path, so nothing detects or switches at
@@ -19,8 +17,10 @@ import sv from "./text.sv.json" with { type: "json" };
 
 type PageTextKey = keyof typeof sv;
 
+// Each catalogue is typed by the other's keys, so a key present in one language and missing in
+// the other fails `tsc --noEmit`, whichever side it is missing from.
 const SWEDISH: Record<keyof typeof en, string> = sv;
-const ENGLISH: Record<PageTextKey, string> = en;
+const ENGLISH: Record<keyof typeof sv, string> = en;
 
 const CATALOGUE: Readonly<Record<Language, Record<PageTextKey, string>>> = {
   sv: SWEDISH,

@@ -197,8 +197,7 @@ export interface RangeSpec {
 }
 
 export interface NavigationEntry {
-  readonly family: string;
-  readonly label: string;
+  readonly family: Family;
   readonly path: string;
   readonly current: boolean;
 }
