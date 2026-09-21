@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 /**
  * Spring serves the compiled assets and writes the script tag itself, so the build emits a
@@ -7,6 +7,11 @@ import { defineConfig } from "vite";
  */
 export default defineConfig({
   base: "/",
+  test: {
+    environment: "jsdom",
+    include: ["src/**/*.test.tsx"],
+    setupFiles: ["./src/test-setup.ts"],
+  },
   build: {
     outDir: "../target/frontend",
     emptyOutDir: true,
