@@ -94,9 +94,41 @@ class ReleaseAuditIT {
             .allMatch(row -> row.overlappingCorrelation() > row.disjointCorrelation()));
 
     assertEquals(ReleaseAudit.STATUS_BLOCKED, stored.verdict().status());
+    assertEquals(42, stored.verdict().blockingReasons().size());
     assertTrue(
         stored.verdict().blockingReasons().stream()
             .anyMatch(reason -> reason.contains("loses to the ilr-window reference")));
+
+    // The reclassification: the institute and fieldwork-length subgroups are still measured and
+    // still reported, and no longer reach the verdict. Party-scope failures still do.
+    assertTrue(
+        stored.verdict().blockingReasons().stream()
+            .noneMatch(
+                reason -> reason.contains(" institute ") || reason.contains(" fieldwork_days ")));
+    assertEquals(
+        11,
+        stored.verdict().blockingReasons().stream()
+            .filter(reason -> reason.contains(" party "))
+            .count());
+    assertTrue(
+        stored.misfit().stream()
+            .filter(subgroup -> !subgroup.scope().equals("party"))
+            .anyMatch(subgroup -> !subgroup.passes()));
+    assertEquals(
+        List.of(
+            "systematic_misfit:institute:eight_party_2010",
+            "systematic_misfit:institute:fi_candidate_2014_2018",
+            "systematic_misfit:fieldwork_days:eight_party_2010",
+            "systematic_misfit:fieldwork_days:fi_candidate_2014_2018"),
+        frozen.reportedNotBlocking().stream()
+            .filter(gate -> gate.startsWith("systematic_misfit:"))
+            .toList());
+
+    // The paired predictive comparison is deferred, not waived: it stands as a failed gate.
+    assertEquals(
+        List.of("predictive_log_score_vs_reference:eight_party_2010"),
+        stored.frozen().deferrals().stream().map(ReleaseAudit.Deferral::gate).toList());
+    assertTrue(stored.frozen().waivers().isEmpty());
     assertThrows(IllegalStateException.class, () -> ReleaseAudit.requireReleasable(stored));
     assertTrue(
         stored.verdict().gates().stream()

@@ -41,6 +41,9 @@ public final class ReleaseAudit {
   /** A gate that is measured and reported, whose failure the registration does not block on. */
   public static final String REPORTED = "reported";
 
+  /** The name every per-scope subgroup misfit gate carries, so a registration can name one. */
+  private static final String MISFIT_GATE = "systematic_misfit:";
+
   /** The residual component of the eight-party roster, which the audit compares like a party. */
   private static final String OTHER = "OTHER";
 
@@ -94,6 +97,25 @@ public final class ReleaseAudit {
     }
   }
 
+  /**
+   * A registered decision to postpone one named gate's resolution. A deferral changes nothing: the
+   * gate keeps its enforcement and a failed blocking gate still blocks. It is the difference
+   * between a decision the registration has not taken yet and one it has taken in the release's
+   * favour, which is what a waiver is.
+   */
+  public record Deferral(String gate, String decisionUrl, String rationale, String pendingOn) {
+    public Deferral {
+      if (gate == null
+          || gate.isBlank()
+          || decisionUrl == null
+          || rationale == null
+          || pendingOn == null) {
+        throw new IllegalArgumentException(
+            "A deferral names a gate, a decision, a reason and what it waits on");
+      }
+    }
+  }
+
   /** The approved behaviour where a roster does not meet the gates. */
   public record Fallback(String id, String approval, String note) {
     public Fallback {
@@ -114,12 +136,14 @@ public final class ReleaseAudit {
       List<String> reportedNotBlocking,
       Map<String, String> rules,
       Fallback fiFallback,
-      List<Waiver> waivers) {
+      List<Waiver> waivers,
+      List<Deferral> deferrals) {
     public Frozen {
       evidence = List.copyOf(evidence);
       reportedNotBlocking = List.copyOf(reportedNotBlocking);
       rules = Collections.unmodifiableMap(new LinkedHashMap<>(rules));
       waivers = List.copyOf(waivers);
+      deferrals = List.copyOf(deferrals);
       if (version == null || registeredOn == null || evidence.isEmpty() || rules.isEmpty()) {
         throw new IllegalArgumentException("An incomplete release registration cannot be frozen");
       }
@@ -143,6 +167,11 @@ public final class ReleaseAudit {
     @Override
     public List<Waiver> waivers() {
       return List.copyOf(waivers);
+    }
+
+    @Override
+    public List<Deferral> deferrals() {
+      return List.copyOf(deferrals);
     }
   }
 
@@ -508,6 +537,15 @@ public final class ReleaseAudit {
                 required(node, "decisionUrl").asString(),
                 required(node, "rationale").asString()));
       }
+      final List<Deferral> deferrals = new ArrayList<>();
+      for (final JsonNode node : required(root, "deferred_decisions")) {
+        deferrals.add(
+            new Deferral(
+                required(node, "gate").asString(),
+                required(node, "decisionUrl").asString(),
+                required(node, "rationale").asString(),
+                required(node, "pendingOn").asString()));
+      }
       return new Frozen(
           required(root, "version").asString(),
           LocalDate.parse(required(root, "registered_on").asString()),
@@ -525,7 +563,8 @@ public final class ReleaseAudit {
               required(fallback, "id").asString(),
               required(fallback, "approval").asString(),
               required(fallback, "note").asString()),
-          waivers);
+          waivers,
+          deferrals);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -977,6 +1016,12 @@ public final class ReleaseAudit {
       List<Dependence> dependence,
       List<Sensitivity> sensitivity,
       IndividualFi individualFi) {
+    final List<String> reportedScopes = reportedMisfitPrefixes(frozen, misfit);
+    final List<String> blockingGateReasons =
+        gates.gate().reasons().stream()
+            .filter(reason -> reportedScopes.stream().noneMatch(reason::startsWith))
+            .toList();
+    final int reportedReasonCount = gates.gate().reasons().size() - blockingGateReasons.size();
     final List<Gate> registered = new ArrayList<>();
     registered.add(evidenceGate(frozen, directory));
     registered.add(parametersGate(frozen, gates, election));
@@ -985,9 +1030,12 @@ public final class ReleaseAudit {
             "development_gates",
             "development-gates.json",
             BLOCKING,
-            !gates.gate().blocked(),
+            blockingGateReasons.isEmpty(),
             gates.gate().blocked()
-                ? gates.gate().reasons().size() + " development gate reasons stand"
+                ? gates.gate().reasons().size()
+                    + " development gate reasons stand, "
+                    + reportedReasonCount
+                    + " of them subgroup findings the registration reports and does not block on"
                 : "every development gate passed",
             null));
     registered.add(compositionGate(frozen, election));
@@ -1053,6 +1101,7 @@ public final class ReleaseAudit {
             null));
     final List<Gate> resolved =
         waived(downgraded(registered, frozen.reportedNotBlocking()), frozen.waivers());
+    requireDeferralsAreRegistered(resolved, frozen.deferrals());
     final LinkedHashSet<String> blocking = new LinkedHashSet<>();
     for (final Gate gate : resolved) {
       if (gate.blocks()) {
@@ -1060,7 +1109,7 @@ public final class ReleaseAudit {
       }
     }
     if (gates.gate().blocked() && !waivedByName(resolved, "development_gates")) {
-      gates.gate().reasons().forEach(reason -> blocking.add("development_gates: " + reason));
+      blockingGateReasons.forEach(reason -> blocking.add("development_gates: " + reason));
     }
     return new Report(
         frozen,
@@ -1090,6 +1139,48 @@ public final class ReleaseAudit {
     return gates.stream()
         .map(gate -> reported.contains(gate.name()) ? with(gate, REPORTED, gate.waiver()) : gate)
         .toList();
+  }
+
+  /**
+   * The development gate names its subgroup findings by period and scope, and the registration
+   * reports a scope by naming that scope's misfit gate. This turns each reported gate name back
+   * into the prefix its findings carry, so a reported scope contributes no blocking reason wherever
+   * the finding is written down. A scope the registration does not name is untouched.
+   *
+   * <p>The match is on the finding's text because the registration pins development-gates.json by
+   * digest: the findings cannot be re-shaped into structured fields without moving that digest and
+   * refusing the freeze. `ReleaseAuditIT` pins the count this filter removes from the real
+   * evidence, so a changed finding format fails there rather than silently stopping.
+   */
+  private static List<String> reportedMisfitPrefixes(Frozen frozen, List<Misfit> misfit) {
+    return misfit.stream()
+        .filter(
+            subgroup ->
+                frozen
+                    .reportedNotBlocking()
+                    .contains(misfitGateName(subgroup.scope(), subgroup.periodId())))
+        .map(subgroup -> subgroup.periodId() + " " + subgroup.scope() + " ")
+        .distinct()
+        .toList();
+  }
+
+  /**
+   * Checks every deferral against the gate it names. A deferral is not a waiver: it neither
+   * downgrades the gate nor clears its failure, so the gates come back untouched and a deferred
+   * blocking gate still blocks.
+   */
+  private static void requireDeferralsAreRegistered(List<Gate> gates, List<Deferral> deferrals) {
+    for (final Deferral deferral : deferrals) {
+      if (gates.stream().noneMatch(gate -> gate.name().equals(deferral.gate()))) {
+        throw new IllegalArgumentException(
+            "A deferral names an unregistered gate " + deferral.gate());
+      }
+      if (gates.stream()
+          .anyMatch(gate -> gate.name().equals(deferral.gate()) && gate.waiver() != null)) {
+        throw new IllegalArgumentException(
+            "Gate " + deferral.gate() + " is both waived and deferred");
+      }
+    }
   }
 
   private static List<Gate> waived(List<Gate> gates, List<Waiver> waivers) {
@@ -1322,6 +1413,10 @@ public final class ReleaseAudit {
         .toList();
   }
 
+  private static String misfitGateName(String scope, String periodId) {
+    return MISFIT_GATE + scope + ":" + periodId;
+  }
+
   private static List<Gate> misfitGates(List<Misfit> misfit) {
     final Map<String, List<Misfit>> byPeriod = new LinkedHashMap<>();
     for (final Misfit subgroup : misfit) {
@@ -1340,7 +1435,7 @@ public final class ReleaseAudit {
             scoped.stream().filter(row -> !row.passes()).map(Misfit::name).toList();
         gates.add(
             new Gate(
-                "systematic_misfit:" + scope + ":" + period.getKey(),
+                misfitGateName(scope, period.getKey()),
                 "diagnostics.json",
                 REPORTED,
                 failed.isEmpty(),

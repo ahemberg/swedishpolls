@@ -32,7 +32,7 @@
     "minimum_scored_folds" : 8,
     "sensitivity_disclosure_points" : 10.0
   },
-  "reported_not_blocking" : [ "resource_runtime_target" ],
+  "reported_not_blocking" : [ "resource_runtime_target", "systematic_misfit:institute:eight_party_2010", "systematic_misfit:institute:fi_candidate_2014_2018", "systematic_misfit:fieldwork_days:eight_party_2010", "systematic_misfit:fieldwork_days:fi_candidate_2014_2018" ],
   "audit_rules" : {
     "freeze" : "The model implementation digest, resolved parameters, coverage behaviour, numeric tolerances and executable environment are recorded before the reserved fit runs. A freeze whose development protocol digest has moved is refused rather than reconciled.",
     "fit" : "One fit of the supported eight-party period over the pinned candidate rows of election_audit2022, at the parameters coverage.json resolved for that period and the registered draw seed. Nothing is retuned for the audit.",
@@ -46,5 +46,16 @@
     "approval" : "https://github.com/ahemberg/swedishpolls/issues/12#issuecomment-5575789888",
     "note" : "Where the individual FI roster does not meet the frozen gates, its estimates stay unavailable while its source observations are retained and served. The fallback waives no other gate and changes no estimator."
   },
-  "waivers" : []
+  "waivers" : [],
+  "deferred_decisions" : [ {
+    "gate" : "predictive_log_score_vs_reference:eight_party_2010",
+    "decisionUrl" : "https://github.com/ahemberg/swedishpolls/issues/240",
+    "rationale" : "Both compared methods carry the same observation-model misfit, so the paired difference measures a mis-specification shared by the candidate and the ilr-window reference rather than a difference between them. Deciding it now would decide it on evidence the observation-model fix is expected to invalidate.",
+    "pendingOn" : "the observation-model variance fix, after which the paired comparison is re-run and decided"
+  } ],
+  "amendments" : [ {
+    "amended_on" : "2026-09-22",
+    "decisionUrl" : "https://github.com/ahemberg/swedishpolls/issues/240",
+    "change" : "Institute-scope and fieldwork-length-scope subgroup misfit gates moved to reported_not_blocking, and the paired predictive comparison recorded as deferred. Made after the development evidence was read; see ADR 0013. No tolerance, band, parameter or estimator moved, and the party-scope subgroup gates stay blocking."
+  } ]
 }

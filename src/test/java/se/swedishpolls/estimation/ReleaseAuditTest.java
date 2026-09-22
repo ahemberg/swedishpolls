@@ -151,6 +151,107 @@ class ReleaseAuditTest {
   }
 
   @Test
+  void reportedSubgroupScopesStopBlockingWhileTheRemainingScopesDoNot(@TempDir Path directory)
+      throws Exception {
+    write(directory, "protocol.json", protocol());
+    final Path diagnostics = write(directory, "diagnostics.json", misfitting());
+    final Path registration = write(directory, "release-protocol.json", registration(directory));
+    final DevelopmentGates.Report gates =
+        gates(
+            List.of(
+                "period party S has unexplained subgroup coverage 95/50=0.8/0.3",
+                "period institute Novus has unexplained subgroup coverage 95/50=0.8/0.3",
+                "period fieldwork_days 1-7 has unexplained subgroup coverage 95/50=0.8/0.3"));
+
+    final ReleaseAudit.Report enforced =
+        evaluate(ReleaseAudit.frozen(registration, directory), directory, diagnostics, gates);
+    assertEquals(
+        4,
+        enforced.verdict().blockingReasons().size(),
+        enforced.verdict().blockingReasons()::toString);
+
+    write(
+        directory,
+        "release-protocol.json",
+        registration(directory)
+            .replace(
+                "\"resource_runtime_target\"",
+                "\"resource_runtime_target\", \"systematic_misfit:institute:period\","
+                    + " \"systematic_misfit:fieldwork_days:period\""));
+    final ReleaseAudit.Report reported =
+        evaluate(ReleaseAudit.frozen(registration, directory), directory, diagnostics, gates);
+    assertEquals(
+        List.of(
+            "development_gates: 3 development gate reasons stand, 2 of them subgroup findings the"
+                + " registration reports and does not block on",
+            "development_gates: period party S has unexplained subgroup coverage 95/50=0.8/0.3"),
+        reported.verdict().blockingReasons());
+    assertEquals(ReleaseAudit.STATUS_BLOCKED, reported.verdict().status());
+
+    // Reporting a scope does not stop measuring it: the metrics and the failed subgroup names are
+    // in the audit exactly as they were before.
+    assertEquals(enforced.misfit(), reported.misfit());
+    assertEquals(
+        "outside the frozen limits: Novus",
+        gate(reported, "systematic_misfit:institute:period").detail());
+    assertEquals(
+        ReleaseAudit.REPORTED, gate(reported, "systematic_misfit:institute:period").enforcement());
+    assertEquals(
+        "outside the frozen limits: S", gate(reported, "systematic_misfit:party:period").detail());
+  }
+
+  @Test
+  void theDevelopmentGatePassesWhenEveryStandingReasonIsReported(@TempDir Path directory)
+      throws Exception {
+    write(directory, "protocol.json", protocol());
+    final Path diagnostics = write(directory, "diagnostics.json", misfitting());
+    final Path registration =
+        write(
+            directory,
+            "release-protocol.json",
+            registration(directory)
+                .replace(
+                    "\"resource_runtime_target\"",
+                    "\"resource_runtime_target\", \"systematic_misfit:institute:period\""));
+    final ReleaseAudit.Report report =
+        evaluate(
+            ReleaseAudit.frozen(registration, directory),
+            directory,
+            diagnostics,
+            gates(
+                List.of("period institute Novus has unexplained subgroup coverage 95/50=0.8/0.3")));
+
+    assertTrue(gate(report, "development_gates").passed());
+    assertEquals(ReleaseAudit.STATUS_RELEASED, report.verdict().status());
+    assertTrue(report.verdict().blockingReasons().isEmpty());
+  }
+
+  @Test
+  void aDeferredGateIsRecordedAndKeepsBlocking(@TempDir Path directory) throws Exception {
+    write(directory, "protocol.json", protocol());
+    final Path diagnostics = write(directory, "diagnostics.json", diagnostics(0.01));
+    final Path registration =
+        write(directory, "release-protocol.json", deferring(directory, "development_gates"));
+    final ReleaseAudit.Frozen frozen = ReleaseAudit.frozen(registration, directory);
+    assertEquals(1, frozen.deferrals().size());
+    assertEquals("development_gates", frozen.deferrals().getFirst().gate());
+
+    final ReleaseAudit.Report report =
+        evaluate(frozen, directory, diagnostics, gates(List.of("the comparison is not decidable")));
+    assertEquals(ReleaseAudit.STATUS_BLOCKED, report.verdict().status());
+    assertTrue(
+        report.verdict().blockingReasons().stream()
+            .anyMatch(reason -> reason.contains("the comparison is not decidable")));
+    assertNull(gate(report, "development_gates").waiver());
+
+    write(directory, "release-protocol.json", deferring(directory, "no_such_gate"));
+    final ReleaseAudit.Frozen unknown = ReleaseAudit.frozen(registration, directory);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> evaluate(unknown, directory, diagnostics, gates(List.of("a reason"))));
+  }
+
+  @Test
   void theRuntimeTargetBlocksUnlessTheRegistrationReportsIt(@TempDir Path directory)
       throws Exception {
     write(directory, "protocol.json", protocol());
@@ -237,6 +338,13 @@ class ReleaseAuditTest {
     assertEquals("individual_fi_estimate_unavailable", fallback.disposition());
     assertEquals(1, fallback.reasons().size());
     assertTrue(fallback.supportDatesExact());
+  }
+
+  private static ReleaseAudit.Gate gate(ReleaseAudit.Report report, String name) {
+    return report.verdict().gates().stream()
+        .filter(gate -> gate.name().equals(name))
+        .findFirst()
+        .orElseThrow();
   }
 
   private static ReleaseAudit.Report evaluate(
@@ -472,6 +580,14 @@ class ReleaseAuditTest {
         .formatted(referenceDifference);
   }
 
+  /** The same diagnostics with one subgroup outside the frozen bands in each registered scope. */
+  private static String misfitting() {
+    return diagnostics(0.01)
+        .replace(
+            "\"coverage95\": 0.95, \"coverage50\": 0.5",
+            "\"coverage95\": 0.8, \"coverage50\": 0.3");
+  }
+
   /** A release registration whose evidence is the temporary diagnostics file. */
   private static String registration(Path directory) throws Exception {
     return """
@@ -491,7 +607,8 @@ class ReleaseAuditTest {
           "fi_fallback": {"id": "individual_fi_estimate_unavailable",
                           "approval": "https://example.invalid/decision",
                           "note": "estimates unavailable, observations retained"},
-          "waivers": []
+          "waivers": [],
+          "deferred_decisions": []
         }
         """
         .formatted(
@@ -508,6 +625,18 @@ class ReleaseAuditTest {
                 + gate
                 + "\", \"decisionUrl\": \"https://example.invalid/decision\","
                 + " \"rationale\": \"the owner accepted the loss\"}]");
+  }
+
+  /** The same registration with one registered deferral of the named gate. */
+  private static String deferring(Path directory, String gate) throws Exception {
+    return registration(directory)
+        .replace(
+            "\"deferred_decisions\": []",
+            "\"deferred_decisions\": [{\"gate\": \""
+                + gate
+                + "\", \"decisionUrl\": \"https://example.invalid/decision\","
+                + " \"rationale\": \"both methods share the misfit\","
+                + " \"pendingOn\": \"the observation-model fix\"}]");
   }
 
   private static Path write(Path directory, String name, String content) throws Exception {
