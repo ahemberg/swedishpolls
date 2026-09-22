@@ -56,8 +56,8 @@ Development evidence is cut at the registered development end date. A publicatio
 history through its own last fieldwork date, at the same frozen parameters.
 
 **The audited verdict blocks release today.** `docs/validation/release-audit.json` reports a
-failed `development_gates` gate, so a deployment publishes nothing and every estimate surface
-answers `503 estimates_unavailable` with the last source-check time.
+failed `development_gates` gate on 42 reasons, so a deployment publishes nothing and every
+estimate surface answers `503 estimates_unavailable` with the last source-check time.
 
 ## Serving
 

@@ -1186,7 +1186,11 @@ against it keep the inputs they were measured with. It also freezes what this ti
 added: the composition sum bound of `1e-9` points, the 349-seat allocation total, the
 minimum of eight scored folds per roster, the ten-point sensitivity disclosure line, the
 runtime target as reported rather than blocking, and the approved unavailable-estimate
-fallback for the individual FI roster. `ReleaseAudit.frozen` refuses a registration whose
+fallback for the individual FI roster. Two later amendments are recorded in its own
+`amendments` list, both from
+[#240](https://github.com/ahemberg/swedishpolls/issues/240): the institute-scope and
+fieldwork-length-scope subgroup gates joined `reported_not_blocking`, and the paired
+predictive comparison was registered as deferred. `ReleaseAudit.frozen` refuses a registration whose
 development protocol or evidence has moved since the freeze, so the audit cannot run
 against inputs the freeze never saw.
 
@@ -1262,9 +1266,12 @@ second audit.
 The report records 37 gates, six of them blocking. Five of the six pass: the frozen
 evidence digests, the frozen parameters and seed the reserved fit ran at, the composition
 summing to 100 within 1e-13 points from a finite fit, the 349-seat total, and the exact
-seeded reproduction. The sixth, `development_gates`, fails and carries all 49 reasons
-[#18](https://github.com/ahemberg/swedishpolls/issues/18) left standing, so the verdict is
-**blocked** on 50 reasons and `requireReleasable` throws.
+seeded reproduction. The sixth, `development_gates`, fails and carries the 49 reasons
+[#18](https://github.com/ahemberg/swedishpolls/issues/18) left standing. Eight of those 49
+are the institute-scope and fieldwork-length-scope subgroup findings that
+[#240](https://github.com/ahemberg/swedishpolls/issues/240) reclassified as reported, so
+they no longer reach the verdict: it is **blocked** on 42 reasons rather than 50, and
+`requireReleasable` throws.
 
 The remaining 31 gates are reported: they restate, per gate, what the aggregate flattens
 into a list of strings.
@@ -1272,7 +1279,11 @@ into a list of strings.
 - **Predictive comparison.** The midpoint candidate beats the recency baseline on both
   rosters, by +1.160 and +0.764 per poll. Against the ilr-window reference it passes on
   the FI roster (+0.018 against an SE of 0.014) and fails on the eight-party roster
-  (-0.024 against an SE of 0.012), which the protocol asks to be no worse than `-SE`.
+  (-0.024 against an SE of 0.012), which the protocol asks to be no worse than `-SE`. That
+  failure is registered as deferred in `deferred_decisions`, pending the observation-model
+  fix: both compared methods carry the same misfit. A deferral changes no enforcement and
+  clears no failure, so the comparison still stands as failed and still blocks through
+  `development_gates`.
 - **Coverage.** Pooled predictive coverage is inside both registered bands on both
   rosters: 92.7% and 51.8% on the eight-party roster, 91.3% and 48.3% on the FI roster.
   The grid-mixture fallback is therefore not invoked.
@@ -1282,7 +1293,12 @@ into a list of strings.
   against the frozen limits. On the
   eight-party roster S, KD and OTHER fail by party and Sifo and Skop by institute, while
   all three fieldwork-length bands pass. On the FI roster S, KD, FI and RESIDUAL fail by
-  party, Inizio, Sifo and Skop by institute, and the 1-7 day band fails. The misfit is
+  party, Inizio, Sifo and Skop by institute, and the 1-7 day band fails. Naming a scope's
+  gate in the registration's `reported_not_blocking` list keeps that scope's findings out
+  of the verdict, and the institute and fieldwork-length gates are named there because the
+  site publishes no house-calibrated and no fieldwork-conditional quantity; see
+  [ADR 0013](../adr/0013-report-institute-and-fieldwork-subgroup-gates.md). The party
+  gates are not named, so party findings still block. The misfit is
   concentrated in the small components and the short windows, which is what
   [checkpoint 9](#development-diagnostics-and-sensitivity-issue-18-checkpoint-9)
   measured; the frozen limits reject it rather than explain it away.
