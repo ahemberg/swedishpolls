@@ -13,7 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import org.apache.commons.csv.CSVFormat;
 import org.junit.jupiter.api.Test;
@@ -67,21 +67,20 @@ class ApiContractTest {
   static void assertEveryUnorderedPair(JsonNode pairs) {
     assertTrue(pairs.isArray(), "comparison.pairs must be a list of pair records");
     final List<String> ids = Coalitions.PRESETS.stream().map(Coalitions.Preset::id).toList();
-    final Set<Set<String>> expected =
-        ids.stream()
+    final List<List<String>> expected =
+        IntStream.range(0, ids.size())
+            .boxed()
             .flatMap(
                 left ->
-                    ids.stream()
-                        .filter(right -> !right.equals(left))
-                        .map(right -> Set.of(left, right)))
-            .collect(Collectors.toSet());
+                    ids.subList(left + 1, ids.size()).stream()
+                        .map(right -> List.of(ids.get(left), right)))
+            .toList();
     assertEquals(45, expected.size());
-    assertEquals(expected.size(), pairs.size());
-    final Set<Set<String>> actual =
+    final List<List<String>> actual =
         StreamSupport.stream(pairs.spliterator(), false)
-            .map(pair -> Set.of(pair.get("left").asString(), pair.get("right").asString()))
-            .collect(Collectors.toSet());
-    assertEquals(expected, actual);
+            .map(pair -> List.of(pair.get("left").asString(), pair.get("right").asString()))
+            .toList();
+    assertEquals(expected, actual, "One record per pair, left before right in catalogue order");
     for (JsonNode pair : pairs) {
       assertEquals(
           Set.of("left", "right", "leftLeads", "rightLeads", "tied"),
