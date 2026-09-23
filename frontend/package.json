@@ -10,7 +10,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test test/*.test.mjs && vitest run",
+    "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run lint && npm test",
     "build": "vite build --outDir ../target/frontend",
     "audit": "fallow audit --base origin/main --dead-code-baseline baselines/dead-code.json --health-baseline baselines/health.json --dupes-baseline baselines/dupes.json --gate all --fail-on-issues --format json"
@@ -21,10 +22,15 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",
+    "@playwright/test": "1.63.0",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "fallow": "3.25.0",
+    "jsdom": "29.1.1",
     "typescript": "7.0.2",
-    "vite": "8.3.0"
+    "vite": "8.3.0",
+    "vitest": "5.0.1"
   }
 }

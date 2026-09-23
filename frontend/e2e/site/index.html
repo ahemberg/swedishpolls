@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Swedish Polls test site</title>
+  </head>
+  <body>
+    <div id="site-root"><p data-testid="server-markup">Server markup</p></div>
+    <script id="site-bootstrap" type="application/json"></script>
+    <script type="module">
+      import { pageFixtureForPath } from "/@fixtures";
+
+      const fixture = pageFixtureForPath(window.location.pathname);
+      document.documentElement.lang = fixture.language;
+      document.getElementById("site-bootstrap").textContent = JSON.stringify(fixture);
+      await import("/@app");
+    </script>
+  </body>
+</html>
