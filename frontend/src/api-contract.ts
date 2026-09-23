@@ -8,9 +8,6 @@ import publication from "../../src/main/resources/api/v1/examples/publication.js
 import seats from "../../src/main/resources/api/v1/examples/seats.json";
 import type {
   AllocationRuleResponse,
-  CoalitionComparisonResponse,
-  CoalitionResponse,
-  CoalitionsResponse,
   ComparableGroupingResponse,
   CoveragePeriodResponse,
   ElectionResponse,
@@ -41,6 +38,12 @@ import type {
   UnavailableEstimateResponse,
   UnavailableSeatsResponse,
 } from "./api";
+import type {
+  CoalitionComparisonResponse,
+  CoalitionPairResponse,
+  CoalitionResponse,
+  CoalitionsResponse,
+} from "./api-coalitions";
 
 type Exact<Expected, Actual extends Expected> = Actual &
   Record<Exclude<keyof Actual, keyof Expected>, never> &
@@ -130,3 +133,6 @@ for (const coalition of coalitions.coalitions) {
   exact<CoalitionResponse>()(coalition);
 }
 exact<CoalitionComparisonResponse>()(coalitions.comparison);
+for (const pair of coalitions.comparison.pairs) {
+  exact<CoalitionPairResponse>()(pair);
+}

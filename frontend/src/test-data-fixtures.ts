@@ -58,7 +58,7 @@ const coalitions: CoalitionResults = {
     ...coalition,
     seatInterval: pair(coalition.seatInterval),
   })),
-  comparison: { pairs: [], tie: coalitionsResponse.comparison.tie },
+  comparison: coalitionsResponse.comparison,
   sensitivity: coalitionsResponse.sensitivity,
 };
 const publication: Publication = {

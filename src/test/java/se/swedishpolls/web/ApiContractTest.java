@@ -12,9 +12,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.apache.commons.csv.CSVFormat;
 import org.junit.jupiter.api.Test;
+import se.swedishpolls.estimation.Coalitions;
 import se.swedishpolls.source.PollCsv;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -55,6 +58,43 @@ class ApiContractTest {
 
   static List<String> texts(JsonNode array) {
     return StreamSupport.stream(array.spliterator(), false).map(JsonNode::asString).toList();
+  }
+
+  /**
+   * One record for every unordered pair of the approved coalitions, each carrying the three
+   * probabilities counted over the same draws.
+   */
+  static void assertEveryUnorderedPair(JsonNode pairs) {
+    assertTrue(pairs.isArray(), "comparison.pairs must be a list of pair records");
+    final List<String> ids = Coalitions.PRESETS.stream().map(Coalitions.Preset::id).toList();
+    final Set<Set<String>> expected =
+        ids.stream()
+            .flatMap(
+                left ->
+                    ids.stream()
+                        .filter(right -> !right.equals(left))
+                        .map(right -> Set.of(left, right)))
+            .collect(Collectors.toSet());
+    assertEquals(45, expected.size());
+    assertEquals(expected.size(), pairs.size());
+    final Set<Set<String>> actual =
+        StreamSupport.stream(pairs.spliterator(), false)
+            .map(pair -> Set.of(pair.get("left").asString(), pair.get("right").asString()))
+            .collect(Collectors.toSet());
+    assertEquals(expected, actual);
+    for (JsonNode pair : pairs) {
+      assertEquals(
+          Set.of("left", "right", "leftLeads", "rightLeads", "tied"),
+          Set.copyOf(pair.propertyNames()));
+      double total = 0;
+      for (String name : List.of("leftLeads", "rightLeads", "tied")) {
+        final JsonNode probability = pair.get(name);
+        assertTrue(probability.isNumber(), name + " must be a probability");
+        assertTrue(probability.asDouble() >= 0 && probability.asDouble() <= 1, name);
+        total += probability.asDouble();
+      }
+      assertEquals(1.0, total, 1e-9, "A pair's three outcomes cover every draw");
+    }
   }
 
   private static List<String> field(JsonNode array, String name) {
@@ -377,6 +417,7 @@ class ApiContractTest {
             Map.entry("s_sd", List.of("S", "SD")),
             Map.entry("m_sd", List.of("M", "SD"))),
         memberships);
+    assertEveryUnorderedPair(coalitions.get("comparison").get("pairs"));
   }
 
   @Test
