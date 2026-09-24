@@ -702,6 +702,8 @@ public final class DevelopmentValidation {
           manifest.get("trainingObservationRowsSha256").asString());
       if (!manifest.get("active").booleanValue()) {
         foldResult.put("reason", required(manifest, "reason").asString());
+        if (manifest.has("trainingObservations"))
+          foldResult.set("trainingObservations", manifest.get("trainingObservations"));
         continue;
       }
       final String periodId = manifest.get("periodId").asString();
@@ -1957,6 +1959,7 @@ public final class DevelopmentValidation {
   private static ArrayNode manifests(JsonNode plan, Path sourceFile) {
     final List<PollCsv.Poll> polls = PollCsv.parse(bytes(sourceFile));
     final List<DevelopmentTuning.Fold> folds = folds(plan);
+    final int minimumTraining = minimumTrainingObservations(plan);
     final ArrayNode manifests = JSON.createArrayNode();
     for (JsonNode declared : required(plan, "periods")) {
       final Roster.CoveragePeriod period = period(declared);
@@ -1964,19 +1967,40 @@ public final class DevelopmentValidation {
       final LocalDate activeThrough =
           LocalDate.parse(required(declared, "activeThrough").asString());
       for (DevelopmentTuning.Fold fold : folds) {
-        final boolean active =
+        final boolean inWindow =
             !fold.cutoff().isBefore(activeFrom) && !fold.cutoff().isAfter(activeThrough);
-        manifests.add(manifest(period, polls, fold, active));
+        manifests.add(manifest(period, polls, fold, inWindow, minimumTraining));
       }
     }
     return manifests;
+  }
+
+  /**
+   * A plan without a registered fold activation rule keeps every nonempty fold in its window, which
+   * is what the archived v2-development-1 registration froze. A registered threshold must be the
+   * one derived from the identified parameters, never one read off the folds it happens to remove.
+   */
+  private static int minimumTrainingObservations(JsonNode plan) {
+    final JsonNode activation = plan.get("foldActivation");
+    if (activation == null || activation.isNull()) return 1;
+    require(
+        required(activation, "minimumTrainingObservations").intValue()
+            == DevelopmentTuning.MINIMUM_TRAINING_OBSERVATIONS,
+        "Fold activation must require one more training observation than the "
+            + DevelopmentTuning.IDENTIFIED_PARAMETERS
+            + " identified parameters");
+    require(
+        !required(activation, "derivation").asString().isBlank(),
+        "Fold activation must state its derivation");
+    return DevelopmentTuning.MINIMUM_TRAINING_OBSERVATIONS;
   }
 
   private static ObjectNode manifest(
       Roster.CoveragePeriod period,
       List<PollCsv.Poll> polls,
       DevelopmentTuning.Fold fold,
-      boolean active) {
+      boolean inWindow,
+      int minimumTrainingObservations) {
     final List<PollCsv.Poll> training = DevelopmentTuning.training(polls, fold);
     final PollObservations.Batch preparedTraining = PollObservations.prepare(period, training);
     final List<PollCsv.Poll> heldOut =
@@ -1993,7 +2017,7 @@ public final class DevelopmentValidation {
                 List.of(0.9, 0.98),
                 List.of(0.4, 0.6)));
     final PollObservations.Batch preparedHeldOut = PollObservations.prepare(period, heldOut);
-    if (active) {
+    if (inWindow) {
       require(
           !preparedTraining.observations().isEmpty(),
           "Unexpected empty active training fold " + period.id() + " " + fold.cutoff());
@@ -2001,17 +2025,23 @@ public final class DevelopmentValidation {
           !preparedHeldOut.observations().isEmpty(),
           "Unexpected empty active scoring fold " + period.id() + " " + fold.cutoff());
     }
+    final int trainingCount = preparedTraining.observations().size();
+    final boolean identified = trainingCount >= minimumTrainingObservations;
     final ObjectNode row = JSON.createObjectNode();
     row.put("periodId", period.id());
     row.put("cutoff", fold.cutoff().toString());
     row.put("scoreThrough", fold.scoreThrough().toString());
-    row.put("active", active);
-    if (!active)
+    row.put("active", inWindow && identified);
+    if (!inWindow)
       row.put(
           "reason",
           preparedTraining.observations().isEmpty()
               ? "no_eligible_training_observation"
               : "no_held_out_composition");
+    else if (!identified) {
+      row.put("reason", "below_minimum_training_observations");
+      row.put("trainingObservations", trainingCount);
+    }
     rows(row.putArray("trainingRows"), training);
     row.put("trainingRowsSha256", rowsSha256(training));
     final List<PollCsv.Poll> trainingObservations =

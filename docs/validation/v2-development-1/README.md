@@ -88,3 +88,13 @@ registered amd64 and arm64 commands and retain both artifacts before comparison.
 Publication remains blocked. This command neither changes the shipped freeze nor
 reruns the once-only election audit. The old audit is development evidence for the
 revised method, and the method missed the 2026-09-12 prospective cutoff.
+
+Issue #241 adds a fold activation rule for later registrations. A plan that declares
+`foldActivation` must set `minimumTrainingObservations` to 4, one more than the three
+parameters each search identifies, and state its derivation. Preparation then marks
+an in-window fold with fewer training observations inactive, with the reason
+`below_minimum_training_observations` and its `trainingObservations` count, and
+tuning reports it beside the other inactive folds without searching it. On the
+registered source this excludes only the FI fold at 2014-05-15. The archived
+`v2-development-1` plan declares no rule, so its registration and evidence are
+unchanged. See [ADR 0014](../../adr/0014-minimum-training-observations-for-fold-activation.md).

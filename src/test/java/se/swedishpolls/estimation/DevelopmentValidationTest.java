@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import se.swedishpolls.testsupport.PollCsvFixtures;
@@ -810,6 +811,147 @@ class DevelopmentValidationTest {
   }
 
   @Test
+  void theMinimumTrainingRuleDeactivatesSparseFoldsInEveryRosterAndKeepsActiveBoundaries()
+      throws Exception {
+    final Path source = temp.resolve("minimum-polls.csv");
+    Files.write(
+        source,
+        PollCsvFixtures.csv(
+            row("2014-01-10", "2014-01-01", "2014-01-09", "NA")
+                + row("2014-01-16", "2014-01-10", "2014-01-14", "NA")
+                + row("2014-02-10", "2014-02-01", "2014-02-05", "NA")
+                + row("2014-04-12", "2014-04-09", "2014-04-11", "1")
+                + row("2014-05-10", "2014-05-01", "2014-05-05", "1")
+                + row("2014-05-16", "2014-04-20", "2014-04-30", "1")
+                + row("2014-06-01", "2014-05-20", "2014-05-30", "1")));
+    final Path identity = temp.resolve("minimum-implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final Path evidence = temp.resolve("minimum-evidence");
+    final ObjectNode declaration = (ObjectNode) JSON.readTree(plan(source, identity, evidence));
+    declaration
+        .putObject("foldActivation")
+        .put("minimumTrainingObservations", DevelopmentTuning.MINIMUM_TRAINING_OBSERVATIONS)
+        .put("derivation", "one more observation than the three tuned parameters");
+    final Path plan = temp.resolve("minimum-plan.json");
+    Files.writeString(plan, JSON.writeValueAsString(declaration), StandardCharsets.UTF_8);
+    final Path registration = temp.resolve("minimum-registration.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+
+    final JsonNode frozen = JSON.readTree(Files.readAllBytes(registration));
+    assertBelowMinimum(fold(frozen, "eight", "2014-01-15"), 1);
+    assertBelowMinimum(fold(frozen, "fi", "2014-05-15"), 2);
+    assertTrue(fold(frozen, "eight", "2014-05-15").get("active").booleanValue());
+    assertEquals(
+        "no_eligible_training_observation",
+        fold(frozen, "fi", "2014-01-15").get("reason").asString());
+
+    final Path result = evidence.resolve("tuning.json");
+    assertEquals(
+        DevelopmentValidation.BLOCKED,
+        DevelopmentValidation.run(
+            "tune", registration.toString(), source.toString(), result.toString()));
+    final JsonNode tuning = JSON.readTree(Files.readAllBytes(result));
+    assertEquals(2, fold(tuning, "fi", "2014-05-15").get("trainingObservations").intValue());
+    assertFalse(fold(tuning, "fi", "2014-05-15").has("methods"));
+    final List<String> reasons =
+        tuning.get("reasons").valueStream().map(JsonNode::asString).toList();
+    assertEquals(2, reasons.size());
+    assertTrue(reasons.stream().allMatch(reason -> reason.startsWith("eight 2014-05-15 ")));
+    assertTrue(reasons.stream().allMatch(reason -> reason.contains("grid boundary")));
+  }
+
+  @Test
+  void theMinimumTrainingThresholdMustBeTheDerivedOne() throws Exception {
+    final Path source = temp.resolve("threshold-polls.csv");
+    Files.write(source, PollCsvFixtures.csv(row("2014-01-10", "2014-01-01", "2014-01-09", "NA")));
+    final Path identity = temp.resolve("threshold-implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final ObjectNode declaration =
+        (ObjectNode) JSON.readTree(plan(source, identity, temp.resolve("threshold-evidence")));
+    // Fifteen is the next FI fold's count: a threshold read off the gap rather than the parameters.
+    declaration
+        .putObject("foldActivation")
+        .put("minimumTrainingObservations", 15)
+        .put("derivation", "the next fold's count");
+    final Path plan = temp.resolve("threshold-plan.json");
+    Files.writeString(plan, JSON.writeValueAsString(declaration), StandardCharsets.UTF_8);
+    final Path registration = temp.resolve("threshold-registration.json");
+
+    assertEquals(
+        DevelopmentValidation.REJECTED,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+    assertTrue(
+        JSON.readTree(Files.readAllBytes(registration))
+            .get("reasons")
+            .toString()
+            .contains("identified parameters"));
+  }
+
+  @Test
+  void onTheRegisteredSourceTheRuleDeactivatesOnlyTheTwoObservationFiFold() throws Exception {
+    final Path source = Path.of("src", "test", "resources", "polls", "audit.csv");
+    final Path identity = temp.resolve("registered-implementation.txt");
+    Files.writeString(identity, "implementation", StandardCharsets.UTF_8);
+    final ObjectNode declaration =
+        (ObjectNode)
+            JSON.readTree(
+                Files.readAllBytes(
+                    Path.of(
+                        "docs", "validation", "v2-development-1", "registration-plan-run-2.json")));
+    declaration.put("version", "test-minimum-training-observations");
+    declaration.put("testFixture", true);
+    declaration
+        .putArray("identities")
+        .addObject()
+        .put("path", identity.toString())
+        .put("sha256", DevelopmentGates.sha256(identity));
+    ((ObjectNode) declaration.get("environment"))
+        .put("javaVersion", System.getProperty("java.version"))
+        .put("osName", System.getProperty("os.name"))
+        .put("osArch", System.getProperty("os.arch"));
+    declaration.put("outputLocation", temp.resolve("registered-evidence").toString());
+    declaration
+        .putObject("foldActivation")
+        .put("minimumTrainingObservations", DevelopmentTuning.MINIMUM_TRAINING_OBSERVATIONS)
+        .put("derivation", "one more observation than the three tuned parameters");
+    final Path plan = temp.resolve("registered-plan.json");
+    Files.writeString(plan, JSON.writeValueAsString(declaration), StandardCharsets.UTF_8);
+    final Path registration = temp.resolve("registered-registration.json");
+    assertEquals(
+        DevelopmentValidation.SUCCESS,
+        DevelopmentValidation.run(
+            "prepare", plan.toString(), source.toString(), registration.toString()));
+
+    final JsonNode folds = JSON.readTree(Files.readAllBytes(registration)).get("folds");
+    assertEquals(96, folds.size());
+    assertEquals(74, folds.valueStream().filter(fold -> fold.get("active").booleanValue()).count());
+    final List<JsonNode> excluded =
+        folds
+            .valueStream()
+            .filter(fold -> fold.has("reason"))
+            .filter(
+                fold -> fold.get("reason").asString().equals("below_minimum_training_observations"))
+            .toList();
+    assertEquals(1, excluded.size());
+    assertEquals("fi_candidate_2014_2018", excluded.getFirst().get("periodId").asString());
+    assertEquals("2014-05-15", excluded.getFirst().get("cutoff").asString());
+    assertEquals(2, excluded.getFirst().get("trainingObservations").intValue());
+    assertEquals(
+        21,
+        folds
+            .valueStream()
+            .filter(fold -> fold.has("reason"))
+            .filter(
+                fold ->
+                    !fold.get("reason").asString().equals("below_minimum_training_observations"))
+            .count());
+  }
+
+  @Test
   void estimatesSeparateHistoriesJointUncertaintyAndTheSharedDrawRemainder() throws Exception {
     final Estimated run = estimate("shared");
 
@@ -1229,6 +1371,12 @@ class DevelopmentValidationTest {
         .filter(row -> row.get("cutoff").asString().equals(cutoff))
         .findFirst()
         .orElseThrow();
+  }
+
+  private static void assertBelowMinimum(JsonNode fold, int trainingObservations) {
+    assertFalse(fold.get("active").booleanValue());
+    assertEquals("below_minimum_training_observations", fold.get("reason").asString());
+    assertEquals(trainingObservations, fold.get("trainingObservations").intValue());
   }
 
   private static boolean contains(JsonNode rows, int row) {
