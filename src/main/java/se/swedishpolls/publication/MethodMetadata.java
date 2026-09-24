@@ -5,7 +5,11 @@ import java.util.List;
 /** The shipped method settings projected into values suitable for publication. */
 public record MethodMetadata(Verdict verdict, Estimator estimator, Draws draws, Coverage coverage) {
 
-  public record Verdict(String status, boolean released, List<String> failedGates) {}
+  public record Verdict(String status, boolean released, List<String> failedGates) {
+    public Verdict {
+      failedGates = List.copyOf(failedGates);
+    }
+  }
 
   public record Estimator(
       String version,
@@ -13,7 +17,11 @@ public record MethodMetadata(Verdict verdict, Estimator estimator, Draws draws, 
       String developmentProtocol,
       String releaseProtocol) {}
 
-  public record Draws(long seed, int count, int decimals, List<Double> intervalLevels) {}
+  public record Draws(long seed, int count, int decimals, List<Double> intervalLevels) {
+    public Draws {
+      intervalLevels = List.copyOf(intervalLevels);
+    }
+  }
 
   public record Coverage(
       String developmentThrough,
@@ -22,7 +30,11 @@ public record MethodMetadata(Verdict verdict, Estimator estimator, Draws draws, 
       int maxInternalGapDays,
       List<Integer> boundaryShiftDays,
       int stabilityBurnInDays,
-      double maxStabilityShiftPoints) {}
+      double maxStabilityShiftPoints) {
+    public Coverage {
+      boundaryShiftDays = List.copyOf(boundaryShiftDays);
+    }
+  }
 
   public static MethodMetadata from(ModelFreeze freeze) {
     return new MethodMetadata(
