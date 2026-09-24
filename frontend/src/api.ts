@@ -1,7 +1,14 @@
+import type { MethodData } from "./method";
+
 export interface PublicationIdentityResponse {
   readonly publicationId: string;
   readonly runId: string;
   readonly snapshotId: number;
+}
+
+export interface MethodResponse extends MethodData {
+  readonly publication: PublicationIdentityResponse;
+  readonly approximatedElection: number;
 }
 
 export interface ModelRunResponse {

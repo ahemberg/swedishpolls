@@ -36,7 +36,8 @@ class ApiContractTest {
           "institutes",
           "elections",
           "seats",
-          "coalitions");
+          "coalitions",
+          "method");
   private static final List<String> ROSTER = List.of("S", "M", "SD", "V", "C", "KD", "L", "MP");
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
@@ -217,7 +218,8 @@ class ApiContractTest {
             "examples/institutes.json",
             "examples/elections.json",
             "examples/seats.json",
-            "examples/coalitions.json")) {
+            "examples/coalitions.json",
+            "examples/method.json")) {
       final tools.jackson.databind.JsonNode dependent = read(name).get("publication");
       assertEquals(
           identity,
@@ -227,6 +229,21 @@ class ApiContractTest {
                       Map.Entry::getKey, entry -> entry.getValue().asString())),
           name + " must identify its publication and model run");
     }
+  }
+
+  @Test
+  void methodExampleCarriesTheFrozenMetadataWithoutDuplicatingLatestEstimates() throws Exception {
+    final JsonNode method = read("examples/method.json");
+    assertEquals(2026, method.get("approximatedElection").asInt());
+    assertEquals("blocked", method.get("verdict").get("status").asString());
+    assertFalse(method.get("verdict").get("released").asBoolean());
+    assertEquals(List.of("development_gates"), texts(method.get("verdict").get("failedGates")));
+    assertEquals(20260908, method.get("draws").get("seed").asInt());
+    assertEquals(30, method.get("coverage").get("minObservations").asInt());
+    assertFalse(method.has("latest"));
+    assertEquals(
+        Set.of("publication", "approximatedElection", "verdict", "estimator", "draws", "coverage"),
+        Set.copyOf(method.propertyNames()));
   }
 
   @Test

@@ -31,6 +31,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import se.swedishpolls.publication.ModelFreeze;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.service.Publications;
 import se.swedishpolls.source.PollCsv;
@@ -64,6 +65,36 @@ class ApiV1ControllerTest {
     when(publications.resolve(org.mockito.ArgumentMatchers.nullable(String.class)))
         .thenReturn(Optional.empty());
     when(publications.lastSuccessfulCheck()).thenReturn(Optional.empty());
+  }
+
+  @Test
+  void methodUsesPinnedPublicationAndFrozenMetadataInBothLanguages() throws Exception {
+    when(publications.resolve(HEADER.publicationId()))
+        .thenReturn(Optional.of(new Publications.Resolved(HEADER, true)));
+    when(publications.freeze()).thenReturn(ModelFreeze.load());
+    for (final String language : List.of("sv", "en")) {
+      mvc.perform(
+              get("/api/v1/method")
+                  .param("publication", HEADER.publicationId())
+                  .param("language", language))
+          .andExpect(status().isOk())
+          .andExpect(
+              header()
+                  .string(
+                      HttpHeaders.CACHE_CONTROL,
+                      org.hamcrest.Matchers.containsString("max-age=300")))
+          .andExpect(jsonPath("$.publication.publicationId").value(HEADER.publicationId()))
+          .andExpect(jsonPath("$.publication.runId").value(HEADER.runId()))
+          .andExpect(jsonPath("$.publication.snapshotId").value(HEADER.snapshotId()))
+          .andExpect(jsonPath("$.approximatedElection").value(2026))
+          .andExpect(jsonPath("$.verdict.status").value("blocked"))
+          .andExpect(jsonPath("$.verdict.failedGates[0]").value("development_gates"))
+          .andExpect(jsonPath("$.estimator.developmentProtocol").value("v1-development-1"))
+          .andExpect(jsonPath("$.draws.intervalLevels[1]").value(0.95))
+          .andExpect(jsonPath("$.coverage.minObservations").value(30));
+    }
+    mvc.perform(get("/api/v1/method").param("publication", "missing"))
+        .andExpect(status().isNotFound());
   }
 
   @Test

@@ -3,6 +3,7 @@ import elections from "../../src/main/resources/api/v1/examples/elections.json";
 import history from "../../src/main/resources/api/v1/examples/estimates-history.json";
 import latest from "../../src/main/resources/api/v1/examples/estimates-latest.json";
 import institutes from "../../src/main/resources/api/v1/examples/institutes.json";
+import method from "../../src/main/resources/api/v1/examples/method.json";
 import polls from "../../src/main/resources/api/v1/examples/polls.json";
 import publication from "../../src/main/resources/api/v1/examples/publication.json";
 import seats from "../../src/main/resources/api/v1/examples/seats.json";
@@ -26,6 +27,7 @@ import type {
   LatestResponse,
   MethodEraFromResponse,
   MethodEraToResponse,
+  MethodResponse,
   ModelRunResponse,
   PollFiltersResponse,
   PollResponse,
@@ -65,6 +67,8 @@ exact<SnapshotResponse>()(publication.snapshot);
 exact<PublicationResponse["assets"]>()(publication.assets);
 
 exact<LatestResponse>()(latest);
+exact<MethodResponse>()(method);
+exactIdentity(method.publication);
 exactIdentity(latest.publication);
 for (const period of latest.coveragePeriods) {
   exact<CoveragePeriodResponse>()(period);

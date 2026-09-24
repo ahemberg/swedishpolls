@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 import se.swedishpolls.model.ElectionReference;
-import se.swedishpolls.publication.ModelFreeze;
+import se.swedishpolls.publication.MethodMetadata;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.service.Publications;
@@ -721,38 +721,7 @@ public final class SiteBootstrap {
     data.set("latest", document(publications.latest(header, header.headlinePeriod(), language)));
     page.put("approximatedElection", header.approximatedElection());
 
-    final ModelFreeze freeze = publications.freeze();
-    final ObjectNode node = data.putObject("method");
-
-    final ObjectNode verdict = node.putObject("verdict");
-    verdict.put("status", freeze.releaseStatus());
-    verdict.put("released", freeze.released());
-    final ArrayNode failed = verdict.putArray("failedGates");
-    freeze.failedBlockingGates().forEach(failed::add);
-
-    final ObjectNode estimator = node.putObject("estimator");
-    estimator.put("version", freeze.estimatorVersion());
-    estimator.put("numericalLibrary", freeze.numericalLibrary());
-    estimator.put("developmentProtocol", freeze.developmentProtocolVersion());
-    estimator.put("releaseProtocol", freeze.releaseProtocolVersion());
-
-    final ObjectNode draws = node.putObject("draws");
-    draws.put("seed", freeze.uncertainty().seed());
-    draws.put("count", freeze.uncertainty().draws());
-    draws.put("decimals", freeze.resolution().decimals());
-    final ArrayNode levels = draws.putArray("intervalLevels");
-    freeze.uncertainty().intervalLevels().forEach(levels::add);
-
-    final ObjectNode coverage = node.putObject("coverage");
-    coverage.put(
-        "developmentThrough", freeze.developmentCoverage().developmentThrough().toString());
-    coverage.put("minObservations", freeze.developmentCoverage().minObservations());
-    coverage.put("minInstitutes", freeze.developmentCoverage().minInstitutes());
-    coverage.put("maxInternalGapDays", freeze.developmentCoverage().maxInternalGapDays());
-    final ArrayNode shifts = coverage.putArray("boundaryShiftDays");
-    freeze.developmentCoverage().boundaryShiftDays().forEach(shifts::add);
-    coverage.put("stabilityBurnInDays", freeze.developmentCoverage().stabilityBurnInDays());
-    coverage.put("maxStabilityShiftPoints", freeze.developmentCoverage().maxStabilityShiftPoints());
+    data.set("method", JSON.valueToTree(MethodMetadata.from(publications.freeze())));
   }
 
   /** The shell every page carries: language, translated routes, wording and site identity. */
