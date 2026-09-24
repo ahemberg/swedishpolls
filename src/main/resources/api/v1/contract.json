@@ -387,6 +387,7 @@
       "path": "/api/v1/method",
       "mediaType": "application/json",
       "cache": "current",
+      "cacheNote": "Method settings come from the deployed model freeze, so pinned responses also use current caching.",
       "paging": false,
       "example": "examples/method.json",
       "query": [

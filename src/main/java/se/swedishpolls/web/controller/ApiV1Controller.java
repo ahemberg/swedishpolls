@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import se.swedishpolls.publication.MethodResponse;
+import se.swedishpolls.publication.MethodMetadata;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.service.Publications;
@@ -98,7 +98,8 @@ public class ApiV1Controller {
       @RequestParam(required = false) String publication,
       @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publication, language);
-    return json(MethodResponse.from(resolved.header(), publications.freeze()), resolved);
+    return Responses.render(
+        MethodResponse.from(resolved.header(), MethodMetadata.from(publications.freeze())), false);
   }
 
   @GetMapping("/estimates/history")

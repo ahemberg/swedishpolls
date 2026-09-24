@@ -2,27 +2,20 @@ package se.swedishpolls.publication;
 
 import java.util.List;
 
-/** The method page's frozen metadata, tied to one publication. */
-public record MethodResponse(
-    Identity publication,
-    int approximatedElection,
-    Verdict verdict,
-    Estimator estimator,
-    Draws draws,
-    Coverage coverage) {
-  public record Identity(String publicationId, String runId, long snapshotId) {}
+/** The shipped method settings projected into values suitable for publication. */
+public record MethodMetadata(Verdict verdict, Estimator estimator, Draws draws, Coverage coverage) {
 
-  record Verdict(String status, boolean released, List<String> failedGates) {}
+  public record Verdict(String status, boolean released, List<String> failedGates) {}
 
-  record Estimator(
+  public record Estimator(
       String version,
       String numericalLibrary,
       String developmentProtocol,
       String releaseProtocol) {}
 
-  record Draws(long seed, int count, int decimals, List<Double> intervalLevels) {}
+  public record Draws(long seed, int count, int decimals, List<Double> intervalLevels) {}
 
-  record Coverage(
+  public record Coverage(
       String developmentThrough,
       int minObservations,
       int minInstitutes,
@@ -31,10 +24,8 @@ public record MethodResponse(
       int stabilityBurnInDays,
       double maxStabilityShiftPoints) {}
 
-  public static MethodResponse from(PublicationHeader header, ModelFreeze freeze) {
-    return new MethodResponse(
-        new Identity(header.publicationId(), header.runId(), header.snapshotId()),
-        header.approximatedElection(),
+  public static MethodMetadata from(ModelFreeze freeze) {
+    return new MethodMetadata(
         new Verdict(freeze.releaseStatus(), freeze.released(), freeze.failedBlockingGates()),
         new Estimator(
             freeze.estimatorVersion(),

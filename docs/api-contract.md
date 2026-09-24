@@ -46,6 +46,8 @@ snapshot id. A page resolves the publication once and passes it back through the
 The method response adds the approximated election year and frozen release verdict,
 estimator, draw and coverage settings. The method page reads coverage periods from
 `/api/v1/estimates/latest`; method metadata does not copy that estimate document.
+Method settings come from the deployed model freeze, so even a request with a pinned
+publication id uses the 300-second current cache policy.
 Poll responses read that publication's snapshot rather than the active one.
 A permanent publication link returns that publication's saved results or
 `unknown_publication`; it never falls back to the current publication.

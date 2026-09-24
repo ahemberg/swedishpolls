@@ -78,6 +78,11 @@ class ApiV1ControllerTest {
                   .param("publication", HEADER.publicationId())
                   .param("language", language))
           .andExpect(status().isOk())
+          .andExpect(
+              header()
+                  .string(
+                      HttpHeaders.CACHE_CONTROL,
+                      org.hamcrest.Matchers.containsString("max-age=300")))
           .andExpect(jsonPath("$.publication.publicationId").value(HEADER.publicationId()))
           .andExpect(jsonPath("$.publication.runId").value(HEADER.runId()))
           .andExpect(jsonPath("$.publication.snapshotId").value(HEADER.snapshotId()))
