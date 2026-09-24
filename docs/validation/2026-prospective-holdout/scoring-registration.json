@@ -1,0 +1,86 @@
+{
+  "version": "2026-prospective-scoring-1",
+  "registeredOn": "2026-09-24",
+  "status": "frozen-before-outcome",
+  "issue": "https://github.com/ahemberg/swedishpolls/issues/245",
+  "holdout": {
+    "path": "docs/validation/2026-prospective-holdout/source.csv",
+    "sha256": "2577ffae3686392f0b63411438e939565e694e9907e5eda6e1473ec9155736ad",
+    "bytes": 270333,
+    "capturedAt": "2026-09-12T22:54:26.081261Z",
+    "cutoff": "2026-09-12",
+    "electionDate": "2026-09-13",
+    "rule": "Use these exact archived bytes. Never reconstruct the holdout from a later source snapshot. Retain eligible polls whose publication date and collection end date are no later than the cutoff."
+  },
+  "outcome": {
+    "sourceUrl": "https://resultat.val.se/val2026/slutlig/RD/rike",
+    "template": "The 2022 outcome template is reused unchanged.",
+    "shares": "Use the official two-decimal percentages for S, M, SD, V, C, KD, L and MP. Compute OTHER as exactly 100 minus their sum in decimal arithmetic. Preserve this rounding in the report.",
+    "error": "For every component, report the drawn mean minus the official percentage in percentage points.",
+    "intervals": {
+      "levels": [
+        0.5,
+        0.95
+      ],
+      "inclusion": "For each registered marginal interval, report whether lower <= official percentage <= upper."
+    },
+    "seats": "Report the national modified Sainte-Lague approximation of the drawn mean beside the official constituency allocation. Never merge, substitute or reconcile the two allocations."
+  },
+  "methods": [
+    {
+      "id": "shipped-v1",
+      "resultStatus": "qualifying-prospective-result",
+      "reason": "This was the shipped method frozen before the holdout cutoff. Its score is the qualifying prospective result even if the result is unflattering.",
+      "identity": {
+        "estimatorVersion": "midpoint-ilr-state-space/v1-development-1",
+        "modelFreezePath": "src/main/resources/publication/model-freeze.json",
+        "modelFreezeSha256": "66b854018f921c34141fc455bd3130743e8796e03c59f95b23ecd7eeb51d27dc",
+        "releaseProtocolPath": "docs/validation/release-protocol.json",
+        "releaseProtocolSha256": "f201269f68cdbe986e52b496b09cfc64d2d7f0e1a1cc4405a313143f6dab78f0",
+        "implementationSha256": "3139c010a07a0caf68a94e8a45ff9c358c0cc7ff834d93090f4c33d445f02a05"
+      },
+      "periodId": "eight_party_2010",
+      "parameters": {
+        "walkVariance": 0.0001,
+        "houseScale": 0.1,
+        "covarianceMultiplier": 1.5
+      },
+      "seed": 20260908,
+      "draws": 10000
+    },
+    {
+      "id": "revised-v2-development-1",
+      "resultStatus": "non-qualifying-diagnostic",
+      "reason": "The revised method was registered on 2026-09-14, after the 2026-09-12 holdout cutoff. It cannot qualify retrospectively and its score must be labelled non-qualifying wherever it appears.",
+      "identity": {
+        "method": "midpoint_candidate",
+        "implementationCommit": "539b1f35b24e78ec79d92b2808f35144efdfe3bf",
+        "registrationPath": "docs/validation/v2-development-1/registration-run-2.json",
+        "registrationSha256": "fccbc0eec6579ecc2fe7b61a4db3cfc3fea074493f2b9c7cc3910d53a5a4401e",
+        "planPath": "docs/validation/v2-development-1/registration-plan-run-2.json",
+        "planSha256": "052779f2d4a6cd2981c606094aa9346ecbf593006113d5c5113b544e4ac4c52c"
+      },
+      "periodId": "eight_party_2010",
+      "parameterSelection": "The midpoint_candidate parameters selected by the latest resolved active cutoff, 2021-10-05, in the frozen run-2 tuning evidence.",
+      "parameters": {
+        "walkVariance": 0.0001,
+        "houseScale": 0.1,
+        "covarianceMultiplier": 1.5
+      },
+      "seed": 20260908,
+      "draws": 10000
+    }
+  ],
+  "execution": {
+    "rule": "Run these commands once, in order, from the repository root after this registration commit is merged. Do not edit a command, input, parameter, seed, draw count or reporting rule after opening the official result.",
+    "commands": [
+      "sha256sum --check docs/validation/2026-prospective-holdout/scoring-registration.json.sha256",
+      "echo '2577ffae3686392f0b63411438e939565e694e9907e5eda6e1473ec9155736ad  docs/validation/2026-prospective-holdout/source.csv' | sha256sum --check -",
+      "curl --fail --location --output docs/validation/2026-prospective-holdout/official-result.html https://resultat.val.se/val2026/slutlig/RD/rike",
+      "sha256sum docs/validation/2026-prospective-holdout/official-result.html > docs/validation/2026-prospective-holdout/official-result.html.sha256",
+      "./mvnw -DskipTests spring-boot:run -Dspring-boot.run.main-class=se.swedishpolls.estimation.ProspectiveElectionScore -Dspring-boot.run.arguments='execute docs/validation/2026-prospective-holdout/scoring-registration.json docs/validation/2026-prospective-holdout/source.csv docs/validation/2026-prospective-holdout/official-result.html docs/validation/2026-prospective-holdout/result.json'",
+      "echo '2577ffae3686392f0b63411438e939565e694e9907e5eda6e1473ec9155736ad  docs/validation/2026-prospective-holdout/source.csv' | sha256sum --check -"
+    ],
+    "capture": "Record each exact command, exit status, wall time and complete console output. Archive the official result URL, retrieval time, bytes and SHA-256 with the result."
+  }
+}
