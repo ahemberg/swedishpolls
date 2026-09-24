@@ -29,11 +29,10 @@ import tools.jackson.databind.node.ObjectNode;
 /**
  * Everything one page shows, resolved against one publication.
  *
- * <p>The publication is resolved once here. The documents, the poll rows, the download links and
- * the share image all name that same publication, so a publish that lands while a reader is loading
- * the page cannot mix two runs into one view. The rendered HTML and the script both read this
- * object, which is why the page cannot word a number one way before the script runs and another way
- * after it.
+ * <p>The publication is resolved once here. The documents, poll rows and download links all name
+ * that same publication, so a publish that lands while a reader is loading the page cannot mix two
+ * runs into one view. The rendered HTML and the script both read this object, which is why the page
+ * cannot word a number one way before the script runs and another way after it.
  */
 @Component
 public final class SiteBootstrap {
@@ -792,7 +791,7 @@ public final class SiteBootstrap {
   /** The publication identity every page carries, whichever family it belongs to. */
   private void publication(ObjectNode page, PublicationHeader header, boolean permanent) {
     final String language = page.get("language").asString();
-    page.set("publication", publications.metadata(header, Translations.of(language)));
+    page.set("publication", publications.metadata(header));
     page.put("permanent", permanent);
     page.put("headlineDate", header.lastFieldworkDate().toString());
     final ObjectNode api = page.putObject("api");

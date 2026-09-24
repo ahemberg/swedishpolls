@@ -1,21 +1,12 @@
 package se.swedishpolls.publication.repository;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Stream;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -25,14 +16,12 @@ import se.swedishpolls.publication.Digest;
 import se.swedishpolls.publication.ModelFreeze;
 import se.swedishpolls.publication.ModelRun;
 import se.swedishpolls.publication.PinnedSnapshot;
-import se.swedishpolls.publication.PublicationAsset;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.PublicationOutcome;
 
 /**
- * Reads and writes publications. A candidate is private until its assets are staged, verified and
- * moved into place and the current pointer is switched in one transaction; nothing here ever
- * rewrites a published document or a published image byte.
+ * Reads and writes publications. A candidate is private until the current pointer is switched in
+ * one transaction; nothing here ever rewrites a published document.
  */
 @Component
 public class PublicationStore {
@@ -42,19 +31,10 @@ public class PublicationStore {
 
   private final JdbcClient db;
   private final TransactionTemplate transaction;
-  private final Path root;
 
-  public PublicationStore(
-      JdbcClient db,
-      PlatformTransactionManager transactions,
-      @Value("${publication.root:target/publications}") String root) {
+  public PublicationStore(JdbcClient db, PlatformTransactionManager transactions) {
     this.db = db;
     this.transaction = new TransactionTemplate(transactions);
-    this.root = Path.of(root);
-  }
-
-  public Path root() {
-    return root;
   }
 
   public Optional<CurrentPublication> current() {
@@ -139,149 +119,10 @@ public class PublicationStore {
         .optional();
   }
 
-  public List<PublicationAsset> assets(String publicationId) {
-    return db.sql(
-            """
-            SELECT publication_id, kind, language, version, renderer_version, media_type,
-                   byte_count, sha256
-            FROM publication_asset WHERE publication_id = ?
-            ORDER BY kind, language, version
-            """)
-        .param(publicationId)
-        .query(
-            (rs, row) ->
-                new PublicationAsset(
-                    rs.getString("publication_id"),
-                    rs.getString("kind"),
-                    rs.getString("language"),
-                    rs.getInt("version"),
-                    rs.getString("renderer_version"),
-                    rs.getString("media_type"),
-                    rs.getInt("byte_count"),
-                    rs.getString("sha256")))
-        .list();
-  }
-
-  public Optional<PublicationAsset> asset(
-      String publicationId, String kind, String language, int version) {
-    return assets(publicationId).stream()
-        .filter(
-            asset ->
-                asset.kind().equals(kind)
-                    && asset.language().equals(language)
-                    && asset.version() == version)
-        .findFirst();
-  }
-
-  /**
-   * The version a newly rendered card is stored as: one past the highest version already there. A
-   * renderer change therefore adds a version rather than replacing published bytes.
-   */
-  public int nextAssetVersion(String publicationId, String kind, String language) {
-    return latestAsset(publicationId, kind, language).map(PublicationAsset::version).orElse(0) + 1;
-  }
-
-  /** The current version of one card: the highest version stored for it. */
-  public Optional<PublicationAsset> latestAsset(
-      String publicationId, String kind, String language) {
-    return assets(publicationId).stream()
-        .filter(asset -> asset.kind().equals(kind) && asset.language().equals(language))
-        .max(Comparator.comparingInt(PublicationAsset::version));
-  }
-
-  /** The stored bytes, verified against the digest recorded when they were staged. */
-  public byte[] bytes(PublicationAsset asset) {
-    try {
-      final byte[] bytes = Files.readAllBytes(assetFile(asset));
-      if (!Digest.sha256(bytes).equals(asset.sha256())) {
-        throw new IllegalStateException("Stored asset " + asset.path() + " no longer matches");
-      }
-      return bytes;
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-  }
-
-  public Path assetFile(PublicationAsset asset) {
-    return root.resolve("assets").resolve(asset.publicationId()).resolve(asset.fileName());
-  }
-
-  private Path stagingDirectory(String publicationId) {
-    return root.resolve("staging").resolve(publicationId);
-  }
-
-  /**
-   * Writes the candidate's image bytes to a private staging directory and reads every one of them
-   * back. An interrupted staging leaves that directory behind and no published byte anywhere.
-   */
-  public List<PublicationAsset> stage(
-      String publicationId, List<PublicationAsset> assets, List<byte[]> bytes) {
-    if (assets.size() != bytes.size()) {
-      throw new IllegalArgumentException("Every staged asset needs its bytes");
-    }
-    try {
-      final Path staging = stagingDirectory(publicationId);
-      deleteRecursively(staging);
-      Files.createDirectories(staging);
-      for (int index = 0; index < assets.size(); index++) {
-        final PublicationAsset asset = assets.get(index);
-        final Path file = staging.resolve(asset.fileName());
-        Files.write(file, bytes.get(index));
-        final byte[] written = Files.readAllBytes(file);
-        if (!Digest.sha256(written).equals(asset.sha256()) || written.length != asset.byteCount()) {
-          throw new IllegalStateException("Staged asset " + asset.path() + " failed verification");
-        }
-      }
-      return List.copyOf(assets);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-  }
-
-  /**
-   * Moves the verified staging directory into place and switches the current pointer in one
-   * transaction. The pointer never moves before every byte it will serve is readable.
-   */
-  public void promote(String publicationId, List<PublicationAsset> assets) {
-    try {
-      final Path staging = stagingDirectory(publicationId);
-      final Path target = root.resolve("assets").resolve(publicationId);
-      Files.createDirectories(target);
-      for (final PublicationAsset asset : assets) {
-        final Path file = assetFile(asset);
-        if (Files.exists(file)) {
-          throw new IllegalStateException("Published asset " + asset.path() + " already exists");
-        }
-        Files.move(staging.resolve(asset.fileName()), file, StandardCopyOption.ATOMIC_MOVE);
-        final byte[] written = Files.readAllBytes(file);
-        if (!Digest.sha256(written).equals(asset.sha256())) {
-          throw new IllegalStateException("Moved asset " + asset.path() + " failed verification");
-        }
-      }
-      deleteRecursively(staging);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+  /** Publishes the complete candidate and switches the current pointer in one transaction. */
+  public void promote(String publicationId) {
     transaction.executeWithoutResult(
         status -> {
-          for (final PublicationAsset asset : assets) {
-            db.sql(
-                    """
-                    INSERT INTO publication_asset(publication_id, kind, language, version,
-                        renderer_version, media_type, byte_count, sha256)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """)
-                .params(
-                    asset.publicationId(),
-                    asset.kind(),
-                    asset.language(),
-                    asset.version(),
-                    asset.rendererVersion(),
-                    asset.mediaType(),
-                    asset.byteCount(),
-                    asset.sha256())
-                .update();
-          }
           db.sql("UPDATE publication SET state = 'published' WHERE id = ?")
               .param(publicationId)
               .update();
@@ -298,13 +139,8 @@ public class PublicationStore {
         });
   }
 
-  /** Discards a candidate that never became current. Its staged bytes go with it. */
+  /** Discards a candidate that never became current. */
   public void abandon(String publicationId) {
-    try {
-      deleteRecursively(stagingDirectory(publicationId));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
     transaction.executeWithoutResult(
         status -> {
           db.sql("DELETE FROM publication_document WHERE publication_id = ?")
@@ -462,19 +298,5 @@ public class PublicationStore {
         .query(Timestamp.class)
         .optional()
         .map(Timestamp::toInstant);
-  }
-
-  private static void deleteRecursively(Path directory) throws IOException {
-    if (!Files.exists(directory)) {
-      return;
-    }
-    final List<Path> paths = new ArrayList<>();
-    try (final Stream<Path> walk = Files.walk(directory)) {
-      walk.forEach(paths::add);
-    }
-    paths.sort(Comparator.reverseOrder());
-    for (final Path path : paths) {
-      Files.deleteIfExists(path);
-    }
   }
 }

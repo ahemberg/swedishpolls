@@ -99,10 +99,6 @@ public final class SiteText {
         "head.description.partyHistorical",
         "{party}: historiska källobservationer till och med {date}. Ingen aktuell enskild"
             + " skattning finns.");
-    text.put("head.imageAlt", "Sammanfattande bild: skattat väljarstöd per {date}.");
-    text.put("head.imageAlt.party", "Sammanfattande bild för {party} per {date}.");
-    text.put(
-        "head.imageAlt.partyHistorical", "Historisk sammanfattande bild för {party} per {date}.");
     text.put(
         "head.description.seats",
         "Approximerad nationell mandatfördelning per {date}: heltalsmandat, väntevärden och"
@@ -126,9 +122,6 @@ public final class SiteText {
     text.put(
         "head.description.coalitionComparison",
         "Jämför block A ({a}) med block B ({b}) från {from} till {to}.");
-    text.put(
-        "head.imageAlt.seats", "Sammanfattande bild: approximerad mandatfördelning per {date}.");
-    text.put("head.imageAlt.coalitions", "Sammanfattande bild: regeringsunderlag per {date}.");
 
     text.put("headline", "Skattat väljarstöd");
     text.put("headline.asOf", "per {date}");
@@ -529,10 +522,6 @@ public final class SiteText {
     text.put("downloads.coalitions", "Regeringsunderlag (JSON)");
     text.put("downloads.houseEffects", "Huseffekter (JSON)");
     text.put("downloads.elections", "Valresultat (JSON)");
-    text.put("downloads.image", "Sammanfattande bild (PNG)");
-    text.put(
-        "downloads.imageNote",
-        "PNG:en är en daterad sammanfattande bild, inte en export av det valda diagramintervallet.");
     text.put("downloads.pinned", "Alla filer kommer från publiceringen {publication}.");
 
     text.put("share.title", "Dela");
@@ -729,9 +718,6 @@ public final class SiteText {
         "head.description.partyHistorical",
         "{party}: historical source observations through {date}. No current individual estimate"
             + " is available.");
-    text.put("head.imageAlt", "Summary image: estimated voter support as of {date}.");
-    text.put("head.imageAlt.party", "Summary image for {party} as of {date}.");
-    text.put("head.imageAlt.partyHistorical", "Historical summary image for {party} as of {date}.");
     text.put(
         "head.description.seats",
         "National seat approximation as of {date}: integer seats, posterior means and intervals."
@@ -755,8 +741,6 @@ public final class SiteText {
     text.put(
         "head.description.coalitionComparison",
         "Compare block A ({a}) with block B ({b}) from {from} to {to}.");
-    text.put("head.imageAlt.seats", "Summary image: national seat approximation as of {date}.");
-    text.put("head.imageAlt.coalitions", "Summary image: coalitions as of {date}.");
 
     text.put("headline", "Estimated voter support");
     text.put("headline.asOf", "as of {date}");
@@ -1150,10 +1134,6 @@ public final class SiteText {
     text.put("downloads.coalitions", "Coalitions (JSON)");
     text.put("downloads.houseEffects", "House effects (JSON)");
     text.put("downloads.elections", "Election results (JSON)");
-    text.put("downloads.image", "Summary image (PNG)");
-    text.put(
-        "downloads.imageNote",
-        "The PNG is a dated summary image, not an export of the selected chart range.");
     text.put("downloads.pinned", "Every file comes from publication {publication}.");
 
     text.put("share.title", "Share");

@@ -2,7 +2,6 @@ package se.swedishpolls.publication;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.awt.Font;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import se.swedishpolls.estimation.Coalitions;
@@ -11,17 +10,6 @@ class TranslationsTest {
   private static final List<String> KEYS =
       List.of(
           "site.name",
-          "card.overview",
-          "card.parties",
-          "card.seats",
-          "card.coalitions",
-          "card.asOf",
-          "card.interval",
-          "card.majority",
-          "card.seatsOf",
-          "card.historical",
-          "card.unavailable",
-          "assets.note",
           "elections.note",
           "institutes.reference",
           "remainder.definition",
@@ -44,15 +32,6 @@ class TranslationsTest {
       for (final Coalitions.Preset preset : Coalitions.PRESETS) {
         assertFalse(text.coalition(preset.id()).isBlank(), language + " is missing " + preset.id());
       }
-    }
-  }
-
-  @Test
-  void theSwedishTranslationRendersInTheCardFont() {
-    final Font font = new Font("DejaVu Sans", Font.PLAIN, 24);
-    final Translations text = Translations.of(Translations.SWEDISH);
-    for (final String key : KEYS) {
-      assertEquals(-1, font.canDisplayUpTo(text.text(key)), key + " has an undrawable glyph");
     }
   }
 

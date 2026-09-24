@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -25,13 +24,10 @@ import se.swedishpolls.model.ElectionReference;
 import se.swedishpolls.model.NationalAllocationRule;
 import se.swedishpolls.publication.CurrentPublication;
 import se.swedishpolls.publication.ModelFreeze;
-import se.swedishpolls.publication.PublicationAsset;
 import se.swedishpolls.publication.PublicationDocuments;
 import se.swedishpolls.publication.PublicationHeader;
 import se.swedishpolls.publication.PublicationOutcome;
 import se.swedishpolls.publication.PublicationRun;
-import se.swedishpolls.publication.ShareImages;
-import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.repository.PublicationLock;
 import se.swedishpolls.publication.repository.PublicationStore;
 import se.swedishpolls.source.PollCsv;
@@ -46,8 +42,8 @@ import tools.jackson.databind.node.ObjectNode;
 /**
  * The single publication worker. One advisory lock keeps two workers from publishing the same
  * snapshot, a changed complete snapshot becomes a private candidate, and the candidate becomes
- * current only after every document and every image byte is written and read back. A failed update
- * leaves the previous publication exactly as it was, with a staleness notice.
+ * current only after every document is written. A failed update leaves the previous publication
+ * exactly as it was, with a staleness notice.
  */
 @Component
 public class Publisher {
@@ -191,7 +187,6 @@ public class Publisher {
   }
 
   private Attempt run(Snapshot snapshot, Instant sourceCheckedAt) {
-    ShareImages.checkFonts();
     final List<PollCsv.Poll> polls = ingest.polls(snapshot.id());
     final List<ElectionReference> elections = electionReferences.all();
     final LocalDate lastFieldworkDate = PublicationRun.lastFieldworkDate(polls);
@@ -234,23 +229,7 @@ public class Publisher {
             document.language(),
             JSON.writeValueAsString(document.body()));
       }
-      final List<PublicationAsset> assets = new ArrayList<>();
-      final List<byte[]> bytes = new ArrayList<>();
-      for (final ShareImages.Card card : ShareImages.cards(results, freeze, polls)) {
-        final byte[] png = ShareImages.render(card, Translations.of(card.language()));
-        bytes.add(png);
-        assets.add(
-            PublicationAsset.of(
-                publicationId,
-                card.kind(),
-                card.language(),
-                store.nextAssetVersion(publicationId, card.kind(), card.language()),
-                ShareImages.RENDERER_VERSION,
-                ShareImages.MEDIA_TYPE,
-                png));
-      }
-      store.stage(publicationId, assets, bytes);
-      store.promote(publicationId, assets);
+      store.promote(publicationId);
       store.recordAttempt(PublicationOutcome.PUBLISHED, sourceCheckedAt, publicationId, null);
       return new Attempt(PublicationOutcome.PUBLISHED, publicationId, null);
     } catch (RuntimeException e) {

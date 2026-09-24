@@ -72,10 +72,6 @@ const publication: Publication = {
   history: publicationResponse.history,
   modelRun: publicationResponse.modelRun,
   snapshot: publicationResponse.snapshot,
-  assets: {
-    overview: publicationResponse.assets.overview,
-    seats: publicationResponse.assets.seats,
-  },
 };
 
 const results: ResultsPageData = { latest, seats, coalitions };

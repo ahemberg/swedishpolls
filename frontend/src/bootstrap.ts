@@ -170,7 +170,6 @@ export interface Publication {
     readonly sourceUrl: string;
     readonly capturedAt: string;
   };
-  readonly assets: Readonly<Record<string, Readonly<Record<Language, string | null>>>>;
 }
 
 export interface SourceSnapshot {
@@ -239,7 +238,6 @@ export interface Bootstrap {
  * The publication-wide summary cards a page can offer. A party page is not here: it offers its
  * own party's card, whose kind is built from the component rather than chosen from a fixed set.
  */
-export type CardKind = "overview" | "seats" | "coalitions";
 
 /** The element the script replaces. Its server-rendered children are the pre-script page. */
 export const MOUNT_ELEMENT = "site-root";

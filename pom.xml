@@ -383,9 +383,6 @@
               </to>
               <container>
                 <mainClass>se.swedishpolls.Application</mainClass>
-                <jvmFlags>
-                  <jvmFlag>-Djava.awt.headless=true</jvmFlag>
-                </jvmFlags>
                 <labels>
                   <org.opencontainers.image.revision>${git.commit.id}</org.opencontainers.image.revision>
                   <org.opencontainers.image.source>https://github.com/ahemberg/swedishpolls</org.opencontainers.image.source>
