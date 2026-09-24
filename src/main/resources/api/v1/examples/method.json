@@ -1,0 +1,34 @@
+{
+  "publication": {
+    "publicationId": "pub_20260908T051233Z",
+    "runId": "run_000412",
+    "snapshotId": 412
+  },
+  "approximatedElection": 2026,
+  "verdict": {
+    "status": "blocked",
+    "released": false,
+    "failedGates": ["development_gates"]
+  },
+  "estimator": {
+    "version": "midpoint-ilr-state-space/v1-development-1",
+    "numericalLibrary": "org.ejml:ejml-simple:0.46.1",
+    "developmentProtocol": "v1-development-1",
+    "releaseProtocol": "v1-release-1"
+  },
+  "draws": {
+    "seed": 20260908,
+    "count": 10000,
+    "decimals": 1,
+    "intervalLevels": [0.5, 0.95]
+  },
+  "coverage": {
+    "developmentThrough": "2021-10-05",
+    "minObservations": 30,
+    "minInstitutes": 5,
+    "maxInternalGapDays": 45,
+    "boundaryShiftDays": [7, 14, 30],
+    "stabilityBurnInDays": 60,
+    "maxStabilityShiftPoints": 0.5
+  }
+}

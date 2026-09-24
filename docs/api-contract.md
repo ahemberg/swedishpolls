@@ -27,6 +27,7 @@ with illustrative numbers; only the poll rows and election references are real d
 | Election references | `/api/v1/elections` | [`examples/elections.json`](../src/main/resources/api/v1/examples/elections.json) |
 | National seats | `/api/v1/seats` | [`examples/seats.json`](../src/main/resources/api/v1/examples/seats.json) |
 | Preset coalitions | `/api/v1/coalitions` | [`examples/coalitions.json`](../src/main/resources/api/v1/examples/coalitions.json) |
+| Method metadata | `/api/v1/method` | [`examples/method.json`](../src/main/resources/api/v1/examples/method.json) |
 
 Errors have their own examples in
 [`examples/errors.json`](../src/main/resources/api/v1/examples/errors.json).
@@ -42,6 +43,9 @@ overwrites published bytes.
 Every other response repeats `publication` as the publication id, run id and
 snapshot id. A page resolves the publication once and passes it back through the
 `publication` parameter, so an ingestion correction cannot change a pinned page.
+The method response adds the approximated election year and frozen release verdict,
+estimator, draw and coverage settings. The method page reads coverage periods from
+`/api/v1/estimates/latest`; method metadata does not copy that estimate document.
 Poll responses read that publication's snapshot rather than the active one.
 A permanent publication link returns that publication's saved results or
 `unknown_publication`; it never falls back to the current publication.

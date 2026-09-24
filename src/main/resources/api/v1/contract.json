@@ -380,6 +380,31 @@
         }
       ],
       "errors": ["unknown_publication", "invalid_filter", "estimates_unavailable"]
+    },
+    {
+      "id": "method",
+      "method": "GET",
+      "path": "/api/v1/method",
+      "mediaType": "application/json",
+      "cache": "current",
+      "paging": false,
+      "example": "examples/method.json",
+      "query": [
+        {
+          "name": "publication",
+          "type": "publication-id",
+          "required": false,
+          "default": "current"
+        },
+        {
+          "name": "language",
+          "type": "enum",
+          "allowed": ["sv", "en"],
+          "default": "sv",
+          "note": "Selects the language of the page using this metadata."
+        }
+      ],
+      "errors": ["unknown_publication", "invalid_filter", "estimates_unavailable"]
     }
   ],
   "errors": [
