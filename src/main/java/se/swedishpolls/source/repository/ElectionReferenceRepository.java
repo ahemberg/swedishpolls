@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import se.swedishpolls.model.ElectionReference;
@@ -16,6 +17,13 @@ public class ElectionReferenceRepository {
 
   public ElectionReferenceRepository(JdbcClient db) {
     this.db = db;
+  }
+
+  /** The latest stored election, whether or not any party result was stored with it. */
+  public Optional<LocalDate> latestElectionDate() {
+    return db.sql("SELECT max(election_date) FROM election_reference")
+        .query(LocalDate.class)
+        .optional();
   }
 
   /** Every stored election, oldest first. */

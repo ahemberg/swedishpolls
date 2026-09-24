@@ -64,3 +64,13 @@ finding or javac warning fails the build. It needs the committed `.mvn/jvm.confi
 `--add-exports` and two `--add-opens` flags into `jdk.compiler` that apply to every Maven
 invocation in this repository. If a JDK upgrade breaks compilation with `IllegalAccessError`,
 that file is the first place to look. See [ADR 0005](docs/adr/0005-static-analysis-gating.md).
+
+### Election result embargo
+
+Do not store, fetch or read any election result later than the 2022 election. The 2026 result is
+embargoed until [issue #247](https://github.com/ahemberg/swedishpolls/issues/247) lifts it: the
+[2026 prospective holdout](docs/validation/2026-prospective-holdout/README.md) is scored against a
+rule registered before the result existed, and loading the result first destroys it permanently.
+`ElectionReferenceService.requireEmbargo` refuses any stored election after
+`LATEST_PERMITTED_ELECTION`, and `SourceRepositoriesTest` runs it over the committed migrations, so
+committing one fails the build. Never delete or relax that check outside #247.
