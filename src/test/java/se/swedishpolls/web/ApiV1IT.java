@@ -251,7 +251,7 @@ class ApiV1IT {
     assertEquals(175, coalitions.get("majoritySeats").intValue());
     assertEquals(Coalitions.PRESETS.size(), coalitions.get("coalitions").size());
     assertEquals(Coalitions.TIE_OUTCOME, coalitions.get("comparison").get("tie").asString());
-    assertEquals(45, coalitions.get("comparison").get("pairs").size());
+    ApiContractTest.assertEveryUnorderedPair(coalitions.get("comparison").get("pairs"));
     assertEquals(1, json("/api/v1/coalitions?coalition=tido").get("coalitions").size());
     assertEquals(400, get("/api/v1/coalitions?coalition=nonesuch").statusCode());
   }
