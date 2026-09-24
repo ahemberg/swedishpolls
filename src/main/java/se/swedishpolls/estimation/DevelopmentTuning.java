@@ -22,6 +22,16 @@ public final class DevelopmentTuning {
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
+  /** The parameters one fold's search identifies: walk variance, house scale and multiplier. */
+  public static final int IDENTIFIED_PARAMETERS = 3;
+
+  /**
+   * A fold identifies its parameters only from more training observations than there are
+   * parameters. Below that the likelihood optimum drifts to the grid's lower corner however far the
+   * grid extends, so such a fold is inactive by rule rather than tuned.
+   */
+  public static final int MINIMUM_TRAINING_OBSERVATIONS = IDENTIFIED_PARAMETERS + 1;
+
   /**
    * The frozen candidate grid. Each axis is finite, strictly ascending and admissible for a fit.
    */
