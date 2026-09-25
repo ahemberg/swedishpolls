@@ -26,5 +26,5 @@ The holdout is always [`source.csv`](source.csv) as captured. It must never be r
 
 ## Result
 
-The [execution report](report.md) records the qualifying shipped score, the revised method's
-non-qualifying diagnostic, the official result and the complete command history.
+The [execution report](report.md) records the failed qualifying run, the remediated non-qualifying
+diagnostics, the official result and the complete command history.

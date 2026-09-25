@@ -1,10 +1,12 @@
 # 2026 prospective holdout result
 
-The shipped method's qualifying prospective score was poor. Its mean absolute error was 1.012
-percentage points across the nine modeled components, its largest absolute error was 2.666 points,
-and only two of nine official shares fell inside its 95% marginal intervals. The revised method
-produced the same numbers. Its result is a non-qualifying diagnostic because it was registered
-after the holdout cutoff.
+The registered qualifying execution failed and produced no score. A remediated run of the shipped
+method had a mean absolute error of 1.012 percentage points across the nine modeled components, a
+largest absolute error of 2.666 points, and only two of nine official shares inside its 95%
+marginal intervals. This measurement is non-qualifying because the scorer changed after the result
+was opened and the shipped bytecode did not match its registered digest. The revised method
+produced the same numbers. It is also a non-qualifying diagnostic because it was registered after
+the holdout cutoff.
 
 ## Official result
 
@@ -26,7 +28,7 @@ official allocation in the same reference tables as earlier elections.
 
 Errors are the drawn mean minus the official two-decimal percentage, in percentage points.
 
-| Component | Official | Shipped mean | Shipped error | 50% | 95% | Revised mean, non-qualifying | Revised error, non-qualifying | 50%, non-qualifying | 95%, non-qualifying |
+| Component | Official | Shipped mean, non-qualifying | Shipped error, non-qualifying | 50%, non-qualifying | 95%, non-qualifying | Revised mean, non-qualifying | Revised error, non-qualifying | 50%, non-qualifying | 95%, non-qualifying |
 | --- | ---: | ---: | ---: | :---: | :---: | ---: | ---: | :---: | :---: |
 | M | 19.85 | 17.184 | -2.666 | no | no | 17.184 | -2.666 | no | no |
 | L | 5.34 | 4.033 | -1.307 | no | no | 4.033 | -1.307 | no | no |
@@ -38,10 +40,12 @@ Errors are the drawn mean minus the official two-decimal percentage, in percenta
 | SD | 17.48 | 19.049 | +1.569 | no | no | 19.049 | +1.569 | no | no |
 | OTHER | 1.59 | 2.079 | +0.489 | no | no | 2.079 | +0.489 | no | no |
 
-The complete qualifying result is [`shipped-result.json`](shipped-result.json). The complete
-non-qualifying diagnostic is [`revised-result.json`](revised-result.json). Both use seed `20260908`,
-10,000 draws and the registered parameters. Their exact reruns had zero maximum absolute
-difference across 90,000 retained values.
+The complete remediated shipped output is [`shipped-result.json`](shipped-result.json). Its
+`resultStatus` repeats the preregistered intended status, but this report rejects that status because
+the registered execution failed. The complete revised non-qualifying diagnostic is
+[`revised-result.json`](revised-result.json). Both use seed `20260908`, 10,000 draws and the
+registered parameters. Their exact reruns had zero maximum absolute difference across 90,000
+retained values.
 
 ## Seats
 
@@ -49,7 +53,7 @@ The approximation applies the national modified Sainte-Lague rule to the drawn m
 allocation includes constituency rules. These are separate quantities and are not reconciled or
 merged.
 
-| Party | Shipped national approximation | Revised national approximation, non-qualifying | Official allocation |
+| Party | Shipped national approximation, non-qualifying | Revised national approximation, non-qualifying | Official allocation |
 | --- | ---: | ---: | ---: |
 | S | 100 | 100 | 99 |
 | M | 61 | 61 | 70 |
@@ -102,11 +106,14 @@ wall time and exit status are stored there.
 | Constructor remediation | 9 | 0 | 0.034 s | Shipped worktree created |
 | Constructor remediation | 10 | 1 | 90.902 s | Registered bytecode digest mismatch |
 | Identity-check remediation | 9 | 0 | 0.059 s | Shipped worktree created |
-| Identity-check remediation | 10 | 0 | 74.438 s | Qualifying shipped score written |
+| Identity-check remediation | 10 | 0 | 74.438 s | Non-qualifying shipped diagnostic written |
 | Identity-check remediation | 11 | 0 | 0.076 s | Revised worktree created |
 | Identity-check remediation | 12 | 0 | 77.673 s | Non-qualifying revised diagnostic written |
 | Identity-check remediation | 13 | 0 | 0.183 s | Detached worktrees removed |
 | Identity-check remediation | 14 | 0 | 0.004 s | Final holdout checksum passed |
+
+Without a recorded owner decision, the failed registered identity check cannot be waived and issue
+#247's qualifying-result criterion remains unmet.
 
 The holdout SHA-256 was
 `2577ffae3686392f0b63411438e939565e694e9907e5eda6e1473ec9155736ad` before and after execution.

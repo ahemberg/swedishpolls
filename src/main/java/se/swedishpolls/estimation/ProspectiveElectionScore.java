@@ -167,6 +167,14 @@ public final class ProspectiveElectionScore {
     final JointUncertainty.FinalDay repeated =
         JointUncertainty.finalDay(
             period, candidates, PRIOR_ELECTIONS, model, coverage, uncertainty);
+    final JsonNode identity = required(method, "identity");
+    final JsonNode registeredImplementation = identity.get("implementationSha256");
+    if (registeredImplementation != null) {
+      requireEqual(
+          registeredImplementation.asString(),
+          finalDay.reproduction().implementationSha256(),
+          "compiled implementation SHA-256");
+    }
     final Map<String, Double> composition = new LinkedHashMap<>();
     for (final JointUncertainty.Component component : finalDay.day().components()) {
       composition.put(component.component(), component.mean());

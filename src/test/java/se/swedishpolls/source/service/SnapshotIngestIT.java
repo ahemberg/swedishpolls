@@ -218,6 +218,8 @@ class SnapshotIngestIT {
     try (final java.io.InputStream input = getClass().getResourceAsStream("/polls/audit.csv")) {
       body = input.readAllBytes();
     }
+    final int electionReferences =
+        db.sql("SELECT count(*) FROM election_reference").query(Integer.class).single();
     final java.util.List<se.swedishpolls.source.PollCsv.Poll> expected = PollCsv.parse(body);
     assertEquals(SnapshotIngest.Result.CHANGED, check());
     final se.swedishpolls.source.Snapshot snapshot = ingest.activeSnapshot().orElseThrow();
@@ -226,7 +228,8 @@ class SnapshotIngestIT {
     assertArrayEquals(body, ingest.rawCsv(snapshot.id()));
     assertEquals(expected, ingest.polls(snapshot.id()));
     assertEquals(
-        5, db.sql("SELECT count(*) FROM election_reference").query(Integer.class).single());
+        electionReferences,
+        db.sql("SELECT count(*) FROM election_reference").query(Integer.class).single());
     // Only pre-2022 development inputs enter the numerical checks. Official outcomes stay in their
     // own tables.
     final java.util.List<se.swedishpolls.source.PollCsv.Poll> development =
