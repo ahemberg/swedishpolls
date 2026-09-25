@@ -77,23 +77,27 @@ function Page({ url }: { readonly url: URL }): JSX.Element {
   return <Shell page={loaded.page} t={translator(loaded.page)} />;
 }
 
+function navigationLink(event: MouseEvent): HTMLAnchorElement | null {
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey ||
+    !(event.target instanceof Element)
+  ) {
+    return null;
+  }
+  return event.target.closest<HTMLAnchorElement>("a[href]");
+}
+
 function App(): JSX.Element {
   const [url, setUrl] = useState(() => new URL(globalThis.location.href));
   useEffect(() => {
     const navigate = () => setUrl(new URL(globalThis.location.href));
     const click = (event: MouseEvent) => {
-      if (
-        event.defaultPrevented ||
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey ||
-        !(event.target instanceof Element)
-      ) {
-        return;
-      }
-      const link = event.target.closest<HTMLAnchorElement>("a[href]");
+      const link = navigationLink(event);
       if (link === null || link.hasAttribute("download") || link.target) {
         return;
       }

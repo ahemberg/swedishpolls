@@ -6,8 +6,7 @@ import { fetchJson, RequestError } from "./useFetched";
 
 const BAD_REQUEST = 400;
 
-function selectionQuery(query: URLSearchParams): URLSearchParams {
-  const result = new URLSearchParams();
+function validateSelection(query: URLSearchParams): void {
   for (const name of ["a", "b", "parties", "from", "to"]) {
     if (query.getAll(name).length > 1) {
       throw new RequestError(BAD_REQUEST, {
@@ -25,6 +24,12 @@ function selectionQuery(query: URLSearchParams): URLSearchParams {
       message: "mixed_parameters",
     });
   }
+}
+
+function selectionQuery(query: URLSearchParams): URLSearchParams {
+  validateSelection(query);
+  const result = new URLSearchParams();
+  const modern = query.has("a") || query.has("b");
   const preset = groupsFor(PRESET);
   let a = preset.a.join(",");
   let b = preset.b.join(",");
