@@ -37,11 +37,6 @@ export interface PublicationResponse {
   readonly permalink: string;
   readonly modelRun: ModelRunResponse;
   readonly snapshot: SnapshotResponse;
-  readonly assets: {
-    readonly note: string;
-    readonly overview: Readonly<Record<"sv" | "en", string>>;
-    readonly seats: Readonly<Record<"sv" | "en", string>>;
-  };
   readonly history: string;
 }
 

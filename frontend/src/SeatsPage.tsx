@@ -135,7 +135,7 @@ function SeatsPage({ page, data, t }: Props): JSX.Element {
           <p className="footnote">{t("sensitivity.note", { note: seats.sensitivity })}</p>
         )}
       </section>
-      <Downloads page={page} t={t} card="seats" />
+      <Downloads page={page} t={t} />
     </div>
   );
 }

@@ -4,14 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Stream;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,8 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
@@ -59,14 +54,6 @@ class PublicationIT {
   private static final int DRAWS = 200;
   private static final String PERIOD = "eight_party_2010";
 
-  private static Path root;
-
-  @DynamicPropertySource
-  static void volume(DynamicPropertyRegistry registry) throws IOException {
-    root = Files.createTempDirectory("swedishpolls-publications");
-    registry.add("publication.root", () -> root.toString());
-  }
-
   @Autowired private JdbcClient db;
   @Autowired private PublicationLock lock;
   @Autowired private Flyway flyway;
@@ -79,12 +66,10 @@ class PublicationIT {
   @InjectWireMock private WireMockServer wireMock;
 
   @BeforeEach
-  void reset() throws IOException {
+  void reset() {
     wireMock.resetAll();
     flyway.clean();
     flyway.migrate();
-    deleteRecursively(root);
-    Files.createDirectories(root);
     TestPublication.serve(wireMock, TestPublication.polls(TestPublication.FROM));
   }
 
@@ -99,6 +84,19 @@ class PublicationIT {
 
   @org.springframework.beans.factory.annotation.Autowired
   private se.swedishpolls.publication.service.Publications publications;
+
+  @Test
+  void migrationDropsThePublicationAssetTable() {
+    assertEquals(
+        0,
+        db.sql(
+                """
+                SELECT count(*) FROM information_schema.tables
+                WHERE table_schema = current_schema() AND table_name = 'publication_asset'
+                """)
+            .query(Integer.class)
+            .single());
+  }
 
   @Test
   @org.junit.jupiter.api.condition.EnabledIfSystemProperty(
@@ -134,7 +132,6 @@ class PublicationIT {
           "artifactSha256",
           Digest.sha256(artifact.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
       evidence.set("precision", JSON.readTree(artifact).get("precision"));
-      evidence.put("images", store.assets(attempt.publicationId()).size());
     }
     evidence.put(
         "processHighWaterMark",
@@ -149,7 +146,7 @@ class PublicationIT {
   }
 
   @Test
-  void aChangedSnapshotBecomesOnePublicationWithEveryDocumentAndEveryCard() {
+  void aChangedSnapshotBecomesOnePublicationWithEveryDocument() {
     final Publisher.Attempt attempt = publisher().publish();
     assertEquals(PublicationOutcome.PUBLISHED, attempt.outcome(), attempt.detail());
 
@@ -161,7 +158,7 @@ class PublicationIT {
     final PublicationHeader header = store.header(current.publicationId()).orElseThrow();
     assertEquals(PublicationStore.PUBLISHED, header.state());
     assertEquals("corrected", header.history());
-    final JsonNode metadata = publications.metadata(header, Translations.of("sv"));
+    final JsonNode metadata = publications.metadata(header);
     assertEquals(1, metadata.path("capabilities").path("customCoalitionHistory").asInt());
     final String artifact = publications.coalitionHistory(header).orElseThrow();
     assertEquals(
@@ -209,18 +206,6 @@ class PublicationIT {
       }
     }
 
-    final List<PublicationAsset> assets = store.assets(current.publicationId());
-    assertEquals(ShareImages.KINDS.size() * Translations.LANGUAGES.size(), assets.size());
-    for (final PublicationAsset asset : assets) {
-      assertEquals(1, asset.version());
-      assertEquals(ShareImages.RENDERER_VERSION, asset.rendererVersion());
-      assertEquals(ShareImages.MEDIA_TYPE, asset.mediaType());
-      assertEquals(asset.byteCount(), store.bytes(asset).length);
-    }
-    assertFalse(
-        Files.exists(root.resolve("staging").resolve(current.publicationId())),
-        "A promoted candidate leaves no staging directory behind");
-
     final JsonNode latest =
         JSON.readTree(
             store
@@ -245,25 +230,63 @@ class PublicationIT {
         latest.get("unavailable").get("FI").get("reason").asString());
   }
 
-  @org.junit.jupiter.params.ParameterizedTest
-  @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
-  void aFailedUpdateExposesNoPartialPublicationAndKeepsThePriorOneWithStaleness(
-      boolean artifactWrite) {
+  @Test
+  void promotionRollsBackWhenTheCurrentPointerCannotMove() {
     final Publisher.Attempt first = publisher().publish();
     assertEquals(PublicationOutcome.PUBLISHED, first.outcome(), first.detail());
-    final List<PublicationAsset> published = store.assets(first.publicationId());
+    final PublicationHeader header = store.header(first.publicationId()).orElseThrow();
+    final String candidate = "pub_20000101T000000Z";
+    store.recordCandidate(
+        candidate,
+        header.runId(),
+        header.snapshotId(),
+        header.lastFieldworkDate(),
+        header.sourceCheckedAt(),
+        header.publishedAt(),
+        header.headlinePeriod(),
+        header.approximatedElection());
+    db.sql(
+            """
+            CREATE FUNCTION reject_publication_pointer() RETURNS trigger LANGUAGE plpgsql AS $$
+            BEGIN RAISE EXCEPTION 'injected pointer failure'; END
+            $$
+            """)
+        .update();
+    db.sql(
+            """
+            CREATE TRIGGER reject_publication_pointer
+            BEFORE UPDATE ON current_publication
+            FOR EACH ROW EXECUTE FUNCTION reject_publication_pointer()
+            """)
+        .update();
 
+    assertThrows(RuntimeException.class, () -> store.promote(candidate));
+
+    assertEquals(
+        PublicationStore.CANDIDATE,
+        db.sql("SELECT state FROM publication WHERE id = ?")
+            .param(candidate)
+            .query(String.class)
+            .single());
+    assertEquals(first.publicationId(), store.current().orElseThrow().publicationId());
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.EnumSource(FailurePoint.class)
+  void aFailedUpdateExposesNoPartialPublicationAndKeepsThePriorOneWithStaleness(
+      FailurePoint failurePoint) {
+    final Publisher.Attempt first = publisher().publish();
+    assertEquals(PublicationOutcome.PUBLISHED, first.outcome(), first.detail());
     TestPublication.serve(wireMock, TestPublication.polls("2019-06-01"));
     final Publisher.Attempt failed =
-        released(new FailingStore(db, transactions, root, artifactWrite)).publish();
+        released(new FailingStore(db, transactions, failurePoint)).publish();
     assertEquals(PublicationOutcome.FAILED, failed.outcome());
 
     final CurrentPublication current = store.current().orElseThrow();
     assertEquals(first.publicationId(), current.publicationId(), "The prior one stays current");
     assertTrue(current.stale());
     assertNotNull(current.staleSince());
-    assertEquals(published, store.assets(first.publicationId()));
-    final PublicationStore restarted = new PublicationStore(db, transactions, root.toString());
+    final PublicationStore restarted = new PublicationStore(db, transactions);
     assertEquals(
         store.document(first.publicationId(), CoalitionHistoryDocument.SURFACE, "sv"),
         restarted.document(first.publicationId(), CoalitionHistoryDocument.SURFACE, "sv"));
@@ -287,9 +310,6 @@ class PublicationIT {
     final Publisher publisher = publisher();
     final Publisher.Attempt first = publisher.publish();
     assertEquals(PublicationOutcome.PUBLISHED, first.outcome(), first.detail());
-    final byte[] card =
-        store.bytes(
-            store.latestAsset(first.publicationId(), ShareImages.OVERVIEW, "sv").orElseThrow());
     final String document =
         store
             .document(first.publicationId(), PublicationDocuments.latestSurface(PERIOD), "sv")
@@ -307,19 +327,14 @@ class PublicationIT {
     assertNotEquals(first.publicationId(), second.publicationId());
     assertEquals(second.publicationId(), store.current().orElseThrow().publicationId());
 
-    assertArrayEquals(
-        card,
-        store.bytes(
-            store.latestAsset(first.publicationId(), ShareImages.OVERVIEW, "sv").orElseThrow()),
-        "Published bytes are never overwritten");
     assertEquals(
         document,
         store
             .document(first.publicationId(), PublicationDocuments.latestSurface(PERIOD), "sv")
             .orElseThrow());
 
-    // A restart reads the same rows and the same volume; nothing is held in memory.
-    final PublicationStore restarted = new PublicationStore(db, transactions, root.toString());
+    // A restart reads the same rows; nothing is held in memory.
+    final PublicationStore restarted = new PublicationStore(db, transactions);
     assertTrue(restarted.header(first.publicationId()).isPresent());
     assertTrue(restarted.header("pub_00000000T000000Z").isEmpty());
     assertEquals(second.publicationId(), restarted.current().orElseThrow().publicationId());
@@ -413,42 +428,6 @@ class PublicationIT {
   }
 
   @Test
-  void aRendererChangeAddsAnAssetVersionBesideTheOneAlreadyPublished() {
-    final Publisher.Attempt first = publisher().publish();
-    assertEquals(PublicationOutcome.PUBLISHED, first.outcome(), first.detail());
-    final PublicationAsset version1 =
-        store.latestAsset(first.publicationId(), ShareImages.OVERVIEW, "sv").orElseThrow();
-    final byte[] original = store.bytes(version1);
-
-    assertEquals(2, store.nextAssetVersion(first.publicationId(), ShareImages.OVERVIEW, "sv"));
-    final byte[] rerendered = new byte[original.length + 1];
-    System.arraycopy(original, 0, rerendered, 0, original.length);
-    final PublicationAsset version2 =
-        new PublicationAsset(
-            first.publicationId(),
-            ShareImages.OVERVIEW,
-            "sv",
-            2,
-            "2",
-            ShareImages.MEDIA_TYPE,
-            rerendered.length,
-            Digest.sha256(rerendered));
-    store.promote(
-        first.publicationId(),
-        store.stage(first.publicationId(), List.of(version2), List.of(rerendered)));
-
-    assertEquals(
-        2,
-        store
-            .latestAsset(first.publicationId(), ShareImages.OVERVIEW, "sv")
-            .orElseThrow()
-            .version());
-    assertArrayEquals(original, store.bytes(version1), "Version 1 keeps its own bytes");
-    assertArrayEquals(rerendered, store.bytes(version2));
-    assertNotEquals(version1.path(), version2.path());
-  }
-
-  @Test
   void theRegisteredCenteringAlternativeIsRefitAndItsMovementSitsBesideTheNumbers() {
     ingest.check();
     final long snapshotId = ingest.activeSnapshot().orElseThrow().id();
@@ -517,45 +496,36 @@ class PublicationIT {
         .single();
   }
 
-  /** A store that stages nothing, standing in for a failed image write or an interrupted move. */
+  /** A store that fails a document write or the final database promotion. */
   private static final class FailingStore extends PublicationStore {
-    private final boolean artifactWrite;
+    private final FailurePoint failurePoint;
 
     FailingStore(
-        JdbcClient db, PlatformTransactionManager transactions, Path root, boolean artifactWrite) {
-      super(db, transactions, root.toString());
-      this.artifactWrite = artifactWrite;
+        JdbcClient db, PlatformTransactionManager transactions, FailurePoint failurePoint) {
+      super(db, transactions);
+      this.failurePoint = failurePoint;
     }
 
     @Override
     public void recordDocument(String publicationId, String surface, String language, String body) {
-      if (artifactWrite && CoalitionHistoryDocument.SURFACE.equals(surface)) {
+      if (failurePoint == FailurePoint.DOCUMENT_WRITE
+          && CoalitionHistoryDocument.SURFACE.equals(surface)) {
         throw new IllegalStateException("injected coalition artifact failure");
       }
       super.recordDocument(publicationId, surface, language, body);
     }
 
     @Override
-    public List<PublicationAsset> stage(
-        String publicationId, List<PublicationAsset> assets, List<byte[]> bytes) {
-      throw new IllegalStateException("injected staging failure");
+    public void promote(String publicationId) {
+      if (failurePoint == FailurePoint.PROMOTION) {
+        throw new IllegalStateException("injected promotion failure");
+      }
+      super.promote(publicationId);
     }
   }
 
-  private static void deleteRecursively(Path directory) throws IOException {
-    if (!Files.exists(directory)) {
-      return;
-    }
-    try (final Stream<Path> walk = Files.walk(directory)) {
-      walk.sorted(Comparator.reverseOrder())
-          .forEach(
-              path -> {
-                try {
-                  Files.deleteIfExists(path);
-                } catch (IOException e) {
-                  throw new UncheckedIOException(e);
-                }
-              });
-    }
+  enum FailurePoint {
+    DOCUMENT_WRITE,
+    PROMOTION
   }
 }

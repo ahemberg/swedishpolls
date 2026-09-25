@@ -151,8 +151,6 @@ class ApiContractTest {
     assertTrue(rules.get("sensitivity").asString().contains("10 percentage points"));
     assertTrue(rules.get("sensitivity").asString().contains("never a block"));
     assertTrue(rules.get("sensitivity").asString().contains("one decimal"));
-    assertTrue(rules.get("assets").asString().contains("immutable"));
-
     final java.util.LinkedHashMap<java.lang.String, java.lang.Integer> errors =
         new LinkedHashMap<String, Integer>();
     for (tools.jackson.databind.JsonNode error : contract.get("errors"))

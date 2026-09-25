@@ -268,14 +268,12 @@ class ApiV1ControllerTest {
                     + "\"snapshot\":{\"snapshotId\":42,\"sha256\":\"digest\","
                     + "\"sourceUrl\":\"https://example.test/polls.csv\","
                     + "\"capturedAt\":\"2026-09-11T11:00:00Z\"},"
-                    + "\"assets\":{\"note\":\"note\"},\"history\":\"published\"}");
+                    + "\"history\":\"published\"}");
     when(publications.resolve(isNull()))
         .thenReturn(Optional.of(new Publications.Resolved(HEADER, false)));
     when(publications.resolve(HEADER.publicationId()))
         .thenReturn(Optional.of(new Publications.Resolved(HEADER, true)));
-    when(publications.metadata(
-            org.mockito.ArgumentMatchers.eq(HEADER), org.mockito.ArgumentMatchers.any()))
-        .thenReturn(body);
+    when(publications.metadata(HEADER)).thenReturn(body);
 
     final MvcResult current =
         mvc.perform(get("/api/v1/publication"))

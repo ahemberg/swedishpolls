@@ -65,7 +65,7 @@ public class ApiV1Controller {
   public ResponseEntity<PublicationResponse> publication(
       @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(null, language);
-    return json(publicationBody(resolved, Translations.of(language)), resolved);
+    return json(publicationBody(resolved), resolved);
   }
 
   @GetMapping("/publications/{publicationId}")
@@ -73,7 +73,7 @@ public class ApiV1Controller {
       @PathVariable String publicationId,
       @RequestParam(defaultValue = Translations.SWEDISH) String language) {
     final Publications.Resolved resolved = resolve(publicationId, language);
-    return json(publicationBody(resolved, Translations.of(language)), resolved);
+    return json(publicationBody(resolved), resolved);
   }
 
   @GetMapping("/estimates/latest")
@@ -320,8 +320,8 @@ public class ApiV1Controller {
 
   // Publication metadata, composed from the immutable rows and the current pointer.
 
-  private PublicationResponse publicationBody(Publications.Resolved resolved, Translations text) {
-    return publicationMetadata.readValue(publications.metadata(resolved.header(), text));
+  private PublicationResponse publicationBody(Publications.Resolved resolved) {
+    return publicationMetadata.readValue(publications.metadata(resolved.header()));
   }
 
   // Request parsing and publication resolution.

@@ -36,6 +36,9 @@ describe("PageIT overview content ports", () => {
     expect(socialDemocrats).toHaveTextContent("27,0 %");
     expect(socialDemocrats).toHaveTextContent("96");
     expect(screen.getByRole("heading", { name: "Blockläget" })).toBeVisible();
+    expect(
+      screen.queryByRole("link", { name: "Sammanfattande bild (PNG)" }),
+    ).not.toBeInTheDocument();
   });
 
   it("theEnglishOverviewSaysTheSameThingInEnglish", () => {

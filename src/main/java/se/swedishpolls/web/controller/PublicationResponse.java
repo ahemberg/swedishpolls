@@ -13,7 +13,6 @@ record PublicationResponse(
     String permalink,
     ModelRun modelRun,
     Snapshot snapshot,
-    JsonNode assets,
     String history,
     @com.fasterxml.jackson.annotation.JsonInclude(
             com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)

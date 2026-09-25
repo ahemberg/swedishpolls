@@ -34,11 +34,9 @@ Errors have their own examples in
 
 ## Publication and run identity
 
-The publication response carries the publication id, model run, source snapshot,
-asset links and the three distinct times: last fieldwork date, source-check time
-and publication time. `stale` marks a publication kept live after a failed update. Its asset links are
-versioned and immutable: a renderer change creates a new asset version and never
-overwrites published bytes.
+The publication response carries the publication id, model run, source snapshot and the three
+distinct times: last fieldwork date, source-check time and publication time. `stale` marks a
+publication kept live after a failed update.
 
 Every other response repeats `publication` as the publication id, run id and
 snapshot id. A page resolves the publication once and passes it back through the
@@ -118,8 +116,8 @@ separate as [election references](election-references.md) stores them.
 ## Caching and errors
 
 Current responses cache for at most 300 seconds with content-based ETags, so query,
-schema and translation differences validate separately. Permanent publication links
-and versioned assets are immutable and cache for a year. Unknown versions and routes return 404, an unknown pinned or permanent publication
+schema and translation differences validate separately. Permanent publication links are immutable
+and cache for a year. Unknown versions and routes return 404, an unknown pinned or permanent publication
 returns 404 on every surface rather than falling back, invalid filters return 400 with the offending
 parameters, and a request needing a publication before the first one exists returns
 503 `estimates_unavailable` with no estimate fields.
@@ -129,7 +127,7 @@ parameters, and a request needing a publication before the first one exists retu
 `ApiV1IT` exercises the served surfaces end to end against a published publication: identity on
 every dependent response, the two cache classes and content ETags, columnar sampled history,
 null unsupported values, point seats apart from posterior means, the ten coalition memberships,
-table and download agreement, versioned image links, and the four error codes.
+table and download agreement, and the four error codes.
 
 `ApiContractTest` checks the manifest, every example and the shared rules: surface
 coverage, pinning and language parameters, paging, error codes, publication and run identity on every

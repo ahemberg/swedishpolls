@@ -39,12 +39,12 @@ class ArchitectureTest {
   }
 
   @Test
-  void rootContainsOnlyLaunchersAndHasNoInboundDependencies() {
+  void rootContainsOnlyTheApplicationAndHasNoInboundDependencies() {
     classes()
         .that()
         .resideInAPackage("se.swedishpolls")
         .should()
-        .haveNameMatching("se\\.swedishpolls\\.(Application|ImageSmokeCheck)")
+        .haveFullyQualifiedName("se.swedishpolls.Application")
         .check(PRODUCTION);
     noClasses()
         .that()

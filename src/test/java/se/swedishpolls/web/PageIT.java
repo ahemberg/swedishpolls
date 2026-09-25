@@ -25,15 +25,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
 import se.swedishpolls.estimation.Coalitions;
 import se.swedishpolls.publication.ModelFreeze;
 import se.swedishpolls.publication.PublicationOutcome;
-import se.swedishpolls.publication.ShareImages;
 import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.repository.PublicationLock;
 import se.swedishpolls.publication.repository.PublicationStore;
@@ -72,7 +69,6 @@ class PageIT {
   private static final int DRAWS = 200;
   private static final String ORIGIN = "https://example.test";
 
-  private static Path root;
   private static String publicationId;
 
   /** Only the freeze is replaced: the source is served over HTTP like the production one. */
@@ -95,12 +91,6 @@ class PageIT {
     PlatformTransactionManager fixtureTransactions(DataSource dataSource) {
       return new DataSourceTransactionManager(dataSource);
     }
-  }
-
-  @DynamicPropertySource
-  static void volume(DynamicPropertyRegistry registry) throws IOException {
-    root = Files.createTempDirectory("swedishpolls-pages");
-    registry.add("publication.root", () -> root.toString());
   }
 
   @LocalServerPort private int port;
@@ -290,7 +280,7 @@ class PageIT {
     assertTrue(page.contains("Ingen aktuell enskild skattning finns för Feministiskt initiativ"));
     assertFalse(page.contains(">0,0 %<"));
     assertTrue(page.contains("2022"));
-    assertTrue(page.contains("/assets/" + publicationId + "/party-fi-sv-1.png"));
+    assertFalse(page.contains("/assets/" + publicationId));
     assertTrue(page.contains("hreflang=\"en\" href=\"/en/party/feminist-initiative\""));
   }
 
@@ -389,15 +379,14 @@ class PageIT {
   }
 
   @Test
-  void aSharedLinkCarriesOpenGraphAndXMetadataWithImageAlternativeText() {
+  void aSharedLinkCarriesOpenGraphAndXMetadataWithoutDeletedImages() {
     final String page = get("/en").body();
     assertTrue(page.contains("<meta property=\"og:type\" content=\"website\">"));
     assertTrue(page.contains("<meta property=\"og:url\" content=\"" + ORIGIN + "/en\">"));
     assertTrue(page.contains("<meta property=\"og:site_name\" content=\"Test poll of polls\">"));
     assertTrue(page.contains("<meta property=\"og:locale\" content=\"en_GB\">"));
-    assertTrue(page.contains("<meta property=\"og:image\" content=\"" + ORIGIN + "/assets/"));
-    assertTrue(page.contains("<meta property=\"og:image:alt\" content=\""));
-    assertTrue(page.contains("<meta name=\"twitter:card\" content=\"summary_large_image\">"));
+    assertFalse(page.contains("property=\"og:image\""));
+    assertTrue(page.contains("<meta name=\"twitter:card\" content=\"summary\">"));
   }
 
   @Test
@@ -413,7 +402,7 @@ class PageIT {
   }
 
   @Test
-  void everyPageNamesOneResolvedPublicationAndPinsPublishedDownloadsAndImagesToIt() {
+  void everyPageNamesOneResolvedPublicationAndPinsPublishedDownloadsToIt() {
     final String page = get("/").body();
     final JsonNode resolved = bootstrap(page);
     assertEquals(publicationId, resolved.get("publication").get("publicationId").asString());
@@ -424,14 +413,7 @@ class PageIT {
                 + resolved.get("source").get("snapshotId").asLong()
                 + "&amp;language=sv"));
     assertTrue(page.contains("/api/v1/seats?publication=" + publicationId + "&amp;language=sv"));
-    assertTrue(
-        resolved
-            .get("publication")
-            .get("assets")
-            .get(ShareImages.OVERVIEW)
-            .get("sv")
-            .asString()
-            .startsWith("/assets/" + publicationId));
+    assertFalse(resolved.get("publication").has("assets"));
   }
 
   @Test
@@ -685,25 +667,11 @@ class PageIT {
     }
   }
 
-  // Both pages are shareable in their own right.
-
   @Test
-  void theSeatsAndCoalitionsPagesShareTheirOwnCardRatherThanTheOverviewCard() {
-    final JsonNode assets = bootstrap(get("/mandat").body()).get("publication").get("assets");
-    final String seatsCard = assets.get(ShareImages.SEATS).get("sv").asString();
-    final String coalitionsCard = assets.get(ShareImages.COALITIONS).get("sv").asString();
-    assertNotEquals(seatsCard, coalitionsCard);
-
-    assertTrue(
-        get("/mandat")
-            .body()
-            .contains("<meta property=\"og:image\" content=\"" + ORIGIN + seatsCard),
-        "the seats page shares the seats card");
-    assertTrue(
-        get("/regeringsunderlag")
-            .body()
-            .contains("<meta property=\"og:image\" content=\"" + ORIGIN + coalitionsCard),
-        "the coalitions page shares the coalitions card");
+  void pagesDoNotAdvertiseDeletedShareImages() {
+    for (final String path : List.of("/", "/mandat", "/regeringsunderlag", "/institut", "/metod")) {
+      assertFalse(get(path).body().contains("property=\"og:image\""), path);
+    }
   }
 
   @Test
@@ -1286,18 +1254,6 @@ class PageIT {
         page.contains("<meta name=\"description\" content=\"" + SiteHtml.escape(own)),
         "the method page describes itself");
     assertTrue(page.contains("hreflang=\"sv\" href=\"" + ORIGIN + "/metod\">"));
-  }
-
-  @Test
-  void thePollstersAndMethodPagesReuseTheOverviewCard() {
-    final JsonNode assets = bootstrap(get("/institut").body()).get("publication").get("assets");
-    final String card = assets.get(ShareImages.OVERVIEW).get("sv").asString();
-    assertTrue(
-        get("/institut").body().contains("<meta property=\"og:image\" content=\"" + ORIGIN + card),
-        "the pollsters page shares the overview card");
-    assertTrue(
-        get("/metod").body().contains("<meta property=\"og:image\" content=\"" + ORIGIN + card),
-        "the method page shares the overview card");
   }
 
   @Test

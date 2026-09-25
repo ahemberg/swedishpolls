@@ -1,4 +1,4 @@
-# A publication is a set of immutable documents and staged image bytes
+# A publication is a set of immutable documents
 
 A published estimate has to stay readable exactly as it was published, and a failed update must
 never replace it with a partial one. Two decisions follow from that.
@@ -22,22 +22,13 @@ read at request time from the publication's own pinned snapshot rather than from
 Pinning is what makes them safe: an ingestion correction creates a new snapshot and a new
 publication, and it cannot change a page that already resolved its publication.
 
-## Documents live in PostgreSQL, image bytes on a volume
+## Documents live in PostgreSQL
 
-Documents are rows. Image bytes are files under `PUBLICATION_ROOT`, indexed by
-`publication_asset`. A candidate's cards are written to a private staging directory, read back and
-compared against the digest recorded for them, moved into place with a single atomic rename, and
-verified again before the current pointer moves. An interrupted staging leaves a staging
-directory and nothing else; no byte it wrote is reachable from any publication.
-
-The pointer switch and the asset rows commit in one transaction, after the rename. Until it
-commits, the candidate's `publication` row says `candidate` and no reader resolves it. On any
-failure the candidate is abandoned, its documents are deleted, and the previous publication stays
-current with a staleness notice on the pointer row rather than on its own immutable rows.
-
-An asset link carries its publication, card, language and version. A renderer change writes a new
-version beside the old one; published bytes are never overwritten, so an immutable link stays
-honest for the year it is cached for.
+Documents are rows. The candidate's published state and the current pointer commit in one
+transaction after every document is written. Until it commits, the candidate's `publication` row
+says `candidate` and no reader resolves it. On any failure the candidate is abandoned, its
+documents are deleted, and the previous publication stays current with a staleness notice on the
+pointer row rather than on its own immutable rows.
 
 ## The estimator the worker runs is shipped, not read from the repository
 

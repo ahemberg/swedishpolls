@@ -11,7 +11,7 @@ not required: a role subpackage appears when the responsibility has that role.
 
 ```
 se.swedishpolls
-├── Application, ImageSmokeCheck     root: boot entry and image-smoke launcher only
+├── Application                      root: boot entry only
 ├── source                           reading polls and stored reference inputs into the system
 │   ├── (root)                       plain classes: PollCsv, PollQuery, Roster and Snapshot
 │   ├── source.service               use cases: SnapshotIngest and its PollSourceClient @HttpExchange
@@ -26,16 +26,15 @@ se.swedishpolls
 │                                    CoverageValidation, Development*, ReleaseAudit and national
 │                                    seat allocation mathematics
 ├── publication                      rendering and storing published documents
-│   ├── (root)                       plain classes: PublicationDocuments, ShareImages, PublicationRun,
+│   ├── (root)                       plain classes: PublicationDocuments, PublicationRun,
 │   │                                ModelFreeze, Translations, the values a publication is read
-│   │                                through (PublicationHeader, CurrentPublication,
-│   │                                PublicationAsset, ModelRun, PinnedSnapshot,
-│   │                                PublicationOutcome) and the Digest their bytes are recorded
-│   │                                under
+│   │                                through (PublicationHeader, CurrentPublication, ModelRun,
+│   │                                PinnedSnapshot and PublicationOutcome) and the Digest their
+│   │                                bytes are recorded under
 │   ├── publication.service          the publish use case: Publisher; the read use case:
 │   │                                Publications and PublicationMetadata; the nightly entry point:
 │   │                                PublisherScheduler
-│   └── publication.repository       document rows, asset links: PublicationStore; the worker's
+│   └── publication.repository       document rows: PublicationStore; the worker's
 │                                    advisory lock: PublicationLock
 ├── model                            shared immutable values used by more than one responsibility
 │   └── (root)                       ElectionReference and NationalAllocationRule
@@ -44,8 +43,8 @@ se.swedishpolls
     │                                SiteFormat, SiteAssets, SiteRoutes, SiteBootstrap, and the
     │                                stored-history request sampling: EstimateQuery, and the
     │                                source chart's date axis: SourceChart
-    └── web.controller               PageController, ApiV1Controller, AssetController,
-                                     ApiExceptionHandler, ApiErrors, Responses
+    └── web.controller               PageController, ApiV1Controller, ApiExceptionHandler,
+                                     ApiErrors, Responses
 ```
 
 Values needed by a single responsibility stay in that responsibility. A value moves to `model`
@@ -166,7 +165,7 @@ enforces:
 3. `estimation` never depends on `publication` or `web`; `publication` may depend on `estimation`
    and `source`; `source` depends on nothing above it.
 4. No package dependency cycle.
-5. Only `Application` and `ImageSmokeCheck` sit directly in `se.swedishpolls`.
+5. Only `Application` sits directly in `se.swedishpolls`.
 6. `@Scheduled` classes only call service methods.
 
 [ADR 0005](adr/0005-static-analysis-gating.md) declined ArchUnit while all production files lived in one package, with an explicit
@@ -191,17 +190,16 @@ matching tests moved together, including `PollObservations` and `WindowFilter`, 
 package-private numerical cooperation remains local. Publication now calls a public house-effect
 calculation instead of accessing fitting spans.
 
-`publication` and `web` are organized per this convention as of #118, so only `Application` and
-`ImageSmokeCheck` remain directly in `se.swedishpolls`. `publication` (root) holds `ModelFreeze`,
-`PublicationRun`, `PublicationDocuments`, `ShareImages`, `Translations`, and the values a publication
-is read through: `PublicationHeader`,
-`CurrentPublication`, `PublicationAsset`, `ModelRun`, `PinnedSnapshot`, `PublicationOutcome` and
+`publication` and `web` are organized per this convention as of #118, so only `Application`
+remains directly in `se.swedishpolls`. `publication` (root) holds `ModelFreeze`, `PublicationRun`,
+`PublicationDocuments`, `Translations`, and the values a publication is read through:
+`PublicationHeader`, `CurrentPublication`, `ModelRun`, `PinnedSnapshot`, `PublicationOutcome` and
 the `Digest` operation their stored bytes are recorded under. `publication.service` holds
 `PublisherScheduler`, which owns the one nightly scheduled entry point, `Publisher`, the
 `Publications` read service and `PublicationMetadata`;
 `publication.repository` holds `PublicationStore` and the `PublicationLock` advisory lock. `web` (root) holds the
 site-rendering cluster and `EstimateQuery`; `web.controller` holds `PageController`,
-`ApiV1Controller`, `AssetController`, `ApiExceptionHandler`, `ApiErrors` and the shared `Responses`
+`ApiV1Controller`, `ApiExceptionHandler`, `ApiErrors` and the shared `Responses`
 cache and ETag helper.
 
 Three couplings were resolved rather than carried across the new boundary. The publication values
@@ -209,10 +207,8 @@ left `PublicationStore`, so `web.controller` names them without importing a repo
 records an attempt against `PublicationOutcome` rather than a type the worker owns. The worker's
 own SQL moved to the repository: the run identifier to `PublicationStore.nextRunId`, the advisory
 lock to `PublicationLock.whileHeld`, which holds it for exactly one attempt. `web.controller`
-computes its response ETag with the JDK digest instead of the publication's, `PublicationDocuments`
-words its own movement figure instead of borrowing the site's, and `ShareImages` renders a card per
-`PollQuery.COMPONENTS`; `SiteRoutesTest` fails if the party pages and the poll components ever
-disagree.
+computes its response ETag with the JDK digest instead of the publication's, and
+`PublicationDocuments` words its own movement figure instead of borrowing the site's.
 
 #119 completes the migration with compiled dependency checks. It moves both scheduled entry points
 into their service packages to remove package cycles without changing scheduling or publication

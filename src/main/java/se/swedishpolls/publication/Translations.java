@@ -73,17 +73,6 @@ public final class Translations {
   private static Map<String, String> english() {
     final LinkedHashMap<String, String> text = new LinkedHashMap<>();
     text.put("site.name", "Swedish poll of polls");
-    text.put("card.overview", "Voting intention");
-    text.put("card.parties", "Parties");
-    text.put("card.seats", "National seat approximation");
-    text.put("card.coalitions", "Coalitions");
-    text.put("card.asOf", "Fieldwork through");
-    text.put("card.interval", "{level}% interval");
-    text.put("card.majority", "Majority probability");
-    text.put("card.seatsOf", "of 349 seats");
-    text.put("card.historical", "Historical estimate, not a current one");
-    text.put("card.unavailable", "No published estimate");
-    text.put("assets.note", ASSETS_NOTE_EN);
     text.put("elections.note", ELECTIONS_NOTE_EN);
     text.put("institutes.reference", INSTITUTES_REFERENCE_EN);
     text.put("remainder.definition", REMAINDER_DEFINITION_EN);
@@ -125,17 +114,6 @@ public final class Translations {
   private static Map<String, String> swedish() {
     final LinkedHashMap<String, String> text = new LinkedHashMap<>();
     text.put("site.name", "Svensk sammanvägning av opinionsmätningar");
-    text.put("card.overview", "Väljarstöd");
-    text.put("card.parties", "Partier");
-    text.put("card.seats", "Approximerad mandatfördelning");
-    text.put("card.coalitions", "Koalitioner");
-    text.put("card.asOf", "Fältarbete till och med");
-    text.put("card.interval", "{level} %-intervall");
-    text.put("card.majority", "Sannolikhet för egen majoritet");
-    text.put("card.seatsOf", "av 349 mandat");
-    text.put("card.historical", "Historisk skattning, inte en aktuell");
-    text.put("card.unavailable", "Ingen publicerad skattning");
-    text.put("assets.note", ASSETS_NOTE_SV);
     text.put("elections.note", ELECTIONS_NOTE_SV);
     text.put("institutes.reference", INSTITUTES_REFERENCE_SV);
     text.put("remainder.definition", REMAINDER_DEFINITION_SV);
@@ -174,12 +152,6 @@ public final class Translations {
     return Map.copyOf(text);
   }
 
-  private static final String ASSETS_NOTE_EN =
-      "Versioned immutable links. A renderer change creates a new version and never overwrites"
-          + " published bytes.";
-  private static final String ASSETS_NOTE_SV =
-      "Versionerade oföränderliga länkar. En ändrad renderare skapar en ny version och skriver"
-          + " aldrig över publicerade bytes.";
   private static final String ELECTIONS_NOTE_EN =
       "Official outcomes are display references, never model observations. Shares derive from"
           + " unrounded vote counts.";
