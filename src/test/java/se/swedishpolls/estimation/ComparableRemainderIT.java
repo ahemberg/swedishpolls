@@ -100,9 +100,9 @@ class ComparableRemainderIT {
       assertEquals(other.intervals().getLast().lower(), wide.lower(), 1e-12);
       assertEquals(other.intervals().getLast().upper(), wide.upper(), 1e-12);
 
-      // Every election is grouped into this period's components; the 2022 result is outside the
-      // development history and is marked so rather than dropped.
-      assertEquals(4, published.elections().size());
+      // Every election is grouped into this period's components; post-2021 results are outside the
+      // development history and are marked so rather than dropped.
+      assertEquals(5, published.elections().size());
       for (se.swedishpolls.estimation.ComparableRemainder.Grouped election :
           published.elections()) {
         assertEquals(
@@ -113,7 +113,7 @@ class ComparableRemainderIT {
         assertEquals(election.shares().get("OTHER"), election.comparableRemainder(), 1e-12);
       }
       assertEquals(
-          List.of(true, true, true, false),
+          List.of(true, true, true, false, false),
           published.elections().stream()
               .map(ComparableRemainder.Grouped::insideSupportedHistory)
               .toList());
