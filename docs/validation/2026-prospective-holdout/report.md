@@ -21,7 +21,7 @@ the holdout cutoff.
 
 The archived source is [`official-result.json`](official-result.json), and its checksum is
 [`official-result.json.sha256`](official-result.json.sha256). Migration
-`V6__2026_election_reference.sql` stores the source URL, hash, retrieval date, vote counts and
+`V7__2026_election_reference.sql` stores the source URL, hash, retrieval date, vote counts and
 official allocation in the same reference tables as earlier elections.
 
 ## Scores
