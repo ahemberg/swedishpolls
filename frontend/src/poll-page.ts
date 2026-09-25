@@ -1,5 +1,5 @@
 import type { Bootstrap, CoveragePeriod, Polls, SourceSnapshot } from "./bootstrap";
-import { OVERVIEW, POLLS } from "./bootstrap";
+import { POLLS } from "./bootstrap";
 import type { InvalidFilter, PollFilterState, PollOptions, PollRow, PollTable } from "./poll-table";
 import { pollQuery } from "./poll-table";
 import type { SourceChartData } from "./source-chart";
@@ -161,9 +161,6 @@ async function sourcePage(
       return {
         ...page,
         noSource: true,
-        navigation: page.navigation.filter(
-          (entry) => entry.family === OVERVIEW || entry.family === POLLS,
-        ),
       };
     }
     throw error;
