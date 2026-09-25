@@ -361,5 +361,11 @@
   "timeline.title": "Utveckling över tid",
   "unavailable.body": "Den första publiceringen har inte blivit klar. Inga siffror visas förrän en körning har klarat alla kontroller.",
   "unavailable.lastCheck": "Källan kontrollerades senast {timestamp}.",
-  "unavailable.title": "Ingen skattning är publicerad än"
+  "unavailable.title": "Ingen skattning är publicerad än",
+  "site.name": "Svenska väljarbarometern",
+  "page.loading": "Laddar sidan.",
+  "page.failed": "Sidan kunde inte laddas.",
+  "page.notFound": "Sidan finns inte.",
+  "page.unavailable": "Den här publiceringen är inte tillgänglig.",
+  "page.invalidFilter": "Det begärda filtret är ogiltigt."
 }

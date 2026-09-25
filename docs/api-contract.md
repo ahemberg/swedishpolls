@@ -92,6 +92,27 @@ number past the end is also not an error on either surface, but they answer it
 differently: the API echoes the requested page beside an empty result, while the
 page settles on its last page.
 
+## Current source data
+
+`GET /api/v1/source/polls` serves source observations without requiring a publication.
+It supplements the frozen publication surfaces above. Omit `snapshot` to select the active
+snapshot, or provide its numeric id to retain a visit's source data. The response carries
+`snapshot` with `id`, `sha256` and `capturedAt`, the applied `filters`, `total`, `page`, `pageSize`,
+`csv`, the available `institutes`, rejected filters in `invalid`, and `polls` in the existing
+poll-row shape. No retained snapshot returns `404 unknown_route`.
+
+The endpoint accepts `from`, `to`, `institute`, `includeExcluded`, `page` and `pageSize`.
+Page size defaults to 50 and is bounded to 200. Invalid filters are named and left unapplied;
+`party` and `coveragePeriod` are unsupported for current source data. A page beyond the end
+returns the last page. Responses use the current cache policy, including pinned requests,
+because source eligibility can change with the deployed rules.
+
+React uses this response for the source-only overview and poll table, and for current poll
+observations alongside published estimates. The chart calls `/source/chart` with the resolved
+snapshot id and the same date and institute filters. Downloads use the returned
+`/source/polls.csv` link. A publication-specific poll page continues to read `/api/v1/polls`
+and pins every request to its publication.
+
 ## Seats, coalitions and elections
 
 Seat responses keep the integer point allocation separate from posterior mean seats

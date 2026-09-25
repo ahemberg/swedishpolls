@@ -96,6 +96,27 @@ class SourcePagesIT {
   }
 
   @Test
+  void sourcePollJsonNeedsNoPublicationAndPinsItsFiltersAndDownload() throws Exception {
+    assertEquals(404, get("/api/v1/source/polls").statusCode());
+    TestPublication.serve(wireMock, TestPublication.polls(TestPublication.FROM));
+    ingest.check();
+    final HttpResponse<String> response = get("/api/v1/source/polls?from=bad&party=S&page=999999");
+    assertEquals(200, response.statusCode());
+    final JsonNode body = JSON.readTree(response.body());
+    final long snapshot = body.path("snapshot").path("id").asLong();
+    assertTrue(snapshot > 0);
+    assertEquals(2, body.path("invalid").size());
+    assertTrue(body.path("polls").size() > 0);
+    assertTrue(body.path("csv").asString().contains("snapshot=" + snapshot));
+    assertEquals(
+        body,
+        JSON.readTree(
+            get("/api/v1/source/polls?snapshot=" + snapshot + "&from=bad&party=S&page=999999")
+                .body()));
+    assertEquals(503, get("/api/v1/publication").statusCode());
+  }
+
+  @Test
   void sourceFiltersCsvExclusionsAndEmptyMatchesUseTheSameSnapshot() throws Exception {
     TestPublication.serve(wireMock, TestPublication.polls(TestPublication.FROM));
     assertEquals(PublicationOutcome.BLOCKED, publisher.publish().outcome());

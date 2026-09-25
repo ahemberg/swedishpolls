@@ -20,7 +20,7 @@ const LANGUAGES: readonly Language[] = ["sv", "en"];
 const PATHS: Readonly<Record<Language, Readonly<Record<Family, string>>>> = {
   sv: {
     [OVERVIEW]: "/",
-    [PARTY]: "/parti/S",
+    [PARTY]: "/parti/socialdemokraterna",
     [SEATS]: "/mandat",
     [COALITIONS]: "/regeringsunderlag",
     [POLLSTERS]: "/institut",
@@ -29,7 +29,7 @@ const PATHS: Readonly<Record<Language, Readonly<Record<Family, string>>>> = {
   },
   en: {
     [OVERVIEW]: "/en",
-    [PARTY]: "/en/party/S",
+    [PARTY]: "/en/party/social-democrats",
     [SEATS]: "/en/seats",
     [COALITIONS]: "/en/coalitions",
     [POLLSTERS]: "/en/pollsters",
@@ -110,9 +110,23 @@ function pageFixture(family: Family, language: Language = "sv"): Bootstrap {
   return { ...page, data: results };
 }
 
-const TEST_ROUTES = LANGUAGES.flatMap((language) =>
-  FAMILIES.map((family) => PATHS[language][family]),
-);
+const PARTY_ROUTES = [
+  ["socialdemokraterna", "social-democrats"],
+  ["moderaterna", "moderates"],
+  ["sverigedemokraterna", "sweden-democrats"],
+  ["vansterpartiet", "left-party"],
+  ["centerpartiet", "centre-party"],
+  ["kristdemokraterna", "christian-democrats"],
+  ["liberalerna", "liberals"],
+  ["miljopartiet", "green-party"],
+  ["feministiskt-initiativ", "feminist-initiative"],
+];
+const TEST_ROUTES = [
+  ...new Set([
+    ...LANGUAGES.flatMap((language) => FAMILIES.map((family) => PATHS[language][family])),
+    ...PARTY_ROUTES.flatMap(([sv, en]) => [`/parti/${sv}`, `/en/party/${en}`]),
+  ]),
+];
 
 function pageFixtureForPath(path: string): Bootstrap {
   let language: Language = "sv";

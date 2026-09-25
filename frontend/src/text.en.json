@@ -361,5 +361,11 @@
   "timeline.title": "Support over time",
   "unavailable.body": "The first publication has not completed. No numbers are shown until a run passes every check.",
   "unavailable.lastCheck": "The source was last checked {timestamp}.",
-  "unavailable.title": "No estimate is published yet"
+  "unavailable.title": "No estimate is published yet",
+  "site.name": "Swedish Poll of Polls",
+  "page.loading": "Loading the page.",
+  "page.failed": "The page could not be loaded.",
+  "page.notFound": "Page not found.",
+  "page.unavailable": "This publication is unavailable.",
+  "page.invalidFilter": "The requested filter is invalid."
 }

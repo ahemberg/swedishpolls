@@ -149,7 +149,7 @@ public class PageController {
             body, new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8), false, ifNoneMatch);
       }
       final PollFilters.Parsed parsed =
-          sourceFilters(from, to, institute, party, coveragePeriod, includeExcluded);
+          PollFilters.source(from, to, institute, party, coveragePeriod, includeExcluded);
       final List<PollFilters.Invalid> invalid = new ArrayList<>(parsed.invalid());
       final SiteBootstrap.PollRequest polls =
           new SiteBootstrap.PollRequest(
@@ -207,7 +207,7 @@ public class PageController {
     final Snapshot selected = sourceSnapshot(snapshot).orElseThrow(ApiErrors::unknownRoute);
     final List<Roster.CoveragePeriod> periods = queries.periods();
     final PollFilters.Parsed parsed =
-        sourceFilters(from, to, institute, party, coveragePeriod, includeExcluded);
+        PollFilters.source(from, to, institute, party, coveragePeriod, includeExcluded);
     if (!parsed.valid()) {
       throw ApiErrors.invalidFilter(parsed.invalid());
     }
@@ -276,26 +276,7 @@ public class PageController {
 
   /** The filters a source chart reads: the table's dates and institutes, and nothing else. */
   private static PollFilters.Parsed sourceFilters(String from, String to, String institute) {
-    return sourceFilters(from, to, institute, null, null, null);
-  }
-
-  private static PollFilters.Parsed sourceFilters(
-      String from,
-      String to,
-      String institute,
-      String party,
-      String coveragePeriod,
-      String includeExcluded) {
-    final PollFilters.Parsed parsed =
-        PollFilters.parse(from, to, institute, null, null, includeExcluded, ignored -> false);
-    final List<PollFilters.Invalid> invalid = new ArrayList<>(parsed.invalid());
-    if (party != null && !party.isBlank()) {
-      invalid.add(new PollFilters.Invalid("party", "unsupported_filter"));
-    }
-    if (coveragePeriod != null && !coveragePeriod.isBlank()) {
-      invalid.add(new PollFilters.Invalid("coveragePeriod", "unsupported_filter"));
-    }
-    return new PollFilters.Parsed(parsed.filters(), invalid);
+    return PollFilters.source(from, to, institute, null, null, null);
   }
 
   private static ResponseEntity<byte[]> redirect(String path) {
