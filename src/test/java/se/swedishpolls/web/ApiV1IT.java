@@ -7,8 +7,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,16 +17,12 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
 import se.swedishpolls.estimation.Coalitions;
 import se.swedishpolls.publication.PublicationDocuments;
 import se.swedishpolls.publication.PublicationOutcome;
-import se.swedishpolls.publication.ShareImages;
-import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.repository.PublicationLock;
 import se.swedishpolls.publication.repository.PublicationStore;
 import se.swedishpolls.publication.service.Publisher;
@@ -64,7 +58,6 @@ class ApiV1IT {
   private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final int DRAWS = 200;
 
-  private static Path root;
   private static String publicationId;
 
   /** Only the freeze is replaced: the source is served over HTTP like the production one. */
@@ -89,12 +82,6 @@ class ApiV1IT {
     }
   }
 
-  @DynamicPropertySource
-  static void volume(DynamicPropertyRegistry registry) throws Exception {
-    root = Files.createTempDirectory("swedishpolls-api");
-    registry.add("publication.root", () -> root.toString());
-  }
-
   @org.springframework.boot.test.web.server.LocalServerPort private int port;
   @Autowired private Publisher publisher;
   @Autowired private PublicationStore store;
@@ -114,7 +101,7 @@ class ApiV1IT {
   }
 
   @Test
-  void publicationMetadataNamesItsRunSnapshotTimesAndImmutableAssets() {
+  void publicationMetadataNamesItsRunSnapshotAndTimesWithoutDeletedAssets() {
     final JsonNode body = json("/api/v1/publication");
     assertEquals(publicationId, body.get("publicationId").asString());
     assertFalse(body.get("stale").booleanValue());
@@ -128,16 +115,7 @@ class ApiV1IT {
     assertFalse(body.get("modelRun").get("numericalLibrary").asString().isBlank());
     assertTrue(body.get("modelRun").get("seed").longValue() > 0);
     assertTrue(body.get("snapshot").get("sha256").asString().matches("[0-9a-f]{64}"));
-    for (final String kind : ShareImages.KINDS) {
-      for (final String language : Translations.LANGUAGES) {
-        assertTrue(
-            body.get("assets")
-                .get(kind)
-                .get(language)
-                .asString()
-                .startsWith("/assets/" + publicationId));
-      }
-    }
+    assertFalse(body.has("assets"));
   }
 
   @Test
@@ -302,19 +280,10 @@ class ApiV1IT {
   }
 
   @Test
-  void versionedImageLinksAreImmutableAndDecodeAsCards() {
-    final JsonNode assets = json("/api/v1/publication").get("assets");
-    for (final String kind : ShareImages.KINDS) {
-      for (final String language : Translations.LANGUAGES) {
-        final String link = assets.get(kind).get(language).asString();
-        final HttpResponse<byte[]> image = bytes(link);
-        assertEquals(200, image.statusCode(), link);
-        assertEquals("image/png", header(image, "Content-Type"));
-        assertTrue(header(image, "Cache-Control").contains("immutable"));
-        assertTrue(image.body().length > 1000);
-      }
-    }
-    assertEquals(404, bytes("/assets/" + publicationId + "/overview-sv-9.png").statusCode());
+  void deletedPublicationAssetRoutesAreUnknown() {
+    final HttpResponse<String> response = get("/assets/" + publicationId + "/overview-sv-1.png");
+    assertEquals(404, response.statusCode());
+    assertEquals(ApiErrors.UNKNOWN_ROUTE, code(response));
   }
 
   @Test
@@ -355,11 +324,10 @@ class ApiV1IT {
    */
   @Test
   @org.junit.jupiter.api.Order(Integer.MAX_VALUE)
-  void aPinnedLoadInterruptedByANewPublicationKeepsItsOwnDataCsvAndImages() {
+  void aPinnedLoadInterruptedByANewPublicationKeepsItsOwnDataAndCsv() {
     final String pinned = publicationId;
     final String estimates = json("/api/v1/estimates/latest?publication=" + pinned).toString();
     final String csv = get("/api/v1/polls.csv?publication=" + pinned).body();
-    final byte[] card = bytes("/assets/" + pinned + "/overview-sv-1.png").body();
 
     TestPublication.serve(wireMock, TestPublication.polls("2019-06-01"));
     final Publisher.Attempt next = publisher.publish();
@@ -369,7 +337,6 @@ class ApiV1IT {
 
     assertEquals(estimates, json("/api/v1/estimates/latest?publication=" + pinned).toString());
     assertEquals(csv, get("/api/v1/polls.csv?publication=" + pinned).body());
-    assertArrayEquals(card, bytes("/assets/" + pinned + "/overview-sv-1.png").body());
     publicationId = next.publicationId();
   }
 
@@ -411,10 +378,6 @@ class ApiV1IT {
 
   private HttpResponse<String> get(String path) {
     return send(path, null, HttpResponse.BodyHandlers.ofString());
-  }
-
-  private HttpResponse<byte[]> bytes(String path) {
-    return send(path, null, HttpResponse.BodyHandlers.ofByteArray());
   }
 
   private <T> HttpResponse<T> send(

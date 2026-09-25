@@ -274,25 +274,12 @@ function Effects({
   );
 }
 
-function cardImage(page: Bootstrap): string | null {
-  const { publication } = page;
-  if (publication === undefined) {
-    return null;
-  }
-  const card = publication.assets.overview;
-  if (card === undefined) {
-    return null;
-  }
-  return card[page.language];
-}
-
 function Downloads({ page, t }: Props): JSX.Element | null {
   const { api } = page;
   if (api === undefined) {
     return null;
   }
   const pin = `?publication=${api.publication}&language=${api.language}`;
-  const image = cardImage(page);
   return (
     <section className="sec">
       <h2>{t("downloads.title")}</h2>
@@ -302,13 +289,6 @@ function Downloads({ page, t }: Props): JSX.Element | null {
             {t("downloads.houseEffects")}
           </a>
         </li>
-        {image !== null && (
-          <li>
-            <a className="btn" href={image} download={true}>
-              {t("downloads.image")}
-            </a>
-          </li>
-        )}
       </ul>
       <p className="meta">{t("downloads.pinned", { publication: api.publication })}</p>
     </section>

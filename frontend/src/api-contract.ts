@@ -64,8 +64,6 @@ function exactIdentity<Actual extends PublicationIdentityResponse>(
 exact<PublicationResponse>()(publication);
 exact<ModelRunResponse>()(publication.modelRun);
 exact<SnapshotResponse>()(publication.snapshot);
-exact<PublicationResponse["assets"]>()(publication.assets);
-
 exact<LatestResponse>()(latest);
 exact<MethodResponse>()(method);
 exactIdentity(method.publication);

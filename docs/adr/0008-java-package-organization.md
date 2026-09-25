@@ -3,7 +3,7 @@
 Java code is organized by responsibility: `source`, `estimation`, `publication` and `web`. Each
 responsibility gets the classic Spring MVC role subpackages it needs: `source.service`,
 `source.repository`, `publication.service`, `publication.repository`, `web.controller`. Only
-`Application` and the intentional image-smoke launcher stay directly in the root package. The full
+`Application` stays directly in the root package. The full
 convention, placement examples and test rules are recorded in the contributor guide at
 [docs/java-packages.md](../java-packages.md); follow that guide whenever adding Java classes,
 moving classes, or changing package dependencies. The guide's "Current state" section tracks how

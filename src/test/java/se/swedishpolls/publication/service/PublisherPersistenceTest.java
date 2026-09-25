@@ -7,12 +7,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
@@ -38,12 +36,11 @@ class PublisherPersistenceTest {
 
   @Autowired private JdbcClient db;
   @Autowired private PlatformTransactionManager transactions;
-  @TempDir private Path root;
 
   @Test
   void anUnchangedSnapshotKeepsOneFreshPersistedPublication() {
     final long snapshotId = published();
-    final PublicationStore store = new PublicationStore(db, transactions, root.toString());
+    final PublicationStore store = new PublicationStore(db, transactions);
     final Publisher publisher = publisher(store, snapshotId, true);
 
     final Publisher.Attempt attempt = publisher.publish();
@@ -56,7 +53,7 @@ class PublisherPersistenceTest {
 
   @Test
   void aBlockedReleaseLeavesNoPersistedPublication() {
-    final PublicationStore store = new PublicationStore(db, transactions, root.toString());
+    final PublicationStore store = new PublicationStore(db, transactions);
     final Publisher publisher = publisher(store, 42, false);
 
     final Publisher.Attempt attempt = publisher.publish();

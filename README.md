@@ -167,10 +167,9 @@ docker compose ps
 docker compose logs -f app
 ```
 
-`docker compose down` stops the stack and removes the containers but retains
-the named `database` and `publications` volumes, so a later start reuses the
-local data. Adding `--volumes` deletes the local database and the retained
-publications permanently.
+`docker compose down` stops the stack and removes the containers but retains the named `database`
+volume, so a later start reuses the local data. Adding `--volumes` deletes the local database
+permanently.
 
 ## Pinned dependencies and runtime
 
@@ -182,10 +181,9 @@ The project uses React 19.2.8, Vite 8.2.2 and TypeScript 5.9.3.
 include Java 25; Vite 8.2.2's package declares Node `^20.19.0 || >=22.12.0`.
 Compilation and the integration checks verify the selected combination locally.
 
-The Maven `docker` profile uses Jib 3.5.2 and pins Temurin 25.0.4+7 Noble's
-multi-platform image index. That runtime includes fontconfig, FreeType and DejaVu fonts.
-The application image runs as UID/GID 10001 with headless Java2D enabled. To build both
-architecture-specific images into the local Docker daemon:
+The Maven `docker` profile uses Jib 3.5.2 and pins Temurin 25.0.4+7 Noble's multi-platform image
+index. The application image runs as UID/GID 10001. To build both architecture-specific images
+into the local Docker daemon:
 
 ```sh
 ./mvnw -Pdocker -Dimage.version=local verify
@@ -221,10 +219,9 @@ docker compose up -d --wait
 Use `ARCH=arm64` only on a 64-bit ARM operating system. `PUBLIC_ORIGIN` is the public
 HTTPS origin without a path. `SITE_NAME` is the public name shown in page and sharing
 metadata. Put a TLS reverse proxy in front of the localhost-only application port.
-Compose waits for PostgreSQL, initializes the publication volume for UID/GID 10001, and
-retains database and publication data in named volumes across restarts. Do not run
-`docker compose down --volumes` on production data. Backups, restore testing, recovery
-controls and external failure notifications are deferred.
+Compose waits for PostgreSQL and retains database data in a named volume across restarts. Do not
+run `docker compose down --volumes` on production data. Backups, restore testing, recovery controls
+and external failure notifications are deferred.
 
 ## CI and merge policy
 

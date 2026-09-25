@@ -140,7 +140,7 @@ function CoalitionsPage({ page, data, t }: Props): JSX.Element {
         )}
       </section>
       <Pairwise page={page} coalitions={coalitions} t={t} />
-      <Downloads page={page} t={t} card="coalitions" />
+      <Downloads page={page} t={t} />
     </div>
   );
 }

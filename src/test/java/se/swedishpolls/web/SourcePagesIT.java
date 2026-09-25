@@ -13,8 +13,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.StreamSupport;
@@ -29,8 +27,6 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
@@ -59,7 +55,6 @@ import tools.jackson.databind.json.JsonMapper;
 @EnableWireMock
 class SourcePagesIT {
   private static final JsonMapper JSON = JsonMapper.builder().build();
-  private static Path root;
 
   @TestConfiguration(proxyBeanMethods = false)
   static class Fixture {
@@ -67,12 +62,6 @@ class SourcePagesIT {
     PlatformTransactionManager fixtureTransactions(DataSource dataSource) {
       return new DataSourceTransactionManager(dataSource);
     }
-  }
-
-  @DynamicPropertySource
-  static void volume(DynamicPropertyRegistry registry) throws IOException {
-    root = Files.createTempDirectory("swedishpolls-source-pages");
-    registry.add("publication.root", () -> root.toString());
   }
 
   @LocalServerPort private int port;

@@ -84,7 +84,7 @@ A stage left unstarted because the wall-clock budget remaining when its turn cam
 A run or stage with planned results left unmeasured. It is never a statistical result, though established failures within it are retained.
 
 **Publication**:
-A complete, permanent set of results produced from one source snapshot by one model run. Its documents, image bytes, inputs, parameters and seeds are retained unchanged; a correction produces a new publication rather than an edit.
+A complete, permanent set of results produced from one source snapshot by one model run. Its documents, inputs, parameters and seeds are retained unchanged; a correction produces a new publication rather than an edit.
 A calibrated publication also claims that its intervals and probabilities satisfy the registered calibration requirements. A trend publication makes no uncertainty claim.
 
 **Trend publication**:
@@ -94,10 +94,7 @@ A publication of central current-opinion estimates and derived seat totals that 
 Source bytes frozen before an outcome is available and used to evaluate a rule registered before that outcome. The holdout is the captured bytes, not a reconstruction from a later source snapshot.
 
 **Candidate publication**:
-A publication being built. It is private until every document and image byte is written and verified, and it is abandoned rather than partially exposed when a check or a write fails.
-
-**Asset version**:
-One rendered version of a publication's share image. A renderer change publishes a new version beside the old one and never overwrites published bytes.
+A publication being built. It is private until every document is written, and it is abandoned rather than partially exposed when a check or a write fails.
 
 **Staleness**:
 The notice a current publication carries after a later update failed. The publication itself is unchanged; only the notice is new, and unchanged source input never causes it.

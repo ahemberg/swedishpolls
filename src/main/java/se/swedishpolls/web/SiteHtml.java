@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Component;
-import se.swedishpolls.publication.ShareImages;
 import se.swedishpolls.publication.Translations;
 import se.swedishpolls.source.PollQuery;
 import tools.jackson.databind.JsonNode;
@@ -102,19 +101,7 @@ public final class SiteHtml {
     property(html, "og:description", description);
     property(html, "og:url", canonical);
     property(html, "og:locale", SiteFormat.locale(language).replace('-', '_'));
-    final String image = shareImage(bootstrap);
-    final String imageAlt = imageAlt(bootstrap, text);
-    if (image != null) {
-      property(html, "og:image", site.url(image));
-      property(html, "og:image:alt", imageAlt);
-      property(html, "og:image:width", Integer.toString(ShareImages.WIDTH));
-      property(html, "og:image:height", Integer.toString(ShareImages.HEIGHT));
-      meta(html, "twitter:card", "summary_large_image");
-      meta(html, "twitter:image", site.url(image));
-      meta(html, "twitter:image:alt", imageAlt);
-    } else {
-      meta(html, "twitter:card", "summary");
-    }
+    meta(html, "twitter:card", "summary");
     meta(html, "twitter:title", title);
     meta(html, "twitter:description", description);
   }
@@ -170,54 +157,6 @@ public final class SiteHtml {
     return members.isEmpty()
         ? text.text("coalitionHistory.noParties")
         : String.join(" + ", members);
-  }
-
-  private static String imageAlt(ObjectNode bootstrap, SiteText text) {
-    if (!bootstrap.has("publication")) {
-      return text.text("unavailable.title");
-    }
-    if (family(bootstrap) == SiteRoutes.Family.PARTY) {
-      final boolean historical =
-          bootstrap.get("data").get("party").get("historicalOnly").asBoolean();
-      final String party = historical ? "head.imageAlt.partyHistorical" : "head.imageAlt.party";
-      return SiteText.fill(
-          SiteText.fill(text.text(party), "party", partyName(bootstrap)),
-          "date",
-          fieldwork(bootstrap));
-    }
-    final String key = "head.imageAlt." + family(bootstrap).key();
-    final String template =
-        text.all().containsKey(key) ? text.text(key) : text.text("head.imageAlt");
-    return SiteText.fill(template, "date", fieldwork(bootstrap));
-  }
-
-  /**
-   * This route's card, in this language, at its published asset version.
-   *
-   * <p>A party page shares its own party's card; every other family shares the publication-wide
-   * card that summarizes it, so a seats link does not preview as the overview.
-   */
-  private static String shareImage(ObjectNode bootstrap) {
-    if (!bootstrap.has("publication")) {
-      return null;
-    }
-    if (family(bootstrap) == SiteRoutes.Family.COALITIONS
-        && bootstrap.path("customCoalitionSelection").asBoolean()) {
-      return null;
-    }
-    final JsonNode card = bootstrap.get("publication").get("assets").get(cardKind(bootstrap));
-    final JsonNode path = card == null ? null : card.get(bootstrap.get("language").asString());
-    return path == null || path.isNull() ? null : path.asString();
-  }
-
-  /** Which published card a route shares. Polls, pollsters and method reuse the overview one. */
-  private static String cardKind(ObjectNode bootstrap) {
-    return switch (family(bootstrap)) {
-      case PARTY -> ShareImages.partyKind(bootstrap.get("route").get("parameter").asString());
-      case SEATS -> ShareImages.SEATS;
-      case COALITIONS -> ShareImages.COALITIONS;
-      case OVERVIEW, POLLSTERS, POLLS, METHOD -> ShareImages.OVERVIEW;
-    };
   }
 
   /**
@@ -1055,10 +994,6 @@ public final class SiteHtml {
     link(html, "/api/v1/seats" + pin, text.text("downloads.seats"));
     link(html, "/api/v1/institutes" + pin, text.text("downloads.houseEffects"));
     link(html, "/api/v1/elections" + pin, text.text("downloads.elections"));
-    final String image = shareImage(bootstrap);
-    if (image != null) {
-      link(html, image, text.text("downloads.image"));
-    }
     html.append("</ul>\n<p class=\"meta\">")
         .append(escape(SiteText.fill(text.text("downloads.pinned"), "publication", publication)))
         .append("</p>\n");
@@ -1580,7 +1515,7 @@ public final class SiteHtml {
     pollstersDownloads(html, bootstrap, text);
   }
 
-  /** The house-effect download and the summary image, pinned to this publication. */
+  /** The house-effect download pinned to this publication. */
   private static void pollstersDownloads(StringBuilder html, ObjectNode bootstrap, SiteText text) {
     final String publication = bootstrap.get("api").get("publication").asString();
     final String language = bootstrap.get("language").asString();
@@ -1589,10 +1524,6 @@ public final class SiteHtml {
         .append(escape(text.text("downloads.title")))
         .append("</h2>\n<ul class=\"downloads\">\n");
     link(html, "/api/v1/institutes" + pin, text.text("downloads.houseEffects"));
-    final String image = shareImage(bootstrap);
-    if (image != null) {
-      link(html, image, text.text("downloads.image"));
-    }
     html.append("</ul>\n<p class=\"meta\">")
         .append(escape(SiteText.fill(text.text("downloads.pinned"), "publication", publication)))
         .append("</p>\n");
@@ -2063,14 +1994,7 @@ public final class SiteHtml {
     link(html, "/api/v1/estimates/latest" + pin, text.text("downloads.estimates"));
     link(html, "/api/v1/seats" + pin, text.text("downloads.seats"));
     link(html, "/api/v1/coalitions" + pin, text.text("downloads.coalitions"));
-    final String image = shareImage(bootstrap);
-    if (image != null) {
-      link(html, image, text.text("downloads.image"));
-    }
     html.append("</ul>\n");
-    html.append("<p class=\"meta\">")
-        .append(escape(text.text("downloads.imageNote")))
-        .append("</p>\n");
     html.append("<p class=\"meta\">")
         .append(escape(SiteText.fill(text.text("downloads.pinned"), "publication", publication)))
         .append("</p>\n");

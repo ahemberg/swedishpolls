@@ -154,19 +154,7 @@ jobs:
           -Dimage.version=${GITHUB_SHA}
           io.github.git-commit-id:git-commit-id-maven-plugin:revision
           jib:dockerBuild@amd64 jib:dockerBuild@arm64
-      - name: Verify headless Java2D and Swedish fonts
-        run: |
-          mkdir -p target/image-smoke
-          for arch in amd64 arm64; do
-            image="ghcr.io/ahemberg/swedishpolls:${GITHUB_SHA}-${arch}"
-            container=$(docker create --platform "linux/${arch}" --entrypoint java "$image" \
-              -Djava.awt.headless=true -cp '/app/resources:/app/classes:/app/libs/*' \
-              se.swedishpolls.ImageSmokeCheck /tmp/image-smoke.png)
-            docker start --attach "$container"
-            docker cp "$container:/tmp/image-smoke.png" "target/image-smoke/${arch}.png"
-            docker rm "$container"
-          done
-      - name: Verify Compose and restart persistence
+      - name: Verify Compose
         env:
           APP_VERSION: ${{ github.sha }}
           DATABASE_PASSWORD: compose-smoke-password
@@ -174,12 +162,13 @@ jobs:
           PUBLIC_ORIGIN: https://polls.example
           SITE_NAME: Swedish Polls smoke test
         run: |
+          mkdir -p target/compose-smoke
           project=
           cleanup() {
             status=$?
             if [ -n "$project" ]; then
               docker compose --project-name "$project" logs --no-color \
-                >"target/image-smoke/compose-${ARCH}.log" 2>&1 || true
+                >"target/compose-smoke/${ARCH}.log" 2>&1 || true
               docker compose --project-name "$project" down --volumes || true
             fi
             exit "$status"
@@ -218,7 +207,6 @@ jobs:
             export ARCH
             project="swedishpolls-${ARCH}"
             for base in \
-              busybox:1.37.0@sha256:9db7b59979c38555a39def84a31fb98b5296952f9e3afd4f6f11f05b07adfab0 \
               postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636; do
               id=$(docker image inspect --format '{{.Id}}' "$base" 2>/dev/null || true)
               if [ -n "$id" ]; then docker image rm "$id"; fi
@@ -226,16 +214,8 @@ jobs:
             docker compose --project-name "$project" up --detach --wait
             wait_for_app
             check_frontend
-            app=$(docker compose --project-name "$project" ps --quiet app)
-            docker exec --user 10001:10001 "$app" sh -c \
-              'printf persisted > /var/lib/swedishpolls/publications/restart-smoke'
-            docker compose --project-name "$project" restart app
-            app=$(docker compose --project-name "$project" ps --quiet app)
-            docker exec --user 10001:10001 "$app" grep -qx persisted \
-              /var/lib/swedishpolls/publications/restart-smoke
-            wait_for_app
             docker compose --project-name "$project" logs --no-color \
-              >"target/image-smoke/compose-${ARCH}.log"
+              >"target/compose-smoke/${ARCH}.log"
             docker compose --project-name "$project" down --volumes
             project=
           done
@@ -243,8 +223,8 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: image-smoke
-          path: target/image-smoke/
+          name: compose-smoke
+          path: target/compose-smoke/
           if-no-files-found: error
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
