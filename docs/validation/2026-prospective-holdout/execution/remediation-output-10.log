@@ -1,0 +1,2 @@
+cp: cannot create regular file '/tmp/swedishpolls-245-shipped/src/main/java/se/swedishpolls/estimation/': No such file or directory
+bash: line 1: cd: /tmp/swedishpolls-245-shipped: No such file or directory

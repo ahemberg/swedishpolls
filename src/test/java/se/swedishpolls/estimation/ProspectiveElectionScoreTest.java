@@ -22,7 +22,8 @@ class ProspectiveElectionScoreTest {
           {"partiforkortning":"C","andelRoster":6.71},
           {"partiforkortning":"KD","andelRoster":5.34},
           {"partiforkortning":"L","andelRoster":4.61},
-          {"partiforkortning":"MP","andelRoster":5.08}
+          {"partiforkortning":"MP","andelRoster":5.08},
+          {"partibeteckning":"Independent","andelRoster":0.01}
         ]},
         "partiMandat": [
           {"partiforkortning":"S","antalMandat":107},

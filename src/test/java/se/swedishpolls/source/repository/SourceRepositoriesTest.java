@@ -42,9 +42,9 @@ class SourceRepositoriesTest {
 
     final List<ElectionReference> references = elections.all();
     assertEquals(
-        List.of(2010, 2014, 2018, 2022),
+        List.of(2010, 2014, 2018, 2022, 2026),
         references.stream().map(ElectionReference::electionYear).toList());
-    assertEquals(6_477_970, references.getLast().validVotes());
+    assertEquals(6_767_429, references.getLast().validVotes());
 
     final List<NationalAllocationRule> rules = allocationRules.all();
     assertEquals(
@@ -64,10 +64,10 @@ class SourceRepositoriesTest {
             """
             INSERT INTO election_reference (election_date, election_year, valid_votes, source_url,
                 source_sha256, retrieved_on, official_seats_source_url)
-            VALUES ('2026-09-13', 2026, 1000, 'https://example.invalid', repeat('0', 64),
+            VALUES ('2026-09-14', 2026, 1000, 'https://example.invalid', repeat('0', 64),
                 '2026-09-14', 'https://example.invalid')
             """)
         .update();
-    assertEquals(Optional.of(LocalDate.of(2026, 9, 13)), elections.latestElectionDate());
+    assertEquals(Optional.of(LocalDate.of(2026, 9, 14)), elections.latestElectionDate());
   }
 }

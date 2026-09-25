@@ -1,0 +1,1 @@
+curl --fail --location --proto '=https' --tlsv1.2 --output docs/validation/2026-prospective-holdout/official-result.json https://resultat.val.se/data/resultat/val2026/RD_S.json

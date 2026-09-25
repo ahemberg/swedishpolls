@@ -1,0 +1,1 @@
+git worktree add --detach /tmp/swedishpolls-245-revised 539b1f35b24e78ec79d92b2808f35144efdfe3bf

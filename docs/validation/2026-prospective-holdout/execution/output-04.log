@@ -1,0 +1,4 @@
+src/main/resources/publication/model-freeze.json: OK
+docs/validation/release-protocol.json: OK
+docs/validation/v2-development-1/registration-run-2.json: OK
+docs/validation/v2-development-1/registration-plan-run-2.json: OK

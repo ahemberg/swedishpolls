@@ -1,0 +1,1 @@
+echo '956465a8cac65589c11c7e5a05eaa2902db8e4c76c32dda6b213198aae73ea92  docs/validation/2026-prospective-holdout/scoring-implementation.sha256' | sha256sum --check -

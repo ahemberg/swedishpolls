@@ -226,7 +226,7 @@ class SnapshotIngestIT {
     assertArrayEquals(body, ingest.rawCsv(snapshot.id()));
     assertEquals(expected, ingest.polls(snapshot.id()));
     assertEquals(
-        4, db.sql("SELECT count(*) FROM election_reference").query(Integer.class).single());
+        5, db.sql("SELECT count(*) FROM election_reference").query(Integer.class).single());
     // Only pre-2022 development inputs enter the numerical checks. Official outcomes stay in their
     // own tables.
     final java.util.List<se.swedishpolls.source.PollCsv.Poll> development =

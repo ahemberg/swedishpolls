@@ -23,3 +23,8 @@ The next archived snapshot was captured at `2026-09-14 20:36:38.802954Z` with SH
 | Infostat | 2026-04-28 to 2026-05-05 | `PublDate` | `NA` | `2026-09-02` |
 
 The holdout is always [`source.csv`](source.csv) as captured. It must never be reconstructed by restricting a later snapshot: the later source includes corrections made after the cutoff, including these four replacements, so such a reconstruction would use information that was not in the frozen input.
+
+## Result
+
+The [execution report](report.md) records the qualifying shipped score, the revised method's
+non-qualifying diagnostic, the official result and the complete command history.
