@@ -18,6 +18,7 @@ import se.swedishpolls.publication.Translations;
 import se.swedishpolls.publication.service.Publications;
 import se.swedishpolls.source.PollQuery;
 import se.swedishpolls.source.Roster;
+import se.swedishpolls.source.Snapshot;
 import se.swedishpolls.source.service.PollQueryService;
 import se.swedishpolls.web.EstimateQuery;
 import se.swedishpolls.web.PollFilters;
@@ -59,6 +60,36 @@ public class ApiV1Controller {
     seats = json.readerFor(SeatsResponse.class);
     objects = json.readerFor(ObjectNode.class);
     publicationMetadata = json.readerFor(PublicationResponse.class);
+  }
+
+  /** Retained source observations, independent of publication authorization. */
+  @GetMapping("/source/polls")
+  public ResponseEntity<SourcePollsResponse> sourcePolls(
+      @RequestParam(required = false) Long snapshot,
+      @RequestParam(required = false) String from,
+      @RequestParam(required = false) String to,
+      @RequestParam(required = false) String institute,
+      @RequestParam(required = false) String party,
+      @RequestParam(required = false) String coveragePeriod,
+      @RequestParam(required = false) String includeExcluded,
+      @RequestParam(required = false) String page,
+      @RequestParam(required = false) String pageSize) {
+    final Snapshot selected =
+        (snapshot == null ? queries.activeSnapshot() : queries.snapshot(snapshot))
+            .orElseThrow(ApiErrors::unknownRoute);
+    final PollFilters.Parsed parsed =
+        PollFilters.source(from, to, institute, party, coveragePeriod, includeExcluded);
+    final List<PollFilters.Invalid> invalid = new ArrayList<>(parsed.invalid());
+    final int number = PollFilters.positive(page, "page", 1, Integer.MAX_VALUE, invalid);
+    final int size =
+        PollFilters.positive(
+            pageSize, "pageSize", PollQuery.DEFAULT_PAGE_SIZE, PollQuery.MAX_PAGE_SIZE, invalid);
+    final PollQuery.Result result =
+        queries.query(selected.id(), queries.periods(), parsed.filters(), number, size);
+    return Responses.render(
+        SourcePollsResponse.from(
+            selected, result, parsed.filters(), invalid, queries.institutes(selected.id())),
+        false);
   }
 
   @GetMapping("/publication")

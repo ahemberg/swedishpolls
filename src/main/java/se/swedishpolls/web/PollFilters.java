@@ -49,6 +49,22 @@ public final class PollFilters {
     }
   }
 
+  /** Current-source filters do not select a modeled party or coverage period. */
+  public static Parsed source(
+      String from,
+      String to,
+      String institute,
+      String party,
+      String coveragePeriod,
+      String includeExcluded) {
+    final Parsed parsed = parse(from, to, institute, null, null, includeExcluded, ignored -> false);
+    final List<Invalid> invalid = new ArrayList<>(parsed.invalid());
+    if (party != null && !party.isBlank()) invalid.add(new Invalid("party", "unsupported_filter"));
+    if (coveragePeriod != null && !coveragePeriod.isBlank())
+      invalid.add(new Invalid("coveragePeriod", "unsupported_filter"));
+    return new Parsed(parsed.filters(), invalid);
+  }
+
   /** Reads one poll query, resolving coverage periods through the caller's own snapshot. */
   public static Parsed parse(
       String from,

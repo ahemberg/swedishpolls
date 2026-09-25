@@ -286,16 +286,7 @@ public class PageController {
       String party,
       String coveragePeriod,
       String includeExcluded) {
-    final PollFilters.Parsed parsed =
-        PollFilters.parse(from, to, institute, null, null, includeExcluded, ignored -> false);
-    final List<PollFilters.Invalid> invalid = new ArrayList<>(parsed.invalid());
-    if (party != null && !party.isBlank()) {
-      invalid.add(new PollFilters.Invalid("party", "unsupported_filter"));
-    }
-    if (coveragePeriod != null && !coveragePeriod.isBlank()) {
-      invalid.add(new PollFilters.Invalid("coveragePeriod", "unsupported_filter"));
-    }
-    return new PollFilters.Parsed(parsed.filters(), invalid);
+    return PollFilters.source(from, to, institute, party, coveragePeriod, includeExcluded);
   }
 
   private static ResponseEntity<byte[]> redirect(String path) {

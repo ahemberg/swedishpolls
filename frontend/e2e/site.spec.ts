@@ -1,5 +1,16 @@
 import { expect, test } from "@playwright/test";
+import { apiFixture } from "../src/api-test-fixtures";
 import { TEST_ROUTES } from "../src/test-fixtures";
+
+test.beforeEach(async ({ page }) => {
+  await page.route(
+    (url) => url.pathname.startsWith("/api/v1/") || url.pathname === "/source/chart",
+    async (route) => {
+      const response = apiFixture(new URL(route.request().url()));
+      await route.fulfill({ status: response.status, json: response.body });
+    },
+  );
+});
 
 test("thePageMountsTheScriptOverItsOwnMarkupRatherThanBesideIt", async ({ page }) => {
   await page.goto("/");
@@ -12,10 +23,11 @@ test("thePageMountsTheScriptOverItsOwnMarkupRatherThanBesideIt", async ({ page }
   await expect(estimates.getByRole("row", { name: /Socialdemokraterna/ })).toContainText("27,0 %");
 });
 
-test("theApprovedRoutesResolve", async ({ request }) => {
+test("theApprovedRoutesResolve", async ({ page }) => {
   for (const route of TEST_ROUTES) {
-    const response = await request.get(route);
-    expect(response.ok()).toBe(true);
+    await page.goto(route);
+    await expect(page.locator("main h1")).toBeVisible();
+    await expect(page.locator("header.site")).toBeVisible();
   }
 });
 
@@ -29,4 +41,33 @@ test("theNavigationAndLanguageSwitchLinkToTranslatedPathsOnly", async ({ page })
     "href",
     "/mandat",
   );
+});
+
+test("client navigation keeps React mounted and back restores the route", async ({ page }) => {
+  await page.goto("/en/seats");
+  await expect(page.locator("header.site")).toBeVisible();
+  await page.evaluate(() => {
+    document.body.dataset.navigationSentinel = "mounted";
+  });
+  await page.getByRole("link", { name: "Method", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Method and validation" })).toBeVisible();
+  await expect(page.locator("body")).toHaveAttribute("data-navigation-sentinel", "mounted");
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: /National seat approximation/ })).toBeVisible();
+});
+
+test("a failed API request offers visible retry content", async ({ page }) => {
+  await page.route("**/api/v1/seats?**", (route) => route.abort());
+  await page.goto("/en/seats");
+  await expect(page.getByRole("heading", { name: "The page could not be loaded." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Retry" })).toBeVisible();
+});
+
+test("source-only pages remain usable without a publication", async ({ page }) => {
+  await page.route("**/api/v1/publication?**", (route) =>
+    route.fulfill({ status: 503, json: { code: "estimates_unavailable" } }),
+  );
+  await page.goto("/en");
+  await expect(page.getByRole("heading", { name: "Opinion polls" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Seats", exact: true })).toHaveCount(0);
 });

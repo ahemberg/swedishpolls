@@ -15,10 +15,28 @@ interface Fetched<T> {
   readonly failed: boolean;
 }
 
+interface ApiFailure {
+  readonly code: string;
+  readonly message: string;
+  readonly field?: string;
+  readonly invalid?: readonly { readonly name: string; readonly reason: string }[];
+}
+
+class RequestError extends Error {
+  readonly status: number;
+  readonly body: ApiFailure;
+  constructor(status: number, body: ApiFailure) {
+    super(`Request failed: ${status}. ${body.message ?? body.code}`);
+    this.status = status;
+    this.body = body;
+  }
+}
+
 async function fetchJson<T>(url: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(url, { signal });
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    const body: ApiFailure = await response.json();
+    throw new RequestError(response.status, body);
   }
   return response.json() as Promise<T>;
 }
@@ -57,4 +75,4 @@ function useFetched<T>(initial: T, url: string | null): Fetched<T> {
 }
 
 export type { Fetched };
-export { fetchJson, useFetched };
+export { fetchJson, RequestError, useFetched };
