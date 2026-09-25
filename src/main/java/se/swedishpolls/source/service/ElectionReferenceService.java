@@ -13,7 +13,7 @@ public class ElectionReferenceService {
    * The last election whose result may be stored. Issue #247 moves it once the prospective
    * holdout's scoring is registered.
    */
-  static final LocalDate LATEST_PERMITTED_ELECTION = LocalDate.of(2022, 9, 11);
+  static final LocalDate LATEST_PERMITTED_ELECTION = LocalDate.of(2026, 9, 13);
 
   private final ElectionReferenceRepository repository;
 
@@ -35,11 +35,11 @@ public class ElectionReferenceService {
               + " is later than "
               + LATEST_PERMITTED_ELECTION
               + ", the last election whose result may be stored. Later results are embargoed to"
-              + " protect the 2026 prospective holdout in docs/validation/2026-prospective-holdout:"
-              + " its scoring must be registered before anyone reads the result, and loading the"
-              + " result early destroys the holdout permanently. This check is not stale. Remove"
-              + " the reference; only https://github.com/ahemberg/swedishpolls/issues/247 lifts"
-              + " the embargo.");
+              + " preserve future prospective holdouts. Issue"
+              + " https://github.com/ahemberg/swedishpolls/issues/247 lifted the 2026 embargo only"
+              + " after the scoring rule in docs/validation/2026-prospective-holdout was"
+              + " registered. Reading a later result early destroys its holdout permanently."
+              + " Remove the reference.");
     }
   }
 }

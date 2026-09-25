@@ -25,17 +25,17 @@ class ElectionReferenceIT {
       assertEquals(0, flyway.migrate().migrationsExecuted);
       final org.springframework.jdbc.core.simple.JdbcClient db = JdbcClient.create(dataSource);
       assertEquals(
-          List.of("2010-09-19", "2014-09-14", "2018-09-09", "2022-09-11"),
+          List.of("2010-09-19", "2014-09-14", "2018-09-09", "2022-09-11", "2026-09-13"),
           db.sql("SELECT election_date::text FROM election_reference ORDER BY election_date")
               .query(String.class)
               .list());
       assertEquals(
-          List.of(5960408, 6231573, 6476725, 6477970),
+          List.of(5960408, 6231573, 6476725, 6477970, 6767429),
           db.sql("SELECT valid_votes FROM election_reference ORDER BY election_date")
               .query(Integer.class)
               .list());
       assertEquals(
-          40,
+          50,
           db.sql("SELECT count(*) FROM election_party_reference").query(Integer.class).single());
       assertEquals(
           0,
@@ -62,7 +62,7 @@ class ElectionReferenceIT {
               .query(Integer.class)
               .list());
       assertEquals(
-          List.of(420524, 337773, 355546, 298542),
+          List.of(420524, 337773, 355546, 298542, 361187),
           db.sql(
                   """
                     SELECT votes FROM election_party_reference WHERE component = 'L' ORDER BY election_date
@@ -78,7 +78,7 @@ class ElectionReferenceIT {
               .query(String.class)
               .single());
       assertEquals(
-          List.of(24139, 194719, 29665, 3157),
+          List.of(24139, 194719, 29665, 3157, 0),
           db.sql(
                   """
                     SELECT votes FROM election_party_reference WHERE component = 'FI' ORDER BY election_date
@@ -86,7 +86,7 @@ class ElectionReferenceIT {
               .query(Integer.class)
               .list());
       assertEquals(
-          List.of(60884, 60326, 69472, 97095),
+          List.of(60884, 60326, 69472, 97095, 107199),
           db.sql(
                   """
                     SELECT votes FROM election_party_reference WHERE component = 'RESIDUAL' ORDER BY election_date
@@ -112,6 +112,26 @@ class ElectionReferenceIT {
                     """)
               .query(Integer.class)
               .list());
+      assertEquals(
+          List.of(25, 0, 22, 19, 70, 22, 0, 99, 62, 30),
+          db.sql(
+                  """
+                    SELECT official_seats FROM election_party_reference WHERE election_date = '2026-09-13' ORDER BY component
+                    """)
+              .query(Integer.class)
+              .list());
+      assertEquals(
+          1,
+          db.sql(
+                  """
+                    SELECT count(*) FROM election_reference
+                    WHERE election_date = '2026-09-13'
+                    AND source_url = 'https://resultat.val.se/data/resultat/val2026/RD_S.json'
+                    AND source_sha256 = '1998afdc723a83b325c729faf68063c8731e33496fc274bf9fbb80499e0afb08'
+                    AND retrieved_on = '2026-09-25'
+                    """)
+              .query(Integer.class)
+              .single());
 
       assertEquals(
           List.of(2010, 2014, 2018, 2022, 2026),

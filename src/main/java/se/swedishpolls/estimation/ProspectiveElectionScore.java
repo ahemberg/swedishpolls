@@ -94,7 +94,7 @@ public final class ProspectiveElectionScore {
               true,
               "https://github.com/ahemberg/swedishpolls/issues/12#issuecomment-5575789888");
       final CoverageValidation.Rules baseRules =
-          CoverageValidation.rules(Path.of("docs", "validation", "coverage.json"));
+          CoverageValidation.rules(Path.of("docs", "validation", "protocol.json"));
       final CoverageValidation.Rules coverage =
           new CoverageValidation.Rules(
               cutoff,
@@ -158,7 +158,7 @@ public final class ProspectiveElectionScore {
             required(method, "seed").longValue(),
             required(method, "draws").intValue(),
             List.of(0.5, 0.95),
-            1);
+            2);
     final EstimateHistory.Fitted fitted =
         EstimateHistory.fitted(period, candidates, PRIOR_ELECTIONS, model, coverage);
     final JointUncertainty.FinalDay finalDay =
@@ -228,7 +228,9 @@ public final class ProspectiveElectionScore {
     }
     final Map<String, String> shares = new LinkedHashMap<>();
     for (final JsonNode party : required(required(result, "rosterPaverkaMandat"), "partiroster")) {
-      final String component = required(party, "partiforkortning").asString();
+      final JsonNode abbreviation = party.get("partiforkortning");
+      if (abbreviation == null || abbreviation.isNull()) continue;
+      final String component = abbreviation.asString();
       if (PollCsv.PARTIES.contains(component)) {
         final BigDecimal share =
             new BigDecimal(required(party, "andelRoster").asString())

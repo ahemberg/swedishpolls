@@ -70,7 +70,7 @@ class NationalSeatsIT {
         db -> {
           final List<SeatOutcomes.OfficialComparison> comparisons =
               officialComparisons(db, allocationRules(db));
-          assertEquals(4, comparisons.size());
+          assertEquals(5, comparisons.size());
           for (final SeatOutcomes.OfficialComparison comparison : comparisons) {
             assertEquals(349, comparison.totalApproximated());
             assertEquals(349, comparison.totalOfficial());
@@ -79,8 +79,8 @@ class NationalSeatsIT {
                 comparison.differenceSeats().values().stream().mapToInt(Integer::intValue).sum(),
                 "A difference moves seats between parties; the board still holds 349");
           }
-          // The two post-reform elections reproduce exactly. The two earlier ones differ by the
-          // constituency machinery this national approximation omits.
+          // The 2018 and 2022 elections reproduce exactly. Earlier ones differ by the constituency
+          // machinery this national approximation omits.
           assertTrue(comparison(comparisons, 2018).matchesOfficial());
           assertTrue(comparison(comparisons, 2022).matchesOfficial());
           assertEquals(3, comparison(comparisons, 2010).maxAbsoluteDifference());

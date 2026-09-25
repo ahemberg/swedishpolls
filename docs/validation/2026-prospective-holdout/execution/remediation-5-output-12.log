@@ -1,0 +1,119 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< se.swedishpolls:swedishpolls >--------------------
+[INFO] Building swedishpolls 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.1.1:run (default-cli) > test-compile @ swedishpolls >>>
+[INFO] 
+[INFO] --- enforcer:3.6.3:enforce (toolchain) @ swedishpolls ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] Rule 1: org.apache.maven.enforcer.rules.version.RequireMavenVersion passed
+[INFO] Rule 2: org.apache.maven.enforcer.rules.dependency.RequireReleaseDeps passed
+[INFO] 
+[INFO] --- spotless:3.10.2:check (spotless-check-validate) @ swedishpolls ---
+[INFO] Index file does not exist. Fallback to an empty index
+[INFO] Spotless.Format is keeping 39 files clean - 0 needs changes to be clean, 39 were already clean, 0 were skipped because caching determined they were already clean
+[INFO] Spotless.Java is keeping 154 files clean - 0 needs changes to be clean, 154 were already clean, 0 were skipped because caching determined they were already clean
+[INFO] Sorting file /tmp/pom13456413717215309921.xml
+[INFO] Pom file is already sorted, exiting
+[INFO] Spotless.Pom is keeping 1 files clean - 0 needs changes to be clean, 1 were already clean, 0 were skipped because caching determined they were already clean
+[INFO] 
+[INFO] --- frontend:2.0.2:install-node-and-npm (node) @ swedishpolls ---
+[INFO] Installing node version v24.13.1
+[INFO] Unpacking /home/alex/.m2/repository/com/github/eirslett/node/24.13.1/node-24.13.1-linux-x64.tar.gz into /tmp/swedishpolls-245-revised/target/node/tmp
+[INFO] Copying node binary from /tmp/swedishpolls-245-revised/target/node/tmp/node-v24.13.1-linux-x64/bin/node to /tmp/swedishpolls-245-revised/target/node/node
+[INFO] Installed node locally.
+[INFO] Installing npm version 11.8.0
+[INFO] Unpacking /home/alex/.m2/repository/com/github/eirslett/npm/11.8.0/npm-11.8.0.tar.gz into /tmp/swedishpolls-245-revised/target/node/node_modules
+[INFO] Installed npm locally.
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (npm-ci) @ swedishpolls ---
+[INFO] Running 'npm ci --no-audit --no-fund' in /tmp/swedishpolls-245-revised/frontend
+[INFO] 
+[INFO] added 32 packages in 2s
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (frontend-check) @ swedishpolls ---
+[INFO] Running 'npm run check' in /tmp/swedishpolls-245-revised/frontend
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 check
+[INFO] > npm run typecheck && npm run lint && npm test
+[INFO] 
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 typecheck
+[INFO] > tsc --noEmit
+[INFO] 
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 lint
+[INFO] > biome check .
+[INFO] 
+[INFO] Checked 61 files in 60ms. No fixes applied.
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 test
+[INFO] > node --test test/*.test.mjs
+[INFO] 
+[INFO] ✔ all 6,561 assignments keep each party in exactly one ordered destination (16.097693ms)
+[INFO] ✔ preset, clear, singleton and moves preserve canonical roster order (0.348728ms)
+[INFO] ✔ latest totals use zero for empty groups and null for missing constituents (0.152264ms)
+[INFO] ✔ share paths use the editor assignment and selected range (0.146548ms)
+[INFO] ✔ approved mixtures use latest support, conditional SD blue and neutral missing weights (0.455925ms)
+[INFO] ✔ lines and bands break at both fit changes and explicit gaps (0.237036ms)
+[INFO] ✔ missing fitted days and declared boundaries cannot be joined (0.172997ms)
+[INFO] ✔ history fetches reject errors and cancellation instead of accepting an error document (54.410798ms)
+[INFO] ℹ tests 8
+[INFO] ℹ suites 0
+[INFO] ℹ pass 8
+[INFO] ℹ fail 0
+[INFO] ℹ cancelled 0
+[INFO] ℹ skipped 0
+[INFO] ℹ todo 0
+[INFO] ℹ duration_ms 151.814839
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (frontend-build) @ swedishpolls ---
+[INFO] Running 'npm run build' in /tmp/swedishpolls-245-revised/frontend
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 build
+[INFO] > vite build --outDir ../target/frontend
+[INFO] 
+[INFO] vite v8.2.2 building client environment for production...
+[INFO] transforming...
+[INFO] ✓ 59 modules transformed.
+[INFO] rendering chunks...
+[INFO] computing gzip size...
+[INFO] ../target/frontend/.vite/manifest.json                        0.59 kB │ gzip:  0.23 kB
+[INFO] ../target/frontend/assets/public-sans-latin-DdeTHZLK.woff2   26.83 kB
+[INFO] ../target/frontend/assets/newsreader-latin-s-izfB6B.woff2   132.00 kB
+[INFO] ../target/frontend/assets/main-JBBaYfX_.css                  10.38 kB │ gzip:  3.29 kB
+[INFO] ../target/frontend/assets/main-DJX5lkMF.js                  266.41 kB │ gzip: 78.22 kB
+[INFO] 
+[INFO] ✓ built in 118ms
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ swedishpolls ---
+[INFO] Copying 18 resources from src/main/resources to target/classes
+[INFO] Copying 5 resources from target/frontend to target/classes/static
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ swedishpolls ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 87 source files with javac [debug parameters release 25] to target/classes
+[INFO] /tmp/swedishpolls-245-revised/src/main/java/se/swedishpolls/web/SiteHtml.java: /tmp/swedishpolls-245-revised/src/main/java/se/swedishpolls/web/SiteHtml.java uses or overrides a deprecated API.
+[INFO] /tmp/swedishpolls-245-revised/src/main/java/se/swedishpolls/web/SiteHtml.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ swedishpolls ---
+[INFO] Copying 2 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ swedishpolls ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 67 source files with javac [debug parameters release 25] to target/test-classes
+[INFO] 
+[INFO] <<< spring-boot:4.1.1:run (default-cli) < test-compile @ swedishpolls <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.1.1:run (default-cli) @ swedishpolls ---
+[INFO] Attaching agents: []
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:16 min
+[INFO] Finished at: 2026-09-25T12:27:34+02:00
+[INFO] ------------------------------------------------------------------------

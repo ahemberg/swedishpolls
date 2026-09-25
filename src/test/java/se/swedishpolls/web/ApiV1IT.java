@@ -360,12 +360,12 @@ class ApiV1IT {
   @Test
   void electionReferencesKeepTheirOwnGroupingAndIntegerCounts() {
     final JsonNode elections = json("/api/v1/elections");
-    assertEquals(4, elections.get("elections").size());
-    final JsonNode last = elections.get("elections").get(3);
-    assertEquals(2022, last.get("electionYear").intValue());
-    assertEquals(6477970, last.get("validVotes").intValue());
-    assertEquals(107, last.get("results").get("S").get("officialSeats").intValue());
-    assertEquals(3157, last.get("results").get("FI").get("votes").intValue());
+    assertEquals(5, elections.get("elections").size());
+    final JsonNode last = elections.get("elections").get(4);
+    assertEquals(2026, last.get("electionYear").intValue());
+    assertEquals(6767429, last.get("validVotes").intValue());
+    assertEquals(99, last.get("results").get("S").get("officialSeats").intValue());
+    assertEquals(0, last.get("results").get("FI").get("votes").intValue());
     assertEquals(
         "eight_party_2010", last.get("comparableGrouping").get("coveragePeriod").asString());
   }

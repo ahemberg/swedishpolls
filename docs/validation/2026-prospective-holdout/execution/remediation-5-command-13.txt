@@ -1,0 +1,1 @@
+git worktree remove --force /tmp/swedishpolls-245-shipped && git worktree remove --force /tmp/swedishpolls-245-revised

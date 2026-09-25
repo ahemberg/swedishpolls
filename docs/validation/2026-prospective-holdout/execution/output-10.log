@@ -1,0 +1,109 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< se.swedishpolls:swedishpolls >--------------------
+[INFO] Building swedishpolls 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.1.1:run (default-cli) > test-compile @ swedishpolls >>>
+[INFO] 
+[INFO] --- enforcer:3.6.3:enforce (toolchain) @ swedishpolls ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] Rule 1: org.apache.maven.enforcer.rules.version.RequireMavenVersion passed
+[INFO] Rule 2: org.apache.maven.enforcer.rules.dependency.RequireReleaseDeps passed
+[INFO] 
+[INFO] --- spotless:3.10.2:check (spotless-check-validate) @ swedishpolls ---
+[INFO] Index file does not exist. Fallback to an empty index
+[INFO] Spotless.Format is keeping 32 files clean - 0 needs changes to be clean, 32 were already clean, 0 were skipped because caching determined they were already clean
+[INFO] Spotless.Java is keeping 110 files clean - 0 needs changes to be clean, 110 were already clean, 0 were skipped because caching determined they were already clean
+[INFO] Sorting file /tmp/pom4962760998464451824.xml
+[INFO] Pom file is already sorted, exiting
+[INFO] Spotless.Pom is keeping 1 files clean - 0 needs changes to be clean, 1 were already clean, 0 were skipped because caching determined they were already clean
+[INFO] 
+[INFO] --- frontend:2.0.2:install-node-and-npm (node) @ swedishpolls ---
+[INFO] Installing node version v24.13.1
+[INFO] Unpacking /home/alex/.m2/repository/com/github/eirslett/node/24.13.1/node-24.13.1-linux-x64.tar.gz into /tmp/swedishpolls-245-shipped/target/node/tmp
+[INFO] Copying node binary from /tmp/swedishpolls-245-shipped/target/node/tmp/node-v24.13.1-linux-x64/bin/node to /tmp/swedishpolls-245-shipped/target/node/node
+[INFO] Installed node locally.
+[INFO] Installing npm version 11.8.0
+[INFO] Unpacking /home/alex/.m2/repository/com/github/eirslett/npm/11.8.0/npm-11.8.0.tar.gz into /tmp/swedishpolls-245-shipped/target/node/node_modules
+[INFO] Installed npm locally.
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (npm-ci) @ swedishpolls ---
+[INFO] Running 'npm ci --no-audit --no-fund' in /tmp/swedishpolls-245-shipped/frontend
+[INFO] 
+[INFO] added 32 packages in 2s
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (frontend-check) @ swedishpolls ---
+[INFO] Running 'npm run check' in /tmp/swedishpolls-245-shipped/frontend
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 check
+[INFO] > npm run typecheck && npm run lint
+[INFO] 
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 typecheck
+[INFO] > tsc --noEmit
+[INFO] 
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 lint
+[INFO] > biome check .
+[INFO] 
+[INFO] Checked 45 files in 37ms. No fixes applied.
+[INFO] 
+[INFO] --- frontend:2.0.2:npm (frontend-build) @ swedishpolls ---
+[INFO] Running 'npm run build' in /tmp/swedishpolls-245-shipped/frontend
+[INFO] 
+[INFO] > swedishpolls-frontend@0.1.0 build
+[INFO] > vite build --outDir ../target/frontend
+[INFO] 
+[INFO] vite v8.2.2 building client environment for production...
+[INFO] transforming...
+[INFO] ✓ 47 modules transformed.
+[INFO] rendering chunks...
+[INFO] computing gzip size...
+[INFO] ../target/frontend/.vite/manifest.json                        0.59 kB │ gzip:  0.23 kB
+[INFO] ../target/frontend/assets/public-sans-latin-DdeTHZLK.woff2   26.83 kB
+[INFO] ../target/frontend/assets/newsreader-latin-s-izfB6B.woff2   132.00 kB
+[INFO] ../target/frontend/assets/main-MWNeDlVC.css                   5.51 kB │ gzip:  2.10 kB
+[INFO] ../target/frontend/assets/main-BgzWztS3.js                  230.34 kB │ gzip: 69.39 kB
+[INFO] 
+[INFO] ✓ built in 156ms
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ swedishpolls ---
+[INFO] Copying 18 resources from src/main/resources to target/classes
+[INFO] Copying 5 resources from target/frontend to target/classes/static
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ swedishpolls ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 59 source files with javac [debug parameters release 25] to target/classes
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ swedishpolls ---
+[INFO] Copying 2 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ swedishpolls ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 51 source files with javac [debug parameters release 25] to target/test-classes
+[INFO] 
+[INFO] <<< spring-boot:4.1.1:run (default-cli) < test-compile @ swedishpolls <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.1.1:run (default-cli) @ swedishpolls ---
+[INFO] Attaching agents: []
+Exception in thread "main" java.lang.IllegalArgumentException: Incomplete scoring input: missing partiforkortning
+	at se.swedishpolls.estimation.ProspectiveElectionScore.required(ProspectiveElectionScore.java:297)
+	at se.swedishpolls.estimation.ProspectiveElectionScore.outcome(ProspectiveElectionScore.java:231)
+	at se.swedishpolls.estimation.ProspectiveElectionScore.execute(ProspectiveElectionScore.java:75)
+	at se.swedishpolls.estimation.ProspectiveElectionScore.main(ProspectiveElectionScore.java:59)
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  22.378 s
+[INFO] Finished at: 2026-09-25T12:16:02+02:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.1.1:run (default-cli) on project swedishpolls: Process terminated with exit code: 1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

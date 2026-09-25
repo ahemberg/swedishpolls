@@ -1,0 +1,1 @@
+sha256sum docs/validation/2026-prospective-holdout/official-result.json > docs/validation/2026-prospective-holdout/official-result.json.sha256
