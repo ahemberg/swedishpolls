@@ -234,7 +234,7 @@ class ApiContractTest {
     final JsonNode method = read("examples/method.json");
     assertEquals(2026, method.get("approximatedElection").asInt());
     assertEquals("blocked", method.get("verdict").get("status").asString());
-    assertFalse(method.get("verdict").get("released").asBoolean());
+    assertEquals("NONE", method.get("verdict").get("authorization").asString());
     assertEquals(List.of("development_gates"), texts(method.get("verdict").get("failedGates")));
     assertEquals(20260908, method.get("draws").get("seed").asInt());
     assertEquals(30, method.get("coverage").get("minObservations").asInt());

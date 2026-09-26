@@ -21,6 +21,14 @@
       "derivation": "The audited gates that are blocking, did not pass and carry no waiver, in release-audit.json#/verdict/gates. ModelFreezeTest.theReleaseVerdictTravelsWithTheFreezeAndCurrentlyBlocksPublication rebuilds the list from that evidence."
     },
     {
+      "path": "authorizedLevel",
+      "derivation": "Issue #243 registers no publication authorization while the trend gate is introduced. Issue #249 makes the separate decision to authorize it."
+    },
+    {
+      "path": "trendGate/failedGates",
+      "derivation": "The failed members of release-protocol.json#/publication_gates/trend_publication/required in release-audit.json#/verdict/gates. ModelFreezeTest checks the shipped list against the audit."
+    },
+    {
       "path": "seed",
       "source": "protocol.json#/seed"
     },

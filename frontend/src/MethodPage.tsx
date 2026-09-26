@@ -166,7 +166,7 @@ function gateRows(page: Bootstrap, data: MethodData, t: Translate): readonly Gat
 }
 
 function verdictKey(data: MethodData): PageTextKey {
-  if (data.verdict.released) {
+  if (data.verdict.authorization === "CALIBRATED") {
     return "method.validation.verdictReleased";
   }
   return "method.validation.verdictBlocked";

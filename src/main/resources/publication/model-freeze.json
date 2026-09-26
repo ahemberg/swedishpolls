@@ -7,6 +7,10 @@
       "development_gates"
     ]
   },
+  "authorizedLevel": "none",
+  "trendGate": {
+    "failedGates": []
+  },
   "seed": 20260908,
   "draws": 10000,
   "intervalLevels": [

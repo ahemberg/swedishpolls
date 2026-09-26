@@ -27,7 +27,11 @@ public final class ModelFreeze {
   /** The classpath resource the running application reads. */
   static final String RESOURCE = "/publication/model-freeze.json";
 
-  public static final String RELEASED = "released";
+  public enum Authorization {
+    NONE,
+    TREND,
+    CALIBRATED
+  }
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
@@ -38,6 +42,8 @@ public final class ModelFreeze {
   private final String releaseProtocolVersion;
   private final String releaseStatus;
   private final List<String> failedBlockingGates;
+  private final Authorization authorizedLevel;
+  private final List<String> failedTrendGates;
   private final JointUncertainty.Rules uncertainty;
   private final CoverageValidation.Rules coverage;
   private final EstimateHistory.Publication resolution;
@@ -51,6 +57,8 @@ public final class ModelFreeze {
       String releaseProtocolVersion,
       String releaseStatus,
       List<String> failedBlockingGates,
+      Authorization authorizedLevel,
+      List<String> failedTrendGates,
       JointUncertainty.Rules uncertainty,
       CoverageValidation.Rules coverage,
       EstimateHistory.Publication resolution,
@@ -62,6 +70,8 @@ public final class ModelFreeze {
     this.releaseProtocolVersion = releaseProtocolVersion;
     this.releaseStatus = releaseStatus;
     this.failedBlockingGates = List.copyOf(failedBlockingGates);
+    this.authorizedLevel = authorizedLevel;
+    this.failedTrendGates = List.copyOf(failedTrendGates);
     this.uncertainty = uncertainty;
     this.coverage = coverage;
     this.resolution = resolution;
@@ -87,6 +97,10 @@ public final class ModelFreeze {
     final List<String> gates = new ArrayList<>();
     for (final JsonNode gate : required(release, "failedBlockingGates")) {
       gates.add(gate.asString());
+    }
+    final List<String> trendGates = new ArrayList<>();
+    for (final JsonNode gate : required(required(root, "trendGate"), "failedGates")) {
+      trendGates.add(gate.asString());
     }
     final List<Double> levels = new ArrayList<>();
     for (final JsonNode level : required(root, "intervalLevels")) {
@@ -118,6 +132,9 @@ public final class ModelFreeze {
         required(root, "releaseProtocolVersion").asString(),
         required(release, "status").asString(),
         gates,
+        Authorization.valueOf(
+            required(root, "authorizedLevel").asString().toUpperCase(java.util.Locale.ROOT)),
+        trendGates,
         new JointUncertainty.Rules(
             required(root, "seed").longValue(),
             required(root, "draws").intValue(),
@@ -166,8 +183,21 @@ public final class ModelFreeze {
     return releaseStatus;
   }
 
-  public boolean released() {
-    return RELEASED.equals(releaseStatus) && failedBlockingGates.isEmpty();
+  public Authorization authorization() {
+    if (authorizedLevel == Authorization.CALIBRATED
+        && "released".equals(releaseStatus)
+        && failedBlockingGates.isEmpty()
+        && failedTrendGates.isEmpty()) {
+      return Authorization.CALIBRATED;
+    }
+    if (authorizedLevel != Authorization.NONE && failedTrendGates.isEmpty()) {
+      return Authorization.TREND;
+    }
+    return Authorization.NONE;
+  }
+
+  public List<String> failedTrendGates() {
+    return failedTrendGates;
   }
 
   public List<String> failedBlockingGates() {

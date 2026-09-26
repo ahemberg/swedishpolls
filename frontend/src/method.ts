@@ -7,7 +7,7 @@
 export interface MethodData {
   readonly verdict: {
     readonly status: string;
-    readonly released: boolean;
+    readonly authorization: string;
     readonly failedGates: readonly string[];
   };
   readonly estimator: {

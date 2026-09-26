@@ -1,0 +1,7 @@
+# Authorize trend publications through a separate gate
+
+Issue #243 introduces three publication authorization levels: none, trend and calibrated. The shipped freeze records the maximum level approved for publication. Its decision method returns calibrated only when the release verdict passes, and trend only when the trend gate passes. A failed calibrated gate may still permit trend when the approved level allows it. The publisher reads that decision; downstream code does not infer authorization from individual checks.
+
+A trend publication claims a central voting-intention composition and derived seats. Its registered gate requires the composition sum, national seat total, exact seeded reproduction, cross-architecture reproduction within the frozen tolerance, and a positive paired log-score margin over the recency baseline for each roster. The gate names these checks directly. Coverage, interval precision and institute-specific findings do not enter it because trend output withholds intervals and probabilities. Calibrated publication still requires the full release verdict.
+
+This amendment follows the existing release audit. It does not change its frozen inputs or reinterpret the blocked calibrated verdict. The trend gate currently passes, but the shipped approved level is none. Issue #249 separately decides whether to set it to trend after reviewing the prospective holdout and completing the trend document and site work.

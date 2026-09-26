@@ -7,7 +7,7 @@
   "approximatedElection": 2026,
   "verdict": {
     "status": "blocked",
-    "released": false,
+    "authorization": "NONE",
     "failedGates": ["development_gates"]
   },
   "estimator": {

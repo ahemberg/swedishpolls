@@ -85,7 +85,8 @@ class PublisherTest {
 
   @Test
   void aBlockedReleasePublishesNothingAndSaysWhy() {
-    when(store.current()).thenReturn(Optional.empty());
+    when(store.current())
+        .thenReturn(Optional.of(new CurrentPublication(HEADER.publicationId(), false, null)));
     final Publisher publisher = publisher(false);
 
     final Publisher.Attempt attempt = publisher.publish();
@@ -94,6 +95,8 @@ class PublisherTest {
     assertNull(attempt.publicationId());
     assertTrue(attempt.detail().contains("development_gates"));
     verify(store).recordAttempt(PublicationOutcome.BLOCKED, CHECKED_AT, null, attempt.detail());
+    verify(store, never()).markStale(any());
+    verify(store, never()).header(any());
     verify(store, never())
         .recordCandidate(any(), any(), anyLong(), any(), any(), any(), any(), anyInt());
   }
