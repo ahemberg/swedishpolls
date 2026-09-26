@@ -183,7 +183,7 @@ function pollsters(): PollstersData {
 const method: MethodData = {
   verdict: {
     status: freeze.release.status,
-    released: freeze.release.status === "released",
+    authorization: freeze.authorizedLevel.toUpperCase(),
     failedGates: freeze.release.failedBlockingGates,
   },
   estimator: {

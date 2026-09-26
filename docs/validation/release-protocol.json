@@ -32,6 +32,12 @@
     "minimum_scored_folds" : 8,
     "sensitivity_disclosure_points" : 10.0
   },
+  "publication_gates" : {
+    "trend_publication" : {
+      "required" : [ "audit_composition_sum", "audit_seat_total", "audit_seeded_reproduction", "tolerance:cross_architecture_reproduction", "predictive_log_score_vs_recency:eight_party_2010", "predictive_log_score_vs_recency:fi_candidate_2014_2018" ],
+      "rule" : "Every named gate must pass without a waiver. These gates protect the central composition and derived seats. Coverage and interval precision do not enter a trend publication decision."
+    }
+  },
   "reported_not_blocking" : [ "resource_runtime_target", "systematic_misfit:institute:eight_party_2010", "systematic_misfit:institute:fi_candidate_2014_2018", "systematic_misfit:fieldwork_days:eight_party_2010", "systematic_misfit:fieldwork_days:fi_candidate_2014_2018" ],
   "audit_rules" : {
     "freeze" : "The model implementation digest, resolved parameters, coverage behaviour, numeric tolerances and executable environment are recorded before the reserved fit runs. A freeze whose development protocol digest has moved is refused rather than reconciled.",
@@ -57,5 +63,9 @@
     "amended_on" : "2026-09-22",
     "decisionUrl" : "https://github.com/ahemberg/swedishpolls/issues/240",
     "change" : "Institute-scope and fieldwork-length-scope subgroup misfit gates moved to reported_not_blocking, and the paired predictive comparison recorded as deferred. Made after the development evidence was read; see ADR 0013. No tolerance, band, parameter or estimator moved, and the party-scope subgroup gates stay blocking."
+  }, {
+    "amended_on" : "2026-09-26",
+    "decisionUrl" : "https://github.com/ahemberg/swedishpolls/issues/243",
+    "change" : "Registered a separate trend-publication gate using existing audited central-estimate and reproduction checks. This post-result addition changes no frozen development evidence, calibrated release verdict, tolerance or estimator; see ADR 0015."
   } ]
 }

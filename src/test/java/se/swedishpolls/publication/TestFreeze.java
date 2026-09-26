@@ -35,6 +35,7 @@ public final class TestFreeze {
       final ObjectNode release = (ObjectNode) root.get("release");
       release.put("status", "released");
       release.putArray("failedBlockingGates");
+      root.put("authorizedLevel", "calibrated");
       return ModelFreeze.parse(root);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
@@ -55,6 +56,7 @@ public final class TestFreeze {
       precision.put("maxEndpointErrorPoints", 100);
       final ObjectNode release = (ObjectNode) root.get("release");
       release.put("status", status);
+      root.put("authorizedLevel", clearGates ? "calibrated" : "none");
       if (clearGates) {
         release.putArray("failedBlockingGates");
       }

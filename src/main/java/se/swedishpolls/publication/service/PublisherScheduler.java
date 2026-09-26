@@ -47,7 +47,7 @@ final class PublisherScheduler {
       switch (attempt.outcome()) {
         case PUBLISHED -> LOG.info("A new publication is current");
         case UNCHANGED -> LOG.info("The source snapshot is unchanged");
-        case BLOCKED -> LOG.warn("The release verdict blocks publication");
+        case BLOCKED -> LOG.warn("Publication authorization blocks publication");
         case FAILED -> LOG.error("The update failed; the previous publication is retained");
         case BUSY -> LOG.info("Another worker holds the publication lock");
       }

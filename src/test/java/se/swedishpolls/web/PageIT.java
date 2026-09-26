@@ -1185,7 +1185,7 @@ class PageIT {
     final ModelFreeze freeze = ModelFreeze.load();
     final JsonNode verdict = bootstrap(page).get("data").get("method").get("verdict");
     assertEquals(freeze.releaseStatus(), verdict.get("status").asString());
-    assertEquals(freeze.released(), verdict.get("released").asBoolean());
+    assertEquals(freeze.authorization().name(), verdict.get("authorization").asString());
     final List<String> gates = new java.util.ArrayList<>();
     for (final JsonNode gate : verdict.get("failedGates")) {
       gates.add(gate.asString());
@@ -1193,7 +1193,7 @@ class PageIT {
     assertEquals(freeze.failedBlockingGates(), gates);
     final SiteText text = SiteText.of(Translations.SWEDISH);
     final String key =
-        freeze.released()
+        freeze.authorization() == ModelFreeze.Authorization.CALIBRATED
             ? "method.validation.verdictReleased"
             : "method.validation.verdictBlocked";
     assertTrue(page.contains(SiteHtml.escape(text.text(key))), key);

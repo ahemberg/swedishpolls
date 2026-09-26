@@ -5,7 +5,8 @@ import java.util.List;
 /** The shipped method settings projected into values suitable for publication. */
 public record MethodMetadata(Verdict verdict, Estimator estimator, Draws draws, Coverage coverage) {
 
-  public record Verdict(String status, boolean released, List<String> failedGates) {
+  public record Verdict(
+      String status, ModelFreeze.Authorization authorization, List<String> failedGates) {
     public Verdict {
       failedGates = List.copyOf(failedGates);
     }
@@ -38,7 +39,7 @@ public record MethodMetadata(Verdict verdict, Estimator estimator, Draws draws, 
 
   public static MethodMetadata from(ModelFreeze freeze) {
     return new MethodMetadata(
-        new Verdict(freeze.releaseStatus(), freeze.released(), freeze.failedBlockingGates()),
+        new Verdict(freeze.releaseStatus(), freeze.authorization(), freeze.failedBlockingGates()),
         new Estimator(
             freeze.estimatorVersion(),
             freeze.numericalLibrary(),

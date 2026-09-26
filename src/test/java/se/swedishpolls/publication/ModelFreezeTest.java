@@ -111,9 +111,60 @@ class ModelFreezeTest {
       }
     }
     assertEquals(failed, freeze.failedBlockingGates());
-    assertFalse(
-        freeze.released(),
+    assertEquals(
+        ModelFreeze.Authorization.NONE,
+        freeze.authorization(),
         "The audited verdict blocks release, so a deployment publishes nothing until it changes");
+  }
+
+  @Test
+  void trendGateUsesOnlyTheRegisteredCentralEstimateChecks() throws Exception {
+    final JsonNode registration = read(Path.of("docs/validation/release-protocol.json"));
+    final JsonNode gates = read(AUDIT).get("verdict").get("gates");
+    final List<String> failed = new ArrayList<>();
+    final List<String> requiredNames = new ArrayList<>();
+    for (final JsonNode required :
+        registration.get("publication_gates").get("trend_publication").get("required")) {
+      requiredNames.add(required.asString());
+      boolean passed = false;
+      for (final JsonNode gate : gates) {
+        if (required.asString().equals(gate.get("name").asString())) {
+          passed = gate.get("passed").booleanValue() && gate.get("waiver").isNull();
+        }
+      }
+      if (!passed) failed.add(required.asString());
+    }
+    assertEquals(failed, ModelFreeze.load().failedTrendGates());
+    assertEquals(
+        List.of(
+            "audit_composition_sum",
+            "audit_seat_total",
+            "audit_seeded_reproduction",
+            "tolerance:cross_architecture_reproduction",
+            "predictive_log_score_vs_recency:eight_party_2010",
+            "predictive_log_score_vs_recency:fi_candidate_2014_2018"),
+        requiredNames,
+        "Party and institute coverage gates cannot enter trend authorization");
+    assertEquals(ModelFreeze.Authorization.NONE, ModelFreeze.load().authorization());
+  }
+
+  @Test
+  void authorizationFallsBackOnlyToAGateThatPassed() throws Exception {
+    final ObjectNode freeze = (ObjectNode) shipped();
+    freeze.put("authorizedLevel", "trend");
+    assertEquals(ModelFreeze.Authorization.TREND, ModelFreeze.parse(freeze).authorization());
+
+    ((ObjectNode) freeze.get("trendGate")).putArray("failedGates").add("audit_seat_total");
+    assertEquals(ModelFreeze.Authorization.NONE, ModelFreeze.parse(freeze).authorization());
+
+    freeze.put("authorizedLevel", "calibrated");
+    assertEquals(ModelFreeze.Authorization.NONE, ModelFreeze.parse(freeze).authorization());
+    ((ObjectNode) freeze.get("trendGate")).putArray("failedGates");
+    assertEquals(ModelFreeze.Authorization.TREND, ModelFreeze.parse(freeze).authorization());
+    ((ObjectNode) freeze.get("release")).put("status", "released").putArray("failedBlockingGates");
+    assertEquals(ModelFreeze.Authorization.CALIBRATED, ModelFreeze.parse(freeze).authorization());
+    ((ObjectNode) freeze.get("trendGate")).putArray("failedGates").add("audit_seat_total");
+    assertEquals(ModelFreeze.Authorization.NONE, ModelFreeze.parse(freeze).authorization());
   }
 
   private static JsonNode shipped() throws Exception {

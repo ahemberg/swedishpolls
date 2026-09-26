@@ -138,6 +138,17 @@ public class Publisher {
     if (active.isEmpty()) {
       return fail(sourceCheckedAt, "no archived source snapshot");
     }
+    if (freeze.authorization() == ModelFreeze.Authorization.NONE) {
+      final String detail =
+          "publication authorization none; release "
+              + freeze.releaseStatus()
+              + "; blocking gates "
+              + String.join(", ", freeze.failedBlockingGates())
+              + "; trend gates "
+              + String.join(", ", freeze.failedTrendGates());
+      store.recordAttempt(PublicationOutcome.BLOCKED, sourceCheckedAt, null, detail);
+      return new Attempt(PublicationOutcome.BLOCKED, null, detail);
+    }
     final Optional<CurrentPublication> current = store.current();
     if (current.isPresent()) {
       final PublicationHeader header = store.header(current.get().publicationId()).orElseThrow();
@@ -147,15 +158,6 @@ public class Publisher {
         return new Attempt(
             PublicationOutcome.UNCHANGED, header.publicationId(), "the snapshot is unchanged");
       }
-    }
-    if (!freeze.released()) {
-      final String detail =
-          "release "
-              + freeze.releaseStatus()
-              + "; blocking gates "
-              + String.join(", ", freeze.failedBlockingGates());
-      store.recordAttempt(PublicationOutcome.BLOCKED, sourceCheckedAt, null, detail);
-      return new Attempt(PublicationOutcome.BLOCKED, null, detail);
     }
     try {
       return run(active.get(), sourceCheckedAt);

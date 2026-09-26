@@ -1843,7 +1843,7 @@ public final class SiteHtml {
     note(
         html,
         text.text(
-            verdict.get("released").asBoolean()
+            "CALIBRATED".equals(verdict.get("authorization").asString())
                 ? "method.validation.verdictReleased"
                 : "method.validation.verdictBlocked"));
     if (!verdict.get("failedGates").isEmpty()) {
